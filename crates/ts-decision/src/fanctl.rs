@@ -506,7 +506,7 @@ impl<H: FanHardware> FanWriter<H> {
             return;
         }
         let Ok(auto) = self.hw.fan_is_auto() else { return };
-        if !auto != !written.is_auto() {
+        if auto != written.is_auto() {
             self.written = None;
         }
     }

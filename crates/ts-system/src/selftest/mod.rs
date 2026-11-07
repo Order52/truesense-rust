@@ -597,7 +597,7 @@ impl Runner<'_, '_> {
         guarded(
             || {
                 audio.set_mic_mute(!muted)?;
-                if audio.mic_muted()? != !muted {
+                if audio.mic_muted()? == muted {
                     return wrong("mute did not read back");
                 }
                 Ok(format!("mute toggled and restored ({muted})"))
