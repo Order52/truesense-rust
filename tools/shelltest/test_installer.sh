@@ -299,20 +299,20 @@ t_the_program_is_found_before_anything_on_the_system_changes() {
 
 t_the_old_python_tree_is_removed_only_after_the_new_service_started() {
   local wait rm_old swap
-  wait=$(line_of 'if ! wait_for_service; then rollback'); rm_old=$(line_of 'rm -r -f "$PREFIX/lib/truesense/truesense" "$PREFIX/lib/truesense.prev"')
-  swap=$(line_of 'mv -f "$PREFIX/bin/truesense.new" "$PREFIX/bin/truesense"')
+  wait=$(line_of 'if ! wait_for_service; then rollback'); rm_old=$(line_of 'rm -r -f "$L/truesense" "$R$PREFIX/lib/truesense.prev"')
+  swap=$(line_of 'mv -f "$B/truesense.new" "$B/truesense"')
   [ -n "$wait" ] && [ -n "$rm_old" ] && [ -n "$swap" ] || { fail "a step is missing from the script (wait=$wait rm=$rm_old swap=$swap)"; return; }
   [ "$rm_old" -gt "$wait" ] || fail "the old tree is removed (line $rm_old) before the service is known to run (line $wait)"
   [ "$swap" -lt "$wait" ] || fail "the new program must be in place (line $swap) before the service is waited for (line $wait)"
-  assert_contains "$(sed -n "$((wait + 1))p" "$INSTALL")" 'rm -f "$PREFIX/bin/truesense.prev"' "the rollback copy is dropped only once the new service runs"
+  assert_contains "$(sed -n "$((wait + 1))p" "$INSTALL")" 'rm -f "$B/truesense.prev"' "the rollback copy is dropped only once the new service runs"
 }
 
 t_the_program_is_swapped_atomically_with_a_rollback_copy_and_a_fast_link() {
   local text; text=$(cat "$INSTALL")
-  assert_contains "$text" 'install -m755 "$BIN" "$PREFIX/bin/truesense.new"'
-  assert_contains "$text" 'cp -p "$PREFIX/bin/truesense" "$PREFIX/bin/truesense.prev"'
-  assert_contains "$text" 'mv -f "$PREFIX/bin/truesense.new" "$PREFIX/bin/truesense"'
-  assert_contains "$text" 'ln -sf truesense "$PREFIX/bin/truesense-fast"'
+  assert_contains "$text" 'install -m755 "$BIN" "$B/truesense.new"'
+  assert_contains "$text" 'cp -p "$B/truesense" "$B/truesense.prev.new"; mv -f "$B/truesense.prev.new" "$B/truesense.prev"'
+  assert_contains "$text" 'mv -f "$B/truesense.new" "$B/truesense"'
+  assert_contains "$text" 'mv -f -T "$B/.truesense-fast.new" "$B/truesense-fast"'
   assert_contains "$text" 'truesense-nvml.c' "the GPU helper is built from C"
 }
 
