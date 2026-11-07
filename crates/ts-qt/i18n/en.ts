@@ -767,5 +767,361 @@
         <source>Smart auto profiles decide how the power mode follows load and heat. Fan curves are only the fan shape. Lighting looks are only lights. Key bindings are only the PREDATOR key. A profile here sets all of it once; it does not keep watching.</source>
         <translation>Smart auto profiles decide how the power mode follows load and heat. Fan curves are only the fan shape. Lighting looks are only lights. Key bindings are only the PREDATOR key. A profile here sets all of it once; it does not keep watching.</translation>
     </message>
+    <message id="curve_auto">
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message id="curve_limit">
+        <source>100 % by %1</source>
+        <translation>100 % by %1</translation>
+    </message>
+    <message id="curve_now">
+        <source>Right now</source>
+        <translation>Right now</translation>
+    </message>
+    <message id="curve_graph">
+        <source>Fan curve graph</source>
+        <translation>Fan curve graph</translation>
+    </message>
+    <message id="curve_point_name">
+        <source>Point %1: %2, %3</source>
+        <translation>Point %1: %2, %3</translation>
+    </message>
+    <message id="cooling_auto">
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message id="cooling_mode_smart">
+        <source>Smart</source>
+        <translation>Smart</translation>
+    </message>
+    <message id="cooling_mode_auto">
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message id="cooling_mode_max">
+        <source>Max</source>
+        <translation>Max</translation>
+    </message>
+    <message id="cooling_mode_manual">
+        <source>Manual</source>
+        <translation>Manual</translation>
+    </message>
+    <message id="cooling_mode_unknown">
+        <source>Unknown</source>
+        <translation>Unknown</translation>
+    </message>
+    <message id="cooling_help_smart">
+        <source>TrueSense follows the fan curve below by temperature. This is the quietest way to stay cool.</source>
+        <translation>TrueSense follows the fan curve below by temperature. This is the quietest way to stay cool.</translation>
+    </message>
+    <message id="cooling_help_auto">
+        <source>The firmware runs the fans by its own curve. They stop completely while the laptop is cool.</source>
+        <translation>The firmware runs the fans by its own curve. They stop completely while the laptop is cool.</translation>
+    </message>
+    <message id="cooling_help_max">
+        <source>Both fans at full speed.</source>
+        <translation>Both fans at full speed.</translation>
+    </message>
+    <message id="cooling_help_manual">
+        <source>You set the speed of each fan yourself.</source>
+        <translation>You set the speed of each fan yourself.</translation>
+    </message>
+    <message id="cooling_pm_eco">
+        <source>Eco</source>
+        <translation>Eco</translation>
+    </message>
+    <message id="cooling_pm_quiet">
+        <source>Quiet</source>
+        <translation>Quiet</translation>
+    </message>
+    <message id="cooling_pm_balanced">
+        <source>Balanced</source>
+        <translation>Balanced</translation>
+    </message>
+    <message id="cooling_pm_performance">
+        <source>Performance</source>
+        <translation>Performance</translation>
+    </message>
+    <message id="cooling_pm_turbo">
+        <source>Turbo</source>
+        <translation>Turbo</translation>
+    </message>
+    <message id="cooling_stop_both_title">
+        <source>Stop both fans?</source>
+        <translation>Stop both fans?</translation>
+    </message>
+    <message id="cooling_stop_one_title">
+        <source>Stop this fan?</source>
+        <translation>Stop this fan?</translation>
+    </message>
+    <message id="cooling_stop_text">
+        <source>With a fan stopped the laptop can overheat quickly under any load. This is only for quiet, light use. It is only allowed while the CPU is under 60 °C and the GPU under 55 °C. If the CPU reaches 70 °C or the GPU 65 °C, TrueSense gives the fans back to the firmware by itself. On this laptop the firmware may keep a stopped fan at a minimum speed. TrueSense checks the fan speed afterwards and says what really happened.</source>
+        <translation>With a fan stopped the laptop can overheat quickly under any load. This is only for quiet, light use. It is only allowed while the CPU is under 60 °C and the GPU under 55 °C. If the CPU reaches 70 °C or the GPU 65 °C, TrueSense gives the fans back to the firmware by itself. On this laptop the firmware may keep a stopped fan at a minimum speed. TrueSense checks the fan speed afterwards and says what really happened.</translation>
+    </message>
+    <message id="cooling_stop_confirm">
+        <source>Stop</source>
+        <translation>Stop</translation>
+    </message>
+    <message id="cooling_discard_title">
+        <source>Discard your changes?</source>
+        <translation>Discard your changes?</translation>
+    </message>
+    <message id="cooling_discard_text">
+        <source>The curve you are editing has changes that are not saved. Opening another curve drops them.</source>
+        <translation>The curve you are editing has changes that are not saved. Opening another curve drops them.</translation>
+    </message>
+    <message id="cooling_discard_confirm">
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
+    <message id="cooling_in_use_unsaved">
+        <source>Fan curve in use: %1 (with your changes, not saved yet)</source>
+        <translation>Fan curve in use: %1 (with your changes, not saved yet)</translation>
+    </message>
+    <message id="cooling_in_use">
+        <source>Fan curve in use: %1</source>
+        <translation>Fan curve in use: %1</translation>
+    </message>
+    <message id="cooling_name_help">
+        <source>Names use letters, digits, . _ - (up to 40).</source>
+        <translation>Names use letters, digits, . _ - (up to 40).</translation>
+    </message>
+    <message id="cooling_saved">
+        <source>Saved fan curve &apos;%1&apos;</source>
+        <translation>Saved fan curve &apos;%1&apos;</translation>
+    </message>
+    <message id="cooling_copied">
+        <source>Copied to &apos;%1&apos;. Drag the points to change it, then Save and Use.</source>
+        <translation>Copied to &apos;%1&apos;. Drag the points to change it, then Save and Use.</translation>
+    </message>
+    <message id="cooling_delete_title">
+        <source>Delete this fan curve?</source>
+        <translation>Delete this fan curve?</translation>
+    </message>
+    <message id="cooling_delete_text">
+        <source>The curve &apos;%1&apos; is deleted for good.</source>
+        <translation>The curve &apos;%1&apos; is deleted for good.</translation>
+    </message>
+    <message id="cooling_delete_confirm">
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message id="cooling_deleted">
+        <source>Deleted fan curve &apos;%1&apos;</source>
+        <translation>Deleted fan curve &apos;%1&apos;</translation>
+    </message>
+    <message id="cooling_fans">
+        <source>Fans</source>
+        <translation>Fans</translation>
+    </message>
+    <message id="cooling_cpu_fan">
+        <source>CPU fan</source>
+        <translation>CPU fan</translation>
+    </message>
+    <message id="cooling_gpu_fan">
+        <source>GPU fan</source>
+        <translation>GPU fan</translation>
+    </message>
+    <message id="cooling_duty">
+        <source>Duty register %1</source>
+        <translation>Duty register %1</translation>
+    </message>
+    <message id="cooling_cpu_temp">
+        <source>CPU %1</source>
+        <translation>CPU %1</translation>
+    </message>
+    <message id="cooling_gpu_temp">
+        <source>GPU %1</source>
+        <translation>GPU %1</translation>
+    </message>
+    <message id="cooling_idle_note">
+        <source>A fan at 0 RPM while the laptop is cool is normal: in Auto and Smart the firmware keeps the fans off until they are needed.</source>
+        <translation>A fan at 0 RPM while the laptop is cool is normal: in Auto and Smart the firmware keeps the fans off until they are needed.</translation>
+    </message>
+    <message id="cooling_stopped_note">
+        <source>You stopped the fans. They go back to Auto by themselves if the laptop gets warm.</source>
+        <translation>You stopped the fans. They go back to Auto by themselves if the laptop gets warm.</translation>
+    </message>
+    <message id="cooling_fans_unavailable">
+        <source>This laptop does not report its fans.</source>
+        <translation>This laptop does not report its fans.</translation>
+    </message>
+    <message id="cooling_mode">
+        <source>Fan mode</source>
+        <translation>Fan mode</translation>
+    </message>
+    <message id="cooling_linked">
+        <source>Control both fans together</source>
+        <translation>Control both fans together</translation>
+    </message>
+    <message id="cooling_stop_word">
+        <source>Stop</source>
+        <translation>Stop</translation>
+    </message>
+    <message id="cooling_manual_help">
+        <source>A fan is 0 (stopped, asks first) or 20 to 100 %. Below 20 % the firmware would stall it.</source>
+        <translation>A fan is 0 (stopped, asks first) or 20 to 100 %. Below 20 % the firmware would stall it.</translation>
+    </message>
+    <message id="cooling_stop_both">
+        <source>Stop both fans…</source>
+        <translation>Stop both fans…</translation>
+    </message>
+    <message id="cooling_curve">
+        <source>Fan curve</source>
+        <translation>Fan curve</translation>
+    </message>
+    <message id="cooling_changed">
+        <source>Changed</source>
+        <translation>Changed</translation>
+    </message>
+    <message id="cooling_undo">
+        <source>Undo</source>
+        <translation>Undo</translation>
+    </message>
+    <message id="cooling_discard">
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
+    <message id="cooling_add_point">
+        <source>Add point</source>
+        <translation>Add point</translation>
+    </message>
+    <message id="cooling_native_note">
+        <source>Native: the firmware controls the fans exactly like PredatorSense on Windows. There is no curve to edit.</source>
+        <translation>Native: the firmware controls the fans exactly like PredatorSense on Windows. There is no curve to edit.</translation>
+    </message>
+    <message id="cooling_builtin_note">
+        <source>Built-in curves cannot be changed. Press Copy to make your own version.</source>
+        <translation>Built-in curves cannot be changed. Press Copy to make your own version.</translation>
+    </message>
+    <message id="cooling_preview_cpu">
+        <source>At CPU %1 this curve asks for %2.</source>
+        <translation>At CPU %1 this curve asks for %2.</translation>
+    </message>
+    <message id="cooling_preview_gpu">
+        <source>At GPU %1 it asks for %2.</source>
+        <translation>At GPU %1 it asks for %2.</translation>
+    </message>
+    <message id="cooling_editor_help">
+        <source>Drag a point to move it. Double-click empty space to add one; right-click a point or press Delete to remove it. Tab to a point and use the arrow keys for fine steps. The Auto band is where the firmware runs the fan, so it stops when cool. The dashed line is where the side must reach 100 %.</source>
+        <translation>Drag a point to move it. Double-click empty space to add one; right-click a point or press Delete to remove it. Tab to a point and use the arrow keys for fine steps. The Auto band is where the firmware runs the fan, so it stops when cool. The dashed line is where the side must reach 100 %.</translation>
+    </message>
+    <message id="cooling_p_predict">
+        <source>Early boost when heating</source>
+        <translation>Early boost when heating</translation>
+    </message>
+    <message id="cooling_p_predict_sub">
+        <source>The curve is read this many degrees ahead while the temperature rises, so the fans start before the heat.</source>
+        <translation>The curve is read this many degrees ahead while the temperature rises, so the fans start before the heat.</translation>
+    </message>
+    <message id="cooling_p_hysteresis">
+        <source>Wait before slowing down</source>
+        <translation>Wait before slowing down</translation>
+    </message>
+    <message id="cooling_p_hysteresis_sub">
+        <source>How far below a point the temperature must fall before the fans may slow down, so they do not hunt.</source>
+        <translation>How far below a point the temperature must fall before the fans may slow down, so they do not hunt.</translation>
+    </message>
+    <message id="cooling_p_down_rate">
+        <source>Slow-down speed</source>
+        <translation>Slow-down speed</translation>
+    </message>
+    <message id="cooling_p_down_rate_sub">
+        <source>The fastest the fans may slow down, in percent per second. Speeding up is always immediate.</source>
+        <translation>The fastest the fans may slow down, in percent per second. Speeding up is always immediate.</translation>
+    </message>
+    <message id="cooling_p_couple">
+        <source>Fan coupling</source>
+        <translation>Fan coupling</translation>
+    </message>
+    <message id="cooling_p_couple_sub">
+        <source>How far the quieter fan may trail the louder one. The two fans share heat pipes, so one fan alone cannot cool its own chip.</source>
+        <translation>How far the quieter fan may trail the louder one. The two fans share heat pipes, so one fan alone cannot cool its own chip.</translation>
+    </message>
+    <message id="cooling_p_battery">
+        <source>Battery shift</source>
+        <translation>Battery shift</translation>
+    </message>
+    <message id="cooling_p_battery_sub">
+        <source>On battery the temperature is read this many degrees lower, so the fans come in later and the laptop is quieter.</source>
+        <translation>On battery the temperature is read this many degrees lower, so the fans come in later and the laptop is quieter.</translation>
+    </message>
+    <message id="cooling_name_placeholder">
+        <source>Name to save or copy as</source>
+        <translation>Name to save or copy as</translation>
+    </message>
+    <message id="cooling_use">
+        <source>Use this curve</source>
+        <translation>Use this curve</translation>
+    </message>
+    <message id="cooling_save">
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message id="cooling_save_as">
+        <source>Save as</source>
+        <translation>Save as</translation>
+    </message>
+    <message id="cooling_copy_edit">
+        <source>Copy to edit</source>
+        <translation>Copy to edit</translation>
+    </message>
+    <message id="cooling_copy">
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message id="cooling_delete">
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message id="cooling_use_help">
+        <source>Use applies what you see now and switches the fans to Smart. Save keeps it under a name.</source>
+        <translation>Use applies what you see now and switches the fans to Smart. Save keeps it under a name.</translation>
+    </message>
+    <message id="cooling_library">
+        <source>Curve library</source>
+        <translation>Curve library</translation>
+    </message>
+    <message id="cooling_unstar">
+        <source>Remove from favourites</source>
+        <translation>Remove from favourites</translation>
+    </message>
+    <message id="cooling_star">
+        <source>Add to favourites</source>
+        <translation>Add to favourites</translation>
+    </message>
+    <message id="cooling_tag_builtin">
+        <source>Built in</source>
+        <translation>Built in</translation>
+    </message>
+    <message id="cooling_tag_in_use">
+        <source>In use</source>
+        <translation>In use</translation>
+    </message>
+    <message id="cooling_use_row">
+        <source>Use</source>
+        <translation>Use</translation>
+    </message>
+    <message id="cooling_bindings">
+        <source>Fans for each power mode</source>
+        <translation>Fans for each power mode</translation>
+    </message>
+    <message id="cooling_now_suffix">
+        <source> (now)</source>
+        <translation> (now)</translation>
+    </message>
+    <message id="cooling_no_curve">
+        <source>No curve</source>
+        <translation>No curve</translation>
+    </message>
+    <message id="cooling_missing">
+        <source>%1 (missing)</source>
+        <translation>%1 (missing)</translation>
+    </message>
+    <message id="cooling_bindings_help">
+        <source>No curve: this power mode leaves the fans as they are. A power mode change never ends a manual fan setting, and a curve chosen for a power mode applies only while the fans are in Smart mode.</source>
+        <translation>No curve: this power mode leaves the fans as they are. A power mode change never ends a manual fan setting, and a curve chosen for a power mode applies only while the fans are in Smart mode.</translation>
+    </message>
 </context>
 </TS>
