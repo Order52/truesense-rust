@@ -64,6 +64,23 @@ Firmware commands per 30 steady ticks, pinned by a test (`a_steady_tick_asks_the
 
 The Go edition made the same set of calls with `sensors` on every tick (5 firmware calls), so the daemon now asks the firmware for about 30 % fewer calls than Go did. What the Rust edition did *more* than Go, and what this branch removes, was the 17 sensor files per tick (Go read `temp1_input` only).
 
+## Measured on the real laptop (PH16-71, installed 0.5.0, 60 s windows, 2026-11-07)
+
+The simulation tables above cannot show the cost of real firmware calls (kernel time in ACPI/WMI and sysfs), so the installed services were measured on the laptop itself, before and after this pass, next to the Go edition's documented figures:
+
+| Process | Before this pass | After | Go 0.4.0 (documented) |
+|---|---|---|---|
+| Daemon, CPU of one core | 1.38 % | **0.37 %** | about 0.5 % |
+| Daemon, wakeups per second | 16.9 | **2.0** | about 1 tick/s plus helpers |
+| Daemon, resident memory | 1.7 MB | 5.9 MB | 14.4 MB |
+| Audio watcher, CPU / wakeups per s | 0.35 % / 52 | **0.03 % / 1.2** | (about 14 MB) |
+| Key service, CPU / wakeups per s | 0.13 % / 26 | **0.00 % / 0.5** | (about 16 MB) |
+| The three together, resident memory | about 7 MB | about 16 MB | 44.6 MB |
+
+What the regression was: the daemon read all 17 coretemp inputs on every tick (each is an MSR read by inter-processor interrupt that wakes that core) where Go read the package sensor only; the audio watcher and key service polled. All three are fixed, and the full self-test (fan phase included) passes on the hardware.
+
+The Qt window with the software renderer: about 130 MB resident (268-323 MB with OpenGL on the NVIDIA stack), about 1 % of a core while it is visible and idle (3 % before the repaint fixes), nothing while hidden, and closing it now quits the process unless a tray host is really present.
+
 ## The honest reading
 
 - **Most of the daemon's cost on the real laptop is kernel time in firmware and sysfs reads**, not CPU in our code. On the real machine the daemon measured about 1.4 % of a core, nearly all of it system time. The simulator has no firmware, so it can only show what we control: the wake-ups and syscalls around the calls, and the number of calls (fixed by a test). Whether the real daemon now lands below the Go edition's 0.5 % is a measurement to take on the laptop (see the checklist at the end).
