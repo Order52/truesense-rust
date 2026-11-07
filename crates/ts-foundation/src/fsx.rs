@@ -207,7 +207,7 @@ pub(crate) fn write_atomic_nosync(path: &Path, data: &[u8], mode: u32) -> Result
     write_atomic_impl(path, data, mode, false)
 }
 
-/// [`write_atomic`] after creating the parent directory (mode `0o755`) when it is missing.
+/// `write_atomic` after creating the parent directory (mode `0o755`) when it is missing.
 pub fn write_atomic_mkdir(path: &Path, data: &[u8], mode: u32) -> Result<(), FsError> {
     if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
         ensure_dir(dir, 0o755)?;

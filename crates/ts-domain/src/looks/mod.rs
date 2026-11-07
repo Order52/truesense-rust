@@ -285,7 +285,7 @@ pub fn default_dir(home: &Path) -> PathBuf {
     home.join(".config/truesense/looks")
 }
 
-/// The boot look path: `TRUESENSE_BOOT_LOOK` (empty counts as unset) or [`DEFAULT_BOOT_FILE`].
+/// The boot look path: `TRUESENSE_BOOT_LOOK` (empty counts as unset) or `DEFAULT_BOOT_FILE`.
 pub fn default_boot_file(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_BOOT_LOOK").map_or_else(|| PathBuf::from(DEFAULT_BOOT_FILE), PathBuf::from)
 }

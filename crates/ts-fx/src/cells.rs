@@ -1,6 +1,6 @@
 //! The adapter between the engine's key layout and a keyboard that is lit by numbered cells.
 //!
-//! The engine draws on [`ph16_71`](crate::layout::ph16_71): 103 keys, each with a name
+//! The engine draws on [`ph16_71`]: 103 keys, each with a name
 //! (`escape`, `w_key`, `kp_7`) and a position in key units, in the layout's order. A host such
 //! as TrueSense lights a keyboard by cells instead (the PH16-71's controller takes 128 colours
 //! in one upload, and which cell belongs to which physical key was measured on the laptop, not

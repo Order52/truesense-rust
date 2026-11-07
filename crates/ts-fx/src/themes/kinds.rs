@@ -431,7 +431,7 @@ pub(super) const PER_KEY_PATTERNS: &[&str] = &[
 pub(super) const BAR_THEMES: &[&str] = &["kitt"];
 
 /// Why a theme is hidden on a machine (the reference design's reasons; the page words them, and the
-/// reference design's English for each is in [`HideReason::as_str`]'s doc).
+/// reference design's English for each is quoted in the variant's doc).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HideReason {
     /// The machine has no light the app drives (the page shows its empty state instead).

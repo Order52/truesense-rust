@@ -42,7 +42,7 @@ pub(crate) const OFFSET_MIN_MHZ: i32 = -300;
 /// The highest curve offset a profile may hold, in MHz. The driver reports its own limit too
 /// (about +-1000), which [`GpuUndervolt::apply`] also enforces.
 pub(crate) const OFFSET_MAX_MHZ: i32 = 250;
-/// The lowest clock cap, in MHz (a cap is 0, meaning none, or [`CAP_MIN_MHZ`]..=[`CAP_MAX_MHZ`]).
+/// The lowest clock cap, in MHz (a cap is 0, meaning none, or [`CAP_MIN_MHZ`]..=`CAP_MAX_MHZ`).
 pub const CAP_MIN_MHZ: i32 = 600;
 /// The highest clock cap, in MHz.
 pub(crate) const CAP_MAX_MHZ: i32 = 3300;

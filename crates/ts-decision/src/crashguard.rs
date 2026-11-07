@@ -24,12 +24,12 @@ pub(crate) const UV_PENDING_PATH: &str = "/var/lib/truesense/uv-pending";
 /// Where the GPU undervolt flag lives unless `TRUESENSE_GPU_UV_PENDING` says otherwise.
 pub(crate) const GPU_UV_PENDING_PATH: &str = "/var/lib/truesense/gpu-uv-pending";
 
-/// The CPU flag path: `$TRUESENSE_UV_PENDING` or [`UV_PENDING_PATH`].
+/// The CPU flag path: `$TRUESENSE_UV_PENDING` or `UV_PENDING_PATH`.
 pub fn uv_pending_path(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_UV_PENDING").map_or_else(|| PathBuf::from(UV_PENDING_PATH), PathBuf::from)
 }
 
-/// The GPU flag path: `$TRUESENSE_GPU_UV_PENDING` or [`GPU_UV_PENDING_PATH`].
+/// The GPU flag path: `$TRUESENSE_GPU_UV_PENDING` or `GPU_UV_PENDING_PATH`.
 pub fn gpu_uv_pending_path(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_GPU_UV_PENDING").map_or_else(|| PathBuf::from(GPU_UV_PENDING_PATH), PathBuf::from)
 }
@@ -101,7 +101,7 @@ impl Guard {
     }
 
     /// Call it from the main loop. Once the machine has been up for more than
-    /// [`STABLE_AFTER_S`] since the setting was applied, the flag is removed; returns true on
+    /// `STABLE_AFTER_S` since the setting was applied, the flag is removed; returns true on
     /// that tick.
     pub fn tick(&mut self, now: f64) -> bool {
         match self.armed_at {

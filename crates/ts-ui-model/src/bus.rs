@@ -189,7 +189,7 @@ impl Bus {
     }
 
     /// Queues `request` as the write for control `key`. A write for the same key that has not
-    /// started is replaced (its `done` gets [`CODE_SUPERSEDED`] at once); writes run one at a
+    /// started is replaced (its `done` gets `CODE_SUPERSEDED` at once); writes run one at a
     /// time in the order of the person's latest change per key. Returns the call's id.
     pub fn write(&self, key: &str, request: Request, done: Done) -> u64 {
         let id = self.next_id();

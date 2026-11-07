@@ -7,7 +7,7 @@
 //! * [`bus`]: asynchronous commands over `ts_gui::gui::Commands`, with ordered, coalesced writes;
 //! * [`live`] and [`poller`]: the newest live frame, history for sparklines, a ticker that only
 //!   runs while the window is visible;
-//! * [`json`], [`format`]: reading results and formatting values for display;
+//! * [`json`], [`format`](mod@format): reading results and formatting values for display;
 //! * `limits`: the limits the pages show, read from the layers that enforce them;
 //! * [`routes`], [`capability`]: the page registry and "this machine lacks that" states;
 //! * [`settings`], [`single`], [`pseudo`]: the app's own `ui.json`, one window per user, the

@@ -110,7 +110,7 @@ impl MicWatcher {
 
     /// Wakes the loop on the sound system's own change notices instead of polling it every
     /// second. While the notices flow the loop runs a pass when one arrives and otherwise only
-    /// every [`FALLBACK`]; while they do not (the helper could not start or ended) it polls as before.
+    /// every `FALLBACK`; while they do not (the helper could not start or ended) it polls as before.
     #[must_use]
     pub fn with_events(mut self, events: Arc<dyn Events>) -> Self {
         self.events = Some(events);

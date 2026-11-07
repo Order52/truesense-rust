@@ -151,7 +151,7 @@ pub(crate) fn watchdog_interval(env: &dyn Fn(&str) -> Option<String>, pid: u32) 
     Some(Duration::from_micros(usec / 2))
 }
 
-/// [`watchdog_interval`] for the running process.
+/// `watchdog_interval` for the running process.
 pub fn watchdog_interval_from_env() -> Option<Duration> {
     watchdog_interval(&crate::fsx::env_nonempty, std::process::id())
 }

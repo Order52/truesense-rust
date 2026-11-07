@@ -5,7 +5,7 @@
 //! daemon together is only a matter of building the concrete values (the sysfs tree, the
 //! command runner, the directories) and handing them over.
 //!
-//! The one adapter with behaviour of its own is [`SystemSensors`], which owns the thread that
+//! The one adapter with behaviour of its own is `SystemSensors`, which owns the thread that
 //! feeds the GPU sampler: it starts only when asked, ends when it is released, and the sampler's
 //! own policy keeps it away from a sleeping card.
 

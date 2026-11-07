@@ -2,7 +2,7 @@
 //! (ranges, Changed and Undo), the game-rule list, the risk bands of power limits and undervolts
 //! and the confirmation each band needs, and the plain-data views of what the daemon answers.
 //!
-//! Every number here is read from the layer that enforces it (see [`crate::limits`]):
+//! Every number here is read from the layer that enforces it (see `crate::limits`):
 //! `ts_decision::smartprofile` (the settings and their ranges), `ts_decision::gamerules`,
 //! `ts_domain::power`, `ts_domain::undervolt` and `ts_domain::gpuundervolt` (the bands: the page
 //! calls the same `risk` functions the daemon does, so the wording is the daemon's own). The

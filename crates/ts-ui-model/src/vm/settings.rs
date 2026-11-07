@@ -321,7 +321,7 @@ pub fn apply_summary(result: &Value) -> Value {
 /// The licence and attribution text for the About box, from the contents of `THIRD_PARTY.md`
 /// (or what stands in for it). `available` is false for missing or blank text. Control characters
 /// other than newline and tab are removed (the text is shown as plain text, never as markup), and
-/// the text is cut at [`LICENCE_MAX_CHARS`]; `truncated` says so.
+/// the text is cut at `LICENCE_MAX_CHARS`; `truncated` says so.
 pub fn licence(arg: &Value) -> Value {
     let raw = str_at(arg, "text").or_else(|| arg.as_str()).unwrap_or("");
     let clean: String =

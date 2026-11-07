@@ -54,9 +54,9 @@ const OUTPUT_LIMIT: u64 = 4 << 20;
 pub struct Output {
     /// Standard output.
     pub stdout: String,
-    /// Standard error; for [`NOT_RUNNABLE`] the reason it did not run.
+    /// Standard error; for `NOT_RUNNABLE` the reason it did not run.
     pub stderr: String,
-    /// The exit status, [`NOT_RUNNABLE`] when the program did not run, -1 when a signal ended it.
+    /// The exit status, `NOT_RUNNABLE` when the program did not run, -1 when a signal ended it.
     pub code: i32,
 }
 
@@ -78,7 +78,7 @@ impl Output {
 }
 
 /// Runs one external program to completion. It never fails: a program that cannot start is an
-/// [`Output`] with code [`NOT_RUNNABLE`], because every caller treats both the same way. The
+/// [`Output`] with code `NOT_RUNNABLE`, because every caller treats both the same way. The
 /// doctor and the service repair share it; tests replace it with a fake.
 pub trait Runner: Send + Sync {
     /// Runs `program` with `args` and returns what it left behind.

@@ -9,7 +9,7 @@
 //! * **Only while a theme is the current look.** The running theme is a record in the user state
 //!   ([`ThemeStore::active`]); the renderer looks at it twice a second and is otherwise asleep. A
 //!   new record (a new `started`) restarts the theme; no record stops it.
-//! * **Rate.** At most [`DEFAULT_FPS`] frames a second, and in practice fewer: an upload is eight
+//! * **Rate.** At most `DEFAULT_FPS` frames a second, and in practice fewer: an upload is eight
 //!   64-byte reports 16 ms apart and a 50 ms settle (`ts_domain::keyboard::FRAME_SETTLE`), about
 //!   180 ms, and `per_key_frame` blocks for all of it. Frames are never queued. Each one is drawn
 //!   for the moment it is sent, so a slow upload simply skips the frames that would have been sent
@@ -105,7 +105,7 @@ pub struct Env {
     pub sleep: Box<dyn Fn(Duration) + Send>,
     /// The log.
     pub log: Box<dyn Fn(&str) + Send>,
-    /// The frame rate cap, [`DEFAULT_FPS`] normally.
+    /// The frame rate cap, `DEFAULT_FPS` normally.
     pub fps: u32,
 }
 

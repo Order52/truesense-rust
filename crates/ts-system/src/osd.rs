@@ -78,7 +78,7 @@ pub trait SessionRunner: Send + Sync {
     fn run(&self, call: &Invocation) -> Option<Outcome>;
 }
 
-/// Runs real processes, killing one that overruns [`HELPER_TIMEOUT`].
+/// Runs real processes, killing one that overruns `HELPER_TIMEOUT`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProcessSessionRunner;
 

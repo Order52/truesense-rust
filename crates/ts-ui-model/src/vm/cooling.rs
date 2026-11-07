@@ -11,7 +11,7 @@
 //! firmware runs the fan, so it stops when cool) or 20..=100; the duty never falls as the
 //! temperature rises; no two points share a temperature; and the side is at 100 % by 95 C (CPU) or
 //! 85 C (GPU), because the chip throttles above that. The messages are the daemon's own sentences.
-//! Every edit verb ([`drag`], [`nudge`], [`insert`], [`remove`]) returns points that pass these
+//! Every edit verb (`drag`, `nudge`, `insert`, `remove`) returns points that pass these
 //! rules whenever the points it was given did, so the editor can never produce a curve the daemon
 //! would refuse.
 //!

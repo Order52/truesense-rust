@@ -1,5 +1,5 @@
 //! Fan curves for the smart fan: temperature (degC) to fan duty (%), separately for the CPU
-//! fan and the GPU fan, and the [`Follower`] that turns temperatures into duties.
+//! fan and the GPU fan, and the `Follower` that turns temperatures into duties.
 //!
 //! A curve is `{"cpu": [[temp, pct], ...], "gpu": [...], "hysteresis": degC, "down_rate":
 //! %/s, "predict": degC, "couple": %, "battery_shift": degC}`. Between points the duty is

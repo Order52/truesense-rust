@@ -7,7 +7,7 @@
 //! - [`Theme::apply`] with [`Values`] (the chosen colourway or Custom colours and the
 //!   settings), [`Theme::setting_value`] and [`Theme::look_for`]: effects.js's
 //!   applySettings, settingValue and lookFor, held to effects.js by `parity.rs`.
-//! - [`Hardware`] (the kinds of keyboard, bar and logo a machine has), [`Theme::lights`],
+//! - [`Hardware`] (the kinds of keyboard, bar and logo a machine has), [`Theme::lights_where`],
 //!   [`Theme::hide_reason`], [`gallery`] and [`hidden_note`]: what each light shows and which
 //!   themes are offered, ported from the reference design and held to it by
 //!   `kinds_parity.rs`, except that software looks run only on the lights where app-drawn

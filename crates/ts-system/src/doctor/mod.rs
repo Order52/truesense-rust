@@ -321,12 +321,12 @@ pub struct Env {
     pub kernel: String,
     /// This build's version.
     pub version: String,
-    /// How many checks run side by side; 0 means [`DEFAULT_WORKERS`].
+    /// How many checks run side by side; 0 means `DEFAULT_WORKERS`.
     pub workers: usize,
 }
 
 impl Env {
-    /// The real machine: the real file system, real programs (each given [`PROGRAM_TIMEOUT`]), the
+    /// The real machine: the real file system, real programs (each given `PROGRAM_TIMEOUT`), the
     /// running kernel, and the configuration from its standard places. The firmware, the daemon, the
     /// sound system and the domain probes are the caller's to connect.
     pub fn system(

@@ -248,7 +248,7 @@ fn log_level(line: &str) -> &'static str {
     }
 }
 
-/// The daemon log as lines with a severity: the last [`LOG_MAX_LINES`], each clipped, blank lines
+/// The daemon log as lines with a severity: the last `LOG_MAX_LINES`, each clipped, blank lines
 /// dropped. `truncated` says older lines were left out. Accepts `{text}` or a bare string.
 pub fn log_tail(arg: &Value) -> Value {
     let text = str_at(arg, "text").or_else(|| arg.as_str()).unwrap_or("");

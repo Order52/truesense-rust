@@ -5,8 +5,8 @@
 //! The key table is effects.js's `LAYOUT_TABLE`: names and payload slots from rgbkb's
 //! `acer_ph16_71/keys.py` (all 103 lit slots), widths and x positions approximated from the
 //! Helios 16 chassis. Rows run top (F keys) to bottom (Ctrl), where keys.py counts them
-//! bottom up. Units are key widths; the keyboard is [`KB_W`] by [`KB_H`] key units and the
-//! bar sits [`BAR_PY`] - [`KB_H`] = 2.5 units in front of the bottom row.
+//! bottom up. Units are key widths; the keyboard is `KB_W` by `KB_H` key units and the
+//! bar sits `BAR_PY` - `KB_H` = 2.5 units in front of the bottom row.
 
 use std::sync::OnceLock;
 
@@ -285,7 +285,7 @@ pub fn keycode(name: &str) -> Option<u16> {
 }
 
 /// The LED slot of the PH16-71 key whose Linux keycode is `code`, or `None` for a code no
-/// lit key reports. Built once from the layout's key names and [`KEYCODES`].
+/// lit key reports. Built once from the layout's key names and the table of Linux keycodes next to it.
 pub fn slot_of_keycode(code: u16) -> Option<u8> {
     static SLOTS: OnceLock<Vec<Option<u8>>> = OnceLock::new();
     SLOTS
@@ -304,7 +304,7 @@ pub fn slot_of_keycode(code: u16) -> Option<u8> {
 }
 
 /// `zoneLayout(n, role)`: n zones across the keyboard's width. Without a role, 3 zones are
-/// the bar, 1 is the logo and anything else the keyboard. Bar zones sit at [`BAR_PY`],
+/// the bar, 1 is the logo and anything else the keyboard. Bar zones sit at `BAR_PY`,
 /// others across the keyboard's middle. (effects.js gives zones no corner; `x0`, `y0` are
 /// filled from the centre and size here.)
 pub fn zone_layout(n: usize, role: Option<Role>) -> Layout {

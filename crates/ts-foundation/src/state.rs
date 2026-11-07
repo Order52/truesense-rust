@@ -35,7 +35,7 @@ pub const TMP_LIVE_PATH: &str = "/tmp/truesense-state";
 /// The legacy file the old Predator widgets read, written only when `[compat] predator_widgets` is on.
 pub const PREDATOR_COMPAT_PATH: &str = "/tmp/predator-state";
 
-/// The settings file path: `$TRUESENSE_STATE` or [`STATE_PATH`].
+/// The settings file path: `$TRUESENSE_STATE` or `STATE_PATH`.
 pub fn default_path_from(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_STATE").map_or_else(|| PathBuf::from(STATE_PATH), PathBuf::from)
 }
@@ -189,7 +189,7 @@ impl Store {
     }
 
     /// Removes the temp files a crashed write left beside the settings file (see
-    /// [`fsx::remove_stale_temps`]); the daemon calls it once at start, under its lock.
+    /// `fsx::remove_stale_temps`); the daemon calls it once at start, under its lock.
     pub fn sweep_stale_temp(&self) -> usize {
         fsx::remove_stale_temps(&self.path)
     }

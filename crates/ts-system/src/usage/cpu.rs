@@ -60,7 +60,7 @@ fn parse_ticks<'a>(fields: impl Iterator<Item = &'a str>) -> Option<CpuTicks> {
 }
 
 /// Parses `/proc/stat`. Lines that are not `cpu` or `cpuN`, and lines that are garbled, are
-/// skipped. Never fails and never reads more than [`MAX_CORES`] core lines.
+/// skipped. Never fails and never reads more than `MAX_CORES` core lines.
 pub fn parse_stat(text: &str) -> StatSnapshot {
     let mut snapshot = StatSnapshot::default();
     for line in text.lines() {

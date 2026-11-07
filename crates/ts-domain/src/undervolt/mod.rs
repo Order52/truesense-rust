@@ -93,7 +93,7 @@ pub trait Msr: Send + Sync {
 /// The real MSR device. It opens the device for every access (nothing stays open between calls)
 /// and the kernel's `msr` driver takes the register number as the file offset and moves 8 bytes.
 ///
-/// It refuses to write any register but [`MAILBOX_MSR`]: this type exists for the voltage mailbox
+/// It refuses to write any register but `MAILBOX_MSR`: this type exists for the voltage mailbox
 /// only, and a stray write to another MSR (power limits, performance bias) is not something any
 /// caller of this crate may ever ask for.
 #[derive(Debug, Clone)]
@@ -107,7 +107,7 @@ impl DevMsr {
         Self { path: path.into() }
     }
 
-    /// CPU 0's device, [`DEFAULT_MSR_PATH`].
+    /// CPU 0's device, `DEFAULT_MSR_PATH`.
     pub fn cpu0() -> Self {
         Self::new(DEFAULT_MSR_PATH)
     }
@@ -325,7 +325,7 @@ impl Undervolt {
             && self.get_locked(plane).is_ok_and(|v| v.abs() <= VERIFY_TOLERANCE_MV)
     }
 
-    /// Writes one plane's offset (0 to -[`MAX_MV`] mV) and verifies it by reading it back; returns
+    /// Writes one plane's offset (0 to -`MAX_MV` mV) and verifies it by reading it back; returns
     /// the offset the CPU reports. Without `confirm` it refuses, and an offset outside the hard zone
     /// is refused before anything is written. An offset that does not read back is rolled back.
     pub fn set(&self, plane: Plane, offset_mv: i32, confirm: bool) -> Result<i32, UndervoltError> {
@@ -426,7 +426,7 @@ pub fn is_builtin(name: &str) -> bool {
 }
 
 impl Profile {
-    /// Checks that both offsets are 0 to -[`MAX_MV`] mV.
+    /// Checks that both offsets are 0 to -`MAX_MV` mV.
     pub fn check(&self) -> Result<(), ProfileError> {
         for (key, mv) in [("core", self.core), ("cache", self.cache)] {
             if !(-MAX_MV..=0).contains(&mv) {

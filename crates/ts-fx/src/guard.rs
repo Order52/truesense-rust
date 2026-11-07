@@ -3,7 +3,7 @@
 //! does, both as in effects.js.
 //!
 //! WCAG counts a flash as a pair of opposing changes of 10 % relative luminance and allows 3
-//! a second. The guard counts changes of [`GUARD_THR`] (8 %) and lets at most [`GUARD_MAX`]
+//! a second. The guard counts changes of `GUARD_THR` (8 %) and lets at most `GUARD_MAX`
 //! of them happen in any rolling second, 2.5 flashes in its own accounting; a change that
 //! would go over the budget is held just short of countable until the oldest one leaves the
 //! window. It works on one luminance per light: the area-weighted mean for a keyboard, each

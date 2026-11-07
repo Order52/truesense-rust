@@ -259,7 +259,7 @@ fn read_prefix(path: &Path, limit: usize) -> Option<Vec<u8>> {
 }
 
 /// Remembers the game mode between ticks: the process list is only read every
-/// [`SCAN_EVERY_TICKS`] ticks.
+/// `SCAN_EVERY_TICKS` ticks.
 #[derive(Debug, Clone, Default)]
 pub struct Watcher {
     /// `None` until the first look; then the last answer.

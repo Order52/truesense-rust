@@ -766,7 +766,7 @@ impl ModeEntry {
     }
 }
 
-/// The edit state of the "Lighting for [mode]" strip.
+/// The edit state of the "Lighting for \[mode\]" strip.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Bindings {
     /// The power mode being edited.

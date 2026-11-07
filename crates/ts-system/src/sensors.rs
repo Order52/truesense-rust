@@ -10,7 +10,7 @@
 //! every two seconds, so the card never reaches its 10 to 15 second suspend delay: the battery
 //! life of a laptop with a smart feature on would be that of one with the card always on, and
 //! every start of the program initialises NVML, which raises system management interrupts. So
-//! the stream follows a small policy ([`GpuGate`]): never start for a card that is asleep or
+//! the stream follows a small policy (`GpuGate`): never start for a card that is asleep or
 //! absent, end when nothing wants it, and *park* (end, so that the card can suspend) after a
 //! minute of idle readings, then start again only when someone else wakes the card.
 //!
@@ -413,8 +413,8 @@ impl Sampler {
     ///
     /// The stream is only started for a card that is awake, ends when `env.wanted` turns false,
     /// parks itself after a minute of idle readings so the card can suspend, and starts again
-    /// when the card is woken by someone else (see [`GpuGate`]). A stream that ends or cannot
-    /// start is restarted after [`GPU_RESTART_DELAY`], doubling up to [`GPU_RETRY_MAX`] while it
+    /// when the card is woken by someone else (see `GpuGate`). A stream that ends or cannot
+    /// start is restarted after `GPU_RESTART_DELAY`, doubling up to `GPU_RETRY_MAX` while it
     /// keeps failing, so a machine without `nvidia-smi` hardly ever tries.
     pub fn run_gpu_stream(&self, source: &dyn LineSource, env: &GpuStreamEnv<'_>) {
         const ARGS: [&str; 4] = [

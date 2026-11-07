@@ -5,7 +5,7 @@
 //! line per change of a card, an output, an input or the server, so one resident helper replaces
 //! all of those questions: the watcher waits, and runs its (unchanged) check when a line arrives.
 //!
-//! What stays as it was: the check itself, and a slow fallback pass every [`FALLBACK`] in case an
+//! What stays as it was: the check itself, and a slow fallback pass every `FALLBACK` in case an
 //! event never comes (a jack that the sound server does not announce). If the event stream cannot
 //! be started, or ends (the sound server restarted), the watcher goes back to its old one-second
 //! pace until the stream is up again.
@@ -36,7 +36,7 @@ const RECONNECT: Duration = Duration::from_secs(5);
 /// What a wait for events ended with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Wake {
-    /// Something changed (and has been quiet for [`QUIET`]).
+    /// Something changed (and has been quiet for `QUIET`).
     Changed,
     /// The time was up with no event.
     Timeout,
@@ -50,7 +50,7 @@ pub enum Wake {
 pub trait Events: Send + Sync {
     /// Whether events are flowing right now. Without them the watcher checks every second.
     fn healthy(&self) -> bool;
-    /// Waits up to `timeout` for a change, then for [`QUIET`] after the last one.
+    /// Waits up to `timeout` for a change, then for `QUIET` after the last one.
     fn wait(&self, timeout: Duration, stop: &AtomicBool) -> Wake;
 }
 

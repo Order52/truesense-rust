@@ -24,7 +24,7 @@
 //!   the limit, so 89, 90, 89, 90 is one episode, not four;
 //! * **rate limits**: an alert is shown once per episode, never twice within `repeat_s` of its
 //!   own previous message (an episode that starts too soon waits and is shown when the time is
-//!   up, if it is still going), and no two messages of any kind come within [`MIN_GAP_S`].
+//!   up, if it is still going), and no two messages of any kind come within `MIN_GAP_S`.
 //!
 //! The severity is deliberately only ever [`Severity::Info`] or [`Severity::Warning`]. The
 //! reference project's finding 36: a notification with "critical" urgency is never dismissed by

@@ -49,7 +49,7 @@ pub fn socket_path_from(env: Option<&OsStr>) -> PathBuf {
     }
 }
 
-/// The socket to use: `TRUESENSE_SOCKET` if set and non-empty, else [`DEFAULT_SOCKET`].
+/// The socket to use: `TRUESENSE_SOCKET` if set and non-empty, else `DEFAULT_SOCKET`.
 pub fn socket_path() -> PathBuf {
     socket_path_from(std::env::var_os(SOCKET_ENV).as_deref())
 }

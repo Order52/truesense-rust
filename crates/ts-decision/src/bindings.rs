@@ -93,7 +93,7 @@ pub enum BindingError {
     Malformed(String),
     /// The look copy is not usable; the text is the parser's reason.
     Look(String),
-    /// The look copy is bigger than [`MAX_LOOK_BYTES`].
+    /// The look copy is bigger than `MAX_LOOK_BYTES`.
     LookTooLarge,
     /// The fan curve copy does not validate.
     Curve(CurveError),

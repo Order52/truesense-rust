@@ -7,7 +7,7 @@ BIN    := target/$(TARGET)/release/truesense
 QMAKE  ?= /usr/bin/qmake6
 QTENV  := QMAKE=$(QMAKE)
 
-.PHONY: debug build test lint fmt ci qt-build qt-release qt-test qt-lint qt-ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
+.PHONY: debug build test lint fmt doc ci qt-build qt-release qt-test qt-lint qt-ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
 debug:           ## debug build of every crate except the Qt app (see qt-build)
 	$(CARGO) build
 build:           ## the static release program, built the way releases are: target/$(TARGET)/release/truesense (truesense-fast is a link the installer makes)
@@ -27,7 +27,9 @@ verify-units:    ## systemd-analyze verify on every unit
 	@tools/ci/verify-units.sh | tail -3
 release-check:   ## do the version numbers, notes and tag agree?  (make release-check TAG=v0.5.0)
 	@tools/release.sh check $(if $(TAG),--tag $(TAG),)
-ci: lint test    ## rustfmt, clippy, tests: the Rust gate (without the Qt app)
+doc:             ## rustdoc with warnings as errors: broken or private intra-doc links fail the build
+	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --no-deps
+ci: lint test doc  ## rustfmt, clippy, tests, rustdoc: the Rust gate (without the Qt app)
 qt-build:        ## the Qt app (debug): target/debug/truesense-qt
 	$(QTENV) $(CARGO) build -p ts-qt
 qt-release:      ## the Qt app (release): target/release/truesense-qt
