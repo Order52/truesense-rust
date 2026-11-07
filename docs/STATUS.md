@@ -1,48 +1,61 @@
 # Status of the Rust edition
 
-Version 0.5.0 (development). Nothing here has been released, and nothing has run on the real laptop yet. This page says what has been verified and how, so that no claim outruns its evidence.
+Version 0.5.0 (development, not released). This page says what has been verified and how, so that no claim outruns its evidence. Last updated after the first install on the PH16-71.
 
 ## What exists
 
-Every layer of the Python edition (0.3.17) has been ported, crate by crate, and the pieces are wired into one program:
+Every layer of the Python edition (0.3.17) is ported, and the Rust edition adds what the reference study asked for (see [APP-DESIGN.md](APP-DESIGN.md)). Crates, by layer:
 
-| Crate | What | Tests |
-|---|---|---|
-| `ts-foundation` | config, state, userstate, atomic files, sd_notify, build info, wait backoff | 77 |
-| `ts-platform` | kernel-module client, firmware simulator, typed hardware features with read-back, command runner | 89 |
-| `ts-ipc` | control-socket protocol, uid-checked server, client | 51 |
-| `ts-decision` | fan curves, smart-fan controller and stop guards, automatic power mode, smart profiles, game rules, thermal governor, charge-once, undervolt crash guard | 167 |
-| `ts-domain` | keyboard HID, lighting, per-key effects, audio, power limits, power managers, CPU and GPU undervolt, profiles, key bindings, actions | 397 |
-| `ts-system` | models and probe, doctor, selftest, services, update (strict tar extractor), osd, touchpad, sensors | 282 |
-| `ts-daemon` | the control loop, guarded steps, boot and shutdown, the 17-command socket table, assembly | 88 |
-| `ts-api` | the application layer, the real service builder, a daemon-to-api integration suite | 288 |
-| `ts-cli` | the whole command tree (ported argparse), the fast status-bar client | 93 |
-| `ts-tui` | the terminal UI (ratatui), golden snapshots of every page | 148 |
-| `ts-gui` | the local web window (the Go edition's front end, embedded) | 139 |
-| `ts-keys` | the PREDATOR/Fn key service, login startup | 81 |
-| `truesense` | the binary: dispatch by program name and subcommand | 5 |
+| Crate | What |
+|---|---|
+| `ts-foundation` | config, state, userstate, atomic files, sd_notify, build info, wait backoff |
+| `ts-platform` | kernel-module client, firmware simulator, typed hardware features with read-back, command runner |
+| `ts-ipc` | control-socket protocol, uid-checked server, client |
+| `ts-decision` | fan curves, smart-fan controller and stop guards, automatic power mode, smart profiles, game rules, thermal governor, charge-once, undervolt crash guard, per-mode bindings, alerts |
+| `ts-fx` | the lighting effects engine and the 32 themes (GPL-3.0-derived, see [THIRD_PARTY.md](../THIRD_PARTY.md)) |
+| `ts-domain` | keyboard HID, lighting looks, themes, per-key effects, audio, power limits, power managers, CPU and GPU undervolt, profiles, key bindings, favourites, actions |
+| `ts-system` | models and probe, doctor, selftest, services, update (strict tar extractor), osd, touchpad, sensors, battery, monitor sources |
+| `ts-daemon` | the control loop, guarded steps, boot and shutdown, the socket command table, alerts, mode bindings, GPU stream policy |
+| `ts-api` | the application layer, capabilities, monitor, the real service builder, a daemon-to-api integration suite |
+| `ts-cli` | the whole command tree (ported argparse), the fast status-bar client |
+| `ts-tui` | the terminal UI (ratatui), golden snapshots of every page |
+| `ts-gui` | the command bus the apps use, and the old local web window (fallback only) |
+| `ts-keys` | the PREDATOR/Fn key service, theme renderer, login startup |
+| `ts-ui-model` | the Qt-free logic of the app: bus, live store, write coalescing, view-models per page |
+| `ts-qt` | the Qt 6 / QML app `truesense-qt`: 11 pages, tray, first-run wizard, translations incl. Arabic stubs |
+| `truesense` | the static binary: daemon, CLI, TUI, key service, dispatch by program name |
 
-`make ci` (rustfmt, clippy with warnings as errors, 1904 tests) passes, and so does the same job on GitHub Actions.
+Gates: `make ci` (rustfmt, clippy with warnings as errors, about 3,000 tests, the workspace without Qt) and `make qt-ci` (the Qt crates, offscreen, plus about 100 QML component tests). Both pass, and `make ci` also runs on GitHub Actions.
 
 ## How it was checked
 
-- **Against the Python edition.** Every module was ported from the Python source with its tests. The command line's help pages (all 127) and about 400 command transcripts were compared with the Python program's own output; the keyboard's HID transcripts (about 40 scenarios) and 275 animation frames were compared byte for byte with Python.
-- **Against the Go edition.** The Go port, which was verified on the laptop, was used as a second opinion for edge cases and test ideas, not copied.
-- **Between the halves.** The daemon and the application layer were written separately from `daemon.py`; an integration suite starts the real daemon on a temporary socket over the firmware simulator and drives it through the real client for every command family. It found no mismatch in command names, argument names or result shapes.
-- **As a program.** The static binary was run in simulation: the daemon on a temporary socket, driven by the CLI (power modes and hold, fan smart/manual/off with the confirmation rule, charge, CPU limits, game rules). The daemon shut down cleanly on SIGTERM and removed its socket.
+- **Against the Python edition.** Every module was ported from the Python source with its tests. The command line's help pages and about 400 command transcripts were compared with the Python program's own output; the keyboard's HID transcripts and 275 animation frames were compared byte for byte.
+- **Against the Go edition and the reference project.** The Go port (verified on the laptop) and the reference project's PH16-71 findings were used as second opinions: see [PH16-71-NOTES.md](PH16-71-NOTES.md).
+- **Between the halves.** An integration suite starts the real daemon on a temporary socket over the firmware simulator and drives it through the real client for every command family.
+- **Resilience.** Crash, kill, corrupt-file, full-disk, clock-jump, suspend and upgrade scenarios are tested in simulation: see [RESILIENCE.md](RESILIENCE.md).
+- **On the real laptop (2026-11-07).**
+  - Read-only: `probe` (0 writes), `sensors`, `doctor` agree with the hardware.
+  - Installed with the installer: kernel module 0.5.0 built for both installed kernels and loaded, the daemon, the key and audio services and the units running, `truesense service check` all good.
+  - The daemon restored the existing settings (smart fan, auto profile) and the boot lighting.
+  - `truesense selftest --skip-fans`: 16 of 16 passed (every other firmware setting, audio, keyboard, daemon pause/restore, doctor).
+  - Resident memory: daemon about 2 MB, key service 1.5 MB, audio watcher 3.3 MB.
 
-## What has NOT been verified
+## What has NOT been verified on real hardware
 
-- Anything on real hardware: the kernel module path, hidraw, real fans, the real keyboard, NVML, MSR undervolt, the Fn keys, audio.
-- The terminal UI on a real terminal (it ran only on ratatui's test backend), and the web window in a real browser. The window's live-update stream relies on a connection upgrade that was checked only with Node's `fetch`.
-- Packaging: installer, units, release pipeline (in progress).
+- The fan phase of the self-test (it needs a cool machine), real fan stops with the watchdog, and the crash failsafe (`ExecStopPost`) after a daemon kill.
+- Real PREDATOR / Fn key presses with the Rust key service.
+- The Qt app on a real display (rendered offscreen only), the tray, and the terminal UI on a real terminal.
+- Themes on the real keyboard (frame rate, flicker), per-mode bindings, alerts, the GPU stream parking and the dGPU suspending: the live checks are listed in [PH16-71-NOTES.md](PH16-71-NOTES.md) and [RESILIENCE.md](RESILIENCE.md).
+- A real upgrade through the updater (no release with `SHA256SUMS` is published yet).
 - The animation frames use libm `sin`/`cos`/`pow`; the golden frames match on glibc, the static build uses musl's libm, which could differ in the last bit for a rare cell.
 
-## Known differences from the Python edition
+## Licence
 
-Listed per module in the commit messages and the agents' reports; the ones users may notice:
+`ts-fx` is derived from predator-sense by cleyton1986 (GPL-3.0), used with the author's permission; the binary links it, so the combination is a combined work. The licence of the whole repository (MIT or GPL-3.0) is still to be decided; see [THIRD_PARTY.md](../THIRD_PARTY.md).
+
+## Known differences from the Python edition
 
 - Update checksums are always required (Python skipped them for releases before 0.3.16).
 - Fan and undervolt safety checks (confirmation, danger lines) run before a request is sent.
 - A saved key binding or timing outside its range is refused where Python accepted it.
-- `truesense display`, `boot` and `service` without a verb run their status action instead of crashing.
+- The GPU temperature shown is a real GPU reading or 0, never the CPU's; the daemon's GPU stream stops while the card sleeps.
