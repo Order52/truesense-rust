@@ -10,8 +10,9 @@ t_packages_build_the_rust_program_and_need_no_python_or_socat() {
   local f text w line
   for f in packaging/arch/PKGBUILD packaging/aur/PKGBUILD.template; do
     text=$(cat "$ROOT/$f")
-    for w in "makedepends=('rust' 'gcc')" "cargo build --release --locked" "-p truesense" "crt-static" "--target \"\$_target\"" "arch=('x86_64')" truesense-fast \
-             tools/nvml/truesense-nvml.c usr/lib/truesense/truesense-nvml "cargo fetch --locked" readelf INTERP "options=('!debug')" 'depends=('"'dkms' 'systemd'"')'; do
+    for w in "makedepends=('rust' 'gcc' 'qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-tools')" "cargo build --release --locked" "-p truesense" "crt-static" "--target \"\$_target\"" "arch=('x86_64')" truesense-fast \
+             tools/nvml/truesense-nvml.c usr/lib/truesense/truesense-nvml "cargo fetch --locked" readelf INTERP "options=('!debug' '!lto')" 'depends=('"'dkms' 'systemd' 'qt6-base' 'qt6-declarative' 'qt6-svg'"')' \
+             "-p ts-qt" 'usr/bin/truesense-qt' libQt6Core THIRD_PARTY.md NOTICE-ts-fx.md "usr/share/\$d/truesense"; do
       assert_contains "$text" "$w" "$f"
     done
     ! grep -qE '(^|[^a-z])go build' <<<"$text" || fail "$f still builds with go"        # (`cargo build` contains the letters, so the match needs a word start)
@@ -19,8 +20,12 @@ t_packages_build_the_rust_program_and_need_no_python_or_socat() {
     # DKMS wants /usr/src/<name>-<the version in dkms.conf>: the package reads it from there instead of repeating a number that could drift
     assert_contains "$text" 'dkms.conf")' "$f"; assert_contains "$text" 'usr/src/truesense-wmi-$_dkms' "$f"
     while IFS= read -r line; do
-      case $line in depends=*python*|depends=*socat*|depends=*qt*) fail "$f: $line";; esac
+      # the window needs Qt 6 and nothing else (no Python, no socat, no older Qt)
+      case $line in depends=*python*|depends=*socat*|depends=*qt5*|depends=*pyqt*|depends=*pyside*) fail "$f: $line";; esac
     done <<<"$text"
+    # Qt is a shared library: the window is built WITHOUT the static-linking flags of the program, and the last RUSTFLAGS before its build must say so
+    local flags; flags=$(awk '/RUSTFLAGS=/ { f = $0 } /-p ts-qt/ { print f; exit }' <<<"$text")
+    assert_contains "$flags" "RUSTFLAGS=" "$f: the flags of the Qt build"; assert_not_contains "$flags" "crt-static" "$f: the Qt window must not be built static"
   done
 }
 
@@ -50,7 +55,24 @@ t_the_units_run_the_rust_program_with_the_right_subcommands() {
 }
 
 t_the_desktop_entries_start_the_window_and_the_terminal_ui() {
+  # `truesense gui` hands over to truesense-qt when it is installed and opens the web window when it is not: it is the entry that works either way; the window class is `truesense`
   assert_line "$(cat "$P/truesense.desktop")" "Exec=@PREFIX@/bin/truesense gui"
+  assert_line "$(cat "$P/truesense.desktop")" "StartupWMClass=truesense"
+  # the page shortcuts start the window itself, with --page and the names of the registry
+  local page; for page in monitor cooling lighting; do
+    assert_line "$(cat "$P/truesense.desktop")" "Exec=@PREFIX@/bin/truesense-qt --page $page"
+    grep -q "\"id\": \"$page\"" "$ROOT/crates/ts-qt/qml/pages/registry.json" || fail "$page is not a page of the Qt app"
+    assert_contains "$(cat "$P/truesense.desktop")" "[Desktop Action ${page^}]"
+  done
+  assert_line "$(cat "$P/truesense.desktop")" "Actions=Monitor;Cooling;Lighting;"
+  # what the installer strips when no Qt window is installed must be exactly the actions (the rest must stay a valid entry)
+  local stripped; stripped=$(sed -e '/^Actions=/d' -e '/^\[Desktop Action /,$d' "$P/truesense.desktop")
+  assert_contains "$stripped" "Exec=@PREFIX@/bin/truesense gui"; assert_not_contains "$stripped" "Desktop Action"; assert_not_contains "$stripped" "bin/truesense-qt"
+  if command -v desktop-file-validate >/dev/null 2>&1; then
+    local d; d=$(tmpdir); sed 's|@PREFIX@|/usr|g' "$P/truesense.desktop" > "$d/truesense.desktop"; printf '%s\n' "${stripped//@PREFIX@//usr}" > "$d/stripped.desktop"
+    run -- desktop-file-validate "$d/truesense.desktop"; assert_code 0
+    run -- desktop-file-validate "$d/stripped.desktop"; assert_code 0
+  fi
   assert_line "$(cat "$P/truesense-tui.desktop")" "Exec=@PREFIX@/bin/truesense tui"
   assert_line "$(cat "$P/truesense-tui.desktop")" "Terminal=true"
 }
@@ -62,14 +84,14 @@ t_every_file_the_installer_and_the_packages_refer_to_exists() {
     [ -e "$ROOT/$f" ] || missing="$missing $f"
   done
   assert_eq "$missing" "" "files named by the scripts that do not exist"
-  for f in LICENSE README.md docs/SAFETY.md packaging/profiles/gaming.toml packaging/icons/truesense.svg packaging/icons/truesense-256.png packaging/truesense.modules-load.conf; do assert_file "$ROOT/$f"; done
+  for f in LICENSE THIRD_PARTY.md crates/ts-fx/NOTICE.md README.md docs/SAFETY.md packaging/profiles/gaming.toml packaging/icons/truesense.svg packaging/icons/truesense-256.png packaging/truesense.modules-load.conf; do assert_file "$ROOT/$f"; done
   assert_eq "$(ls "$P"/profiles/*.toml | wc -l)" 4 "profiles"
 }
 
 t_the_installer_and_the_uninstaller_agree_on_the_installed_files() {
   # what install.sh puts in place that uninstall.sh must take out again
   local text; text=$(cat "$ROOT/tools/uninstall.sh")
-  local w; for w in '$PREFIX/bin/truesense' '$PREFIX/bin/truesense-fast' '$PREFIX/bin/truesense.prev' '$PREFIX/lib/truesense' '/etc/modprobe.d/truesense.conf' '/etc/udev/rules.d/70-truesense.rules' \
+  local w; for w in '$PREFIX/bin/truesense' '$PREFIX/bin/truesense-fast' '$PREFIX/bin/truesense.prev' '$PREFIX/bin/truesense-qt' '$PREFIX/bin/truesense-qt.prev' '$PREFIX/share/doc/truesense' '$PREFIX/lib/truesense' '/etc/modprobe.d/truesense.conf' '/etc/udev/rules.d/70-truesense.rules' \
              '/usr/share/applications/truesense.desktop' '/etc/systemd/user/truesense-'; do assert_contains "$text" "$w" "uninstall.sh"; done
 }
 
