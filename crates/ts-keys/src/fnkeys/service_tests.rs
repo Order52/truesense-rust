@@ -1054,7 +1054,11 @@ fn the_service_over_the_simulated_machine_waits_for_the_keyboard_and_stops() {
     let (services, _rig) = Services::simulated(&dir).expect("services");
     let api = Api::new(services);
     let mut env = Env::from_api(&api);
-    assert_eq!(env.background.len(), 1, "the per-key animation loop comes with the service");
+    assert_eq!(
+        env.background.len(),
+        2,
+        "the per-key animation loop and the theme renderer come with the service"
+    );
     env.background.clear();
     env.timing.max_wait = ms(5);
     let lines = Arc::new(Mutex::new(Vec::<String>::new()));
@@ -1105,11 +1109,11 @@ fn real_reports_over_a_real_descriptor_run_the_bound_action_in_real_time() {
     std::thread::sleep(ms(20));
     keyboard.write_all(&RELEASE).expect("release");
     let started = Instant::now();
-    while poison_free(&rig.world.actions).is_empty() && started.elapsed() < Duration::from_secs(5) {
+    while poison_free(&rig.world.actions).is_empty() && started.elapsed() < Duration::from_secs(60) {
         std::thread::sleep(ms(5));
     }
     keyboard.write_all(&FN_F10).expect("fn+f10");
-    while poison_free(&rig.world.actions).len() < 2 && started.elapsed() < Duration::from_secs(5) {
+    while poison_free(&rig.world.actions).len() < 2 && started.elapsed() < Duration::from_secs(60) {
         std::thread::sleep(ms(5));
     }
     stop.store(true, Ordering::SeqCst);

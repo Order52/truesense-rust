@@ -1123,6 +1123,7 @@ dependencies = [
  "serde",
  "serde_json",
  "ts-foundation",
+ "ts-fx",
  "ts-platform",
 ]
 
@@ -1134,6 +1135,14 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+]
+
+[[package]]
+name = "ts-fx"
+version = "0.5.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1170,6 +1179,7 @@ dependencies = [
  "ts-api",
  "ts-domain",
  "ts-foundation",
+ "ts-fx",
  "ts-ipc",
  "ts-platform",
  "ts-system",

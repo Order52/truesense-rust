@@ -29,6 +29,7 @@ use ts_foundation::sdnotify::{self, Notifier as Systemd};
 
 use super::gestures::Gestures;
 use super::hid::{HidError, HidOpener, HidReports, HidrawOpener};
+use crate::renderer::Renderer;
 
 /// The icon of every message of this service.
 const OSD_ICON: &str = "power";
@@ -180,13 +181,16 @@ pub struct Env {
 impl Env {
     /// The real service environment over the application layer: the real hidraw node, the user's
     /// configuration files, the same action runner as `truesense keys test`, the on-screen
-    /// notifier, systemd's socket and watchdog from the environment, and the per-key animation
-    /// loop (the Python edition started it inside this service).
+    /// notifier, systemd's socket and watchdog from the environment, the per-key animation
+    /// loop (the Python edition started it inside this service) and the theme renderer.
     pub fn from_api(api: &Api) -> Env {
         let services = api.services();
         let sink: Arc<dyn FrameSink> = services.keyboard.clone();
         let fx = FxStore::new(Arc::clone(&services.user), Arc::clone(&sink), Arc::new(epoch_seconds));
         let mut animation = AnimationRunner::new(move || fx.get(), sink, epoch_seconds, std::thread::sleep);
+        // The themes: drawn while one is the current look, idle (a look at the user state twice a
+        // second) otherwise.
+        let mut themes = Renderer::from_api(api);
         Env {
             find_node: Arc::clone(&services.fn_key_node),
             opener: Arc::new(HidrawOpener),
@@ -200,7 +204,10 @@ impl Env {
             systemd: Systemd::from_env(),
             watchdog: sdnotify::watchdog_interval_from_env(),
             timing: LoopTiming::default(),
-            background: vec![Box::new(move |stop| animation.run(&stop))],
+            background: vec![
+                Box::new(move |stop| animation.run(&stop)),
+                Box::new(move |stop| themes.run(&stop)),
+            ],
         }
     }
 }

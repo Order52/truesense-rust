@@ -14,6 +14,7 @@ ts-foundation = { path = "../ts-foundation" }
 ts-platform = { path = "../ts-platform" }
 ts-ipc = { path = "../ts-ipc" }
 ts-domain = { path = "../ts-domain" }
+ts-fx = { path = "../ts-fx" }
 ts-system = { path = "../ts-system" }
 ts-api = { path = "../ts-api" }
 serde.workspace = true

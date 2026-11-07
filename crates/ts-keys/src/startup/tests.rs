@@ -68,6 +68,7 @@ fn look_with(keyboard: bool, rear: bool) -> Look {
             direction: Some(0),
             zones: None,
         }),
+        theme: None,
     }
 }
 

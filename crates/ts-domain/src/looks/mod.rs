@@ -20,6 +20,7 @@ use ts_foundation::userstate::{self, Store};
 use ts_platform::hw::{Coded, Hw, HwError, Rear as HwRear, RearMode, RearSettings, Rgb};
 
 use crate::keyboard::{self, Keyboard, KeyboardError};
+use crate::themes::ThemeSpec;
 
 /// Where the daemon keeps the boot look unless `TRUESENSE_BOOT_LOOK` says otherwise.
 pub const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
@@ -89,6 +90,14 @@ pub struct Look {
     /// The rear light part.
     #[serde(default)]
     pub rear: Option<Rear>,
+    /// A theme the key service draws on the keyboard while this look is the current one.
+    ///
+    /// Optional and additive: the `keyboard` part is the static look written when the look is
+    /// applied (and put back when the theme stops), so a program that does not know themes
+    /// applies a themed look as its static look and ignores this member (`Look` does not deny
+    /// unknown fields in the Rust edition, and no edition rewrites a look it only applies).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<ThemeSpec>,
 }
 
 /// The rear light bar as the hardware layer remembers it (`rear_state` in the user state).
@@ -160,10 +169,11 @@ impl Look {
         serde_json::from_str(text).map_err(|source| LooksError::Parse { what: "look".to_owned(), source })
     }
 
-    /// Whether the look changes nothing: both parts missing or empty.
+    /// Whether the look changes nothing: no part, or only empty ones.
     pub fn is_empty(&self) -> bool {
         self.keyboard.as_ref().is_none_or(keyboard::State::is_empty)
             && self.rear.as_ref().is_none_or(Rear::is_empty)
+            && self.theme.is_none()
     }
 
     /// The look as one line, as `truesense look show` prints it.
@@ -186,7 +196,10 @@ impl Look {
             ),
             None => "rear unchanged".to_owned(),
         };
-        format!("{keyboard}; {rear}")
+        match &self.theme {
+            Some(t) => format!("{keyboard}; {rear}; theme {}", t.name),
+            None => format!("{keyboard}; {rear}"),
+        }
     }
 }
 
@@ -210,6 +223,7 @@ fn native() -> Look {
             direction: Some(1),
             zones: None,
         }),
+        theme: None,
     }
 }
 
@@ -271,6 +285,7 @@ pub struct LookStore {
     state: Arc<Store>,
     keyboard: Arc<dyn KeyboardControl>,
     rear: Arc<dyn RearControl>,
+    now: Arc<dyn Fn() -> f64 + Send + Sync>,
 }
 
 /// Look names use letters, digits, `.`, `_` and `-`, at most 40 of them.
@@ -305,7 +320,21 @@ impl LookStore {
         keyboard: Arc<dyn KeyboardControl>,
         rear: Arc<dyn RearControl>,
     ) -> Self {
-        Self { dir: dir.into(), boot_file: boot_file.into(), state, keyboard, rear }
+        Self {
+            dir: dir.into(),
+            boot_file: boot_file.into(),
+            state,
+            keyboard,
+            rear,
+            now: Arc::new(crate::perkeyfx::epoch_seconds),
+        }
+    }
+
+    /// The same store reading the wall clock (seconds since the epoch) from `now`, which stamps
+    /// the start of a theme; tests pass a fixed one.
+    pub fn with_clock(mut self, now: impl Fn() -> f64 + Send + Sync + 'static) -> Self {
+        self.now = Arc::new(now);
+        self
     }
 
     fn path(&self, name: &str) -> Result<PathBuf, LooksError> {
@@ -342,10 +371,12 @@ impl LookStore {
             .get(userstate::keys::REAR_STATE)
             .filter(|v| v.as_object().is_some_and(|m| !m.is_empty()));
         let rear = rear.and_then(|v| serde_json::from_value::<Rear>(v).ok());
-        if keyboard.is_none() && rear.is_none() {
+        // A theme that is running is part of what is on the keyboard now.
+        let theme = self.state.get_as::<crate::themes::Active>(crate::themes::ACTIVE_KEY).map(|a| a.spec);
+        if keyboard.is_none() && rear.is_none() && theme.is_none() {
             return Err(invalid("nothing to save yet: set the keyboard or rear light first"));
         }
-        Ok(Look { keyboard, rear })
+        Ok(Look { keyboard, rear, theme })
     }
 
     /// Stores a look under `name`; `None` saves the current lights ([`LookStore::capture`]).
@@ -360,6 +391,9 @@ impl LookStore {
             Some(l) => l.clone(),
             None => self.capture()?,
         };
+        if let Some(theme) = &look.theme {
+            theme.check_shape().map_err(|e| invalid(e.to_string()))?;
+        }
         let path = self.path(name)?;
         fsx::write_atomic_mkdir(&path, &to_pretty_json(&look)?, 0o644).map_err(file_error("save look"))?;
         Ok(look)
@@ -429,7 +463,41 @@ impl LookStore {
             self.rear.rear_set(&r.settings()?).map_err(LooksError::Rear)?;
             done.push(format!("rear: {}", r.mode));
         }
+        // The theme goes last: it is drawn over the static keyboard look just written, and the key
+        // service takes that look as the one to put back when the theme stops. A look with a
+        // keyboard part and no theme ends the theme that was running; a rear-only look leaves it.
+        let keyboard_part = look.keyboard.as_ref().is_some_and(|k| !k.is_empty());
+        if look.theme.is_some() || keyboard_part {
+            if let Some(line) = self.set_theme(look.theme.as_ref())? {
+                done.push(line);
+            }
+        }
         Ok(done)
+    }
+
+    /// Records the theme to draw (`Some`) or ends the running one (`None`); answers the line to
+    /// report, if anything was done. A theme the store does not hold, or one that cannot run, is
+    /// the key service's to refuse (it records why where `theme show` says it); the shape is
+    /// checked here.
+    fn set_theme(&self, spec: Option<&ThemeSpec>) -> Result<Option<String>, LooksError> {
+        match spec {
+            Some(spec) => {
+                spec.check_shape().map_err(|e| invalid(e.to_string()))?;
+                let active = crate::themes::Active { spec: spec.clone(), started: (self.now)() };
+                self.state.set_as(crate::themes::ACTIVE_KEY, &active).map_err(file_error("start theme"))?;
+                Ok(Some(format!("theme: {}", spec.name)))
+            }
+            None => {
+                let running = self.state.get_as::<crate::themes::Active>(crate::themes::ACTIVE_KEY).is_some();
+                if !running {
+                    return Ok(None);
+                }
+                self.state
+                    .set(crate::themes::ACTIVE_KEY, serde_json::Value::Null)
+                    .map_err(file_error("stop theme"))?;
+                Ok(Some("theme: stopped".to_owned()))
+            }
+        }
     }
 
     // ---- the boot look (root; used by the daemon) ----------------------------------------------

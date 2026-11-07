@@ -14,4 +14,5 @@ pub mod perkeyfx;
 pub mod power;
 pub mod powermgr;
 pub mod profiles;
+pub mod themes;
 pub mod undervolt;

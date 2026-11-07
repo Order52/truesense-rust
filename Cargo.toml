@@ -1,11 +1,11 @@
 [workspace]
 resolver = "3"
 members = ["crates/truesense", "crates/ts-api",
-    "crates/ts-cli", "crates/ts-daemon", "crates/ts-decision", "crates/ts-domain", "crates/ts-foundation", "crates/ts-gui", "crates/ts-ipc", "crates/ts-keys", "crates/ts-platform", "crates/ts-qt", "crates/ts-system", "crates/ts-tui", "crates/ts-ui-model"]
+    "crates/ts-cli", "crates/ts-daemon", "crates/ts-decision", "crates/ts-domain", "crates/ts-foundation", "crates/ts-fx", "crates/ts-gui", "crates/ts-ipc", "crates/ts-keys", "crates/ts-platform", "crates/ts-qt", "crates/ts-system", "crates/ts-tui", "crates/ts-ui-model"]
 # Everything except ts-qt: it needs the Qt 6 development files, so the Qt-free gate (`make ci`)
 # must not build it. `make qt-ci` covers it (`cargo build --workspace` also does).
 default-members = ["crates/truesense", "crates/ts-api",
-    "crates/ts-cli", "crates/ts-daemon", "crates/ts-decision", "crates/ts-domain", "crates/ts-foundation", "crates/ts-gui", "crates/ts-ipc", "crates/ts-keys", "crates/ts-platform", "crates/ts-system", "crates/ts-tui", "crates/ts-ui-model"]
+    "crates/ts-cli", "crates/ts-daemon", "crates/ts-decision", "crates/ts-domain", "crates/ts-foundation", "crates/ts-fx", "crates/ts-gui", "crates/ts-ipc", "crates/ts-keys", "crates/ts-platform", "crates/ts-system", "crates/ts-tui", "crates/ts-ui-model"]
 
 [workspace.package]
 version = "0.5.0"
