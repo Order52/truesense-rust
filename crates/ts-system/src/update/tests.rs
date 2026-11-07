@@ -377,6 +377,38 @@ fn the_cache_file_is_compatible_with_the_python_edition_and_remembers_notificati
 }
 
 #[test]
+fn an_answer_cached_for_another_repository_is_not_trusted() {
+    let world = World::new(FakeHost::user());
+    let path = world.tmp.0.join("cache/update.json");
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    // What an older edition left behind: a fresh answer about the Go edition's repository.
+    fs::write(
+        &path,
+        r#"{"checked_at": 999999.0, "info": {"version": "0.4.0", "tag": "v0.4.0", "url": "https://github.com/Order52/truesense/releases/tag/v0.4.0", "notes": ""}, "error": null, "notified": "0.4.0"}"#,
+    )
+    .unwrap();
+    world.serve_github(Some("v9.9.9"), &["v9.9.9"]);
+    let updater = world.updater();
+    let status = updater.check(false, None);
+    assert_eq!(status.latest.as_deref(), Some("9.9.9"), "the old answer is asked again, not shown");
+    assert!(!world.net.asked().is_empty());
+    assert_eq!(updater.notified().as_deref(), Some("0.4.0"), "what the user was told is remembered");
+    let written: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    assert_eq!(written["repo"], "o/r");
+    // The same repository's answer is used from then on, and a different one is not.
+    let asked = world.net.asked().len();
+    updater.check(false, None);
+    assert_eq!(world.net.asked().len(), asked);
+    let other = Updater::new("p/q", world.net.clone(), world.host.clone())
+        .unwrap()
+        .with_current("0.4.0")
+        .with_clock(Arc::new(|| 1_000_000.0))
+        .with_cache_path(Some(path.clone()));
+    other.check(false, None);
+    assert!(world.net.asked().len() > asked, "a cache written for o/r is not an answer for p/q");
+}
+
+#[test]
 fn a_corrupt_or_unwritable_cache_is_ignored() {
     let world = World::new(FakeHost::user());
     world.serve_github(Some("v9.9.9"), &["v9.9.9"]);

@@ -241,13 +241,16 @@ pub struct Status {
 
 /// The cache file `~/.cache/truesense/update.json`: `{"checked_at", "info", "error"}` as the
 /// Python edition wrote it, plus `notified` (the version the user was last told about, so the
-/// daily timer notifies once per version).
+/// daily timer notifies once per version) and `repo` (whose releases `info` describes, so an
+/// answer from another repository, such as the one an older edition asked, is not trusted).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct CacheFile {
     checked_at: f64,
     info: Option<Info>,
     error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    repo: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     notified: Option<String>,
 }
@@ -591,11 +594,31 @@ impl Updater {
     }
 
     fn load_cache(&self) -> CacheFile {
-        self.cache_path
+        let mut cache: CacheFile = self
+            .cache_path
             .as_deref()
             .and_then(|p| fsx::read_limited(p, fsx::MAX_SETTINGS_FILE).ok())
             .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        if !self.cache_is_for_this_repo(&cache) {
+            // What was asked of another repository says nothing about this one: ask again (the
+            // notification memory is about versions, so it stays).
+            cache = CacheFile { notified: cache.notified, ..CacheFile::default() };
+        }
+        cache.repo = Some(self.repo.clone());
+        cache
+    }
+
+    /// Whether the cached answer came from this updater's repository: by the `repo` it recorded,
+    /// or, for a cache an older edition wrote, by the GitHub address of the release it holds.
+    fn cache_is_for_this_repo(&self, cache: &CacheFile) -> bool {
+        match (&cache.repo, &cache.info) {
+            (Some(repo), _) => *repo == self.repo,
+            (None, Some(info)) => {
+                !info.url.contains("github.com/") || info.url.contains(&format!("github.com/{}/", self.repo))
+            }
+            (None, None) => true,
+        }
     }
 
     /// The cache is a convenience: a read-only home or a full disk is not an error.

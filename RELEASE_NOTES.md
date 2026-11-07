@@ -4,6 +4,8 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
+- The update check no longer trusts an answer cached for another repository: after moving from the Go or Python edition, `truesense update check` could say "newest 0.4.0" for a day from the old repository's cache.
+
 ## 0.5.0 (2026-11-08): TrueSense in Rust, with a native Qt app
 
 TrueSense is now written in Rust. It replaces the Python (0.3.x) and Go (0.4.x) editions in place, with the same commands, files, control socket and kernel module, and adds a native Qt 6 window.
