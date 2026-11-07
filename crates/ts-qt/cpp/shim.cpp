@@ -68,6 +68,12 @@ void set_quit_on_last_window_closed(bool quit) { QGuiApplication::setQuitOnLastW
 
 void allow_resource_reads() { qputenv("QML_XHR_ALLOW_FILE_READ", QByteArray("1")); }
 
+void prefer_software_renderer() {
+    if (qEnvironmentVariableIsSet("QT_QUICK_BACKEND") || qEnvironmentVariableIsSet("QMLSCENE_DEVICE")) return;
+    if (qgetenv("TRUESENSE_QT_RENDER").toLower() == "opengl") return;
+    qputenv("QT_QUICK_BACKEND", QByteArray("software"));
+}
+
 void set_engine(QQmlApplicationEngine &engine) { g_engine = &engine; }
 
 }  // namespace truesense

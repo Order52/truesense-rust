@@ -24,6 +24,12 @@ void set_quit_on_last_window_closed(bool quit);
 // forbids it unless QML_XHR_ALLOW_FILE_READ is set). Our QML is the only QML that runs.
 void allow_resource_reads();
 
+// Picks the software scene graph unless the person asked for OpenGL (TRUESENSE_QT_RENDER=opengl) or
+// set QT_QUICK_BACKEND themselves. A control panel does not need a GPU: the software renderer
+// roughly halves the resident memory (no GL driver libraries) and can never wake a sleeping
+// discrete GPU. Must run before the first window exists.
+void prefer_software_renderer();
+
 // Remembers the engine so that set_language can retranslate it. Called once from main.
 void set_engine(QQmlApplicationEngine &engine);
 

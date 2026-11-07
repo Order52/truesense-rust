@@ -41,6 +41,12 @@ pub fn set_engine(engine: Pin<&mut QQmlApplicationEngine>) {
     qobject::set_engine(engine)
 }
 
+/// Chooses the software scene graph (less memory, never wakes the discrete GPU) unless the person
+/// asked for OpenGL with `TRUESENSE_QT_RENDER=opengl` or set `QT_QUICK_BACKEND` themselves.
+pub fn prefer_software_renderer() {
+    qobject::prefer_software_renderer();
+}
+
 /// Lets QML read its own bundled icon files (see `Icon.qml`).
 pub fn allow_resource_reads() {
     qobject::allow_resource_reads();

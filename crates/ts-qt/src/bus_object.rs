@@ -103,6 +103,8 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn allow_resource_reads();
         #[namespace = "truesense"]
+        fn prefer_software_renderer();
+        #[namespace = "truesense"]
         fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);
     }
 
