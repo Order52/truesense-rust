@@ -1,0 +1,1 @@
+savedcmd_Module.symvers :=  /usr/lib/modules/7.3.0-4-cachyos/build/scripts/mod/modpost -M    -a    -N  -o Module.symvers -n -T modules.order -i /usr/lib/modules/7.3.0-4-cachyos/build/Module.symvers -e 

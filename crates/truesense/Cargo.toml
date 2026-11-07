@@ -1,0 +1,28 @@
+[package]
+name = "truesense"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "truesense"
+path = "src/main.rs"
+
+[dependencies]
+ts-foundation = { path = "../ts-foundation" }
+ts-platform = { path = "../ts-platform" }
+ts-ipc = { path = "../ts-ipc" }
+ts-daemon = { path = "../ts-daemon" }
+ts-api = { path = "../ts-api" }
+ts-cli = { path = "../ts-cli" }
+ts-tui = { path = "../ts-tui" }
+ts-gui = { path = "../ts-gui" }
+ts-keys = { path = "../ts-keys" }
+ts-system = { path = "../ts-system" }
+ts-domain = { path = "../ts-domain" }
+ts-decision = { path = "../ts-decision" }
