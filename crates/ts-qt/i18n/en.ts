@@ -872,8 +872,8 @@ Save your work first.</source>
         <translation>GPU undervolt</translation>
     </message>
     <message id="perf_uv_describe_cpu">
-        <source>core %1 mV, cache %2 mV</source>
-        <translation>core %1 mV, cache %2 mV</translation>
+        <source>core %1, cache %2</source>
+        <translation>core %1, cache %2</translation>
     </message>
     <message id="perf_uv_describe_gpu">
         <source>offset %1, cap %2</source>

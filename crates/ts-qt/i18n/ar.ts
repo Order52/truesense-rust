@@ -872,7 +872,7 @@ Save your work first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="perf_uv_describe_cpu">
-        <source>core %1 mV, cache %2 mV</source>
+        <source>core %1, cache %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="perf_uv_describe_gpu">
