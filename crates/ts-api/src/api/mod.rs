@@ -42,6 +42,7 @@ mod gpu;
 mod keyboard;
 mod keys;
 mod looks;
+mod monitor;
 mod power;
 mod profile;
 mod rear;
@@ -100,6 +101,10 @@ pub use keyboard::{
 };
 pub use keys::{KeyBindings, KeyProfileEdit, KeyProfileView, KeyTiming, KeysSettings};
 pub use looks::StartupSettings;
+pub use monitor::{
+    GpuSource, MAX_TOP as MONITOR_MAX_TOP, MonitorCore, MonitorCpu, MonitorDisks, MonitorGpu, MonitorMemory,
+    MonitorNetwork, MonitorOverview, SystemInfo, TemperatureReading,
+};
 pub use power::{
     AutoAction, AutoMode, CpuSettings, GameRuleAction, GameRules, Hold, ManagerUnit, PowerManagersRestored,
     PowerManagersState, PowerManagersStopped, PowerStatus,
@@ -264,12 +269,14 @@ pub struct Services {
 pub struct Api {
     pub(crate) s: Services,
     rapl: status::RaplMeter,
+    monitor: monitor::Monitor,
 }
 
 impl Api {
     /// The application layer over these services.
     pub fn new(services: Services) -> Self {
-        Self { s: services, rapl: status::RaplMeter::default() }
+        let monitor = monitor::Monitor::new(services.root.clone());
+        Self { s: services, rapl: status::RaplMeter::default(), monitor }
     }
 
     /// The services this layer was built from, for a caller that needs one directly (the terminal

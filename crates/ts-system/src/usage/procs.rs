@@ -192,6 +192,13 @@ impl ProcSampler {
         self.last.get_or_insert_with(ProcSnapshot::default)
     }
 
+    /// Scans now whatever the interval says: for priming a new sampler, which needs a second scan
+    /// a moment after the first to have CPU percentages at all.
+    pub fn rescan(&mut self, now: f64) -> &ProcSnapshot {
+        let snapshot = self.scan(now);
+        self.last.insert(snapshot)
+    }
+
     /// Resizes the rankings (a page asking for a different number); the next scan applies it.
     pub fn set_top(&mut self, top: usize) {
         self.top = top.clamp(1, MAX_TOP);
@@ -412,6 +419,9 @@ mod tests {
         assert_eq!(s.sample(11.4).scanned, 1);
         assert_eq!(s.sample(11.6).scanned, 2, "interval over: scans again");
         assert_eq!(s.sample(5.0).scanned, 2, "a clock that went backwards rescans");
+        proc(&t, 3, "newer", (1, 1), 3, 5);
+        assert_eq!(s.sample(5.1).scanned, 2, "cached");
+        assert_eq!(s.rescan(5.2).scanned, 3, "a forced scan ignores the interval");
     }
 
     #[test]

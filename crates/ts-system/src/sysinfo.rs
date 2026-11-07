@@ -63,6 +63,8 @@ pub struct GpuDevice {
     /// The marketing name, when something asked for it (filled in by the application layer for
     /// the NVIDIA card; the kernel has no name for it).
     pub name: Option<String>,
+    /// The driver version, likewise filled in by whoever asked the card.
+    pub driver: Option<String>,
 }
 
 /// Everything static about the machine.
@@ -175,6 +177,7 @@ pub fn gpu_devices(root: &Path) -> Vec<GpuDevice> {
                 boot_vga: read_line(&dir.join("boot_vga")).as_deref() == Some("1"),
                 address,
                 name: None,
+                driver: None,
             })
         })
         .collect()
@@ -197,6 +200,13 @@ fn is_placeholder(text: &str) -> bool {
         .any(|p| lower.contains(p))
 }
 
+/// Seconds since boot from `/proc/uptime`; `None` when unreadable or not a sane number.
+pub fn read_uptime(root: &Path) -> Option<f64> {
+    read_line(&below(root, "/proc/uptime"))
+        .and_then(|l| l.split_whitespace().next().and_then(|s| s.parse::<f64>().ok()))
+        .filter(|u| u.is_finite() && *u >= 0.0)
+}
+
 /// Reads everything static below `root` (`/` on a real machine).
 pub fn read(root: &Path) -> SystemInfo {
     let mut cpu = read_text(&below(root, "/proc/cpuinfo")).map(|t| parse_cpuinfo(&t)).unwrap_or_default();
@@ -213,9 +223,7 @@ pub fn read(root: &Path) -> SystemInfo {
         drives: block_devices(root),
         os: os_text.map(|t| parse_os_release(&t)).unwrap_or_else(|| parse_os_release("")),
         kernel: read_line(&below(root, "/proc/sys/kernel/osrelease")).filter(|k| !k.is_empty()),
-        uptime_s: read_line(&below(root, "/proc/uptime"))
-            .and_then(|l| l.split_whitespace().next().and_then(|s| s.parse::<f64>().ok()))
-            .filter(|u| u.is_finite() && *u >= 0.0),
+        uptime_s: read_uptime(root),
     }
 }
 
