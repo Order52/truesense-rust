@@ -35,8 +35,10 @@
 //! # What the daemon feeds
 //!
 //! The daemon's `gpu` and `gpuw` live values are averages of an `nvidia-smi -l 2` stream that the
-//! daemon starts only when a smart feature needs it; without that stream they stay 0. They are
-//! therefore used only when non-zero, and labelled `source: "daemon"`.
+//! daemon runs only while a smart feature needs it, never for a sleeping card, and ends when the
+//! card has been idle for a minute so that it can sleep; without the stream they are 0, and the
+//! live key `gpu_state` says what that 0 means (`suspended` is true zero, `unsampled` is unknown).
+//! They are used only when non-zero, and labelled `source: "daemon"`.
 #![forbid(unsafe_code)]
 
 use std::collections::BTreeMap;

@@ -259,7 +259,7 @@ fn stopping_a_fan_needs_the_confirmation_and_goes_through_the_service() {
     let ran = fx.run("fan off --confirm");
     assert_eq!(
         ran.out,
-        "fans: OFF   (back on Auto automatically at CPU 70 C / GPU 65 C; `truesense fan auto` now)\n"
+        "fans: OFF   (back on Auto automatically at CPU 70 C / GPU 65 C; `truesense fan auto` now; the firmware may keep the fans at their minimum speed: check `truesense fan status`)\n"
     );
     assert_eq!(fx.daemon().last_args("fan").unwrap().get("mode"), Some(&json!("off")));
     // A duty beyond the range is refused before anything is sent.

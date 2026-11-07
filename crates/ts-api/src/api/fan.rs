@@ -84,7 +84,9 @@ impl Serialize for FanOutcome {
     }
 }
 
-/// The note added to the answer when a fan was stopped.
+/// The note added to the answer when a fan was stopped. A manual duty of 0 is not silence on the
+/// PH16-71: the firmware keeps a fan at its minimum (about 1700 rpm). Only the firmware's own
+/// Auto curve reaches 0 rpm, and only when the laptop is cool.
 const STOP_NOTE: &str = "   (a stopped fan: all fans return to Auto at CPU 70 C / GPU 65 C; `truesense fan auto` now. The firmware may keep the fan at its minimum speed: check `truesense fan status`)";
 
 impl fmt::Display for FanOutcome {
@@ -95,7 +97,7 @@ impl fmt::Display for FanOutcome {
             FanRequest::Max => f.write_str("fans: MAX  (`truesense fan smart on` hands them back)"),
             FanRequest::Smart => f.write_str("fans: smart curve"),
             FanRequest::Off => f.write_str(
-                "fans: OFF   (back on Auto automatically at CPU 70 C / GPU 65 C; `truesense fan auto` now)",
+                "fans: OFF   (back on Auto automatically at CPU 70 C / GPU 65 C; `truesense fan auto` now; the firmware may keep the fans at their minimum speed: check `truesense fan status`)",
             ),
             FanRequest::Manual { cpu, gpu } => {
                 let gpu = gpu.unwrap_or(cpu);
