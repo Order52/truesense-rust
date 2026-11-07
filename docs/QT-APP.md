@@ -165,7 +165,8 @@ when the driver cannot give one.
 
 Two rules keep an idle window idle, and `crates/ts-qt/tests/render.rs` pins them:
 
-- **No `Canvas`.** Charts and gauges are `QtQuick.Shapes` and `Rectangle` items, so only an item
+- **No `Canvas`** (one static exception: the gallery's `KeyboardThumb`, which repaints only when its
+  colours change). Charts and gauges are `QtQuick.Shapes` and `Rectangle` items, so only an item
   whose data changed is repainted; a JavaScript canvas repaints in full on every change.
 - **No idle animation.** A `Behavior` may animate a user action, never a live value that the
   store refreshes every second (that was ~50 to 140 frames per second at 165 Hz).

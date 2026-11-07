@@ -52,10 +52,14 @@ fn offenders(pattern: &str, allowed: &[&str]) -> Vec<String> {
 #[test]
 fn nothing_is_drawn_by_a_script_canvas() {
     // A Canvas re-runs JavaScript, fills an image and uploads it as a texture for every change; the
-    // charts and gauges are QtQuick.Shapes (scene-graph geometry) instead.
-    let found = offenders("Canvas {", &[]);
+    // charts and gauges are QtQuick.Shapes (scene-graph geometry) instead. The one exception is the
+    // gallery's keyboard picture: it is static (it repaints only when its colours, layout or size
+    // change, never on a timer), and a Canvas keeps a card at one item where per-key items would
+    // make a gallery of thirty cards three thousand.
+    const STATIC_PICTURES: &[&str] = &["components/KeyboardThumb.qml"];
+    let found = offenders("Canvas {", STATIC_PICTURES);
     assert!(found.is_empty(), "a Canvas is back:\n{}", found.join("\n"));
-    let found = offenders("getContext(", &[]);
+    let found = offenders("getContext(", STATIC_PICTURES);
     assert!(found.is_empty(), "script drawing is back:\n{}", found.join("\n"));
 }
 
