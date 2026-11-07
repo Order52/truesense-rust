@@ -246,6 +246,7 @@ impl Rig {
             watchdog: None,
             timing: LoopTiming::default(),
             background: Vec::new(),
+            watch: None,
         }
     }
 
@@ -1122,3 +1123,24 @@ fn real_reports_over_a_real_descriptor_run_the_bound_action_in_real_time() {
 }
 
 use std::io::Write as _;
+
+#[test]
+fn both_lighting_loops_idle_with_the_same_pause_that_the_quiet_sleep_stretches() {
+    assert_eq!(ts_domain::perkeyfx::IDLE_INTERVAL, crate::renderer::IDLE);
+    // A frame pause is never stretched: only a ring ends it early.
+    let started = std::time::Instant::now();
+    super::lighting_sleep(true)(Duration::from_millis(20));
+    assert!(started.elapsed() < Duration::from_secs(5));
+}
+
+#[test]
+fn the_watching_pace_sleeps_long_and_the_default_pace_polls() {
+    let watching = LoopTiming::watching();
+    assert!(watching.max_wait >= Duration::from_secs(5) && watching.config_poll >= Duration::from_secs(30));
+    assert_eq!(
+        watching.reconnect,
+        LoopTiming::default().reconnect,
+        "a missing keyboard is looked for as before"
+    );
+    assert!(LoopTiming::default().max_wait <= Duration::from_millis(500));
+}

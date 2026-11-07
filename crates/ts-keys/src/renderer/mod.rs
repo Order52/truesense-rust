@@ -112,9 +112,9 @@ pub struct Env {
 impl Renderer {
     /// The renderer over the real machine: the user's theme store and user state, the keyboard
     /// the key service already holds, the cell numbering of the verified key map, the wall clock,
-    /// real waits and standard output as the log (the journal under systemd). The local hour is not
+    /// the given wait and standard output as the log (the journal under systemd). The local hour is not
     /// known here, so a theme that follows the day shows noon.
-    pub fn from_api(api: &Api) -> Renderer {
+    pub fn from_api(api: &Api, sleep: Box<dyn Fn(Duration) + Send>) -> Renderer {
         let services = api.services();
         Renderer::new(Env {
             themes: Box::new(ThemeStore::beside(services.config.user.as_deref(), Arc::clone(&services.user))),
@@ -123,7 +123,7 @@ impl Renderer {
             painter: CellPainter::new(services.keymap),
             now: Box::new(epoch_seconds),
             local_hours: Box::new(|| None),
-            sleep: Box::new(std::thread::sleep),
+            sleep,
             log: Box::new(|line| println!("{line}")),
             fps: DEFAULT_FPS,
         })

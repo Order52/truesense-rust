@@ -3,3 +3,4 @@
 pub mod fnkeys;
 pub mod renderer;
 pub mod startup;
+pub mod watch;
