@@ -321,7 +321,7 @@ fn default_limits(id: &str) -> Limits {
         "gpu" => (80.0, 90.0),
         "nvme" => (65.0, 75.0),
         "wifi" => (70.0, 85.0),
-        _ => (60.0, 75.0),
+        _ => (70.0, 90.0),
     };
     Limits { warn, crit }
 }
@@ -623,8 +623,8 @@ fn gpu(args: &Value) -> Value {
         "absent": state == "absent",
         "note": str_at(base, "note"),
         "error": str_at(&detail_answer, "error").or_else(|| str_at(&live, "error")),
-        "name": str_at(base, "name").or_else(|| str_at(&d, "name")),
-        "driver": str_at(base, "driver").or_else(|| str_at(&d, "driver")),
+        "name": str_at(base, "name").or_else(|| str_at(&d, "name")).or_else(|| str_at(&detail_answer, "name")),
+        "driver": str_at(base, "driver").or_else(|| str_at(&d, "driver")).or_else(|| str_at(&detail_answer, "driver")),
         "vbios": str_at(&d, "vbios"),
         "source": str_at(base, "source"),
         "has_detail": !d.is_null(),
@@ -1501,6 +1501,39 @@ mod tests {
         }
         assert_eq!(v("network", &json!({}))["has_data"], false);
         assert_eq!(v("network", &json!({}))["interfaces"], json!([]));
+    }
+
+    // ---- the views the QML tests draw ----
+
+    /// `tests/monitor-fixtures.json` holds realistic and empty inputs for every view verb and
+    /// `tests/monitor-views.json` what this module answers for them. The QML component test of the
+    /// Monitor tabs draws the same views, so a change of the contract between the two fails here
+    /// until the file is regenerated (see the ignored test below) and the QML is looked at again.
+    #[test]
+    fn the_fixture_views_are_what_the_module_answers() {
+        let fixtures: Value = serde_json::from_str(include_str!("../../tests/monitor-fixtures.json")).unwrap();
+        let views: Value = serde_json::from_str(include_str!("../../tests/monitor-views.json")).unwrap();
+        let fixtures = fixtures.as_object().unwrap();
+        assert!(fixtures.len() >= 12);
+        assert_eq!(views.as_object().unwrap().len(), fixtures.len(), "regenerate tests/monitor-views.json");
+        for (name, f) in fixtures {
+            // Through text, as the file went: 4211.0 and 4211 are different JSON numbers to `==`.
+            let answered = call(f["verb"].as_str().unwrap(), &f["args"]).unwrap();
+            let got: Value = serde_json::from_str(&serde_json::to_string(&answered).unwrap()).unwrap();
+            assert_eq!(got, views[name], "{name}");
+        }
+    }
+
+    #[test]
+    #[ignore = "regenerates tests/monitor-views.json from tests/monitor-fixtures.json"]
+    fn regenerate_the_fixture_views() {
+        let fixtures: Value = serde_json::from_str(include_str!("../../tests/monitor-fixtures.json")).unwrap();
+        let mut out = serde_json::Map::new();
+        for (name, f) in fixtures.as_object().unwrap() {
+            out.insert(name.clone(), call(f["verb"].as_str().unwrap(), &f["args"]).unwrap());
+        }
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/monitor-views.json");
+        std::fs::write(path, serde_json::to_string_pretty(&Value::Object(out)).unwrap() + "\n").unwrap();
     }
 
     // ---- dispatch ----

@@ -1,0 +1,1164 @@
+{
+  "overview_full": {
+    "gauges": [
+      {
+        "id": "cpu",
+        "index": 0,
+        "value": 86.0,
+        "text": "86 °C",
+        "min_text": "44 °C",
+        "max_text": "91 °C",
+        "from": 0,
+        "to": 110.0,
+        "warn_at": 85.0,
+        "crit_at": 95.0,
+        "level": "warn",
+        "badge": ""
+      },
+      {
+        "id": "gpu",
+        "index": 0,
+        "value": 58.0,
+        "text": "58 °C",
+        "min_text": "41 °C",
+        "max_text": "72 °C",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 80.0,
+        "crit_at": 90.0,
+        "level": "ok",
+        "badge": ""
+      },
+      {
+        "id": "board",
+        "index": 0,
+        "value": 47.0,
+        "text": "47 °C",
+        "min_text": "39 °C",
+        "max_text": "52 °C",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 70.0,
+        "crit_at": 90.0,
+        "level": "ok",
+        "badge": ""
+      },
+      {
+        "id": "nvme",
+        "index": 0,
+        "value": 44.0,
+        "text": "44 °C",
+        "min_text": "38 °C",
+        "max_text": "51 °C",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 65.0,
+        "crit_at": 75.0,
+        "level": "ok",
+        "badge": ""
+      },
+      {
+        "id": "nvme",
+        "index": 1,
+        "value": 97.0,
+        "text": "97 °C",
+        "min_text": "40 °C",
+        "max_text": "97 °C",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 65.0,
+        "crit_at": 75.0,
+        "level": "bad",
+        "badge": ""
+      },
+      {
+        "id": "wifi",
+        "index": 0,
+        "value": 52.0,
+        "text": "52 °C",
+        "min_text": "45 °C",
+        "max_text": "58 °C",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 70.0,
+        "crit_at": 85.0,
+        "level": "ok",
+        "badge": ""
+      }
+    ],
+    "gpu_state": "active",
+    "has_data": true,
+    "cpu_load": {
+      "value": 37.4,
+      "text": "37 %",
+      "level": "ok"
+    },
+    "cpu_freq_text": "4.30 GHz",
+    "memory": {
+      "value": 58.2,
+      "text": "58 %",
+      "level": "ok"
+    },
+    "swap": {
+      "value": 8.1,
+      "text": "8 %",
+      "level": "ok"
+    },
+    "net": {
+      "primary": "wlan0",
+      "rx_text": "2.3 MB/s",
+      "tx_text": "80.0 KB/s"
+    },
+    "uptime_text": "3 d 4 h"
+  },
+  "overview_asleep": {
+    "gauges": [
+      {
+        "id": "cpu",
+        "index": 0,
+        "value": 51.0,
+        "text": "51 °C",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 110.0,
+        "warn_at": 85.0,
+        "crit_at": 95.0,
+        "level": "ok",
+        "badge": ""
+      },
+      {
+        "id": "gpu",
+        "index": 0,
+        "value": 44.0,
+        "text": "44 °C",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 80.0,
+        "crit_at": 90.0,
+        "level": "ok",
+        "badge": "asleep"
+      },
+      {
+        "id": "board",
+        "index": 0,
+        "value": 40.0,
+        "text": "40 °C",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 70.0,
+        "crit_at": 90.0,
+        "level": "ok",
+        "badge": ""
+      }
+    ],
+    "gpu_state": "suspended",
+    "has_data": true,
+    "cpu_load": {
+      "value": 2.1,
+      "text": "2 %",
+      "level": "ok"
+    },
+    "cpu_freq_text": "–",
+    "memory": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "swap": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "net": {
+      "primary": null,
+      "rx_text": "–",
+      "tx_text": "–"
+    },
+    "uptime_text": "2 min"
+  },
+  "overview_empty": {
+    "gauges": [
+      {
+        "id": "cpu",
+        "index": 0,
+        "value": null,
+        "text": "–",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 110.0,
+        "warn_at": 85.0,
+        "crit_at": 95.0,
+        "level": "unknown",
+        "badge": ""
+      },
+      {
+        "id": "gpu",
+        "index": 0,
+        "value": null,
+        "text": "–",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 80.0,
+        "crit_at": 90.0,
+        "level": "unknown",
+        "badge": ""
+      },
+      {
+        "id": "board",
+        "index": 0,
+        "value": null,
+        "text": "–",
+        "min_text": "–",
+        "max_text": "–",
+        "from": 0,
+        "to": 100.0,
+        "warn_at": 70.0,
+        "crit_at": 90.0,
+        "level": "unknown",
+        "badge": ""
+      }
+    ],
+    "gpu_state": "unknown",
+    "has_data": false,
+    "cpu_load": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "cpu_freq_text": "–",
+    "memory": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "swap": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "net": {
+      "primary": null,
+      "rx_text": "–",
+      "tx_text": "–"
+    },
+    "uptime_text": "–"
+  },
+  "facts_full": {
+    "rows": [
+      {
+        "id": "model",
+        "text": "Acer · Predator PH16-71"
+      },
+      {
+        "id": "bios",
+        "text": "V1.18 · 06/09/2026"
+      },
+      {
+        "id": "cpu",
+        "text": "13th Gen Intel(R) Core(TM) i7-13700HX"
+      },
+      {
+        "id": "cores",
+        "text": "16 / 24"
+      },
+      {
+        "id": "max_clock",
+        "text": "5.00 GHz"
+      },
+      {
+        "id": "gpu0",
+        "text": "NVIDIA GeForce RTX 4060 Laptop GPU · nvidia 560.35.03"
+      },
+      {
+        "id": "gpu1",
+        "text": "Intel 0xa788 · i915"
+      },
+      {
+        "id": "memory",
+        "text": "15.3 GB"
+      },
+      {
+        "id": "os",
+        "text": "CachyOS"
+      },
+      {
+        "id": "kernel",
+        "text": "7.3.0-4-cachyos"
+      },
+      {
+        "id": "uptime",
+        "text": "3 d 4 h"
+      }
+    ]
+  },
+  "facts_empty": {
+    "rows": [
+      {
+        "id": "model",
+        "text": "–"
+      },
+      {
+        "id": "bios",
+        "text": "–"
+      },
+      {
+        "id": "cpu",
+        "text": "–"
+      },
+      {
+        "id": "cores",
+        "text": "–"
+      },
+      {
+        "id": "max_clock",
+        "text": "–"
+      },
+      {
+        "id": "gpu0",
+        "text": "–"
+      },
+      {
+        "id": "memory",
+        "text": "–"
+      },
+      {
+        "id": "os",
+        "text": "–"
+      },
+      {
+        "id": "kernel",
+        "text": "–"
+      },
+      {
+        "id": "uptime",
+        "text": "–"
+      }
+    ]
+  },
+  "cpu_full": {
+    "has_data": true,
+    "load": {
+      "value": 37.4,
+      "text": "37 %",
+      "level": "ok"
+    },
+    "freq_avg_text": "2.80 GHz",
+    "freq_max_text": "4.80 GHz",
+    "governor": "powersave",
+    "temp": {
+      "value": 71.0,
+      "text": "71 °C"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "available": false
+    },
+    "load_avg": {
+      "available": true,
+      "one": "2.50",
+      "five": "1.75",
+      "fifteen": "1.20",
+      "running": 3.0,
+      "tasks": 812.0
+    },
+    "cores": [
+      {
+        "label": "0",
+        "text": "8 %",
+        "sub": "800 MHz",
+        "value": 0.08,
+        "level": "ok"
+      },
+      {
+        "label": "1",
+        "text": "5 %",
+        "sub": "800 MHz",
+        "value": 0.05,
+        "level": "ok"
+      },
+      {
+        "label": "2",
+        "text": "36 %",
+        "sub": "3.20 GHz",
+        "value": 0.36,
+        "level": "ok"
+      },
+      {
+        "label": "3",
+        "text": "97 %",
+        "sub": "4.80 GHz",
+        "value": 0.97,
+        "level": "bad"
+      },
+      {
+        "label": "4",
+        "text": "12 %",
+        "sub": "1.20 GHz",
+        "value": 0.12,
+        "level": "ok"
+      },
+      {
+        "label": "5",
+        "text": "–",
+        "sub": "–",
+        "value": null,
+        "level": "unknown"
+      },
+      {
+        "label": "6",
+        "text": "54 %",
+        "sub": "2.60 GHz",
+        "value": 0.54,
+        "level": "ok"
+      },
+      {
+        "label": "7",
+        "text": "71 %",
+        "sub": "3.90 GHz",
+        "value": 0.71,
+        "level": "ok"
+      }
+    ],
+    "core_count": 8,
+    "top": [
+      {
+        "pid": 4211.0,
+        "name": "firefox",
+        "cmdline": "/usr/lib/firefox/firefox",
+        "user": "me",
+        "state_id": "running",
+        "threads": 97.0,
+        "cpu_text": "143 %",
+        "mem_text": "2.0 GB",
+        "value": 1.0
+      },
+      {
+        "pid": 1987.0,
+        "name": "Hyprland",
+        "cmdline": "Hyprland",
+        "user": "me",
+        "state_id": "sleeping",
+        "threads": 9.0,
+        "cpu_text": "18 %",
+        "mem_text": "384 MB",
+        "value": 0.12771929824561404
+      },
+      {
+        "pid": 3320.0,
+        "name": "code",
+        "cmdline": "/opt/visual-studio-code/code --type=renderer",
+        "user": "me",
+        "state_id": "sleeping",
+        "threads": 31.0,
+        "cpu_text": "6.4 %",
+        "mem_text": "1.0 GB",
+        "value": 0.04491228070175439
+      },
+      {
+        "pid": 55.0,
+        "name": "kworker/u48:2",
+        "cmdline": "",
+        "user": "root",
+        "state_id": "waiting",
+        "threads": 1.0,
+        "cpu_text": "0.8 %",
+        "mem_text": "0 B",
+        "value": 0.005614035087719299
+      },
+      {
+        "pid": 900.0,
+        "name": "pid 900",
+        "cmdline": "",
+        "user": null,
+        "state_id": "other",
+        "threads": null,
+        "cpu_text": "–",
+        "mem_text": "–",
+        "value": null
+      }
+    ],
+    "top_valid": true,
+    "processes": 446.0
+  },
+  "cpu_first": {
+    "has_data": true,
+    "load": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "freq_avg_text": "800 MHz",
+    "freq_max_text": "800 MHz",
+    "governor": null,
+    "temp": {
+      "value": null,
+      "text": "–"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "available": false
+    },
+    "load_avg": {
+      "available": false,
+      "one": "–",
+      "five": "–",
+      "fifteen": "–",
+      "running": null,
+      "tasks": null
+    },
+    "cores": [
+      {
+        "label": "0",
+        "text": "–",
+        "sub": "800 MHz",
+        "value": null,
+        "level": "unknown"
+      }
+    ],
+    "core_count": 1,
+    "top": [],
+    "top_valid": false,
+    "processes": 446.0
+  },
+  "cpu_empty": {
+    "has_data": false,
+    "load": {
+      "value": null,
+      "text": "–",
+      "level": "unknown"
+    },
+    "freq_avg_text": "–",
+    "freq_max_text": "–",
+    "governor": null,
+    "temp": {
+      "value": null,
+      "text": "–"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "available": false
+    },
+    "load_avg": {
+      "available": false,
+      "one": "–",
+      "five": "–",
+      "fifteen": "–",
+      "running": null,
+      "tasks": null
+    },
+    "cores": [],
+    "core_count": 0,
+    "top": [],
+    "top_valid": false,
+    "processes": null
+  },
+  "gpu_awake": {
+    "has_data": true,
+    "state": "active",
+    "asleep": false,
+    "absent": false,
+    "note": null,
+    "error": null,
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "560.35.03",
+    "vbios": "95.07.2b.00.5e",
+    "source": "firmware",
+    "has_detail": true,
+    "detail_cached": false,
+    "detail_age_text": "1 s",
+    "temperature": {
+      "value": 61.0,
+      "text": "61 °C",
+      "from": 0,
+      "to": 110,
+      "warn_at": 80.0,
+      "crit_at": 90.0,
+      "level": "ok"
+    },
+    "util": {
+      "value": 34.0,
+      "text": "34 %"
+    },
+    "memory_util_text": "12 %",
+    "vram": {
+      "used_text": "1.5 GB",
+      "total_text": "8.0 GB",
+      "free_text": "6.3 GB",
+      "value": 0.1875915974596971,
+      "level": "ok"
+    },
+    "power": {
+      "value": 41.5,
+      "text": "41.5 W",
+      "limit_text": "80 W",
+      "fraction": 0.51875
+    },
+    "clocks": {
+      "graphics": {
+        "text": "1.74 GHz",
+        "max_text": "3.10 GHz",
+        "value": 0.5603864734299517
+      },
+      "memory": {
+        "text": "8.00 GHz",
+        "max_text": "8.00 GHz",
+        "value": 1.0
+      }
+    },
+    "pstate": "P2",
+    "pcie": {
+      "text": "Gen 3 x8",
+      "max_text": "Gen 4 x8",
+      "downgraded": true
+    },
+    "fan_text": "–",
+    "limits": [
+      {
+        "id": "current",
+        "text": "80 W"
+      },
+      {
+        "id": "default",
+        "text": "80 W"
+      },
+      {
+        "id": "min",
+        "text": "80 W"
+      },
+      {
+        "id": "max",
+        "text": "80 W"
+      }
+    ]
+  },
+  "gpu_asleep": {
+    "has_data": true,
+    "state": "suspended",
+    "asleep": true,
+    "absent": false,
+    "note": "asleep",
+    "error": null,
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "560.35.03",
+    "vbios": null,
+    "source": "firmware",
+    "has_detail": false,
+    "detail_cached": false,
+    "detail_age_text": "–",
+    "temperature": {
+      "value": 43.0,
+      "text": "43 °C",
+      "from": 0,
+      "to": 110,
+      "warn_at": 80.0,
+      "crit_at": 90.0,
+      "level": "ok"
+    },
+    "util": {
+      "value": null,
+      "text": "–"
+    },
+    "memory_util_text": "–",
+    "vram": {
+      "used_text": "–",
+      "total_text": "–",
+      "free_text": "–",
+      "value": null,
+      "level": "unknown"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "limit_text": "–",
+      "fraction": null
+    },
+    "clocks": {
+      "graphics": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      },
+      "memory": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      }
+    },
+    "pstate": null,
+    "pcie": {
+      "text": "–",
+      "max_text": "–",
+      "downgraded": false
+    },
+    "fan_text": "–",
+    "limits": [
+      {
+        "id": "current",
+        "text": "–"
+      },
+      {
+        "id": "default",
+        "text": "–"
+      },
+      {
+        "id": "min",
+        "text": "–"
+      },
+      {
+        "id": "max",
+        "text": "–"
+      }
+    ]
+  },
+  "gpu_absent": {
+    "has_data": true,
+    "state": "absent",
+    "asleep": false,
+    "absent": true,
+    "note": null,
+    "error": null,
+    "name": null,
+    "driver": null,
+    "vbios": null,
+    "source": null,
+    "has_detail": false,
+    "detail_cached": false,
+    "detail_age_text": "–",
+    "temperature": {
+      "value": null,
+      "text": "–",
+      "from": 0,
+      "to": 110,
+      "warn_at": 80.0,
+      "crit_at": 90.0,
+      "level": "unknown"
+    },
+    "util": {
+      "value": null,
+      "text": "–"
+    },
+    "memory_util_text": "–",
+    "vram": {
+      "used_text": "–",
+      "total_text": "–",
+      "free_text": "–",
+      "value": null,
+      "level": "unknown"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "limit_text": "–",
+      "fraction": null
+    },
+    "clocks": {
+      "graphics": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      },
+      "memory": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      }
+    },
+    "pstate": null,
+    "pcie": {
+      "text": "–",
+      "max_text": "–",
+      "downgraded": false
+    },
+    "fan_text": "–",
+    "limits": [
+      {
+        "id": "current",
+        "text": "–"
+      },
+      {
+        "id": "default",
+        "text": "–"
+      },
+      {
+        "id": "min",
+        "text": "–"
+      },
+      {
+        "id": "max",
+        "text": "–"
+      }
+    ]
+  },
+  "gpu_empty": {
+    "has_data": false,
+    "state": "unknown",
+    "asleep": false,
+    "absent": false,
+    "note": null,
+    "error": null,
+    "name": null,
+    "driver": null,
+    "vbios": null,
+    "source": null,
+    "has_detail": false,
+    "detail_cached": false,
+    "detail_age_text": "–",
+    "temperature": {
+      "value": null,
+      "text": "–",
+      "from": 0,
+      "to": 110,
+      "warn_at": 80.0,
+      "crit_at": 90.0,
+      "level": "unknown"
+    },
+    "util": {
+      "value": null,
+      "text": "–"
+    },
+    "memory_util_text": "–",
+    "vram": {
+      "used_text": "–",
+      "total_text": "–",
+      "free_text": "–",
+      "value": null,
+      "level": "unknown"
+    },
+    "power": {
+      "value": null,
+      "text": "–",
+      "limit_text": "–",
+      "fraction": null
+    },
+    "clocks": {
+      "graphics": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      },
+      "memory": {
+        "text": "–",
+        "max_text": "–",
+        "value": null
+      }
+    },
+    "pstate": null,
+    "pcie": {
+      "text": "–",
+      "max_text": "–",
+      "downgraded": false
+    },
+    "fan_text": "–",
+    "limits": [
+      {
+        "id": "current",
+        "text": "–"
+      },
+      {
+        "id": "default",
+        "text": "–"
+      },
+      {
+        "id": "min",
+        "text": "–"
+      },
+      {
+        "id": "max",
+        "text": "–"
+      }
+    ]
+  },
+  "memory_full": {
+    "has_memory": true,
+    "has_disks": true,
+    "ram": {
+      "total_text": "15.3 GB",
+      "used_text": "8.9 GB",
+      "pct_text": "58 %",
+      "value": 0.581,
+      "level": "ok",
+      "available_text": "6.4 GB",
+      "free_text": "6.2 GB",
+      "cache_text": "358 MB"
+    },
+    "swap": {
+      "total_text": "31.2 GB",
+      "used_text": "2.6 GB",
+      "pct_text": "8 %",
+      "value": 0.083,
+      "level": "ok"
+    },
+    "swap_present": true,
+    "top": [
+      {
+        "pid": 4211.0,
+        "name": "firefox",
+        "cmdline": "/usr/lib/firefox/firefox",
+        "user": "me",
+        "state_id": "running",
+        "threads": 97.0,
+        "cpu_text": null,
+        "mem_text": "2.0 GB",
+        "value": 1.0
+      },
+      {
+        "pid": 3320.0,
+        "name": "code",
+        "cmdline": "/opt/visual-studio-code/code --type=renderer",
+        "user": "me",
+        "state_id": "sleeping",
+        "threads": 31.0,
+        "cpu_text": null,
+        "mem_text": "1.0 GB",
+        "value": 0.5
+      },
+      {
+        "pid": 1987.0,
+        "name": "Hyprland",
+        "cmdline": "Hyprland",
+        "user": "me",
+        "state_id": "sleeping",
+        "threads": 9.0,
+        "cpu_text": null,
+        "mem_text": "384 MB",
+        "value": 0.1875
+      },
+      {
+        "pid": 55.0,
+        "name": "kworker/u48:2",
+        "cmdline": "",
+        "user": "root",
+        "state_id": "waiting",
+        "threads": 1.0,
+        "cpu_text": null,
+        "mem_text": "0 B",
+        "value": 0.0
+      },
+      {
+        "pid": 900.0,
+        "name": "pid 900",
+        "cmdline": "",
+        "user": null,
+        "state_id": "other",
+        "threads": null,
+        "cpu_text": null,
+        "mem_text": "–",
+        "value": null
+      }
+    ],
+    "processes": 446.0,
+    "filesystems": [
+      {
+        "label": "/",
+        "text": "75 %",
+        "sub": "700 GB / 938 GB",
+        "device": "/dev/nvme1n1p2",
+        "fstype": "ext4",
+        "avail_text": "237 GB",
+        "value": 0.747,
+        "level": "ok"
+      },
+      {
+        "label": "/boot",
+        "text": "97 %",
+        "sub": "990 MB / 1.0 GB",
+        "device": "/dev/nvme0n1p1",
+        "fstype": "vfat",
+        "avail_text": "34.0 MB",
+        "value": 0.9670000000000001,
+        "level": "bad"
+      },
+      {
+        "label": "/home",
+        "text": "42 %",
+        "sub": "391 GB / 932 GB",
+        "device": "/dev/nvme0n1p2",
+        "fstype": "btrfs",
+        "avail_text": "540 GB",
+        "value": 0.42,
+        "level": "ok"
+      }
+    ],
+    "drives": [
+      {
+        "name": "nvme0n1",
+        "model": "SAMSUNG MZVL21T0HCLR-00B07",
+        "kind": "nvme",
+        "size_text": "954 GB",
+        "temp_text": "43 °C"
+      },
+      {
+        "name": "nvme1n1",
+        "model": "Predator SSD GM7000 1TB",
+        "kind": "nvme",
+        "size_text": "954 GB",
+        "temp_text": "45 °C"
+      },
+      {
+        "name": "mmcblk0",
+        "model": null,
+        "kind": "mmc",
+        "size_text": "119 GB",
+        "temp_text": "–"
+      }
+    ]
+  },
+  "memory_empty": {
+    "has_memory": false,
+    "has_disks": false,
+    "ram": null,
+    "swap": null,
+    "swap_present": false,
+    "top": [],
+    "processes": null,
+    "filesystems": [],
+    "drives": []
+  },
+  "network_full": {
+    "has_data": true,
+    "primary": "wlan0",
+    "primary_kind": "wifi",
+    "primary_address": "192.168.1.5",
+    "rx": {
+      "text": "2.3 MB/s",
+      "peak_text": "9.0 MB/s",
+      "session_text": "3.0 GB"
+    },
+    "tx": {
+      "text": "80.0 KB/s",
+      "peak_text": "1.0 MB/s",
+      "session_text": "200 MB"
+    },
+    "interfaces": [
+      {
+        "name": "wlan0",
+        "kind": "wifi",
+        "state": "up",
+        "mac": "36:07:db:c4:d5:b8",
+        "primary": true,
+        "speed_text": "866 Mbit/s",
+        "rx_text": "2.3 MB/s",
+        "tx_text": "80.0 KB/s",
+        "session_rx_text": "3.0 GB",
+        "session_tx_text": "200 MB",
+        "total_rx_text": "9.0 GB",
+        "total_tx_text": "1.0 GB",
+        "addresses": [
+          "192.168.1.5"
+        ]
+      },
+      {
+        "name": "enp109s0",
+        "kind": "ethernet",
+        "state": "down",
+        "mac": "74:d4:dd:08:96:ab",
+        "primary": false,
+        "speed_text": "–",
+        "rx_text": "–",
+        "tx_text": "–",
+        "session_rx_text": "0 B",
+        "session_tx_text": "0 B",
+        "total_rx_text": "0 B",
+        "total_tx_text": "0 B",
+        "addresses": []
+      },
+      {
+        "name": "docker0",
+        "kind": "virtual",
+        "state": "down",
+        "mac": "02:42:ac:11:00:01",
+        "primary": false,
+        "speed_text": "–",
+        "rx_text": "0 B/s",
+        "tx_text": "0 B/s",
+        "session_rx_text": "0 B",
+        "session_tx_text": "0 B",
+        "total_rx_text": "0 B",
+        "total_tx_text": "0 B",
+        "addresses": [
+          "172.17.0.1"
+        ]
+      }
+    ],
+    "chart": {
+      "min": 0.0,
+      "max": 10000000.0,
+      "grid": [
+        {
+          "value": 0.0,
+          "fraction": 0.0,
+          "text": "0 B/s"
+        },
+        {
+          "value": 3333333.3333333335,
+          "fraction": 0.3333333333333333,
+          "text": "3.2 MB/s"
+        },
+        {
+          "value": 6666666.666666667,
+          "fraction": 0.6666666666666666,
+          "text": "6.4 MB/s"
+        },
+        {
+          "value": 10000000.0,
+          "fraction": 1.0,
+          "text": "9.5 MB/s"
+        }
+      ]
+    }
+  },
+  "network_empty": {
+    "has_data": false,
+    "primary": null,
+    "primary_kind": null,
+    "primary_address": null,
+    "rx": {
+      "text": "–",
+      "peak_text": "–",
+      "session_text": "–"
+    },
+    "tx": {
+      "text": "–",
+      "peak_text": "–",
+      "session_text": "–"
+    },
+    "interfaces": [],
+    "chart": {
+      "min": 0.0,
+      "max": 200000.0,
+      "grid": [
+        {
+          "value": 0.0,
+          "fraction": 0.0,
+          "text": "0 B/s"
+        },
+        {
+          "value": 66666.66666666667,
+          "fraction": 0.3333333333333333,
+          "text": "65.1 KB/s"
+        },
+        {
+          "value": 133333.33333333334,
+          "fraction": 0.6666666666666666,
+          "text": "130 KB/s"
+        },
+        {
+          "value": 200000.0,
+          "fraction": 1.0,
+          "text": "195 KB/s"
+        }
+      ]
+    }
+  }
+}
