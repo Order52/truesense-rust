@@ -392,7 +392,7 @@ def bench_services(binary, qt, sb, seconds, only, results):
             open(sb.calls, "w").close()
             a = Proc([binary, "audio", "voice", "watch"], sb.env, f"{sb.root}/audio.log")
             procs.append(a)
-            time.sleep(12)  # the start-up repair has its own pauses
+            time.sleep(100)  # the login repair looks at 20 s and 90 s after start; measure after both
             before = sb.calls_by_name()
             results["audio"] = measure(a.pid, seconds)
             after = sb.calls_by_name()
