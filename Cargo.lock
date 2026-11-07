@@ -800,6 +800,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ts-fx"
+version = "0.5.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ts-gui"
 version = "0.5.0"
 dependencies = [
