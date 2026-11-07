@@ -111,14 +111,15 @@ TestCase {
 
     // ---- Ui and Theme ----------------------------------------------------------------------
     function test_ui_load_and_theme_follow_the_setting() {
-        Ui.load('{"theme":"light","language":"ar","language_effective":"ar","rtl":true,"font_scale":1.2,"reduced_motion":true,"problem":"bad file"}')
+        Ui.load('{"theme":"light","language":"pseudo","language_effective":"pseudo","font_scale":1.2,"reduced_motion":true,"problem":"bad file"}')
         compare(Ui.theme, "light")
-        compare(Ui.rtl, true)
+        compare(Ui.languageSetting, "pseudo")
+        compare(Ui.language, "pseudo")
         compare(Theme.dark, false)
         compare(Theme.animMs, 0)
         compare(Ui.problem, "bad file")
         compare(Theme.fontBody, Math.round(14 * 1.2))
-        Ui.load('{"theme":"dark","rtl":false,"font_scale":1,"reduced_motion":false}')
+        Ui.load('{"theme":"dark","font_scale":1,"reduced_motion":false}')
         compare(Theme.dark, true)
         compare(Theme.bg.toString(), "#17181c")
         compare(Ui.problem, "")

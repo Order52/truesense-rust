@@ -22,7 +22,7 @@ Every layer of the Python edition (0.3.17) is ported, and the Rust edition adds 
 | `ts-gui` | the command bus the apps use, and the old local web window (fallback only) |
 | `ts-keys` | the PREDATOR/Fn key service, theme renderer, login startup |
 | `ts-ui-model` | the Qt-free logic of the app: bus, live store, write coalescing, view-models per page |
-| `ts-qt` | the Qt 6 / QML app `truesense-qt`: 11 pages, tray, first-run wizard, translations incl. Arabic stubs |
+| `ts-qt` | the Qt 6 / QML app `truesense-qt`: 11 pages, tray, first-run wizard, English catalogue and the `qsTrId` plumbing (Arabic was dropped) |
 | `truesense` | the static binary: daemon, CLI, TUI, key service, dispatch by program name |
 
 Gates: `make ci` (rustfmt, clippy with warnings as errors, about 3,000 tests, the workspace without Qt) and `make qt-ci` (the Qt crates, offscreen, plus about 100 QML component tests). Both pass, and `make ci` also runs on GitHub Actions.

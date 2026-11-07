@@ -10,11 +10,11 @@ namespace truesense {
 void set_identity(const QString &app_id, const QString &display_name, const QString &icon_path);
 
 // Loads `:/i18n/<code>.qm` on top of the English catalogue (so a string missing in `code` shows
-// its English text, not its id), switches the layout direction for right-to-left languages and
-// retranslates the running QML engine. Returns false when no catalogue exists for `code`.
-bool set_language(const QString &code, bool rtl);
+// its English text, not its id) and retranslates the running QML engine. Returns false when no
+// catalogue exists for `code`.
+bool set_language(const QString &code);
 
-// The desktop's locale name ("ar_EG", "en_US").
+// The desktop's locale name ("de_DE", "en_US").
 QString system_locale_name();
 
 // Quit only when asked (the window hides to the tray instead of ending the program).

@@ -95,7 +95,7 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn set_identity(app_id: &QString, display_name: &QString, icon_path: &QString);
         #[namespace = "truesense"]
-        fn set_language(code: &QString, rtl: bool) -> bool;
+        fn set_language(code: &QString) -> bool;
         #[namespace = "truesense"]
         fn system_locale_name() -> QString;
         #[namespace = "truesense"]
@@ -275,7 +275,6 @@ fn ui_json(shared: &Shared) -> String {
     let language = shared.model.language(&locale);
     let mut value: Value = serde_json::from_str(&shared.model.ui_json()).unwrap_or_else(|_| json!({}));
     value["language_effective"] = json!(language);
-    value["rtl"] = json!(ts_ui_model::settings::is_rtl(&language));
     value.to_string()
 }
 
@@ -343,7 +342,7 @@ impl qobject::Bus {
         }
     }
 
-    /// Changes a setting; the language also switches the translator and the layout direction.
+    /// Changes a setting; the language also switches the translator.
     pub fn set_ui(mut self: Pin<&mut Self>, key: &QString, value_json: &QString) -> QString {
         let Some(shared) = self.shared() else { return QString::from("not ready") };
         let key = key.to_string();
@@ -354,8 +353,7 @@ impl qobject::Bus {
         if key == "language" {
             let v: Value = serde_json::from_str(&text).unwrap_or_default();
             let code = v["language_effective"].as_str().unwrap_or("en").to_owned();
-            let rtl = v["rtl"].as_bool().unwrap_or(false);
-            crate::platform::set_language(&code, rtl);
+            crate::platform::set_language(&code);
         }
         self.as_mut().set_ui_json(QString::from(text.as_str()));
         QString::from(result.err().unwrap_or_default().as_str())

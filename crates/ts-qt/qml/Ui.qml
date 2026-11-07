@@ -10,12 +10,10 @@ QtObject {
 
     /// "dark", "light" or "system".
     property string theme: "dark"
-    /// What the person chose: "system", "en", "ar" (or "pseudo" in tests).
+    /// What the person chose: "system" or "en" (or "pseudo" in tests).
     property string languageSetting: "system"
     /// The language actually loaded.
     property string language: "en"
-    /// Whether the layout is mirrored (Arabic).
-    property bool rtl: false
     property real fontScale: 1.0
     property bool reducedMotion: false
     property bool minimiseToTray: true
@@ -38,7 +36,6 @@ QtObject {
         if (o.theme !== undefined) theme = o.theme
         if (o.language !== undefined) languageSetting = o.language
         if (o.language_effective !== undefined) language = o.language_effective
-        if (o.rtl !== undefined) rtl = o.rtl
         if (o.font_scale !== undefined) fontScale = o.font_scale
         if (o.reduced_motion !== undefined) reducedMotion = o.reduced_motion
         if (o.minimise_to_tray !== undefined) minimiseToTray = o.minimise_to_tray

@@ -1,4 +1,4 @@
-// The first-run wizard: welcome, a health check with plain-language fixes, language and theme, done.
+// The first-run wizard: welcome, a health check with plain-language fixes, theme, done.
 // It covers the window it is placed in (the shell puts it over everything) and emits `finished()`
 // when the person finishes or skips; the shell then stops showing it, and this file has already
 // remembered that in ui.json (`Ui.set("onboarded", true)`), so it appears once.
@@ -437,7 +437,7 @@ Item {
                         }
                     }
 
-                    // ---- language and theme ----
+                    // ---- theme ----
                     ColumnLayout {
                         spacing: Theme.spacing
                         Text {
@@ -449,21 +449,6 @@ Item {
                             font.bold: true
                             wrapMode: Text.Wrap
                             Accessible.role: Accessible.Heading
-                        }
-                        SettingRow {
-                            Layout.fillWidth: true
-                            //% "Language"
-                            label: qsTrId("onb_language")
-                            Segmented {
-                                model: [
-                                    //% "System"
-                                    { value: "system", label: qsTrId("onb_lang_system") },
-                                    { value: "en", label: "English" },
-                                    { value: "ar", label: "العربية" }
-                                ]
-                                current: Ui.languageSetting
-                                onActivated: (v) => Ui.set("language", v)
-                            }
                         }
                         SettingRow {
                             Layout.fillWidth: true

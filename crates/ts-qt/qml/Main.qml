@@ -25,8 +25,6 @@ ApplicationWindow {
     visible: !Bus.startHidden
     title: "TrueSense"
     color: Theme.bg
-    LayoutMirroring.enabled: Ui.rtl
-    LayoutMirroring.childrenInherit: true
 
     // ---- the singletons are fed from here -----------------------------------------------------
     Binding { target: Nav; property: "headerShowsTitle"; value: win.layoutMode === 0 }

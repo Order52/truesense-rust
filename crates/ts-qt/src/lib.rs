@@ -99,7 +99,7 @@ fn start_qt(shared: &Shared) -> i32 {
 
     let locale = platform::system_locale_name();
     let language = shared.model.language(&locale);
-    platform::set_language(&language, ts_ui_model::settings::is_rtl(&language));
+    platform::set_language(&language);
 
     platform::prefer_software_renderer();
     platform::allow_resource_reads();

@@ -44,7 +44,7 @@ void set_identity(const QString &app_id, const QString &display_name, const QStr
     }
 }
 
-bool set_language(const QString &code, bool rtl) {
+bool set_language(const QString &code) {
     // English first and always: later-installed translators are asked first, so a language only
     // has to translate what it translates.
     if (g_english == nullptr) {
@@ -58,7 +58,6 @@ bool set_language(const QString &code, bool rtl) {
         delete g_language;
         g_language = nullptr;
     }
-    QGuiApplication::setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
     if (g_engine != nullptr) {
         g_engine->retranslate();
     }

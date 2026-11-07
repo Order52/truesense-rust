@@ -79,7 +79,7 @@ visible**; a hidden or minimised window polls nothing. Tracked series are `DEFAU
   `capabilities get` overrides them.
 * `Toasts.show(text, "info"|"ok"|"error")`; `ConfirmDialog { id: confirm }` and
   `confirm.ask({title, text, confirmText, danger, typeWord}, function () { ... })`.
-* `Ui.theme`, `Ui.fontScale`, `Ui.reducedMotion`, `Ui.rtl`; change them with `Ui.set(key, value)`
+* `Ui.theme`, `Ui.fontScale`, `Ui.reducedMotion`; change them with `Ui.set(key, value)`
   (saved in `~/.config/truesense/ui.json`). Navigation: `Nav.go("cooling")`.
 * Colours, sizes, fonts: **only** `Theme.*` tokens (`Theme.qml` is the one place with colour
   literals). Respect `Theme.animMs` for animations (0 with reduced motion). No timer or animation may run
@@ -89,11 +89,17 @@ visible**; a hidden or minimised window polls nothing. Tracked series are `DEFAU
 
 Every user string: `//% "English text"` on the line **before** `qsTrId("page_what")` (ids are
 `<page>_<what>`). Run `crates/ts-qt/tools/i18n-update.sh` (lupdate; fills `en.ts`, adds unfinished
-entries to `ar.ts`) and commit `i18n/*.ts`. `tests/i18n.rs` fails when an id has no English entry or a
-catalogue keeps a dead id. Arabic is a stub: untranslated ids show their English text. Right-to-left
-is automatic (`LayoutMirroring` from `Ui.rtl`); charts and the keyboard preview must not mirror
-(`LayoutMirroring.enabled: false` inside them, as `Sparkline` does). `language: "pseudo"` in ui.json
-shows every translated string accented and padded: whatever stays plain bypasses `qsTrId`.
+entries to any other `i18n/<code>.ts`) and commit `i18n/*.ts`. `tests/i18n.rs` fails when an id has no
+English entry or a catalogue keeps a dead id. English is the only language: Arabic was dropped, and a
+`ui.json` that still says `"language": "ar"` (or any language without a catalogue) loads and gives English.
+To add a language: put `<code>.ts` in `i18n/` (`build.rs` compiles every file there with `lrelease`), add the
+code to `CATALOGUES` in `ts-ui-model/src/settings.rs` and to `LANGUAGES` there, and put a Language row back
+in the Settings page and the first-run wizard (they were removed with Arabic: one language needs no
+picker). A right-to-left language also needs the layout mirroring that was removed with Arabic (`Ui.rtl`
+from the settings JSON, `LayoutMirroring` on the window, the layout direction in the shim's
+`set_language`); charts and the keyboard preview already set `LayoutMirroring.enabled: false` inside
+them. `language: "pseudo"` in ui.json shows every translated string accented and padded: whatever stays
+plain bypasses `qsTrId`.
 
 ## Components (`qml/components`, all `import org.truesense.app`)
 

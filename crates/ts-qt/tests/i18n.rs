@@ -95,10 +95,25 @@ fn every_id_used_in_qml_or_the_registry_has_english_text() {
     }
 }
 
+/// Every `i18n/*.ts` file name; English is the only one today, and the checks below apply to any
+/// language added later.
+fn catalogues() -> Vec<String> {
+    let mut names: Vec<String> = fs::read_dir(root().join("i18n"))
+        .unwrap()
+        .flatten()
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter(|n| n.ends_with(".ts"))
+        .collect();
+    names.sort();
+    names
+}
+
 #[test]
-fn no_catalogue_keeps_an_id_the_qml_no_longer_uses() {
+fn english_is_present_and_no_catalogue_keeps_an_id_the_qml_no_longer_uses() {
+    let files = catalogues();
+    assert!(files.iter().any(|f| f == "en.ts"), "i18n/en.ts is the source of every language: {files:?}");
     let used: BTreeSet<String> = qml_ids().into_iter().chain(registry_ids()).collect();
-    for file in ["en.ts", "ar.ts"] {
+    for file in &files {
         for (id, ..) in messages(file) {
             assert!(
                 used.contains(&id),
@@ -111,30 +126,29 @@ fn no_catalogue_keeps_an_id_the_qml_no_longer_uses() {
 #[test]
 fn placeholders_survive_in_every_translation() {
     let en = messages("en.ts");
-    for (id, source, ..) in &en {
-        let Some((_, _, tr, unfinished)) = messages("ar.ts").into_iter().find(|m| &m.0 == id) else {
-            continue;
-        };
-        if unfinished || tr.is_empty() {
-            continue;
-        }
-        for n in 1..=3 {
-            let p = format!("%{n}");
-            assert_eq!(
-                source.contains(&p),
-                tr.contains(&p),
-                "{id}: placeholder {p} must be kept in the Arabic text"
-            );
+    for file in catalogues().iter().filter(|f| *f != "en.ts") {
+        let other = messages(file);
+        for (id, source, ..) in &en {
+            let Some((_, _, tr, unfinished)) = other.iter().find(|m| &m.0 == id) else { continue };
+            if *unfinished || tr.is_empty() {
+                continue;
+            }
+            for n in 1..=3 {
+                let p = format!("%{n}");
+                assert_eq!(
+                    source.contains(&p),
+                    tr.contains(&p),
+                    "{file} {id}: placeholder {p} must be kept in the translation"
+                );
+            }
         }
     }
 }
 
 #[test]
-fn the_arabic_stub_translates_the_navigation() {
-    let ar = messages("ar.ts");
-    for id in registry_ids() {
-        let (_, _, tr, unfinished) =
-            ar.iter().find(|m| m.0 == id).unwrap_or_else(|| panic!("{id} missing from ar.ts"));
-        assert!(!unfinished && !tr.is_empty(), "{id} is not translated in ar.ts");
-    }
+fn arabic_is_not_shipped() {
+    assert!(
+        !catalogues().iter().any(|f| f == "ar.ts"),
+        "the Arabic catalogue was dropped on purpose; a language is added with its own native review"
+    );
 }

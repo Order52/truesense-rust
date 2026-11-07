@@ -299,7 +299,7 @@ System     Health | Settings
 | **Audio** | existing page (output, speaker filter, DTS, jack, mic, voice, repair) | `audio *` | EQ later (7.14) |
 | **Profiles and favourites** | whole-setup profiles with description and Apply, save current, delete; the Favourites list with reorder, kind icons | `profile list/show/apply/next/save/delete/current` | `favourite *` |
 | **Health** | doctor results with fix text, self-test, service check/repair, daemon log tail | `doctor run`, `selftest run`, `service *`, `config validate` | none |
-| **Settings** | model and "features supported on this machine" checklist, language, theme (dark/light/system), tray options, alerts, startup, autostart, update, reset-all, settings export/import | `gui autostart`, `update *`, `startup *`, `touchpad set`, `config show/reset-all` | `alerts get/set`, `config export/import`, `ui` settings stored in the app's own file |
+| **Settings** | model and "features supported on this machine" checklist, theme (dark/light/system), tray options, alerts, startup, autostart, update, reset-all, settings export/import | `gui autostart`, `update *`, `startup *`, `touchpad set`, `config show/reset-all` | `alerts get/set`, `config export/import`, `ui` settings stored in the app's own file |
 
 Rules for every page: a capability the machine lacks shows a greyed control with one sentence ("TGP is fixed by this laptop's firmware"),
 never a missing control and never an error toast (the capability list comes from `ts-system::models` probe, extended with sysfs facts, 4.4).
@@ -396,6 +396,8 @@ flag), because the one-second tick must stay cheap on idle (see 4.10).
 - Dangling names (deleted look) show greyed with a remove button; `apply` of one fails with a normal error.
 
 ### 4.7 i18n and Arabic
+
+> Arabic was dropped later (the app is English only for now; the plumbing, the pseudo-locale and the build step stay). The Arabic and RTL notes below are history.
 
 - Mechanism: Qt Linguist. QML uses `qsTrId("page_id_text") //% "English text"` so extraction (`lupdate`) keeps the English next to the
   id; ids are stable keys, so his 829 keys can be converted mechanically (R9): his catalogue key becomes our id, his English value

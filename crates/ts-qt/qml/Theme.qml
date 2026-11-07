@@ -93,5 +93,5 @@ QtObject {
     readonly property int fontTitle: fs(22)
     readonly property int fontSection: fs(15)
     readonly property int fontBig: fs(28)
-    readonly property string fontFamily: ""   // empty: the system's default font (Arabic falls back by itself)
+    readonly property string fontFamily: ""   // empty: the system's default font (other scripts fall back by themselves)
 }

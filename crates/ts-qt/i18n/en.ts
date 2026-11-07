@@ -163,18 +163,6 @@
         <source>System</source>
         <translation>System</translation>
     </message>
-    <message id="settings_language">
-        <source>Language</source>
-        <translation>Language</translation>
-    </message>
-    <message id="settings_lang_system">
-        <source>Follow the desktop</source>
-        <translation>Follow the desktop</translation>
-    </message>
-    <message id="settings_lang_pseudo">
-        <source>Pseudo-language (for testing the layout)</source>
-        <translation>Pseudo-language (for testing the layout)</translation>
-    </message>
     <message id="settings_text_size">
         <source>Text size</source>
         <translation>Text size</translation>
@@ -5118,14 +5106,6 @@
     <message id="onb_look_title">
         <source>Make it yours</source>
         <translation>Make it yours</translation>
-    </message>
-    <message id="onb_language">
-        <source>Language</source>
-        <translation>Language</translation>
-    </message>
-    <message id="onb_lang_system">
-        <source>System</source>
-        <translation>System</translation>
     </message>
     <message id="onb_theme">
         <source>Theme</source>
