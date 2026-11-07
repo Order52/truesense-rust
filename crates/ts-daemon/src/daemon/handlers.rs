@@ -161,10 +161,22 @@ impl Daemon {
         if key == "auto_profile" {
             self.save("auto_mode", if on { "smart" } else { "off" });
         }
+        let was_on = self.state.get_bool(key, false);
         self.save(key, on);
         self.info(format!("setting {key} = {on}"));
         if key == "smart_fan" && !on {
             g.writer.forget();
+            g.fan.reset();
+            if was_on {
+                // The curve ran the fans by hand; switching it off must not leave them at its
+                // last duty until somebody presses Auto (the firmware owns them when nothing
+                // else does). Only on the change: a manual duty set by a `fan` request, which
+                // also switches the curve off, must stay.
+                match self.hw.fan_auto() {
+                    Ok(()) => self.info("smart fan off: fans back to the firmware"),
+                    Err(e) => self.warn(format!("smart fan off, but the fans could not be handed back: {e}")),
+                }
+            }
         }
         Ok(Value::Object(self.state.snapshot()))
     }

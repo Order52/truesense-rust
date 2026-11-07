@@ -197,3 +197,28 @@ fn a_busy_cpu_is_not_hot_by_the_gpu_line_when_the_gpu_gives_no_temperature() {
     assert_eq!(live(&sighted)["activity"], json!("hot"));
     assert_eq!(sighted.snap().duty, [100, 100]);
 }
+
+// ---- the smart curve's off switch --------------------------------------------------------------
+
+#[test]
+fn switching_the_smart_fan_off_hands_the_fans_back_instead_of_leaving_the_last_duty() {
+    let rig = Rig::new();
+    rig.drive(10, 75, 60, 90.0);
+    assert_eq!(rig.snap().fan, SimFan::Manual, "the curve is running the fans");
+    rig.ok_set_smart_fan(false);
+    assert_eq!(rig.snap().fan, SimFan::Auto, "off means the firmware has them again, at once");
+    rig.drive(5, 75, 60, 90.0);
+    assert_eq!(rig.snap().fan, SimFan::Auto, "and stays so: nothing smart is on");
+}
+
+#[test]
+fn a_manual_duty_survives_the_smart_fan_being_switched_off_again() {
+    let rig = Rig::new();
+    rig.drive(10, 75, 60, 90.0);
+    rig.ok_fan_manual(50); // this also switches the curve off
+    assert_eq!((rig.snap().fan, rig.snap().duty), (SimFan::Manual, [50, 50]));
+    rig.ok_set_smart_fan(false); // already off: nothing to hand back
+    assert_eq!((rig.snap().fan, rig.snap().duty), (SimFan::Manual, [50, 50]));
+    rig.drive(5, 60, 50, 20.0);
+    assert_eq!(rig.snap().duty, [50, 50], "ticks leave a hand-set duty alone");
+}
