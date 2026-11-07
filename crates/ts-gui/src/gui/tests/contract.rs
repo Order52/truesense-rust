@@ -90,6 +90,20 @@ fn the_table_and_the_scanner_see_the_whole_contract() {
 /// Documented commands the server answers itself or that the page never sends.
 const SERVER_ONLY: [&str; 2] = ["gui/ping", "gui/quit"];
 
+/// Documented commands that only the native (Qt) app calls, so the web front end never does. They
+/// must still be documented and implemented (the tests below check both); this list keeps the
+/// "every documented command is called by the page" rule for everything else.
+const NATIVE_ONLY: [&str; 8] = [
+    "monitor/overview",
+    "monitor/cpu",
+    "monitor/gpu",
+    "monitor/memory",
+    "monitor/network",
+    "monitor/disks",
+    "monitor/reset",
+    "system/info",
+];
+
 #[test]
 fn every_command_the_page_calls_is_documented_and_every_documented_one_is_called() {
     let (doc, calls) = (documented(), used());
@@ -98,9 +112,13 @@ fn every_command_the_page_calls_is_documented_and_every_documented_one_is_called
     }
     for c in &doc {
         assert!(
-            calls.contains(c) || SERVER_ONLY.contains(&c.as_str()),
+            calls.contains(c) || SERVER_ONLY.contains(&c.as_str()) || NATIVE_ONLY.contains(&c.as_str()),
             "COMMANDS.md documents {c} but the front end never calls it: the table must stay minimal"
         );
+    }
+    for c in NATIVE_ONLY {
+        assert!(doc.contains(c), "{c} is exempt as native-only but COMMANDS.md does not document it");
+        assert!(!calls.contains(c), "the web front end calls {c}: take it off the native-only list");
     }
 }
 
