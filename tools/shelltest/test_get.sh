@@ -176,4 +176,59 @@ t_attestation_verification_uses_the_github_cli() {
   assert_code 1; assert_contains "$R_ERR" "needs the GitHub CLI"
 }
 
+# ---- the optional prebuilt Qt window (truesense-qt-X.Y.Z-linux-x86_64.tar.gz) ---------------------------------------------------------------
+
+# publish_qt DOC VERSION [list=no|wrong] [empty] [missing]: the Qt tarball next to the bundle, listed in SHA256SUMS (list=no leaves it out, list=wrong lists another hash), empty (no
+# binary inside), missing (listed but not served)
+publish_qt() {
+  local doc=$1 v=$2 o list=yes empty=0 missing=0 d asset hash; shift 2
+  for o in "$@"; do case $o in list=*) list=${o#list=};; empty) empty=1;; missing) missing=1;; esac; done
+  asset=$doc/$REL/v$v/truesense-qt-$v-linux-x86_64.tar.gz
+  d=$(tmpdir); mkdir -p "$d/truesense-qt-$v/bin"; [ "$empty" = 1 ] || printf '#!/bin/sh\necho "truesense-qt %s"\n' "$v" > "$d/truesense-qt-$v/bin/truesense-qt"
+  chmod 755 "$d/truesense-qt-$v/bin"/* 2>/dev/null || true
+  tar -czf "$asset" -C "$d" "truesense-qt-$v"
+  hash=$(sha256sum "$asset" | cut -d' ' -f1); [ "$list" != wrong ] || hash=$(printf '%064d' 7)
+  [ "$list" = no ] || printf '%s  truesense-qt-%s-linux-x86_64.tar.gz\n' "$hash" "$v" >> "$doc/$REL/v$v/SHA256SUMS"
+  [ "$missing" = 0 ] || rm -f "$asset"
+}
+
+t_a_listed_qt_window_is_verified_and_added_to_the_bundle() {
+  local doc; doc=$(tmpdir); publish "$doc" 0.5.0 right; publish_qt "$doc" 0.5.0
+  run_get "$doc" 0.5.0
+  assert_code 0; assert_contains "$R_OUT" "prebuilt Qt window verified and added (bin/truesense-qt"; assert_contains "$R_OUT" "verified and unpacked"
+}
+
+t_a_release_without_a_qt_window_installs_as_before() {
+  local doc; doc=$(tmpdir); publish "$doc" 0.5.0 right
+  run_get "$doc" 0.5.0
+  assert_code 0; assert_contains "$R_OUT" "this release has no prebuilt Qt window"; assert_contains "$R_OUT" "web window"
+  publish_qt "$doc" 0.5.0 list=no
+  run_get "$doc" 0.5.0
+  assert_code 0; assert_contains "$R_OUT" "has no prebuilt Qt window" "an unlisted file is not fetched"
+}
+
+t_a_qt_window_that_cannot_be_downloaded_is_skipped_but_one_that_does_not_match_its_list_is_refused() {
+  local doc; doc=$(tmpdir); publish "$doc" 0.5.0 right; publish_qt "$doc" 0.5.0 missing
+  run_get "$doc" 0.5.0
+  assert_code 0; assert_contains "$R_OUT" "could not be downloaded: continuing without it"
+  doc=$(tmpdir); publish "$doc" 0.5.0 right; publish_qt "$doc" 0.5.0 list=wrong
+  run_get "$doc" 0.5.0
+  assert_code 1; assert_contains "$R_ERR" "checksum mismatch for truesense-qt-0.5.0-linux-x86_64.tar.gz"; assert_contains "$R_ERR" "refusing"
+  doc=$(tmpdir); publish "$doc" 0.5.0 right; publish_qt "$doc" 0.5.0 empty
+  run_get "$doc" 0.5.0
+  assert_code 1; assert_contains "$R_ERR" "does not hold truesense-qt-0.5.0/bin/truesense-qt"
+}
+
+t_no_qt_is_honoured_and_the_qt_window_gets_the_same_attestation_check() {
+  local doc good log bad; doc=$(tmpdir); publish "$doc" 0.5.0 right; publish_qt "$doc" 0.5.0
+  run_get "$doc" 0.5.0 TRUESENSE_NO_QT=1
+  assert_code 0; assert_contains "$R_OUT" "not fetching the prebuilt Qt window"; assert_not_contains "$R_OUT" "verified and added"
+  good=$(tmpdir); log=$(tmpdir)/gh.log; fake_program "$good" gh "echo \"\$*\" >> '$log'"
+  run_get "$doc" 0.5.0 TRUESENSE_VERIFY_ATTESTATION=1 "PATH=$good:$PATH"
+  assert_code 0; assert_contains "$(cat "$log")" "qt.tar.gz"; assert_contains "$R_OUT" "prebuilt Qt window verified and added"
+  bad=$(tmpdir); fake_program "$bad" gh "case \"\$*\" in *qt.tar.gz*) exit 1;; esac"
+  run_get "$doc" 0.5.0 TRUESENSE_VERIFY_ATTESTATION=1 "PATH=$bad:$PATH"
+  assert_code 1; assert_contains "$R_ERR" "truesense-qt-0.5.0-linux-x86_64.tar.gz does not verify"
+}
+
 run_tests "$@"
