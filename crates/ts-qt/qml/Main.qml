@@ -20,11 +20,40 @@ ApplicationWindow {
 
     width: saved.window_width
     height: saved.window_height
-    minimumWidth: 360
-    minimumHeight: 480
+    // Small on purpose: under a tiling compositor the window gets the size of its tile, and a
+    // minimum larger than the tile makes it overlap its neighbours (a fight with the layout).
+    minimumWidth: 320
+    minimumHeight: 260
     visible: !Bus.startHidden
     title: "TrueSense"
     color: Theme.bg
+    // The desktop's Qt platform theme (qt6ct, kde, gnome) hands every Basic control ITS palette and
+    // font size; our look is the Theme tokens, light or dark by our own setting, so the controls
+    // that read the palette (text fields, the drop-down popup, selection) are given ours. The font
+    // FAMILY stays the desktop's on purpose (the app reads like the rest of the desktop); the size
+    // is ours so a control without an explicit size matches the pages.
+    palette {
+        window: Theme.bg
+        windowText: Theme.text
+        base: Theme.field
+        alternateBase: Theme.tile
+        text: Theme.text
+        button: Theme.button
+        buttonText: Theme.text
+        brightText: Theme.text
+        highlight: Theme.accent
+        highlightedText: Theme.accentInk
+        placeholderText: Theme.muted
+        light: Theme.tile
+        midlight: Theme.tileHover
+        mid: Theme.cardLine
+        dark: Theme.sep
+        shadow: Theme.scrim
+        toolTipBase: Theme.dialog
+        toolTipText: Theme.text
+        link: Theme.accent
+    }
+    font.pixelSize: Theme.fontBody
     LayoutMirroring.enabled: Ui.rtl
     LayoutMirroring.childrenInherit: true
 
@@ -124,7 +153,10 @@ ApplicationWindow {
 
     // ---- first frame, test hook ---------------------------------------------------------------
     property bool firstFrame: false
+    /// Frames presented since the last `REPORT {"fps"...}` line (TRUESENSE_QT_FPS=1, tools/qtprofile).
+    property int framesSince: 0
     onFrameSwapped: {
+        framesSince++
         if (firstFrame) return
         firstFrame = true
         if (Bus.framePresented()) {
@@ -135,6 +167,27 @@ ApplicationWindow {
         }
     }
     TestHook { id: testHook }
+    Timer {
+        interval: 1000
+        repeat: true
+        running: win.firstFrame && JSON.parse(Bus.testConfig()).fps === true
+        onTriggered: { Bus.report(JSON.stringify({ fps: win.framesSince })); win.framesSince = 0 }
+    }
+
+    // TRUESENSE_QT_SCROLL=1 (tools/qtprofile): scrolls the page up and down at 60 steps a second, to
+    // measure what a scene-graph backend costs while content moves. Does nothing otherwise.
+    Timer {
+        property real t: 0
+        interval: 16
+        repeat: true
+        running: win.firstFrame && JSON.parse(Bus.testConfig()).scroll === true
+        onTriggered: {
+            var f = pageLoader.item && pageLoader.item.flick
+            if (!f) return
+            t += 0.016
+            f.contentY = Math.max(0, f.contentHeight - f.height) * (0.5 - 0.5 * Math.cos(t * 2))
+        }
+    }
 
     // ---- keyboard -----------------------------------------------------------------------------
     Repeater {

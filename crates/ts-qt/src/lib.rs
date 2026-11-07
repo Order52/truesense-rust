@@ -101,7 +101,9 @@ fn start_qt(shared: &Shared) -> i32 {
     let language = shared.model.language(&locale);
     platform::set_language(&language, ts_ui_model::settings::is_rtl(&language));
 
-    platform::prefer_software_renderer();
+    let saved = shared.model.settings();
+    let renderer = platform::choose_renderer(saved.extra_str("renderer"));
+    bus_object::set_renderer(renderer);
     platform::allow_resource_reads();
     let mut engine = QQmlApplicationEngine::new();
     let Some(mut engine_ref) = engine.as_mut() else { return 1 };

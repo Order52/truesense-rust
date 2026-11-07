@@ -36,6 +36,11 @@ pub struct TestConfig {
     pub exit_after_ms: i32,
     /// `TRUESENSE_QT_SHOT`: where the hook saves a PNG of the window.
     pub shot: Option<String>,
+    /// `TRUESENSE_QT_FPS=1`: the shell prints `REPORT {"fps": n}` (frames presented in the last second) once a
+    /// second, for `tools/qtprofile`; nothing runs when it is unset.
+    pub fps: bool,
+    /// `TRUESENSE_QT_SCROLL=1`: the shell scrolls the page up and down by itself (measuring).
+    pub scroll: bool,
 }
 
 impl TestConfig {
@@ -46,6 +51,8 @@ impl TestConfig {
             enabled: get("TRUESENSE_QT_TEST").is_some(),
             exit_after_ms: get("TRUESENSE_QT_EXIT_AFTER_MS").and_then(|v| v.parse().ok()).unwrap_or(0),
             shot: get("TRUESENSE_QT_SHOT"),
+            fps: get("TRUESENSE_QT_FPS").is_some(),
+            scroll: get("TRUESENSE_QT_SCROLL").is_some(),
         }
     }
 }
@@ -67,6 +74,12 @@ pub struct Shared {
 }
 
 static SHARED: OnceLock<Arc<Shared>> = OnceLock::new();
+static RENDERER: OnceLock<String> = OnceLock::new();
+
+/// Records which scene-graph backend was chosen (reported by the test hook and `tools/qtprofile`).
+pub fn set_renderer(name: String) {
+    let _ = RENDERER.set(name);
+}
 
 /// Hands the shared state to the Bus before the QML engine creates it (set once per process).
 pub fn install(shared: Arc<Shared>) -> bool {
@@ -105,7 +118,7 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn allow_resource_reads();
         #[namespace = "truesense"]
-        fn prefer_software_renderer();
+        fn choose_renderer(requested: &QString) -> QString;
         #[namespace = "truesense"]
         fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);
     }
@@ -393,7 +406,7 @@ impl qobject::Bus {
     pub fn test_config(&self) -> QString {
         let t = self.shared().map(|s| s.test.clone()).unwrap_or_default();
         QString::from(
-            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot})
+            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot, "fps": t.fps, "scroll": t.scroll})
                 .to_string()
                 .as_str(),
         )
@@ -415,6 +428,7 @@ impl qobject::Bus {
         state["first_frame_ms"] = json!(first);
         state["rss_kb"] = json!(crate::rss_kb());
         state["live_frames"] = json!(self.shared().map_or(0, |s| s.model.live.accepted()));
+        state["renderer"] = json!(RENDERER.get().map_or("", String::as_str));
         println!("REPORT {state}");
     }
 }
