@@ -22,7 +22,7 @@ use crate::firmware::{Device, FirmwareError, Reply};
 
 pub use fans::{Duty, FanState, Sensors};
 pub use features::Capabilities;
-pub use linux::{CommandRunner, LinuxSensors, ProcessRunner};
+pub use linux::{CommandOutput, CommandRunner, LinuxSensors, ProcessRunner};
 pub use probe::{ProbeEntry, READ_ONLY, probe_firmware};
 pub use rear::{REAR_ZONES, Rear, RearSettings};
 pub use types::{

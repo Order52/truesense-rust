@@ -12,49 +12,94 @@ use std::time::{Duration, Instant};
 /// How long `nvidia-smi` may take: a wedged NVIDIA driver must not wedge the daemon's tick.
 const GPU_QUERY_TIMEOUT: Duration = Duration::from_secs(3);
 
-/// Runs an external program and returns what it printed on standard output, whatever its exit
-/// status (like the Python edition, which read the output of a failed `nvidia-smi` and found
-/// no number in it).
+/// What a finished program left behind: its exit status and both output streams.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct CommandOutput {
+    /// Exit status; `None` when a signal ended the program.
+    pub code: Option<i32>,
+    /// Everything written to standard output.
+    pub stdout: Vec<u8>,
+    /// Everything written to standard error.
+    pub stderr: Vec<u8>,
+}
+
+impl CommandOutput {
+    /// True when the program exited with status 0.
+    pub fn success(&self) -> bool {
+        self.code == Some(0)
+    }
+}
+
+/// Runs an external program. [`output`](CommandRunner::output) returns only what it printed on
+/// standard output, whatever its exit status (like the Python edition, which read the output of
+/// a failed `nvidia-smi` and found no number in it); [`run`](CommandRunner::run) also reports the
+/// exit status and standard error, for callers that must tell failure from empty output.
 pub trait CommandRunner: Send + Sync {
     /// Runs `program` with `args`, giving up after `timeout`.
     fn output(&self, program: &str, args: &[&str], timeout: Duration) -> io::Result<Vec<u8>>;
+
+    /// Like [`output`](CommandRunner::output) but with the exit status and standard error. The
+    /// default implementation only knows the output (status unknown, no error text); real
+    /// runners override it.
+    fn run(&self, program: &str, args: &[&str], timeout: Duration) -> io::Result<CommandOutput> {
+        self.output(program, args, timeout).map(|stdout| CommandOutput {
+            code: None,
+            stdout,
+            stderr: Vec::new(),
+        })
+    }
 }
 
 /// Runs real processes, killing one that exceeds its timeout.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProcessRunner;
 
+/// The most standard error text kept from a program: a runaway one must not fill memory.
+const MAX_STDERR: u64 = 64 * 1024;
+
 impl CommandRunner for ProcessRunner {
     fn output(&self, program: &str, args: &[&str], timeout: Duration) -> io::Result<Vec<u8>> {
+        self.run(program, args, timeout).map(|o| o.stdout)
+    }
+
+    fn run(&self, program: &str, args: &[&str], timeout: Duration) -> io::Result<CommandOutput> {
         let mut child = Command::new(program)
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .spawn()?;
         let mut stdout = child.stdout.take().ok_or_else(|| io::Error::other("no stdout pipe"))?;
-        // Read on a thread so a program that prints more than a pipe holds cannot block its own exit.
-        let reader = thread::spawn(move || {
+        let stderr = child.stderr.take().ok_or_else(|| io::Error::other("no stderr pipe"))?;
+        // Read on threads so a program that prints more than a pipe holds cannot block its own exit.
+        let out_reader = thread::spawn(move || {
             let mut out = Vec::new();
             stdout.read_to_end(&mut out).map(|_| out)
         });
+        let err_reader = thread::spawn(move || {
+            let mut out = Vec::new();
+            stderr.take(MAX_STDERR).read_to_end(&mut out).map(|_| out)
+        });
         let deadline = Instant::now() + timeout;
-        loop {
-            if child.try_wait()?.is_some() {
-                break;
+        let status = loop {
+            if let Some(status) = child.try_wait()? {
+                break status;
             }
             if Instant::now() >= deadline {
                 let _ = child.kill();
                 let _ = child.wait();
-                let _ = reader.join();
+                let _ = out_reader.join();
+                let _ = err_reader.join();
                 return Err(io::Error::new(
                     io::ErrorKind::TimedOut,
                     format!("{program} did not finish in time"),
                 ));
             }
             thread::sleep(Duration::from_millis(10));
-        }
-        reader.join().map_err(|_| io::Error::other("reader thread panicked"))?
+        };
+        let stdout = out_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;
+        let stderr = err_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;
+        Ok(CommandOutput { code: status.code(), stdout, stderr })
     }
 }
 

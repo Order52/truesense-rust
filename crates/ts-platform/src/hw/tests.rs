@@ -1145,3 +1145,52 @@ fn a_program_that_does_not_exist_is_an_error_not_a_hang() {
     assert_eq!(LinuxSensors::new("/nonexistent-root", Arc::new(ProcessRunner)).cpu_temp(), None);
     assert!(LinuxSensors::new("/nonexistent-root", Arc::new(ProcessRunner)).on_ac());
 }
+
+#[cfg(test)]
+mod command_output_tests {
+    use super::*;
+
+    #[test]
+    fn a_real_program_reports_status_and_stderr() {
+        let out = ProcessRunner
+            .run("/bin/sh", &["-c", "echo out; echo err >&2; exit 3"], Duration::from_secs(5))
+            .expect("sh runs");
+        assert_eq!(out.code, Some(3));
+        assert_eq!(out.stdout, b"out\n");
+        assert_eq!(out.stderr, b"err\n");
+        assert!(!out.success());
+    }
+
+    #[test]
+    fn success_means_status_zero() {
+        let out = ProcessRunner.run("/bin/sh", &["-c", "exit 0"], Duration::from_secs(5)).expect("sh runs");
+        assert!(out.success());
+    }
+
+    #[test]
+    fn output_still_ignores_the_status() {
+        let out = ProcessRunner
+            .output("/bin/sh", &["-c", "echo x; exit 9"], Duration::from_secs(5))
+            .expect("sh runs");
+        assert_eq!(out, b"x\n");
+    }
+
+    #[test]
+    fn a_runner_that_only_knows_output_reports_an_unknown_status() {
+        struct OnlyOutput;
+        impl CommandRunner for OnlyOutput {
+            fn output(&self, _: &str, _: &[&str], _: Duration) -> io::Result<Vec<u8>> {
+                Ok(b"hi".to_vec())
+            }
+        }
+        let out = OnlyOutput.run("x", &[], Duration::from_secs(1)).expect("default run");
+        assert_eq!(out, CommandOutput { code: None, stdout: b"hi".to_vec(), stderr: Vec::new() });
+        assert!(!out.success());
+    }
+
+    #[test]
+    fn a_program_that_hangs_is_killed() {
+        let err = ProcessRunner.run("/bin/sh", &["-c", "sleep 5"], Duration::from_millis(100)).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::TimedOut);
+    }
+}
