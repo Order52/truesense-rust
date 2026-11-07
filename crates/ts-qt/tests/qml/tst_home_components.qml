@@ -37,6 +37,18 @@ TestCase {
         compare(Vm.lastError, "no such verb")
     }
 
+    function test_an_unchanged_answer_is_the_same_object_so_nothing_downstream_rebuilds() {
+        fake.answers = { "home.same": { tiles: [1, 2, 3] } }
+        Api.transport = fake
+        var first = Vm.call("home", "same", { n: 1 })
+        var second = Vm.call("home", "same", { n: 2 })
+        verify(first === second, "the same text gives the very same object")
+        fake.answers = { "home.same": { tiles: [1, 2, 4] } }
+        var third = Vm.call("home", "same", { n: 3 })
+        verify(third !== first)
+        compare(third.tiles[2], 4)
+    }
+
     // ---- HomeBanner ---------------------------------------------------------------------------
     Component { id: bannerC; HomeBanner { width: 440 } }
     SignalSpy { id: bannerSpy; signalName: "actionClicked" }

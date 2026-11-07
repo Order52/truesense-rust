@@ -16,6 +16,7 @@ mod types;
 
 use std::fmt;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use crate::firmware::{Device, FirmwareError, Reply};
@@ -142,6 +143,8 @@ pub struct Hw {
     sleep: Sleeper,
     kb_timeout: Option<Arc<dyn KbTimeoutFlag>>,
     memory: Option<Arc<dyn RearMemory>>,
+    /// Whether the module has `sensors_temps` (false once an older module said "unknown command").
+    temps_command: Arc<AtomicBool>,
 }
 
 impl Hw {
@@ -153,6 +156,7 @@ impl Hw {
             sleep: Arc::new(std::thread::sleep),
             kb_timeout: None,
             memory: None,
+            temps_command: Arc::new(AtomicBool::new(true)),
         }
     }
 

@@ -14,6 +14,8 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use crate::watch::Watcher;
+
 /// A hidraw node hands out exactly one report per `read`; the vendor reports of this keyboard are
 /// 3 bytes, and 64 is the largest a full-speed HID endpoint sends.
 const REPORT_BUFFER: usize = 64;
@@ -59,6 +61,17 @@ pub trait HidReports: Send {
     /// Waits up to `timeout` for the next report. `Ok(None)` means none came in time (the caller
     /// has timers to run). An error ends this stream: the service opens a new one.
     fn read_report(&mut self, timeout: Duration) -> Result<Option<Vec<u8>>, HidError>;
+
+    /// [`HidReports::read_report`] that also returns (with `Ok(None)`) as soon as `watch` says a
+    /// watched file changed, so the caller can look at it without polling on a timer. A stream
+    /// that cannot wait on two things ignores `watch`.
+    fn read_report_watching(
+        &mut self,
+        timeout: Duration,
+        _watch: Option<&Watcher>,
+    ) -> Result<Option<Vec<u8>>, HidError> {
+        self.read_report(timeout)
+    }
 }
 
 /// Opens the report stream of a node.
@@ -110,20 +123,32 @@ enum Readiness {
 }
 
 /// Waits until `fd` is readable, hung up, or `timeout` has passed (rounded up to whole
-/// milliseconds: `poll` has no finer step and a zero would spin).
-fn wait_readable(fd: RawFd, timeout: Duration) -> io::Result<Readiness> {
+/// milliseconds: `poll` has no finer step and a zero would spin). With `watch`, also returns when
+/// it has something to say (after emptying it).
+fn wait_readable(fd: RawFd, watch: Option<&Watcher>, timeout: Duration) -> io::Result<Readiness> {
     let millis = libc::c_int::try_from(timeout.as_nanos().div_ceil(1_000_000)).unwrap_or(libc::c_int::MAX);
-    let mut pfd = libc::pollfd { fd, events: libc::POLLIN, revents: 0 };
-    // SAFETY: `pfd` is one initialised `pollfd` that lives until the call returns, and `nfds` is
-    // 1, the number of elements behind the pointer. `poll` only writes `revents`. A descriptor
-    // that is not open is reported through `POLLNVAL`, not by undefined behaviour.
-    let ready = unsafe { libc::poll(&mut pfd, 1, millis) };
+    let mut pfds = [
+        libc::pollfd { fd, events: libc::POLLIN, revents: 0 },
+        libc::pollfd { fd: watch.map_or(-1, Watcher::fd), events: libc::POLLIN, revents: 0 },
+    ];
+    // SAFETY: `pfds` holds two initialised `pollfd`s that live until the call returns, and `nfds`
+    // is 2, the number of elements behind the pointer. `poll` only writes `revents`; a negative
+    // `fd` (no watcher) is ignored by `poll`, and a descriptor that is not open is reported
+    // through `POLLNVAL`, not by undefined behaviour.
+    let ready = unsafe { libc::poll(pfds.as_mut_ptr(), 2, millis) };
     if ready < 0 {
         let error = io::Error::last_os_error();
         // A signal interrupted the wait: the caller's loop simply comes round again.
         return if error.kind() == io::ErrorKind::Interrupted { Ok(Readiness::Timeout) } else { Err(error) };
     }
-    Ok(if ready == 0 {
+    if pfds[1].revents != 0 {
+        if let Some(watch) = watch {
+            watch.drain();
+        }
+    }
+    let pfd = &pfds[0];
+    Ok(if pfd.revents == 0 {
+        // Nothing from the keyboard: a timeout, or only the watcher spoke (the caller looks).
         Readiness::Timeout
     } else if pfd.revents & libc::POLLIN != 0 {
         // Data first: a hang-up with a report still queued delivers the report, and the next
@@ -136,7 +161,15 @@ fn wait_readable(fd: RawFd, timeout: Duration) -> io::Result<Readiness> {
 
 impl HidReports for HidrawFile {
     fn read_report(&mut self, timeout: Duration) -> Result<Option<Vec<u8>>, HidError> {
-        match wait_readable(self.file.as_raw_fd(), timeout).map_err(HidError::Read)? {
+        self.read_report_watching(timeout, None)
+    }
+
+    fn read_report_watching(
+        &mut self,
+        timeout: Duration,
+        watch: Option<&Watcher>,
+    ) -> Result<Option<Vec<u8>>, HidError> {
+        match wait_readable(self.file.as_raw_fd(), watch, timeout).map_err(HidError::Read)? {
             Readiness::Timeout => return Ok(None),
             Readiness::HungUp => return Err(HidError::Gone),
             Readiness::Readable => {}

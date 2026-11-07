@@ -174,5 +174,6 @@ fn main() {
         .include_dir("cpp")
         .cpp_files(["cpp/shim.cpp", "cpp/shim.h"])
         .qt_module("Quick")
+        .qt_module("DBus")
         .build();
 }

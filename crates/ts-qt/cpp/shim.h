@@ -20,6 +20,12 @@ QString system_locale_name();
 // Quit only when asked (the window hides to the tray instead of ending the program).
 void set_quit_on_last_window_closed(bool quit);
 
+// Whether the desktop really shows tray icons: a StatusNotifierWatcher is on the session bus and
+// says a host (a panel that draws the icons) is registered. Qt's own "tray available" is true as
+// soon as the watcher exists, and hiding the window into a tray nobody draws leaves an invisible
+// program running. Asks the bus (500 ms at most); false without a session bus.
+bool tray_host_registered();
+
 // Lets QML read its own icon files with XMLHttpRequest (Qt treats qrc: as a local file and
 // forbids it unless QML_XHR_ALLOW_FILE_READ is set). Our QML is the only QML that runs.
 void allow_resource_reads();

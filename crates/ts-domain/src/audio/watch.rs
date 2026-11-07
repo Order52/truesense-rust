@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use super::Audio;
+use super::events::{Events, FALLBACK};
 use super::sound::DEFAULT_REPAIR_DELAYS;
 use super::voice::{VoiceDevice, VoiceMode};
 
@@ -97,18 +98,35 @@ pub struct MicWatcher {
     last: Option<Signature>,
     tick: u8,
     dts: DtsWatcher,
+    /// Change notices from the sound system; without them the loop asks once a second.
+    events: Option<Arc<dyn Events>>,
 }
 
 impl MicWatcher {
     /// A watcher in its initial state: the first pass applies the policy.
     pub fn new(audio: Arc<Audio>) -> Self {
-        Self { audio, last: None, tick: 0, dts: DtsWatcher::new() }
+        Self { audio, last: None, tick: 0, dts: DtsWatcher::new(), events: None }
+    }
+
+    /// Wakes the loop on the sound system's own change notices instead of polling it every
+    /// second. While the notices flow the loop runs a pass when one arrives and otherwise only
+    /// every [`FALLBACK`]; while they do not (the helper could not start or ended) it polls as before.
+    #[must_use]
+    pub fn with_events(mut self, events: Arc<dyn Events>) -> Self {
+        self.events = Some(events);
+        self
     }
 
     /// One pass of the loop; the caller waits a second between passes. Nothing in a pass can fail:
     /// a tool that does not answer reads as an empty answer, and the loop must outlive every tool
     /// hiccup.
     pub fn step(&mut self) {
+        self.pass(false);
+    }
+
+    /// One pass; the DTS check runs on every second call, or on every call with `dts_every_time`
+    /// (a pass that an event asked for may be about a new output).
+    fn pass(&mut self, dts_every_time: bool) {
         let audio = &self.audio;
         let signature = audio.signature();
         if self.last.as_ref() != Some(&signature) {
@@ -126,7 +144,7 @@ impl MicWatcher {
         }
         // The DTS check runs every second pass.
         self.tick = (self.tick + 1) % 2;
-        if self.tick == 0 {
+        if dts_every_time || self.tick == 0 {
             self.dts.step(audio);
         }
     }
@@ -142,8 +160,21 @@ impl MicWatcher {
                 DtsWatcher::cover(&audio); // logged inside; the watch goes on without it
             }
             while !stop.load(Ordering::Relaxed) {
-                self.step();
-                audio.clock.sleep(TICK);
+                let events = self.events.clone();
+                match events {
+                    Some(events) if events.healthy() => {
+                        self.pass(true);
+                        events.wait(FALLBACK, stop);
+                    }
+                    Some(events) => {
+                        self.step();
+                        events.wait(TICK, stop);
+                    }
+                    None => {
+                        self.step();
+                        audio.clock.sleep(TICK);
+                    }
+                }
             }
         });
     }

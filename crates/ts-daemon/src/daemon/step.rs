@@ -46,6 +46,10 @@ const CHARGE_CHECK_EVERY: u64 = chargefull::CHECK_EVERY_TICKS;
 /// The power managers are looked at when `tick % 150` is 5 (about every 5 minutes).
 const PM_GUARD_EVERY: u64 = 150;
 const PM_GUARD_PHASE: u64 = 5;
+/// The fan speeds are read from the firmware on the first tick and then every this many ticks;
+/// the ticks in between ask for the temperatures only (3 firmware calls instead of 5). The speeds
+/// are shown, never decided on, so they may be a few seconds old.
+const RPM_EVERY: u64 = 5;
 /// The smart fan follower always moves by one second per step, as the Python daemon did, whatever
 /// the real pace of the loop (it ticks every one or two seconds).
 const FOLLOWER_DT_S: f64 = 1.0;
@@ -240,7 +244,7 @@ impl Daemon {
         g.tick += 1;
         let load = self.sensors.cpu_load();
         let pkg = self.sensors.package_temp();
-        let reading = self.hw.sensors();
+        let reading = if g.tick % RPM_EVERY == 1 { self.hw.sensors() } else { self.hw.sensor_temps(g.rpm) };
         if let Err(e) = &reading {
             self.warn_every("device", 60.0, format!("device unavailable, waiting: {e}"));
         }

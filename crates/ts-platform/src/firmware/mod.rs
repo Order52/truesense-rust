@@ -30,10 +30,11 @@ pub const MAX_COMMAND_LEN: usize = 95;
 
 /// Every command of the module that only reads. The module whitelists its commands; this is the
 /// subset that can never change a setting, and the only thing [`ReadOnly`] lets through.
-pub const READ_ONLY_COMMANDS: [&str; 15] = [
+pub const READ_ONLY_COMMANDS: [&str; 16] = [
     "version",
     "caps",
     "sensors",
+    "sensors_temps",
     "get_mode",
     "get_modes",
     "get_gpu",

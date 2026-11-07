@@ -49,11 +49,14 @@ GridLayout {
         wrapMode: Text.Wrap
     }
 
+    // The model is the number of rows; each row reads its entry from `root.model`, so a new array
+    // with the same rows updates the bars in place instead of rebuilding them on every sample.
     Repeater {
-        model: root.model
+        model: root.model.length
         delegate: RowLayout {
             id: row
-            required property var modelData
+            required property int index
+            readonly property var modelData: root.model[index]
             readonly property real fraction: (modelData.value === null || modelData.value === undefined || isNaN(modelData.value))
                 ? 0 : Math.max(0, Math.min(1, modelData.value))
 

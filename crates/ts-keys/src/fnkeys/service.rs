@@ -26,10 +26,12 @@ use ts_domain::actions::ActionRunner;
 use ts_domain::keybinds::{self, ActionCheck, Bindings, Gesture, KeyEvent};
 use ts_domain::perkeyfx::{FrameSink, FxStore, Runner as AnimationRunner, epoch_seconds};
 use ts_foundation::sdnotify::{self, Notifier as Systemd};
+use ts_foundation::wake;
 
 use super::gestures::Gestures;
 use super::hid::{HidError, HidOpener, HidReports, HidrawOpener};
 use crate::renderer::Renderer;
+use crate::watch::Watcher;
 
 /// The icon of every message of this service.
 const OSD_ICON: &str = "power";
@@ -77,7 +79,9 @@ impl Clock for MonotonicClock {
     }
 
     fn sleep(&self, how_long: Duration) {
-        std::thread::sleep(how_long);
+        // A ring of the process bell (the stop signal, a changed file) ends the wait early; the
+        // loop looks at everything again either way.
+        wake::sleep(how_long);
     }
 }
 
@@ -136,6 +140,17 @@ pub struct LoopTiming {
     pub max_actions: usize,
 }
 
+impl LoopTiming {
+    /// The pace when a [`Watcher`] announces changes of the configuration: nothing needs asking
+    /// on a short timer any more, so the loop sleeps until a report, a gesture timer, the
+    /// watchdog, a changed file or (at the longest) `max_wait`, which only bounds how long a stop
+    /// that did not interrupt the wait can go unnoticed. The slow `config_poll` is a safety net
+    /// for a change that was not announced.
+    pub fn watching() -> Self {
+        Self { config_poll: Duration::from_secs(30), max_wait: Duration::from_secs(5), ..Self::default() }
+    }
+}
+
 impl Default for LoopTiming {
     fn default() -> Self {
         Self {
@@ -176,6 +191,23 @@ pub struct Env {
     pub timing: LoopTiming,
     /// Loops that live as long as the service.
     pub background: Vec<Background>,
+    /// Announces changes of the configuration and the user state (inotify), when it could be
+    /// started; the loop then waits on it together with the keyboard.
+    pub watch: Option<Arc<Watcher>>,
+}
+
+/// How long the two lighting loops sleep while nothing is running, when a watcher rings the bell
+/// on every change of the user state (they used to look twice a second).
+const QUIET_HEARTBEAT: Duration = Duration::from_secs(30);
+
+/// The pause both lighting loops return while idle (the same 500 ms in both).
+const IDLE_PAUSE: Duration = crate::renderer::IDLE;
+
+/// The wait of a lighting loop: an idle pause becomes [`QUIET_HEARTBEAT`] when `watching` (a
+/// change of the user state rings the bell and ends it at once, and so does a stop); every other
+/// pause (a frame, a back-off) is kept.
+pub fn lighting_sleep(watching: bool) -> impl Fn(Duration) + Send + 'static {
+    move |pause| wake::sleep(if watching && pause == IDLE_PAUSE { QUIET_HEARTBEAT } else { pause })
 }
 
 impl Env {
@@ -187,10 +219,20 @@ impl Env {
         let services = api.services();
         let sink: Arc<dyn FrameSink> = services.keyboard.clone();
         let fx = FxStore::new(Arc::clone(&services.user), Arc::clone(&sink), Arc::new(epoch_seconds));
-        let mut animation = AnimationRunner::new(move || fx.get(), sink, epoch_seconds, std::thread::sleep);
-        // The themes: drawn while one is the current look, idle (a look at the user state twice a
-        // second) otherwise.
-        let mut themes = Renderer::from_api(api);
+        // One inotify thread for the files the loops read: the configuration (the key loop) and the
+        // user state (the lighting loops). Without it (no inotify) everything polls as before.
+        let watch = Watcher::start(&[
+            services.user.path().to_path_buf(),
+            services.config.user.clone().unwrap_or_default(),
+        ])
+        .ok()
+        .map(Arc::new);
+        let watching = watch.as_ref().is_some_and(|w| w.complete());
+        let mut animation =
+            AnimationRunner::new(move || fx.get(), sink, epoch_seconds, lighting_sleep(watching));
+        // The themes: drawn while one is the current look, asleep (until the user state changes)
+        // otherwise.
+        let mut themes = Renderer::from_api(api, Box::new(lighting_sleep(watching)));
         Env {
             find_node: Arc::clone(&services.fn_key_node),
             opener: Arc::new(HidrawOpener),
@@ -203,7 +245,8 @@ impl Env {
             log: stdout_logger(),
             systemd: Systemd::from_env(),
             watchdog: sdnotify::watchdog_interval_from_env(),
-            timing: LoopTiming::default(),
+            timing: if watching { LoopTiming::watching() } else { LoopTiming::default() },
+            watch,
             background: vec![
                 Box::new(move |stop| animation.run(&stop)),
                 Box::new(move |stop| themes.run(&stop)),
@@ -307,6 +350,12 @@ impl Service {
         self.report_systemd("STOPPING", self.env.systemd.stopping());
         stop.store(true, Ordering::SeqCst);
         for handle in background {
+            // A loop that was between its stop check and its sleep when the bell rang would sleep
+            // out its pause: ring until it has ended (a few milliseconds, only while stopping).
+            while !handle.is_finished() {
+                wake::ring();
+                std::thread::sleep(Duration::from_millis(5));
+            }
             if handle.join().is_err() {
                 self.log("a background loop panicked");
             }
@@ -337,7 +386,7 @@ impl Service {
         self.run_timers(now);
         let wait = self.next_wait(now);
         let read = match &mut self.link {
-            Link::Up { reports } => Some(reports.read_report(wait)),
+            Link::Up { reports } => Some(reports.read_report_watching(wait, self.env.watch.as_deref())),
             Link::Down { .. } => {
                 self.env.clock.sleep(wait);
                 None
@@ -346,6 +395,8 @@ impl Service {
         match read {
             Some(Ok(Some(report))) => self.handle_report(&report, self.env.clock.now()),
             Some(Err(e)) => self.disconnect(&e),
+            // Woken by the watcher (or by the timeout): has the configuration changed? One `stat`.
+            Some(Ok(None)) if self.env.watch.is_some() => self.reload_if_changed(),
             Some(Ok(None)) | None => {}
         }
         let now = self.env.clock.now();

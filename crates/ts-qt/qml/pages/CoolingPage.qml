@@ -445,6 +445,7 @@ PageFrame {
                         Layout.preferredHeight: 26
                         minimum: 0
                         values: Live.history("sensors." + dial.modelData + "_fan_rpm")
+                        minRepaintMs: 3000
                     }
                     Text {
                         Layout.fillWidth: true

@@ -356,9 +356,10 @@ PageFrame {
         spacing: 8
         visible: page.view.banner.show
         Repeater {
-            model: page.view.banner.problems
+            model: page.view.banner.problems.length
             delegate: HomeBanner {
-                required property var modelData
+                required property int index
+                readonly property var modelData: page.view.banner.problems[index]
                 Layout.fillWidth: true
                 kind: modelData.kind === "daemon" ? "warn" : "bad"
                 text: modelData.kind === "daemon"
@@ -389,6 +390,7 @@ PageFrame {
             //% "Load %1"
             subText: qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.cpu.load))
             values: Live.history("sensors.cpu_temp")
+            minRepaintMs: 3000
             hot: page.tiles.cpu.hot === true
         }
         HomeStatTile {
@@ -400,6 +402,7 @@ PageFrame {
             valueText: Fmt.temp(page.tiles.gpu.temp)
             subText: qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.gpu.load))
             values: Live.history("sensors.gpu_temp")
+            minRepaintMs: 3000
             hot: page.tiles.gpu.hot === true
         }
         HomeStatTile {
@@ -413,6 +416,7 @@ PageFrame {
             subText: qsTrId("home_tile_fan_sub").arg(page.tiles.fan.cpu_rpm == null ? Fmt.unknown : Math.round(page.tiles.fan.cpu_rpm))
                                                    .arg(page.tiles.fan.gpu_rpm == null ? Fmt.unknown : Math.round(page.tiles.fan.gpu_rpm))
             values: Live.history("sensors.cpu_fan_rpm")
+            minRepaintMs: 3000
             minimum: 0
         }
         HomeStatTile {
@@ -430,6 +434,7 @@ PageFrame {
                     ? qsTrId("home_tile_batt")
                     : ""
             values: Live.history("battery_pct")
+            minRepaintMs: 3000
             minimum: 0
             maximum: 100
             hot: page.tiles.battery.low === true

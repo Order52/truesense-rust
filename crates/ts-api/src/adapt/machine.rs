@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
+use ts_domain::audio::events::{EventSource, PactlSubscribe};
 use ts_domain::audio::{DtsLocator, system_dts_locator};
 use ts_domain::keyboard::HidOpener;
 use ts_foundation::fsx;
@@ -54,6 +55,10 @@ pub struct Machine {
     pub sleep: Sleeper,
     /// Wall-clock seconds since the epoch.
     pub clock: Clock,
+    /// Where the sound system's change notices come from (`pactl subscribe`); `None` makes the
+    /// audio watcher ask once a second, as it did before, which is what a test wants (no process
+    /// is ever started by a test).
+    pub audio_events: Option<Arc<dyn EventSource>>,
 }
 
 impl Machine {
@@ -72,6 +77,7 @@ impl Machine {
             dts_locator: system_dts_locator(),
             sleep: Arc::new(std::thread::sleep),
             clock: Arc::new(wall_clock),
+            audio_events: Some(Arc::new(PactlSubscribe)),
         }
     }
 

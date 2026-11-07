@@ -27,6 +27,7 @@
 
 mod alsa;
 mod dts;
+pub mod events;
 mod mic;
 mod output;
 pub mod parse;
@@ -48,6 +49,7 @@ use std::time::{Duration, Instant};
 use ts_foundation::config::Config;
 use ts_foundation::fsx::{self, FsError};
 use ts_foundation::userstate;
+use ts_foundation::wake;
 use ts_platform::hw::CommandRunner;
 
 pub use alsa::Jack;
@@ -115,17 +117,13 @@ impl Clock for SystemClock {
     }
 
     fn sleep(&self, d: Duration) {
-        let slice = Duration::from_millis(50);
-        let end = Instant::now() + d;
-        loop {
-            if self.stop.as_ref().is_some_and(|s| s.load(Ordering::Relaxed)) {
-                return;
+        match &self.stop {
+            // The signal bridge rings the process bell after it sets the flag, so the sleeper
+            // wakes at once instead of looking at the flag every 50 ms.
+            Some(stop) => {
+                wake::wait_until(d, || stop.load(Ordering::Relaxed));
             }
-            let left = end.saturating_duration_since(Instant::now());
-            if left.is_zero() {
-                return;
-            }
-            std::thread::sleep(left.min(slice));
+            None => std::thread::sleep(d),
         }
     }
 }
@@ -351,6 +349,7 @@ pub struct Audio {
     env: EnvLookup,
     log: Logger,
     dts_locator: DtsLocator,
+    events: Option<Arc<dyn events::EventSource>>,
 }
 
 impl Audio {
@@ -368,6 +367,7 @@ impl Audio {
             env: Arc::new(fsx::env_nonempty),
             log: Arc::new(|line| println!("{line}")),
             dts_locator: system_dts_locator(),
+            events: None,
         }
     }
 
@@ -411,6 +411,18 @@ impl Audio {
     pub fn with_dts_locator(mut self, locator: DtsLocator) -> Self {
         self.dts_locator = locator;
         self
+    }
+
+    /// Lets the watcher wait for the sound system's change notices instead of asking every second.
+    #[must_use]
+    pub fn with_event_source(mut self, source: Option<Arc<dyn events::EventSource>>) -> Self {
+        self.events = source;
+        self
+    }
+
+    /// Where change notices come from, when there is a source.
+    pub fn event_source(&self) -> Option<Arc<dyn events::EventSource>> {
+        self.events.clone()
     }
 
     /// Whether the RNNoise LADSPA plugin (Purified Voice) is installed.

@@ -138,10 +138,11 @@ impl Device for Simulator {
 }
 
 /// The module's command table (`ts_cmds`): name and whether it takes an argument.
-const COMMANDS: [(&str, bool); 27] = [
+const COMMANDS: [(&str, bool); 28] = [
     ("version", false),
     ("caps", false),
     ("sensors", false),
+    ("sensors_temps", false),
     ("get_mode", false),
     ("get_modes", false),
     ("set_mode", true),
@@ -241,6 +242,7 @@ fn dispatch(s: &mut Snapshot, name: &str, arg: &str) -> Option<String> {
             "ok cpu={} sys={} gpu={} cpu_rpm={} gpu_rpm={}\n",
             s.temps[0], s.temps[1], s.temps[2], s.rpm[0], s.rpm[1]
         ),
+        "sensors_temps" => format!("ok cpu={} sys={} gpu={}\n", s.temps[0], s.temps[1], s.temps[2]),
         "get_mode" => format!("ok mode={}\n", s.mode),
         // Bits 0, 1, 4, 5 and 6: the five modes of the PH16-71.
         "get_modes" => "ok mask=0x73\n".to_string(),

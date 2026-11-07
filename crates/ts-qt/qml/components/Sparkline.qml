@@ -44,7 +44,40 @@ Item {
         return { lo: lo, hi: hi }
     }
 
-    onValuesChanged: canvas.requestPaint()
+    /// The shortest time between two repaints caused by new `values`. 0 repaints at once. A
+    /// chart of minutes of history that shifts by one sample a second has nothing to show in the
+    /// second after the last repaint, and a canvas repaint is the most expensive thing a live page
+    /// does (each costs about as much as the rest of the second's update together), so the live
+    /// pages ask for a few seconds; a change that arrives sooner is drawn when the time is up.
+    property int minRepaintMs: 0
+
+    // The live history arrives as a new array every second even when it holds the same numbers (a
+    // flat fan-speed or battery series): repaint only when what would be drawn is different.
+    property string _drawn: ""
+    property double _paintedAt: 0
+    function _repaintIfChanged() {
+        var key = JSON.stringify(values)
+        if (key === _drawn) { settle.stop(); return }
+        var wait = minRepaintMs - (Date.now() - _paintedAt)
+        if (wait > 0) {
+            settle.interval = wait
+            settle.restart()
+            return
+        }
+        _paint(key)
+    }
+    function _paint(key) {
+        settle.stop()
+        _drawn = key
+        _paintedAt = Date.now()
+        canvas.requestPaint()
+    }
+    Timer {
+        id: settle
+        // Only runs while a change waits for its turn.
+        onTriggered: root._repaintIfChanged()
+    }
+    onValuesChanged: _repaintIfChanged()
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
     onLineColorChanged: canvas.requestPaint()

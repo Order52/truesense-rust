@@ -12,6 +12,8 @@ Rectangle {
     property string valueText: "–"
     property string subText: ""
     property var values: []
+    /// Passed to the sparkline: the shortest time between two repaints of the chart.
+    property int minRepaintMs: 0
     property real minimum: NaN
     property real maximum: NaN
     property bool hot: false
@@ -63,6 +65,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 30
             values: root.values
+            minRepaintMs: root.minRepaintMs
             minimum: root.minimum
             maximum: root.maximum
             lineColor: root.hot ? Theme.bad : Theme.chartLine

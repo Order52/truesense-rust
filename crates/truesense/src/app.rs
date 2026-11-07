@@ -68,10 +68,12 @@ fn run_cli(args: &[String]) -> i32 {
         }
     };
     let launcher = SystemLauncher::new(api.clone());
-    let stdout = io::stdout();
-    let stderr = io::stderr();
+    // Not locked for the whole command: a held lock would block every other thread that prints
+    // (the key service's log lines from its action and lighting threads, the audio watcher's),
+    // for as long as the command runs. Each write locks for itself.
+    let (mut out, mut err) = (io::stdout(), io::stderr());
     let stdin = io::stdin();
-    let (mut out, mut err, mut input) = (stdout.lock(), stderr.lock(), stdin.lock());
+    let mut input = stdin.lock();
     let mut io = Io::new(&mut out, &mut err, &mut input);
     io.columns = terminal_columns();
     io.colour = signals::is_terminal(1);
