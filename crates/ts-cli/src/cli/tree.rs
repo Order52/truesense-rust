@@ -312,7 +312,9 @@ fn keyboard() -> Command {
                 .arg(Arg::opt("--color").default_str("00aec7"))
                 .arg(Arg::opt("--speed").int().default_int(5))
                 .arg(brightness())
-                .arg(Arg::opt("--direction").int().default_int(0)),
+                .arg(Arg::opt("--direction").help(
+                    "wave only: left-to-right | right-to-left | bottom-to-top | top-to-bottom | clockwise | counter-clockwise, or 0..5 in that order (default: left-to-right)",
+                )),
             verb("fx")
                 .help("per-key animation on chosen keys (drawn by the key service, about 5 frames a second): off | pulse | wave | cycle | twinkle | rainbow | scanner | comet | ripple | rain | matrix | fire | plasma | aurora | lightning | confetti | starlight | mood | breathing")
                 .arg(Arg::pos("mode").choices_owned(fx_modes))

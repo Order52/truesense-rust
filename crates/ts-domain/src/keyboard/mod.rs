@@ -24,6 +24,7 @@
 //! ([`HidrawOpener`]), the simulator ([`SimHid`], `TRUESENSE_SIM=1`) and the recording fakes of
 //! the tests all drive the same code.
 
+mod direction;
 mod hidraw;
 mod sim;
 mod state;
@@ -41,6 +42,7 @@ use ts_platform::hw::{HwError, KbTimeoutFlag, Sleeper};
 
 use crate::keymap::{self, Color, KeyMap, KeymapError};
 
+pub use direction::{Direction, DirectionError, allowed as direction_choices, takes_direction};
 pub use hidraw::{HidrawOpener, find_node, is_lighting_interface};
 pub use sim::SimHid;
 pub use state::{State, mode};
@@ -368,7 +370,8 @@ impl Keyboard {
             .ok()
             .filter(|_| (SPEED_MIN..=SPEED_MAX).contains(&speed))
             .ok_or_else(|| invalid(format!("speed {SPEED_MIN}..{SPEED_MAX}, brightness 0..{MAX_BRIGHT}")))?;
-        // The packet carries direction + 1 in one byte.
+        direction::check(name, direction).map_err(|e| invalid(e.to_string()))?;
+        // The packet carries direction + 1 in one byte (the Wave's six are `Direction`).
         let direction_byte = u8::try_from(direction)
             .ok()
             .and_then(|d| d.checked_add(1))
@@ -736,5 +739,7 @@ impl KbTimeoutFlag for TimeoutFlag {
     }
 }
 
+#[cfg(test)]
+mod direction_tests;
 #[cfg(test)]
 mod tests;

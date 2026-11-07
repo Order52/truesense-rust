@@ -2923,6 +2923,22 @@
         <source>Right to left</source>
         <translation>Right to left</translation>
     </message>
+    <message id="light_kb_dir_btt">
+        <source>Bottom to top</source>
+        <translation>Bottom to top</translation>
+    </message>
+    <message id="light_kb_dir_ttb">
+        <source>Top to bottom</source>
+        <translation>Top to bottom</translation>
+    </message>
+    <message id="light_kb_dir_cw">
+        <source>Clockwise</source>
+        <translation>Clockwise</translation>
+    </message>
+    <message id="light_kb_dir_ccw">
+        <source>Counter-clockwise</source>
+        <translation>Counter-clockwise</translation>
+    </message>
     <message id="light_kb_perkey_note">
         <source>The keyboard shows your own key colours. Pick an effect to replace them.</source>
         <translation>The keyboard shows your own key colours. Pick an effect to replace them.</translation>

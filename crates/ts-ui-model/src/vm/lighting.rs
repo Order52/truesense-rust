@@ -115,6 +115,23 @@ fn hue_ramp(t: f64) -> Rgb {
     hsv_to_rgb(Hsv { h: t.rem_euclid(1.0) * 360.0, s: 1.0, v: 1.0 })
 }
 
+/// The hue position of a cell for the Wave's still preview in the given direction (0 to 5, see
+/// `ts_api::api::wave_directions`): along the columns, the rows, or the angle around the middle of
+/// the keyboard, the way the reference project draws the firmware wave (`kb.rs`, `make_wave`).
+fn wave_position(cell: usize, direction: i64) -> f64 {
+    let (col, row) = ((cell / ROWS as usize) as f64, (cell % ROWS as usize) as f64);
+    let (x, y) = ((col + 0.5) / 22.0, (row + 0.5) / ROWS as f64);
+    let angle = ((y - 0.5) * ROWS as f64).atan2((x - 0.5) * 22.0) / std::f64::consts::TAU;
+    match direction {
+        1 => 1.0 - x,
+        2 => 1.0 - y,
+        3 => y,
+        4 => angle,
+        5 => -angle,
+        _ => x,
+    }
+}
+
 fn lerp_rgb(a: Rgb, b: Rgb, t: f64) -> Rgb {
     [0, 1, 2].map(|i| clamp_byte(f64::from(a[i]) + (f64::from(b[i]) - f64::from(a[i])) * t))
 }
@@ -542,9 +559,12 @@ pub struct Effect {
     pub colour: bool,
     /// The effect has a speed (a static colour has none).
     pub speed: bool,
-    /// The effect travels, so a direction makes sense. This only enables the control: the byte is
-    /// always sent, and the keyboard ignores it where it means nothing. [U: which effects honour
-    /// it was never measured on the laptop.]
+    /// The effect takes a direction. Only the Wave does, with six values (0 to 5, `ts_api::api::wave_directions`): the
+    /// reference project (`predator-sense`, hardware-confirmed on a PH16-71 on 2026-10-15) lists
+    /// `uses_direction` for the Wave alone, asserts it for all 14 effects in its test
+    /// `colour_speed_and_direction_match_the_spec_table`, and its `wire_direction` documents the
+    /// six bytes. No other effect was seen to react, so the control is enabled for the Wave only
+    /// and the other effects are sent direction 0.
     pub direction: bool,
     /// Lowest brightness at which picking this effect shows anything (neon was invisible at 25 and
     /// shows at 50: `docs/verification-log.md`; the others need only a visible level).
@@ -560,15 +580,15 @@ pub const EFFECTS: [Effect; 13] = [
     fx("static", "lighting/static", true, false, false, 10),
     fx("breathing", "lighting/breathing", true, true, false, 10),
     fx("wave", "lighting/wave", false, true, true, 10),
-    fx("snake", "lighting/snake", true, true, true, 10),
-    fx("ripple", "lighting/ripple", true, true, true, 10),
-    fx("neon", "lighting/rainbow", false, true, true, 50),
-    fx("raindrop", "lighting/rain", true, true, true, 10),
+    fx("snake", "lighting/snake", true, true, false, 10),
+    fx("ripple", "lighting/ripple", true, true, false, 10),
+    fx("neon", "lighting/rainbow", false, true, false, 50),
+    fx("raindrop", "lighting/rain", true, true, false, 10),
     fx("lightning", "lighting/lightning", true, true, false, 10),
     fx("spot", "lighting/spot", true, true, false, 10),
     fx("star", "lighting/stars", true, true, false, 10),
-    fx("fireball", "lighting/fireball", true, true, true, 10),
-    fx("snow", "lighting/snow", true, true, true, 10),
+    fx("fireball", "lighting/fireball", true, true, false, 10),
+    fx("snow", "lighting/snow", true, true, false, 10),
     fx("heartbeat", "lighting/heartbeat", true, true, false, 10),
 ];
 
@@ -596,7 +616,13 @@ pub fn pick_effect(name: &str, current: &Value) -> Result<Value, String> {
     let colour = str_at(current, "colour").and_then(norm_hex).unwrap_or_else(|| STOCK.to_owned());
     let speed = i64_at(current, "speed").filter(|s| (SPEED_RANGE.0..=SPEED_RANGE.1).contains(s)).unwrap_or(DEFAULT_SPEED);
     let level = i64_at(current, "brightness").unwrap_or(0).clamp(0, KB_MAX);
-    let direction = i64_at(current, "direction").filter(|d| matches!(d, 0 | 1)).unwrap_or(0);
+    // The wave keeps the direction the person chose; every other effect is sent 0 (the reference
+    // project's default, wire byte 1) because none of them was seen to honour one.
+    let direction = if e.direction {
+        i64_at(current, "direction").filter(|d| (0..6).contains(d)).unwrap_or(0)
+    } else {
+        0
+    };
     Ok(json!({
         "name": e.id, "color": colour, "speed": speed,
         "brightness": level.max(e.pick_floor), "direction": direction,
@@ -610,12 +636,14 @@ pub const FX_MODES: [&str; 18] = [
     "plasma", "aurora", "lightning", "confetti", "starlight", "mood",
 ];
 
-/// The rear bar's effects: id, icon, whether it has a speed and whether it travels (a direction
-/// only makes sense for the moving ones; [U] not measured, like the keyboard's table).
+/// The rear bar's effects: id, icon, whether it has a speed and whether it travels. The bar's
+/// modes are the kernel module's (2 neon, 3 wave); the reference project measured on the same
+/// laptop that its modes 3 and 4 follow a direction and its ripple does not, and its mode 2
+/// (code 2 is our neon) is not among those that do. So only our wave (code 3) keeps the control.
 const REAR_EFFECTS: [(&str, &str, bool, bool); 5] = [
     ("static", "lighting/static", false, false),
     ("breathing", "lighting/breathing", true, false),
-    ("neon", "lighting/rainbow", true, true),
+    ("neon", "lighting/rainbow", true, false),
     ("wave", "lighting/wave", true, true),
     ("twinkling", "lighting/stars", true, false),
 ];
@@ -685,7 +713,11 @@ pub fn preview(look: &Value, cells: Option<&Value>) -> Value {
             let pattern: Vec<String> = (0..CELLS)
                 .map(|cell| {
                     if !uses_colour {
-                        // The firmware ignores the colour: a hue ramp across the columns.
+                        // The firmware ignores the colour: a hue ramp across the columns, or along
+                        // the wave's direction.
+                        if name == "wave" {
+                            return to_hex(hue_ramp(wave_position(cell, i64_at(look, "direction").unwrap_or(0))));
+                        }
                         return to_hex(hue_ramp((cell as f64 / ROWS as f64) / 22.0));
                     }
                     if still || name == "breathing" {
@@ -1611,8 +1643,54 @@ mod tests {
         assert!(!effect("static").unwrap().speed);
         assert!(effect("breathing").unwrap().speed);
         assert_eq!(effect("neon").unwrap().pick_floor, 50);
-        assert!(!effect("static").unwrap().direction && effect("wave").unwrap().direction);
+        let with_direction: Vec<&str> = EFFECTS.iter().filter(|e| e.direction).map(|e| e.id).collect();
+        assert_eq!(with_direction, ["wave"], "only the wave honours a direction (reference, PH16-71)");
         assert_eq!(call("effects", &json!({})).unwrap().as_array().unwrap().len(), 13);
+    }
+
+    #[test]
+    fn the_wave_preview_follows_its_direction() {
+        let shot = |direction: i64| {
+            let p = preview(&json!({"mode": "effect", "name": "wave", "brightness": 50, "direction": direction}), None);
+            p["cells"].as_array().unwrap().iter().map(|c| c.as_str().unwrap().to_owned()).collect::<Vec<_>>()
+        };
+        let cell = |col: usize, row: usize| col * 6 + row;
+        let (ltr, rtl, up, down) = (shot(0), shot(1), shot(2), shot(3));
+        // Left to right: same hue down a column, different along a row; right to left mirrors it.
+        assert_eq!(ltr[cell(3, 0)], ltr[cell(3, 5)]);
+        assert_ne!(ltr[cell(3, 0)], ltr[cell(15, 0)]);
+        assert_eq!(rtl[cell(3, 2)], ltr[cell(18, 2)]);
+        // Vertical directions: the same hue along a row, different down a column, opposite to each other.
+        assert_eq!(up[cell(2, 1)], up[cell(17, 1)]);
+        assert_ne!(up[cell(2, 0)], up[cell(2, 5)]);
+        assert_eq!(up[cell(2, 0)], down[cell(2, 5)]);
+        // Around the middle: the two rotations are mirror images and differ from the straight ones.
+        let (cw, ccw) = (shot(4), shot(5));
+        assert_ne!(cw, ccw);
+        assert_ne!(cw, ltr);
+        assert_ne!(cw[cell(11, 0)], ccw[cell(11, 0)], "above the middle the angle has opposite signs");
+        assert_eq!(cw[cell(11, 0)], ccw[cell(11, 5)], "the mirror image: above and below swap");
+    }
+
+    #[test]
+    fn only_the_wave_keeps_a_direction_when_picked() {
+        for d in 0..=5 {
+            let r = pick_effect("wave", &json!({"direction": d})).unwrap();
+            assert_eq!(r["direction"], d);
+        }
+        assert_eq!(pick_effect("wave", &json!({"direction": 6})).unwrap()["direction"], 0);
+        assert_eq!(pick_effect("wave", &json!({"direction": -1})).unwrap()["direction"], 0);
+        for e in EFFECTS.iter().filter(|e| e.id != "wave") {
+            assert_eq!(pick_effect(e.id, &json!({"direction": 4})).unwrap()["direction"], 0, "{}", e.id);
+        }
+    }
+
+    #[test]
+    fn the_rear_bar_keeps_the_direction_control_on_the_wave_only() {
+        let rows = call("rear_effects", &json!({})).unwrap();
+        let with: Vec<&str> =
+            rows.as_array().unwrap().iter().filter(|r| r["direction"] == true).map(|r| r["id"].as_str().unwrap()).collect();
+        assert_eq!(with, ["wave"]);
     }
 
     #[test]

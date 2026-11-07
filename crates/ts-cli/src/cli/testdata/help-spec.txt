@@ -821,6 +821,9 @@ options:
   --speed SPEED
   --brightness BRIGHTNESS
   --direction DIRECTION
+                        wave only: left-to-right | right-to-left | bottom-to-
+                        top | top-to-bottom | clockwise | counter-clockwise,
+                        or 0..5 in that order (default: left-to-right)
 
 --------------------------------------------------
 VERB keyboard fx

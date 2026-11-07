@@ -2,7 +2,7 @@
 #![forbid(unsafe_code)]
 
 use serde_json::{Value, json};
-use ts_api::api::{Api, EffectRequest, LightingProfileAnswer, RearRequest};
+use ts_api::api::{Api, EffectRequest, LightingProfileAnswer, RearRequest, parse_direction};
 
 use super::args::{Args, SWITCH, SWITCH_NO_TOGGLE, on_off, parse_word};
 use super::{CommandError, Ctx, Outcome, lift, names, val, with_builtin};
@@ -94,9 +94,18 @@ fn effect(api: &Api, a: &Args) -> Outcome {
     request.color = if color.is_empty() { DEFAULT_EFFECT_COLOR.to_owned() } else { color };
     request.speed = a.int_opt("speed")?.unwrap_or(DEFAULT_EFFECT_SPEED);
     request.brightness = a.int_opt("brightness")?;
-    request.direction = a.int_opt("direction")?.unwrap_or(0);
+    request.direction = wave_direction(a)?;
     api.set_keyboard_effect(&request)?;
     Ok(json!("sent"))
+}
+
+/// The `direction` member of `keyboard effect`: a number (the stored 0 to 5 of the wave) or one of
+/// the names (`clockwise`, `counter-clockwise`, `left-to-right`, ...); absent is 0.
+pub(super) fn wave_direction(a: &Args) -> Result<i64, CommandError> {
+    match a.raw("direction") {
+        Some(Value::String(text)) => Ok(parse_direction(text)?),
+        _ => Ok(a.int_opt("direction")?.unwrap_or(0)),
+    }
 }
 
 fn set_cells(api: &Api, a: &Args) -> Outcome {

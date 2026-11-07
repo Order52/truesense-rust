@@ -354,3 +354,35 @@ fn key_names_and_layout_agree() {
     assert_eq!(cells[0].row, cells[0].cell % 6);
     assert!(json["keys"].is_object() && json["groups"].is_array());
 }
+
+#[test]
+fn the_wave_directions_are_listed_and_parsed_and_reach_the_keyboard() {
+    use crate::api::{parse_direction, wave_directions};
+    let list = wave_directions();
+    let ids: Vec<&str> = list.iter().map(|d| d.id).collect();
+    assert_eq!(
+        ids,
+        [
+            "left-to-right",
+            "right-to-left",
+            "bottom-to-top",
+            "top-to-bottom",
+            "clockwise",
+            "counter-clockwise"
+        ]
+    );
+    assert_eq!(list.iter().map(|d| d.wire).collect::<Vec<_>>(), [1, 2, 3, 4, 5, 6]);
+    assert_eq!(parse_direction("clockwise").unwrap(), 4);
+    assert_eq!(parse_direction("ccw").unwrap(), 5);
+    assert_eq!(parse_direction("3").unwrap(), 3);
+    assert!(parse_direction("sideways").unwrap_err().to_string().contains("0..5"));
+    assert_eq!(parse_direction("200").unwrap(), 200, "numbers go on: the effect decides");
+    let fx = no_daemon();
+    fx.api.set_keyboard_effect(&EffectRequest { direction: 4, ..EffectRequest::new("wave") }).unwrap();
+    assert_eq!(fx.api.keyboard_last().direction, 4);
+    let err = fx
+        .api
+        .set_keyboard_effect(&EffectRequest { direction: 6, ..EffectRequest::new("wave") })
+        .unwrap_err();
+    assert!(err.to_string().starts_with("wave direction 6"), "{err}");
+}

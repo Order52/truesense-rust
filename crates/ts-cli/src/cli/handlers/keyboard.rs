@@ -4,7 +4,7 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use ts_api::api::{AnimationRequest, EffectRequest, LightingProfileAnswer, PaintItem};
+use ts_api::api::{AnimationRequest, EffectRequest, LightingProfileAnswer, PaintItem, parse_direction};
 use ts_domain::keyboard::MAX_BRIGHT;
 
 use super::{Cx, Fail, Outcome, fail};
@@ -41,7 +41,10 @@ pub(super) fn keyboard(cx: &mut Cx<'_, '_>, verb: Option<&str>, m: &Matches) -> 
                 color: m.str("color").unwrap_or("00aec7").to_owned(),
                 speed: m.int("speed").unwrap_or(5),
                 brightness,
-                direction: m.int("direction").unwrap_or(0),
+                direction: match m.str("direction") {
+                    Some(text) => parse_direction(text)?,
+                    None => 0,
+                },
             };
             api.set_keyboard_effect(&request)?;
             sent(cx, "sent");

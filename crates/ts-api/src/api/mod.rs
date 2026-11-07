@@ -107,7 +107,7 @@ pub use favourites::{FavouriteInfo, FavouriteKind};
 pub use gpu::{AppliedGpuUndervolt, GpuApplied, GpuUndervoltState};
 pub use keyboard::{
     AnimationRequest, DesignInfo, EffectRequest, KeyCell, KeyLayout, KeyNames, KeyboardLook, KeyboardStatus,
-    LightingProfileAnswer, Ordered, PaintItem,
+    LightingProfileAnswer, Ordered, PaintItem, WaveDirection, parse_direction, wave_directions,
 };
 pub use keys::{KeyBindings, KeyProfileEdit, KeyProfileView, KeyTiming, KeysSettings};
 pub use looks::StartupSettings;

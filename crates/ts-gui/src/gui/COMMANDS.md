@@ -98,7 +98,7 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 | `keyboard` | `status` | none | `{"look", "brightness", "max", "backlight_timeout", "lighting_profiles"}` (`look` is `{}` or `{"mode": "effect", "name", "color", "speed", "brightness"}` / `{"mode": "perkey", ...}`) | `cli.h_keyboard` status |
 | `keyboard` | `on` / `off` | none | message | `actions.run("keyboard:on")` |
 | `keyboard` | `brightness` | `{"level": 0..50}` | the level | `keyboard.set_brightness` |
-| `keyboard` | `effect` | `{"name", "color": "rrggbb", "speed": 1..12, "brightness": 0..50, "direction"?: 0\|1}` | message | `keyboard.set_effect` |
+| `keyboard` | `effect` | `{"name", "color": "rrggbb", "speed": 1..12, "brightness": 0..50, "direction"?: 0..5 or a name}`; the direction is used by `wave` only: 0 `left-to-right`, 1 `right-to-left`, 2 `bottom-to-top`, 3 `top-to-bottom`, 4 `clockwise`, 5 `counter-clockwise` (wire bytes 1 to 6, confirmed on a PH16-71; `cw` and `ccw` are accepted too); any other effect keeps the old rule (0..254, ignored by the keyboard) | message | `keyboard.set_effect` |
 | `keyboard` | `color` | `{"color": "rrggbb"}` | message; stays in the running effect | `keyboard.set_color` |
 | `keyboard` | `speed` | `{"level": 1..12}` | message | `keyboard.set_speed` |
 | `keyboard` | `operating` | `{"action": ...}` | bool: the colour follows the power mode | `daemon set operating_follow` |
