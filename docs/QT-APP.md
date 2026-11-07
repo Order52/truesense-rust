@@ -21,6 +21,10 @@ TRUESENSE_QT_EXIT_AFTER_MS=2000 TRUESENSE_QT_SHOT=/path/shot.png truesense-qt --
 at nothing, so nothing touches the real desktop). Never run the GUI without
 `QT_QPA_PLATFORM=offscreen` on a machine where somebody works.
 
+## Installing and releasing
+
+`truesense-qt` is an optional, dynamic program next to the static `truesense`: `truesense gui` hands over to it when it is installed (and opens the web window when it is not). `tools/install.sh` finds or builds it (`TRUESENSE_QT_BIN`, `bin/truesense-qt`, `target/release/truesense-qt` from `make qt-release`, else a build from source as your user), refuses a stale one, installs the Qt 6 run-time packages, swaps it in with a `.prev` rollback copy and installs the launcher entry and the About-box texts; see docs/INSTALL.md ("The Qt window"). The Arch package builds and ships it (it depends on `qt6-base`, `qt6-declarative`, `qt6-svg`), the release workflow attaches it as `truesense-qt-X.Y.Z-linux-x86_64.tar.gz`, and CI runs `make qt-ci` in an Arch container (docs/RELEASING.md). The shell tests that cover this are `tools/shelltest/test_sandbox_qt.sh` (installer and uninstaller in the sandbox), and the Qt cases of `test_installer.sh`, `test_packaging.sh` and `test_get.sh`.
+
 ## What a page agent writes
 
 1. **The QML file** `crates/ts-qt/qml/pages/<Name>Page.qml` (the placeholder exists already; replace

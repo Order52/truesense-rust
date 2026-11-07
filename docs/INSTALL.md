@@ -1,13 +1,13 @@
 # Installing TrueSense
 
-Requires: an Acer Predator Helios 16 **PH16-71**, systemd, Linux with the kernel headers of your running kernel (and dkms and a C compiler, to build the small kernel module). TrueSense itself is one static program: no Python, no Qt, no runtime to install.
+Requires: an Acer Predator Helios 16 **PH16-71**, systemd, Linux with the kernel headers of your running kernel (and dkms and a C compiler, to build the small kernel module). TrueSense itself is one static program (`truesense`): no Python, no runtime to install. The native window, `truesense-qt`, is an optional second program that needs Qt 6 (see "The Qt window" below); without it `truesense gui` opens the built-in web window and everything else is the same.
 
 ## One line
 ```
 curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash
 curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash -s -- --no-gui   # extra options
 ```
-`get.sh` finds the newest release, downloads it, **checks it against the release's `SHA256SUMS`** (a mismatch, or a missing list, stops the install), checks that the download really is the version it was asked for, and runs `tools/install.sh`. Pin a version with `TRUESENSE_VERSION=0.5.0`, also require an exact hash with `TRUESENSE_SHA256=<hash>`, and with the GitHub CLI installed add `TRUESENSE_VERIFY_ATTESTATION=1` to check the signed build provenance too. Read the script first if you like: it is short.
+`get.sh` finds the newest release, downloads it, **checks it against the release's `SHA256SUMS`** (a mismatch, or a missing list, stops the install), checks that the download really is the version it was asked for, and runs `tools/install.sh`. If the release carries the prebuilt Qt window (`truesense-qt-X.Y.Z-linux-x86_64.tar.gz`), `get.sh` downloads it too, checks it against the same `SHA256SUMS` (and attestation), and puts it into the bundle for the installer; `TRUESENSE_NO_QT=1` skips it. Pin a version with `TRUESENSE_VERSION=0.5.0`, also require an exact hash with `TRUESENSE_SHA256=<hash>`, and with the GitHub CLI installed add `TRUESENSE_VERIFY_ATTESTATION=1` to check the signed build provenance too. Read the script first if you like: it is short.
 
 ## From a clone
 ```
@@ -22,7 +22,8 @@ Which program the installer installs, in this order: `TRUESENSE_BIN=/path` if yo
 |---|---|
 | `--check` | report only, change nothing |
 | `--no-deps` | never run the package manager, only report what is missing |
-| `--no-gui` | accepted for compatibility: the window is part of the program and needs no extra package |
+| `--no-qt` | do not install the Qt window (`truesense-qt`); `truesense gui` opens the built-in web window |
+| `--no-gui` | accepted for compatibility, does nothing (the web window is part of the program) |
 | `--with-audio` | also install the RNNoise plugin where packaged (Arch) |
 | `--no-services` | install files, do not enable/start services |
 | `--module-only` | only the kernel module |
@@ -31,6 +32,26 @@ Which program the installer installs, in this order: `TRUESENSE_BIN=/path` if yo
 | `--force` | allow a model other than PH16-71 (unsupported) |
 | `--uninstall` | remove (same as `tools/uninstall.sh [--purge]`) |
 
+## The Qt window (`truesense-qt`)
+`truesense gui`, the launcher entry and the PREDATOR key all open the same window: the Qt app when `truesense-qt` is installed (next to `truesense`, or in `/usr/local/bin` or `/usr/bin`), the built-in web window otherwise. The Qt app is a normal dynamic program, so it needs Qt 6 at run time and is **optional for the installer: it can only be left out, never make the install fail**.
+
+Which window the installer installs, in this order: `TRUESENSE_QT_BIN=/path` (use `sudo env TRUESENSE_QT_BIN=... tools/install.sh`); `bin/truesense-qt` (what the prebuilt tarball unpacks to, see below); `target/release/truesense-qt` (`make qt-release`); otherwise it is **built from the source tree as the user who ran `sudo`**, but only when a Rust toolchain, a C++ compiler, `qmake6` and the Qt 6 declarative and svg development files are all there. When one is missing the installer says which, names the development packages for your distribution, installs everything else, and leaves the web window working. `--no-qt` skips all of it. As with the program, a `truesense-qt` whose `--version` differs from this tree's version is not installed (a stale build): one you named with `TRUESENSE_QT_BIN` stops the install before anything changes, one found by itself is left out with the reason, and a window that is already installed stays.
+
+Run-time packages (`tools/install.sh --check` lists them under "optional"; the installer installs them with the package manager unless you pass `--no-deps`, and leaves the window out if that fails):
+
+| family | packages |
+|---|---|
+| Arch, CachyOS, Manjaro | `qt6-base qt6-declarative qt6-svg` (`qt6-wayland` for native Wayland) |
+| Debian, Ubuntu, Mint | `libqt6svg6 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qt-labs-platform` |
+| Fedora | `qt6-qtbase-gui qt6-qtdeclarative qt6-qtsvg` |
+| openSUSE | `libQt6Svg6 qt6-declarative-imports` |
+
+Only the Arch names were checked against a real system; the others are the packages that provide the same libraries and QML modules on those distributions and are untested. To build it yourself you need the matching development packages (Arch: `qt6-base qt6-declarative qt6-svg qt6-tools`; Debian: `qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools qt6-svg-dev qt6-l10n-tools libgl-dev`; Fedora: `qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel qt6-qttools-devel`; openSUSE: `qt6-base-devel qt6-declarative-devel qt6-svg-devel qt6-tools-devel`), then `make qt-release` (QMAKE is `/usr/bin/qmake6`, override with `QMAKE=...`) and `sudo tools/install.sh`.
+
+The files: `$PREFIX/bin/truesense-qt` (swapped in beside the old one like the program; the old one is kept as `truesense-qt.prev` until the service has started, and put back with the old program if it does not), the launcher entry `truesense.desktop` (it runs `truesense gui`, so it works with or without the Qt window; with it installed it also offers *Monitor*, *Cooling* and *Lighting* shortcuts that open that page), and `THIRD_PARTY.md` and the `ts-fx` `NOTICE-ts-fx.md` in `$PREFIX/share/doc/truesense/` and `$PREFIX/share/licenses/truesense/`, where the About box finds them.
+
+**Prebuilt window.** Each release can carry `truesense-qt-X.Y.Z-linux-x86_64.tar.gz` (top folder `truesense-qt-X.Y.Z/`, `bin/truesense-qt`): it is the program of the Arch package, built on Arch Linux against its current Qt 6, listed in `SHA256SUMS` and attested like the other files. It only runs where a Qt 6 and a glibc at least as new are installed; the installer checks that it runs and leaves it out (web window) when it does not. `get.sh` fetches it for you; by hand: unpack the bundle, `tar -xzf truesense-qt-X.Y.Z-linux-x86_64.tar.gz --strip-components=1 -C truesense-X.Y.Z` puts it into the bundle's `bin/`, then `sudo tools/install.sh`. `truesense update apply` downloads only the main bundle, so after an update the installer rebuilds the window from source if it can and otherwise keeps the one you have (and says its version).
+
 ## What it does for each distribution
 | family | prerequisites installed with | headers package |
 |---|---|---|
@@ -38,7 +59,7 @@ Which program the installer installs, in this order: `TRUESENSE_BIN=/path` if yo
 | Debian, Ubuntu, Mint, Pop | `apt-get install` | `linux-headers-$(uname -r)` |
 | Fedora, Nobara | `dnf install` | `kernel-devel-$(uname -r)` |
 | openSUSE | `zypper install` | `kernel-default-devel` |
-Anything else: it tells you exactly what to install by hand. A Rust toolchain is **not** a prerequisite (a release bundle carries the program); it is only used when you install from a source tree that has no built program.
+Anything else: it tells you exactly what to install by hand. Qt is **not** a prerequisite of the program (see above). A Rust toolchain is **not** a prerequisite (a release bundle carries the program); it is only used when you install from a source tree that has no built program.
 
 Safety: the module is test-built in a scratch folder first (nothing changes if it does not compile); the program files are installed beside the old ones and swapped; if `truesense.service` does not come up within 15 s the previous version is restored (`truesense.prev`). Everything is logged to `/var/log/truesense-install.log`. The installer is safe to re-run.
 
@@ -72,7 +93,7 @@ TrueSense talks to firmware, so it only writes to laptops it has been **verified
 ## Arch package (AUR)
 `packaging/arch/PKGBUILD` builds from a checkout (`cd packaging/arch && makepkg -si`); `packaging/aur/PKGBUILD.template` builds from the tagged release tarball, and the maintainer publishes it with `tools/aur-publish.sh X.Y.Z` (needs an AUR account and SSH key). After that: `yay -S truesense`. Official Arch repositories require a Trusted User/package maintainer to adopt the package; it cannot be pushed there directly.
 
-Both build with `makedepends=('rust' 'gcc')`: `cargo build --release --locked` for `x86_64-unknown-linux-gnu` with `-C target-feature=+crt-static`. They use the host target and not musl because Arch's `rust` package ships the host standard library only; the result is the same kind of program (a static-pie executable with no libc to match), which the PKGBUILD verifies before packaging. The program uses no name lookups or `dlopen`, the things a static glibc cannot do. The release bundle's program is the musl build.
+Both build the static program with `cargo build --release --locked` for `x86_64-unknown-linux-gnu` with `-C target-feature=+crt-static`, and then the Qt window with `cargo build --release --locked -p ts-qt` for the host **without** the static flag (`makedepends=('rust' 'gcc' 'qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-tools')`). The package ships `/usr/bin/truesense-qt` and `depends` on `qt6-base`, `qt6-declarative` and `qt6-svg`: a package must not install a window that cannot start, so Qt is a hard dependency there (the installer script treats it as optional). `options=('!debug' '!lto')`: makepkg's default LTO flags make the C++ part of the Qt app unreadable for the Rust linker. The static program is built as follows. They use the host target and not musl because Arch's `rust` package ships the host standard library only; the result is the same kind of program (a static-pie executable with no libc to match), which the PKGBUILD verifies before packaging. The program uses no name lookups or `dlopen`, the things a static glibc cannot do. The release bundle's program is the musl build.
 
 ## Status
-The packaging of the Rust edition is checked in CI on every push: the installer's distribution detection and package names on each family, the kernel module against each distribution's headers, the Arch package, the release bundle's reproducibility. A full install on Debian, Ubuntu, Fedora and openSUSE is **untested on real hardware**, and so is the first installation of the Rust edition itself on the laptop. Reports and fixes welcome.
+The packaging of the Rust edition is checked in CI on every push: the installer's distribution detection and package names on each family, the kernel module against each distribution's headers, the Arch package (with its Qt window), the release bundle's reproducibility, and the Qt window itself (`make qt-ci` in an Arch container; not blocking yet, see RELEASING.md). A full install on Debian, Ubuntu, Fedora and openSUSE is **untested on real hardware**, and so is the first installation of the Rust edition itself on the laptop. Reports and fixes welcome.
