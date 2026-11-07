@@ -131,11 +131,15 @@ impl Capabilities {
         Self { map }
     }
 
-    /// Reads the list `capabilities get` answers: `[{"id", "supported": bool, "why"?: text}]`.
-    /// Entries of the wrong shape are skipped (an older or newer daemon must not break the app).
+    /// Reads what `capabilities get` answers: either the bare list `[{"id", "supported": bool,
+    /// "why"?: text}]` or the real report `{"model": .., "items": [..]}`. The report names features
+    /// with underscores (`rear_light`) and the app's ids use hyphens (`rear-light`); an entry is
+    /// stored under both spellings so either asks the right question. Entries of the wrong shape
+    /// are skipped (an older or newer daemon must not break the app).
     pub fn from_list(list: &Value) -> Self {
+        let items = list.get("items").unwrap_or(list);
         let mut map = BTreeMap::new();
-        for entry in list.as_array().map(Vec::as_slice).unwrap_or_default() {
+        for entry in items.as_array().map(Vec::as_slice).unwrap_or_default() {
             let (Some(cap), Some(supported)) = (str_at(entry, "id"), bool_at(entry, "supported")) else {
                 continue;
             };
@@ -144,6 +148,10 @@ impl Capabilities {
             } else {
                 CapState::Unavailable(str_at(entry, "why").map(str::to_owned))
             };
+            let hyphenated = cap.replace('_', "-");
+            if hyphenated != cap {
+                map.insert(hyphenated, state.clone());
+            }
             map.insert(cap.to_owned(), state);
         }
         Self { map }
@@ -252,6 +260,22 @@ mod tests {
         assert_eq!(merged.state(id::REAR_LIGHT), CapState::Available);
         assert_eq!(merged.state("x"), CapState::Unknown);
         assert_eq!(Capabilities::from_list(&json!({"not": "a list"})), Capabilities::default());
+    }
+
+    #[test]
+    fn the_real_report_shape_and_underscore_ids_are_understood() {
+        let report = json!({
+            "model": {"product": "Predator PH16-71"},
+            "items": [
+                {"id": "rear_light", "supported": false, "why": "no light bar"},
+                {"id": "power_limits", "supported": true},
+                {"id": "daemon", "supported": true},
+            ]
+        });
+        let caps = Capabilities::from_list(&report);
+        assert_eq!(caps.state("rear_light"), CapState::Unavailable(Some("no light bar".into())));
+        assert_eq!(caps.state("rear-light"), CapState::Unavailable(Some("no light bar".into())));
+        assert!(caps.usable("power-limits") && caps.usable("power_limits") && caps.usable("daemon"));
     }
 
     #[test]
