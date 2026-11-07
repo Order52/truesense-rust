@@ -44,20 +44,20 @@ pub(crate) use store::{Kind, NamedStore};
 
 /// The voltage-offset mailbox (verified layout, 13th-gen HX): a write of this register is a
 /// request, the read that follows returns the answer.
-pub const MAILBOX_MSR: u32 = 0x150;
+pub(crate) const MAILBOX_MSR: u32 = 0x150;
 /// CPU 0's MSR device; it needs root and the `msr` kernel module.
-pub const DEFAULT_MSR_PATH: &str = "/dev/cpu/0/msr";
+pub(crate) const DEFAULT_MSR_PATH: &str = "/dev/cpu/0/msr";
 
 /// The deepest offset ever written: 0 to -120 mV.
-pub const MAX_MV: i32 = 120;
+pub(crate) const MAX_MV: i32 = 120;
 /// Up to here the core offset is usually fine on 13th-gen HX.
-pub const SAFE_CORE_MV: u32 = 60;
+pub(crate) const SAFE_CORE_MV: u32 = 60;
 /// Up to here the cache offset is usually fine.
-pub const SAFE_CACHE_MV: u32 = 50;
+pub(crate) const SAFE_CACHE_MV: u32 = 50;
 /// Beyond the safe value and up to here the core offset may be unstable: test under load.
-pub const CAUTION_CORE_MV: u32 = 90;
+pub(crate) const CAUTION_CORE_MV: u32 = 90;
 /// Beyond the safe value and up to here the cache offset may be unstable.
-pub const CAUTION_CACHE_MV: u32 = 70;
+pub(crate) const CAUTION_CACHE_MV: u32 = 70;
 
 /// The mailbox works in steps of 1/1.024 mV, so a read-back may differ from the request by this.
 const VERIFY_TOLERANCE_MV: i32 = 2;

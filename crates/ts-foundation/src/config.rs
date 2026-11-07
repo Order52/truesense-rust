@@ -397,7 +397,7 @@ pub struct AlertsConfig {
 }
 
 /// The smallest and largest temperature limit an alert may use.
-pub const ALERT_LIMIT_RANGE: std::ops::RangeInclusive<i64> = 70..=100;
+pub(crate) const ALERT_LIMIT_RANGE: std::ops::RangeInclusive<i64> = 70..=100;
 
 fn strings(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_owned()).collect()

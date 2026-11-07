@@ -24,26 +24,26 @@ use serde_json::{Value, json};
 use crate::json::{at, bool_at, f64_at, list_at, str_at};
 
 /// The power modes in the order the tiles show them.
-pub const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
+pub(crate) const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
 /// The GPU modes in the order the tiles show them.
-pub const GPU_MODES: [&str; 3] = ["optimus", "nvidia", "auto"];
+pub(crate) const GPU_MODES: [&str; 3] = ["optimus", "nvidia", "auto"];
 /// The fan modes in the order the tiles show them.
-pub const FAN_MODES: [&str; 4] = ["smart", "auto", "max", "manual"];
+pub(crate) const FAN_MODES: [&str; 4] = ["smart", "auto", "max", "manual"];
 /// The mode controls (`power auto`): the person picks, the daemon follows heat and load, or the firmware's own.
-pub const MODE_CONTROLS: [&str; 3] = ["off", "native", "smart"];
+pub(crate) const MODE_CONTROLS: [&str; 3] = ["off", "native", "smart"];
 
 /// The lowest duty a running fan is ever asked for (the firmware's own floor for a spinning fan).
 pub const MIN_DUTY: i64 = 20;
 /// The highest duty.
 pub const MAX_DUTY: i64 = 100;
 /// CPU temperature from which its live tile is drawn as hot.
-pub const CPU_HOT_C: f64 = 85.0;
+pub(crate) const CPU_HOT_C: f64 = 85.0;
 /// GPU temperature from which its live tile is drawn as hot.
-pub const GPU_HOT_C: f64 = 75.0;
+pub(crate) const GPU_HOT_C: f64 = 75.0;
 /// A fan above this speed is turning: a "stopped" fan that still reads more is held up by the firmware.
-pub const FAN_TURNING_RPM: f64 = 500.0;
+pub(crate) const FAN_TURNING_RPM: f64 = 500.0;
 /// Battery percentage at or below which the battery tile warns (only while discharging).
-pub const BATTERY_LOW_PCT: f64 = 20.0;
+pub(crate) const BATTERY_LOW_PCT: f64 = 20.0;
 /// The capabilities (ids of `capabilities get`) whose absence means the firmware cannot be driven at all.
 const ESSENTIAL: [&str; 2] = ["power_modes", "fan_control"];
 

@@ -14,11 +14,11 @@ use serde_json::{Value, json};
 use crate::json::{bool_at, f64_at, list_at, str_at};
 
 /// Most lines of the daemon log the page keeps (the command already returns about sixty).
-pub const LOG_MAX_LINES: usize = 200;
+pub(crate) const LOG_MAX_LINES: usize = 200;
 /// Longest log or self-test line kept, in characters; a runaway line must not freeze the layout.
-pub const LINE_MAX_CHARS: usize = 600;
+pub(crate) const LINE_MAX_CHARS: usize = 600;
 /// Most self-test lines parsed.
-pub const SELFTEST_MAX_LINES: usize = 500;
+pub(crate) const SELFTEST_MAX_LINES: usize = 500;
 
 fn clip(line: &str) -> String {
     let line = line.trim_end();

@@ -196,14 +196,14 @@ pub fn ensure_dir(path: &Path, mode: u32) -> Result<(), FsError> {
 /// disk. The file ends up with exactly `mode` (the umask is overridden, since a status file
 /// that must be world-readable should not depend on the caller's umask). The parent
 /// directory must exist; see [`write_atomic_mkdir`].
-pub fn write_atomic(path: &Path, data: &[u8], mode: u32) -> Result<(), FsError> {
+pub(crate) fn write_atomic(path: &Path, data: &[u8], mode: u32) -> Result<(), FsError> {
     write_atomic_impl(path, data, mode, true)
 }
 
 /// [`write_atomic`] without the `fsync`s: still all-or-nothing for readers, but a power loss
 /// may leave the old content. For files rewritten every second and meaningless after a
 /// reboot, such as the live state for status bars, where a disk sync per tick would be waste.
-pub fn write_atomic_nosync(path: &Path, data: &[u8], mode: u32) -> Result<(), FsError> {
+pub(crate) fn write_atomic_nosync(path: &Path, data: &[u8], mode: u32) -> Result<(), FsError> {
     write_atomic_impl(path, data, mode, false)
 }
 
@@ -221,7 +221,7 @@ pub fn write_atomic_mkdir(path: &Path, data: &[u8], mode: u32) -> Result<(), FsE
 /// would otherwise fill the directory. Call it only when no other process writes `path`
 /// (the daemon, after it took its single-instance lock): it cannot tell a dead writer's file
 /// from a live one's.
-pub fn remove_stale_temps(path: &Path) -> usize {
+pub(crate) fn remove_stale_temps(path: &Path) -> usize {
     let (Some(dir), Some(name)) = (path.parent().filter(|d| !d.as_os_str().is_empty()), path.file_name())
     else {
         return 0;

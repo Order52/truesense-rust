@@ -18,7 +18,7 @@ use serde::Serialize;
 use super::files::{below, dir_names, indexed, read_line, read_text, read_u64};
 
 /// The most cores looked at. A hostile `/proc/stat` cannot make the sampler allocate without bound.
-pub const MAX_CORES: usize = 1024;
+pub(crate) const MAX_CORES: usize = 1024;
 
 /// A CPU frequency above this is a broken file, not a processor (kHz: 100 GHz).
 const MAX_PLAUSIBLE_KHZ: u64 = 100_000_000;

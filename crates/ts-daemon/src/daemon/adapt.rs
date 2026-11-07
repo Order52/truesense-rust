@@ -145,7 +145,7 @@ impl Notice for Osd {
 
 /// The running programs, read from a `/proc` tree.
 #[derive(Debug, Clone)]
-pub struct ProcFs {
+pub(crate) struct ProcFs {
     root: PathBuf,
 }
 
@@ -170,7 +170,7 @@ impl ProcessList for ProcFs {
 /// The machine's sensors: `/proc/stat` and the battery through [`Sampler`], the CPU package
 /// temperature and the charger through [`LinuxSensors`], and the GPU readings of a background
 /// `nvidia-smi` stream that only runs while the daemon asks for it.
-pub struct SystemSensors {
+pub(crate) struct SystemSensors {
     sampler: Arc<Sampler>,
     linux: LinuxSensors,
     source: Arc<dyn LineSource>,

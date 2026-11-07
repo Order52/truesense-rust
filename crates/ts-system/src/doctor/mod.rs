@@ -36,10 +36,10 @@ use crate::services::{Runner, SystemRunner};
 
 /// How long the doctor lets one program run (the Python edition's 6 s): a wedged tool must not
 /// hold up the whole report.
-pub const PROGRAM_TIMEOUT: Duration = Duration::from_secs(6);
+pub(crate) const PROGRAM_TIMEOUT: Duration = Duration::from_secs(6);
 
 /// How many checks run side by side unless told otherwise.
-pub const DEFAULT_WORKERS: usize = 8;
+pub(crate) const DEFAULT_WORKERS: usize = 8;
 
 /// The grade of one check.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

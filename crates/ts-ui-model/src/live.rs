@@ -17,7 +17,7 @@ use serde_json::{Map, Value, json};
 use crate::json::f64_at;
 
 /// Samples kept per series: two minutes at the one-second tick.
-pub const HISTORY_LEN: usize = 120;
+pub(crate) const HISTORY_LEN: usize = 120;
 
 /// The series every page may rely on: dotted paths into a live frame (`COMMANDS.md`, "The live
 /// stream"). Pages that need another one call [`LiveStore::track`].

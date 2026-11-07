@@ -29,11 +29,12 @@ pub use ts_platform::hw::READ_ONLY;
 pub const DMI_ROOT: &str = "/sys/class/dmi/id";
 
 /// Where a user of an unverified model sends the probe report.
-pub const REPORT_URL: &str = "https://github.com/Order52/truesense/issues/new?template=new_model_report.yml";
+pub(crate) const REPORT_URL: &str =
+    "https://github.com/Order52/truesense/issues/new?template=new_model_report.yml";
 
 /// The Acer gaming WMI interface TrueSense talks to; its presence is the first sign that a model
 /// has it.
-pub const GAMING_WMI_GUID: &str = "7a4ddfe7-5b5d-40b4-8595-4408e0cc7f56";
+pub(crate) const GAMING_WMI_GUID: &str = "7a4ddfe7-5b5d-40b4-8595-4408e0cc7f56";
 
 /// How much of a firmware error message the report keeps (the Python edition cut at 120).
 const ERROR_LIMIT: usize = 120;
@@ -94,7 +95,7 @@ pub struct Known {
 /// The verified models. Add a model here only with a verified hardware report
 /// (`docs/STATUS.md`): the kernel module matches the same names, and firmware control must never
 /// be guessed.
-pub const SUPPORTED: &[Known] = &[Known {
+pub(crate) const SUPPORTED: &[Known] = &[Known {
     product: "Predator PH16-71",
     family: "Predator Helios 16",
     verified_bios: &["V1.18"],
@@ -202,7 +203,7 @@ pub fn identify(root: &Path) -> Model {
 
 /// The running kernel's release (`uname -r`), read from `/proc/sys/kernel/osrelease` so no
 /// system call needs `unsafe`. Empty when it cannot be read.
-pub fn kernel_release() -> String {
+pub(crate) fn kernel_release() -> String {
     fsx::read_trim_opt(Path::new("/proc/sys/kernel/osrelease")).unwrap_or_default()
 }
 

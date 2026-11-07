@@ -28,18 +28,16 @@ use crate::json;
 
 /// Error code of a write that a newer write for the same control replaced before it started.
 /// Callers treat it as "nothing to report": the newer write will answer.
-pub const CODE_SUPERSEDED: &str = "superseded";
+pub(crate) const CODE_SUPERSEDED: &str = "superseded";
 /// Error code of a command the bus does not have (the page asked for something that is not in
 /// `COMMANDS.md`).
-pub const CODE_UNKNOWN: &str = "unknown-command";
+pub(crate) const CODE_UNKNOWN: &str = "unknown-command";
 /// Error code of a command that did not finish in the time the bus allows.
-pub const CODE_TIMEOUT: &str = "timeout";
+pub(crate) const CODE_TIMEOUT: &str = "timeout";
 /// Error code of arguments that are not a JSON object.
 pub const CODE_BAD_ARGS: &str = "bad-args";
 /// Error code of a command that panicked (a bug below the bus; the app stays alive and says so).
-pub const CODE_INTERNAL: &str = "internal";
-/// Error code the daemon-less commands use: the root service is not running.
-pub const CODE_NEEDS_DAEMON: &str = "needs-daemon";
+pub(crate) const CODE_INTERNAL: &str = "internal";
 
 /// One command: area and verb are the command line's names (`power set`), `args` a JSON object.
 #[derive(Debug, Clone, PartialEq)]

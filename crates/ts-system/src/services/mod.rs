@@ -21,10 +21,10 @@ use serde::{Deserialize, Serialize};
 use ts_platform::firmware::DEVICE_PATH;
 
 /// The units that run as root; `sudo truesense service repair` manages them.
-pub const SYSTEM_UNITS: [&str; 2] = ["truesense.service", "truesense-health.timer"];
+pub(crate) const SYSTEM_UNITS: [&str; 2] = ["truesense.service", "truesense-health.timer"];
 
 /// The units that run in the user's session; `truesense service repair` manages them without sudo.
-pub const USER_UNITS: [&str; 4] = [
+pub(crate) const USER_UNITS: [&str; 4] = [
     "truesense-keys.service",
     "truesense-audio.service",
     "truesense-startup.service",
@@ -32,11 +32,11 @@ pub const USER_UNITS: [&str; 4] = [
 ];
 
 /// The daemon's control socket.
-pub const SOCKET_PATH: &str = "/run/truesense/truesense.sock";
+pub(crate) const SOCKET_PATH: &str = "/run/truesense/truesense.sock";
 
 /// The exit code that stands for "could not run it at all" (not installed, timed out), with the
 /// reason in standard error: the shell's own convention.
-pub const NOT_RUNNABLE: i32 = 127;
+pub(crate) const NOT_RUNNABLE: i32 = 127;
 
 /// How long a repair lets one program run: `systemctl restart` and `dkms autoinstall` can take
 /// a while.

@@ -36,22 +36,22 @@ use crate::nvidia::{self, GpuPower};
 
 /// Weight of a new CPU load sample (the daemon smooths the jittery `/proc/stat` deltas without
 /// a delay long enough to hide a real rise).
-pub const CPU_LOAD_ALPHA: f64 = 0.25;
+pub(crate) const CPU_LOAD_ALPHA: f64 = 0.25;
 
 /// Weight of a new GPU load or power sample.
-pub const GPU_ALPHA: f64 = 0.3;
+pub(crate) const GPU_ALPHA: f64 = 0.3;
 
 /// Pause before the `nvidia-smi` stream is restarted after it ended or failed to start. Repeated
 /// failures double it up to [`GPU_RETRY_MAX`].
-pub const GPU_RESTART_DELAY: Duration = Duration::from_secs(5);
+pub(crate) const GPU_RESTART_DELAY: Duration = Duration::from_secs(5);
 
 /// The longest pause between two start attempts of a stream that keeps failing (no `nvidia-smi`
 /// installed, a driver that is not loaded): a dead path settles at one attempt per five minutes.
-pub const GPU_RETRY_MAX: Duration = Duration::from_secs(300);
+pub(crate) const GPU_RETRY_MAX: Duration = Duration::from_secs(300);
 
 /// How often the stream thread looks at the card's power state while it has nothing to read.
 /// Reading `power/runtime_status` does not wake the card.
-pub const GPU_POLL: Duration = Duration::from_secs(2);
+pub(crate) const GPU_POLL: Duration = Duration::from_secs(2);
 
 /// A GPU reading older than this is not current: the stream emits a line every two seconds, so
 /// a gap of this length means it ended or is stuck, and the temperature must not be trusted.
@@ -59,23 +59,23 @@ pub const GPU_FRESH_S: f64 = 6.0;
 
 /// Idle readings (load and power below the two limits that follow) for this many seconds end the
 /// stream so that the card can suspend.
-pub const GPU_IDLE_PARK_S: f64 = 60.0;
+pub(crate) const GPU_IDLE_PARK_S: f64 = 60.0;
 
 /// The highest load, in percent, that still counts as idle for parking.
-pub const GPU_IDLE_UTIL_PCT: f64 = 5.0;
+pub(crate) const GPU_IDLE_UTIL_PCT: f64 = 5.0;
 
 /// The highest power draw, in watts, that still counts as idle for parking (an awake RTX 4060
 /// at P8 draws about 5 to 15 W; a game draws far more).
-pub const GPU_IDLE_POWER_W: f64 = 25.0;
+pub(crate) const GPU_IDLE_POWER_W: f64 = 25.0;
 
 /// After a park the card should be seen asleep within this time; if it never is, something else
 /// holds it awake (a compositor on the card, a CUDA process, a card without runtime power
 /// management), so reading it costs nothing more and the stream starts again.
-pub const GPU_PARK_FALLBACK_S: f64 = 180.0;
+pub(crate) const GPU_PARK_FALLBACK_S: f64 = 180.0;
 
 /// After that fallback restart the stream does not park again for this long, so that a card held
 /// awake by someone else is not started and stopped (each start initialises NVML) in a loop.
-pub const GPU_NO_PARK_S: f64 = 600.0;
+pub(crate) const GPU_NO_PARK_S: f64 = 600.0;
 
 /// The seconds since the Unix epoch, as a float (the `time.time()` of the Python edition).
 pub type Clock = Arc<dyn Fn() -> f64 + Send + Sync>;
@@ -174,7 +174,7 @@ impl GpuFeed {
 /// --format=csv,noheader,nounits`: `61, 40, 55.5`. `None` for anything else, including a line
 /// with a field the driver could not give (`[N/A]`) and a number that is not finite (a NaN
 /// would poison the running averages for good).
-pub fn parse_gpu_line(line: &str) -> Option<(f64, f64, f64)> {
+pub(crate) fn parse_gpu_line(line: &str) -> Option<(f64, f64, f64)> {
     let mut fields = line.split(',').map(str::trim);
     let (t, u, w) = (fields.next()?, fields.next()?, fields.next()?);
     if fields.next().is_some() {

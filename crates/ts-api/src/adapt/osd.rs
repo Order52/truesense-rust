@@ -17,7 +17,7 @@ use crate::api::{ConfigFiles, Notifier};
 /// Shows messages for both consumers that need them: the application layer's [`Notifier`] and the
 /// sound system's `ts_domain::audio::Osd`.
 #[derive(Clone)]
-pub struct LiveOsd {
+pub(crate) struct LiveOsd {
     base: Osd,
     config: ConfigFiles,
     settle: Duration,

@@ -38,7 +38,7 @@ pub const UNITS: [&str; 6] =
 
 /// Where a takeover remembers what it stopped, so that [`PowerManagers::restore`] can undo it
 /// across restarts of the daemon.
-pub const DEFAULT_RECORD_PATH: &str = "/var/lib/truesense/power_managers.json";
+pub(crate) const DEFAULT_RECORD_PATH: &str = "/var/lib/truesense/power_managers.json";
 /// The kernel's CPU directory.
 pub const DEFAULT_CPU_DIR: &str = "/sys/devices/system/cpu";
 

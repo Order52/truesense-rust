@@ -23,7 +23,7 @@ use serde_json::Value;
 use crate::wire::{self, Args, DeadlineReader, MAX_LINE, Request, Response, WireError};
 
 /// How long a call may take unless told otherwise (the Python edition's 3 s).
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(3);
+pub(crate) const DEFAULT_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// Why a call failed. `Display` is the message to show the user.
 #[derive(Debug)]

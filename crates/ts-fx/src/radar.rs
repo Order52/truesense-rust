@@ -17,7 +17,7 @@ const PARAMS: &[ParamDef] = &[
     keyset("centre", &["k_key"]),
 ];
 
-pub static RADAR: EffectDef = EffectDef::software("radar", "Radar", PARAMS, create);
+pub(crate) static RADAR: EffectDef = EffectDef::software("radar", "Radar", PARAMS, create);
 
 /// Targets in the pool; `blips` decides how many of them show.
 const NB: usize = 6;

@@ -41,7 +41,7 @@ pub const MAX_NAME: usize = 40;
 
 /// The most bytes of JSON one look copy may hold. A per-key look is about 2 KB; the bound keeps a
 /// hostile or broken client from filling the state file and the 64 KiB control-socket line.
-pub const MAX_LOOK_BYTES: usize = 16 * 1024;
+pub(crate) const MAX_LOOK_BYTES: usize = 16 * 1024;
 
 /// What a binding part is, for messages and for the wire (`look`, `fan_curve`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -17,7 +17,7 @@ const PARAMS: &[ParamDef] = &[
     num("keyglow", 0.0, 1.5, 0.4),
 ];
 
-pub static RIPPLE: EffectDef =
+pub(crate) static RIPPLE: EffectDef =
     EffectDef::software("ripple", "Ripple Bloom", PARAMS, create).with_needs(&[Need::Keys]);
 
 /// Rings kept at once (a ring of them: the 21st press replaces the first ring).

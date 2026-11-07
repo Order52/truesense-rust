@@ -19,13 +19,13 @@ use serde_json::{Value, json};
 use crate::json::{at, f64_at, i64_at, list_at, str_at};
 
 /// Colours the keyboard takes in one upload.
-pub const CELLS: usize = 128;
+pub(crate) const CELLS: usize = 128;
 /// Cells that are keys.
-pub const KEY_CELLS: usize = 126;
+pub(crate) const KEY_CELLS: usize = 126;
 /// Rows of the keyboard picture (the cell numbering).
 const ROWS: i64 = 6;
 /// The stock cyan of the keyboard and the default effect colour.
-pub const STOCK: &str = "00aec7";
+pub(crate) const STOCK: &str = "00aec7";
 /// The colours offered as swatches (the web window's palette).
 pub const PALETTE: [&str; 16] = [
     "ff3b30", "ff9500", "ffcc00", "34c759", "00c7be", "32ade6", "007aff", "5856d6", "af52de", "ff2d55", "ffffff",
@@ -93,7 +93,7 @@ pub fn rgb_to_hsv(c: Rgb) -> Hsv {
 }
 
 /// HSV to RGB; hue wraps, saturation and value are clamped.
-pub fn hsv_to_rgb(hsv: Hsv) -> Rgb {
+pub(crate) fn hsv_to_rgb(hsv: Hsv) -> Rgb {
     let h = hsv.h.rem_euclid(360.0) / 60.0;
     let (s, v) = (hsv.s.clamp(0.0, 1.0), hsv.v.clamp(0.0, 1.0));
     let c = v * s;
@@ -125,7 +125,7 @@ fn luminance(c: Rgb) -> f64 {
 }
 
 /// Whether a key of this colour wants dark text (`true`) or light text.
-pub fn wants_dark_text(hex: &str) -> bool {
+pub(crate) fn wants_dark_text(hex: &str) -> bool {
     parse_rgb(hex).is_some_and(|c| luminance(c) > 150.0)
 }
 
@@ -303,7 +303,7 @@ fn key_label(name: &str) -> String {
 
 /// Reads the answer of `keyboard layout` (`{"keys": {"name": [{"cell"}|number, ...]}}`) into
 /// name to cells. Entries of the wrong shape and cells beyond the keyboard are skipped.
-pub fn name_cells(layout: &Value) -> BTreeMap<String, Vec<usize>> {
+pub(crate) fn name_cells(layout: &Value) -> BTreeMap<String, Vec<usize>> {
     let keys = at(layout, "keys").and_then(Value::as_object);
     keys.into_iter()
         .flatten()
@@ -323,7 +323,7 @@ pub fn name_cells(layout: &Value) -> BTreeMap<String, Vec<usize>> {
 /// Builds the picture from the key names the machine reports. A key the picture does not know still
 /// gets a cap, in an extra row below; names that share cells with an earlier key (aliases such as
 /// `enter` for `return`) are drawn once.
-pub fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
+pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
     let mut seen: BTreeSet<usize> = BTreeSet::new();
     let mut keys = Vec::new();
     let mut add = |name: &str, x: f64, y: f64, w: f64, h: f64, keys: &mut Vec<Key>| {
@@ -374,14 +374,14 @@ pub fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
 const INSET: f64 = 0.04;
 
 /// The key under a point (layout units).
-pub fn key_at(keys: &[Key], x: f64, y: f64) -> Option<&Key> {
+pub(crate) fn key_at(keys: &[Key], x: f64, y: f64) -> Option<&Key> {
     keys.iter().find(|k| {
         x >= k.x + INSET && x <= k.x + k.w - INSET && y >= k.y + INSET && y <= k.y + k.h - INSET
     })
 }
 
 /// Cells of every key a box touches (any corner order).
-pub fn cells_in_box(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<usize> {
+pub(crate) fn cells_in_box(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<usize> {
     let (x0, x1) = (a.0.min(b.0), a.0.max(b.0));
     let (y0, y1) = (a.1.min(b.1), a.1.max(b.1));
     keys.iter()
@@ -421,7 +421,7 @@ fn segment_entry(a: (f64, f64), b: (f64, f64), min: (f64, f64), max: (f64, f64))
 /// Keys crossed by the straight line a drag made between two pointer positions, in the order the
 /// line meets them. A fast drag reports far-apart positions; interpolating exactly means no key in
 /// between is skipped.
-pub fn keys_on_segment(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<&Key> {
+pub(crate) fn keys_on_segment(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<&Key> {
     let mut hits: Vec<(f64, &Key)> = keys
         .iter()
         .filter_map(|k| {
@@ -464,7 +464,7 @@ pub fn neighbour(keys: &[Key], cell: usize, dir: &str) -> Option<usize> {
 }
 
 /// The cells of a named group ("wasd", "arrows", ...); `all` is the 126 key cells.
-pub fn group_cells(group: &str, keys: &[Key]) -> Vec<usize> {
+pub(crate) fn group_cells(group: &str, keys: &[Key]) -> Vec<usize> {
     let by_names = |pred: &dyn Fn(&str) -> bool| -> Vec<usize> {
         keys.iter().filter(|k| pred(&k.name)).flat_map(|k| k.cells.iter().copied()).collect()
     };
@@ -605,7 +605,7 @@ pub fn pick_effect(name: &str, current: &Value) -> Result<Value, String> {
 
 /// The software animations of the key service (`keyboard fx`): id and whether it needs the colours
 /// under it. Speeds are 1..10.
-pub const FX_MODES: [&str; 18] = [
+pub(crate) const FX_MODES: [&str; 18] = [
     "pulse", "wave", "cycle", "twinkle", "rainbow", "breathing", "scanner", "comet", "ripple", "rain", "matrix", "fire",
     "plasma", "aurora", "lightning", "confetti", "starlight", "mood",
 ];
@@ -719,7 +719,7 @@ pub fn valid_name(name: &str) -> bool {
 }
 
 /// Whether `name` is a usable per-key set name (no dots).
-pub fn valid_set_name(name: &str) -> bool {
+pub(crate) fn valid_set_name(name: &str) -> bool {
     (1..=40).contains(&name.len()) && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
 }
 
@@ -1021,7 +1021,7 @@ pub fn theme_request(args: &Value) -> Result<Value, String> {
 
 /// An id for a user theme from the name typed: lower case letters, digits, `-` and `_` (spaces
 /// become `-`); `None` when nothing is left.
-pub fn theme_id(name: &str) -> Option<String> {
+pub(crate) fn theme_id(name: &str) -> Option<String> {
     let id: String = name
         .trim()
         .to_lowercase()

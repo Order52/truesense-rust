@@ -141,7 +141,7 @@ impl Notifier {
 /// recommends, or `None` when no watchdog is armed for this process. `env` is the environment
 /// lookup and `pid` this process's id: `WATCHDOG_PID`, when set, names the one process the
 /// watchdog applies to (a child that inherited the variables must not ping).
-pub fn watchdog_interval(env: &dyn Fn(&str) -> Option<String>, pid: u32) -> Option<Duration> {
+pub(crate) fn watchdog_interval(env: &dyn Fn(&str) -> Option<String>, pid: u32) -> Option<Duration> {
     let usec: u64 = env("WATCHDOG_USEC")?.trim().parse().ok().filter(|&u| u > 0)?;
     if let Some(target) = env("WATCHDOG_PID") {
         if target.trim().parse::<u32>().ok() != Some(pid) {

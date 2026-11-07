@@ -25,10 +25,10 @@ use ts_foundation::wake;
 
 /// How long the watcher sleeps between two checks while events arrive. The check runs sooner
 /// when an event comes; this is only the safety net for a change nobody announced.
-pub const FALLBACK: Duration = Duration::from_secs(10);
+pub(crate) const FALLBACK: Duration = Duration::from_secs(10);
 /// The quiet time that must follow the last event of a burst before the watcher looks: a volume
 /// slider or a profile switch produces dozens of lines at once.
-pub const QUIET: Duration = Duration::from_millis(400);
+pub(crate) const QUIET: Duration = Duration::from_millis(400);
 /// The pause before the event stream is started again after it ended or failed to start.
 const RECONNECT: Duration = Duration::from_secs(5);
 

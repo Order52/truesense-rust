@@ -37,7 +37,7 @@ const MAX_CMDLINE: usize = 4096;
 /// The longest program name a rule may have.
 const NAME_MAX: usize = 80;
 /// The process list is read every this many ticks (games do not start every second).
-pub const SCAN_EVERY_TICKS: u64 = 3;
+pub(crate) const SCAN_EVERY_TICKS: u64 = 3;
 
 /// Why a rule or a rule set was refused. The messages are the Python edition's.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -16,10 +16,10 @@
 //! kept exactly; themes are designed to 2.0 flashes a second or less.
 
 /// A change of at least this much relative luminance counts.
-pub const GUARD_THR: f64 = 0.08;
+pub(crate) const GUARD_THR: f64 = 0.08;
 /// Counted changes allowed in any rolling second: 5, which is 2.5 flashes in the guard's
 /// own accounting and at most 3 by WCAG's count.
-pub const GUARD_MAX: usize = 5;
+pub(crate) const GUARD_MAX: usize = 5;
 
 /// One light's guard state (`makeLimiter`/`limitLum`).
 #[derive(Debug, Clone, PartialEq)]

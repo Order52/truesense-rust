@@ -20,16 +20,16 @@ use ts_foundation::fsx::{self, FsError};
 
 /// The languages the app offers; `system` follows the desktop. `pseudo` is for tests and is not
 /// listed in the settings page.
-pub const LANGUAGES: &[&str] = &["system", "en", "ar", "pseudo"];
+pub(crate) const LANGUAGES: &[&str] = &["system", "en", "ar", "pseudo"];
 /// The colour themes.
 pub const THEMES: &[&str] = &["dark", "light", "system"];
 
 /// Smallest window the layout is designed for; saved sizes below it are raised to it.
-pub const MIN_WINDOW: (u32, u32) = (360, 480);
+pub(crate) const MIN_WINDOW: (u32, u32) = (360, 480);
 /// Largest saved window dimension: a corrupt file must not ask for a 10-million-pixel window.
-pub const MAX_WINDOW: u32 = 16_384;
+pub(crate) const MAX_WINDOW: u32 = 16_384;
 /// Where the window opens the first time.
-pub const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
+pub(crate) const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
 
 /// The settings with their defaults (what a missing file means).
 #[derive(Debug, Clone, PartialEq)]
@@ -200,7 +200,7 @@ fn set_choice(slot: &mut String, v: &Value, allowed: &[&str]) -> bool {
 /// The language to load for the setting `choice` when the desktop's locale is `system_locale`
 /// (`ar_EG`, `en_US`, ...): `system` follows the desktop, and a desktop language we have no
 /// catalogue for gets English.
-pub fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
+pub(crate) fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
     match choice {
         "system" => {
             let lang = system_locale.split(['_', '-', '.', '@']).next().unwrap_or("");

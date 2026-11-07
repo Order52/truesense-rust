@@ -37,21 +37,21 @@ use crate::undervolt::{Kind, NamedStore};
 pub use helper::{HELPER_NAME, HELPER_PATH, HelperNvml, Nvml, NvmlError};
 
 /// The lowest curve offset a profile may hold, in MHz.
-pub const OFFSET_MIN_MHZ: i32 = -300;
+pub(crate) const OFFSET_MIN_MHZ: i32 = -300;
 /// The highest curve offset a profile may hold, in MHz. The driver reports its own limit too
 /// (about +-1000), which [`GpuUndervolt::apply`] also enforces.
-pub const OFFSET_MAX_MHZ: i32 = 250;
+pub(crate) const OFFSET_MAX_MHZ: i32 = 250;
 /// The lowest clock cap, in MHz (a cap is 0, meaning none, or [`CAP_MIN_MHZ`]..=[`CAP_MAX_MHZ`]).
-pub const CAP_MIN_MHZ: i32 = 600;
+pub(crate) const CAP_MIN_MHZ: i32 = 600;
 /// The highest clock cap, in MHz.
-pub const CAP_MAX_MHZ: i32 = 3300;
+pub(crate) const CAP_MAX_MHZ: i32 = 3300;
 /// The lower end of the locked clock range: the GPU's idle clock, so that only the top is capped.
 const MIN_LOCKED_CLOCK_MHZ: u32 = 210;
 
 /// Up to here an offset is usually fine with a clock cap.
-pub const SAFE_OFFSET_MHZ: i32 = 150;
+pub(crate) const SAFE_OFFSET_MHZ: i32 = 150;
 /// Past here games and the driver can crash.
-pub const DANGER_OFFSET_MHZ: i32 = 200;
+pub(crate) const DANGER_OFFSET_MHZ: i32 = 200;
 /// A cap below this costs a lot of speed.
 const LOW_CAP_MHZ: i32 = 1500;
 

@@ -36,19 +36,19 @@ pub const MIN_POINTS: usize = 2;
 /// The most points a side may have.
 pub const MAX_POINTS: usize = 12;
 /// The lowest temperature of a point (and the left edge of the plot).
-pub const TEMP_MIN: f64 = 20.0;
+pub(crate) const TEMP_MIN: f64 = 20.0;
 /// The highest temperature of a point (and the right edge of the plot).
-pub const TEMP_MAX: f64 = 110.0;
+pub(crate) const TEMP_MAX: f64 = 110.0;
 /// The lowest duty that holds a fan; below it the only valid value is 0.
-pub const DUTY_MIN: f64 = 20.0;
+pub(crate) const DUTY_MIN: f64 = 20.0;
 /// The highest duty.
-pub const DUTY_MAX: f64 = 100.0;
+pub(crate) const DUTY_MAX: f64 = 100.0;
 /// Percent per grid step of a dragged duty.
 const DUTY_STEP: f64 = 5.0;
 /// The CPU side must be at 100 % by this temperature.
-pub const CPU_FULL_BY: f64 = 95.0;
+pub(crate) const CPU_FULL_BY: f64 = 95.0;
 /// The GPU side must be at 100 % by this temperature.
-pub const GPU_FULL_BY: f64 = 85.0;
+pub(crate) const GPU_FULL_BY: f64 = 85.0;
 /// Two points must be at least this many degrees apart when one is inserted (a point closer than
 /// that cannot be grabbed again with a pointer).
 const MIN_GAP: f64 = 2.0;

@@ -233,8 +233,13 @@ mod tests {
         std::fs::write(dir.join("user.json.tmp"), b"{}").unwrap();
         std::fs::rename(dir.join("user.json.tmp"), dir.join("user.json")).unwrap();
         assert!(readable(watcher.fd(), 5000), "the event reaches the pipe");
-        watcher.drain();
-        assert!(!readable(watcher.fd(), 50), "drained");
+        // The create, the write and the rename are separate kernel events and the reader thread
+        // may deliver them in more than one batch: drain until it has gone quiet.
+        let quiet = (0..50).any(|_| {
+            watcher.drain();
+            !readable(watcher.fd(), 100)
+        });
+        assert!(quiet, "drained");
         waiter.join().unwrap();
         assert!(rung.load(Ordering::SeqCst), "the bell cut the sleeper short");
         drop(watcher);

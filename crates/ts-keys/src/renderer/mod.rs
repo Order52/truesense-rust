@@ -45,14 +45,14 @@ use ts_fx::cells::CellPainter;
 use ts_fx::engine::{Effect, Input};
 
 /// The frame rate cap unless told otherwise.
-pub const DEFAULT_FPS: u32 = 15;
+pub(crate) const DEFAULT_FPS: u32 = 15;
 /// The highest cap accepted: the keyboard cannot take more, and a higher number would only
 /// matter for a fake sink.
-pub const MAX_FPS: u32 = 30;
+pub(crate) const MAX_FPS: u32 = 30;
 /// How often the running-theme record is read while a theme is drawn.
 pub const POLL: Duration = Duration::from_millis(500);
 /// How long the loop sleeps while no theme runs.
-pub const IDLE: Duration = Duration::from_millis(500);
+pub(crate) const IDLE: Duration = Duration::from_millis(500);
 /// The longest step of a theme's own clock: after a suspend or a stall the theme resumes where it
 /// was instead of jumping.
 const MAX_STEP: f64 = 0.5;
@@ -167,7 +167,7 @@ enum State {
 }
 
 /// Draws the theme that is running.
-pub struct Renderer {
+pub(crate) struct Renderer {
     env: Env,
     state: State,
     next_poll: f64,

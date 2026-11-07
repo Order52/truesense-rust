@@ -23,7 +23,7 @@ use crate::keyboard::{self, Keyboard, KeyboardError};
 use crate::themes::ThemeSpec;
 
 /// Where the daemon keeps the boot look unless `TRUESENSE_BOOT_LOOK` says otherwise.
-pub const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
+pub(crate) const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
 
 /// The built-in looks, which cannot be saved over or deleted.
 pub const BUILTIN_NAMES: [&str; 1] = ["native"];

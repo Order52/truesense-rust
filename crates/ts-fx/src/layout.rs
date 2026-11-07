@@ -11,15 +11,15 @@
 use std::sync::OnceLock;
 
 /// Keyboard width in key units.
-pub const KB_W: f64 = 19.25;
+pub(crate) const KB_W: f64 = 19.25;
 /// The bottom row's centre, in key units from the F row's.
-pub const KB_H: f64 = 4.86;
+pub(crate) const KB_H: f64 = 4.86;
 /// Where the light bar's zones sit: in front of the keyboard, below the touchpad.
-pub const BAR_PY: f64 = KB_H + 2.5;
+pub(crate) const BAR_PY: f64 = KB_H + 2.5;
 /// The model the key table describes.
-pub const MODEL: &str = "PH16-71";
+pub(crate) const MODEL: &str = "PH16-71";
 /// Key rows, the F row (0) to the bottom row (`ROW_PY.length` in effects.js).
-pub const KEY_ROWS: usize = TABLE.len();
+pub(crate) const KEY_ROWS: usize = TABLE.len();
 
 /// Which light a layout drives.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -239,7 +239,7 @@ pub fn ph16_71() -> &'static Layout {
 }
 
 /// The highest Linux keycode (`KEY_MAX` in `linux/input-event-codes.h`).
-pub const KEY_MAX: u16 = 0x2ff;
+pub(crate) const KEY_MAX: u16 = 0x2ff;
 
 /// The Linux keycode (`linux/input-event-codes.h`) the kernel reports for each key of
 /// [`TABLE`], by the key's name: how a key press read from the keyboard

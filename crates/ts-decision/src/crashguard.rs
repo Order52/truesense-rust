@@ -17,12 +17,12 @@ use std::path::{Path, PathBuf};
 use ts_foundation::fsx::{self, FsError};
 
 /// How long the machine must stay up after applying before the setting counts as stable.
-pub const STABLE_AFTER_S: f64 = 600.0;
+pub(crate) const STABLE_AFTER_S: f64 = 600.0;
 
 /// Where the CPU undervolt flag lives unless `TRUESENSE_UV_PENDING` says otherwise.
-pub const UV_PENDING_PATH: &str = "/var/lib/truesense/uv-pending";
+pub(crate) const UV_PENDING_PATH: &str = "/var/lib/truesense/uv-pending";
 /// Where the GPU undervolt flag lives unless `TRUESENSE_GPU_UV_PENDING` says otherwise.
-pub const GPU_UV_PENDING_PATH: &str = "/var/lib/truesense/gpu-uv-pending";
+pub(crate) const GPU_UV_PENDING_PATH: &str = "/var/lib/truesense/gpu-uv-pending";
 
 /// The CPU flag path: `$TRUESENSE_UV_PENDING` or [`UV_PENDING_PATH`].
 pub fn uv_pending_path(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {

@@ -29,7 +29,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 /// Where the daemon listens unless `TRUESENSE_SOCKET` says otherwise.
-pub const DEFAULT_SOCKET: &str = "/run/truesense/truesense.sock";
+pub(crate) const DEFAULT_SOCKET: &str = "/run/truesense/truesense.sock";
 
 /// Environment variable that moves the socket (used by tests and for running a second daemon).
 pub const SOCKET_ENV: &str = "TRUESENSE_SOCKET";
@@ -57,12 +57,12 @@ pub fn socket_path() -> PathBuf {
 /// The text of the "no such command" reply. A client recognises an older daemon by this
 /// prefix (see `client::ClientError::UnknownCommand`), so the wording is part of the
 /// protocol, not a courtesy.
-pub fn unknown_command_message(cmd: &str) -> String {
+pub(crate) fn unknown_command_message(cmd: &str) -> String {
     format!("{UNKNOWN_COMMAND_PREFIX} '{cmd}'")
 }
 
 /// First words of every "no such command" reply, see [`unknown_command_message`].
-pub const UNKNOWN_COMMAND_PREFIX: &str = "unknown command";
+pub(crate) const UNKNOWN_COMMAND_PREFIX: &str = "unknown command";
 
 /// Why a message could not be read or understood.
 #[derive(Debug)]

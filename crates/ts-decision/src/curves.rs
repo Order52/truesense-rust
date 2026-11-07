@@ -27,30 +27,30 @@ pub const MIN_POINTS: usize = 2;
 /// The most points a side may have.
 pub const MAX_POINTS: usize = 12;
 /// The lowest temperature a point may sit at.
-pub const MIN_TEMP_C: f64 = 20.0;
+pub(crate) const MIN_TEMP_C: f64 = 20.0;
 /// The highest temperature a point may sit at.
-pub const MAX_TEMP_C: f64 = 110.0;
+pub(crate) const MAX_TEMP_C: f64 = 110.0;
 /// The lowest manual duty a fan can hold: below 20 % the firmware stalls the fan, so a point
 /// is either 0 (hand over to the firmware) or 20..=100.
-pub const MIN_DUTY_PCT: f64 = 20.0;
+pub(crate) const MIN_DUTY_PCT: f64 = 20.0;
 /// The highest duty.
-pub const MAX_DUTY_PCT: f64 = 100.0;
+pub(crate) const MAX_DUTY_PCT: f64 = 100.0;
 /// The CPU curve must be at 100 % by this temperature: the CPU throttles above it, so a curve
 /// that is cooler than that for the load could let the laptop overheat.
-pub const CPU_FULL_BY_C: f64 = 95.0;
+pub(crate) const CPU_FULL_BY_C: f64 = 95.0;
 /// The GPU curve must be at 100 % by this temperature (the GPU throttles above it).
-pub const GPU_FULL_BY_C: f64 = 85.0;
+pub(crate) const GPU_FULL_BY_C: f64 = 85.0;
 
 /// Default `hysteresis` in degC.
-pub const DEFAULT_HYSTERESIS: f64 = 4.0;
+pub(crate) const DEFAULT_HYSTERESIS: f64 = 4.0;
 /// Default `down_rate` in percent per second.
-pub const DEFAULT_DOWN_RATE: f64 = 1.5;
+pub(crate) const DEFAULT_DOWN_RATE: f64 = 1.5;
 /// Default `predict` in degC.
-pub const DEFAULT_PREDICT: f64 = 5.0;
+pub(crate) const DEFAULT_PREDICT: f64 = 5.0;
 /// Default `couple` in percent.
-pub const DEFAULT_COUPLE: f64 = 15.0;
+pub(crate) const DEFAULT_COUPLE: f64 = 15.0;
 /// Default `battery_shift` in degC.
-pub const DEFAULT_BATTERY_SHIFT: f64 = 3.0;
+pub(crate) const DEFAULT_BATTERY_SHIFT: f64 = 3.0;
 
 /// The five follower parameters with their allowed ranges, in the order Python checks them.
 const PARAM_RANGES: [(&str, f64, f64); 5] = [
@@ -767,7 +767,7 @@ fn valid_name(name: &str) -> bool {
 /// since the last step, the battery shift) is passed in; it reads no clock and does no I/O,
 /// so the same inputs always give the same outputs. The daemon's control loop owns it.
 #[derive(Debug, Clone)]
-pub struct Follower {
+pub(crate) struct Follower {
     curve: Curve,
     duty: [f64; 2],
 }

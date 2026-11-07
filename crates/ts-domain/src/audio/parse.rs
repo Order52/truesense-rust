@@ -15,7 +15,7 @@ const DTS_KINDS: [&str; 5] = ["speakers", "headphones", "bluetooth-speaker", "bl
 /// The ALSA card index of the laptop's sound card (`sof-hda-dsp` in `/proc/asound/cards`); `"1"`
 /// when the text does not name it (it is card 1 on the PH16-71). A line that names the card but
 /// has no index returns the first word, as the Python edition did.
-pub fn card_index(cards: &str) -> String {
+pub(crate) fn card_index(cards: &str) -> String {
     cards
         .lines()
         .filter(|l| l.contains("sof-hda-dsp"))
@@ -26,7 +26,7 @@ pub fn card_index(cards: &str) -> String {
 
 /// The value of an `amixer cget` control: the text after `: values=` on its last line (`on`,
 /// `off`, `2`, `1,1`). `None` when amixer printed nothing.
-pub fn control_value(out: &str) -> Option<String> {
+pub(crate) fn control_value(out: &str) -> Option<String> {
     let last = out.trim().lines().next_back()?.trim();
     if last.is_empty() {
         return None;
@@ -35,7 +35,7 @@ pub fn control_value(out: &str) -> Option<String> {
 }
 
 /// The `: values=N` line of a volume control, not the `values=2` channel count in its header.
-pub fn boost_value(out: &str) -> Option<u32> {
+pub(crate) fn boost_value(out: &str) -> Option<u32> {
     out.lines().find_map(|line| {
         let digits = line.trim_start().strip_prefix(": values=")?;
         let end = digits.find(|c: char| !c.is_ascii_digit()).unwrap_or(digits.len());
@@ -45,7 +45,7 @@ pub fn boost_value(out: &str) -> Option<u32> {
 
 /// Column `col` (0-based, tab separated) of every line of a `pactl list short` output that has more
 /// than one column.
-pub fn short_column(out: &str, col: usize) -> Vec<String> {
+pub(crate) fn short_column(out: &str, col: usize) -> Vec<String> {
     out.lines()
         .filter_map(|l| {
             let fields: Vec<&str> = l.split('\t').collect();
@@ -56,7 +56,7 @@ pub fn short_column(out: &str, col: usize) -> Vec<String> {
 
 /// `(id, name)` of every real input of `pactl list short sources`: monitors of outputs are not
 /// microphones.
-pub fn short_sources(out: &str) -> Vec<(String, String)> {
+pub(crate) fn short_sources(out: &str) -> Vec<(String, String)> {
     out.lines()
         .filter(|l| !l.contains("monitor"))
         .filter_map(|l| {
@@ -68,25 +68,25 @@ pub fn short_sources(out: &str) -> Vec<(String, String)> {
 
 /// The first whitespace-separated word of every non-empty line (the id of
 /// `pactl list short sink-inputs`).
-pub fn first_fields(out: &str) -> Vec<String> {
+pub(crate) fn first_fields(out: &str) -> Vec<String> {
     out.lines().filter_map(|l| l.split_whitespace().next()).map(str::to_owned).collect()
 }
 
 /// The PipeWire name of the card whose short listing contains `matching`.
-pub fn card_name(short_cards: &str, matching: &str) -> Option<String> {
+pub(crate) fn card_name(short_cards: &str, matching: &str) -> Option<String> {
     short_cards.lines().filter(|l| l.contains(matching)).find_map(|l| l.split('\t').nth(1).map(str::to_owned))
 }
 
 /// The part of `pactl list cards` that follows `Name: <card>`, up to the next card when
 /// `until_next` is set. `None` when the card is not listed.
-pub fn card_block(list_cards: &str, card: &str, until_next: bool) -> Option<String> {
+pub(crate) fn card_block(list_cards: &str, card: &str, until_next: bool) -> Option<String> {
     let (_, rest) = list_cards.split_once(&format!("Name: {card}"))?;
     let rest = if until_next { rest.split_once("\nCard #").map_or(rest, |(head, _)| head) } else { rest };
     Some(rest.to_owned())
 }
 
 /// The `Active Profile:` of a card block (`"?"` when it has none).
-pub fn active_profile(block: &str) -> String {
+pub(crate) fn active_profile(block: &str) -> String {
     block
         .lines()
         .find(|l| l.contains("Active Profile:"))
@@ -95,7 +95,7 @@ pub fn active_profile(block: &str) -> String {
 }
 
 /// The profile names under `Profiles:` of a card block.
-pub fn profiles_offered(block: &str) -> Vec<String> {
+pub(crate) fn profiles_offered(block: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut on = false;
     for line in block.lines() {
@@ -114,7 +114,7 @@ pub fn profiles_offered(block: &str) -> Vec<String> {
 }
 
 /// The `Description:` of the named sink in `pactl list sinks`, or the name itself when there is none.
-pub fn sink_description(list_sinks: &str, name: &str) -> String {
+pub(crate) fn sink_description(list_sinks: &str, name: &str) -> String {
     let Some((_, rest)) = list_sinks.split_once(&format!("Name: {name}")) else { return name.to_owned() };
     rest.lines()
         .map(str::trim)
@@ -124,12 +124,12 @@ pub fn sink_description(list_sinks: &str, name: &str) -> String {
 }
 
 /// Whether `pactl get-source-mute` said muted (`Mute: yes`).
-pub fn is_muted(out: &str) -> bool {
+pub(crate) fn is_muted(out: &str) -> bool {
     out.contains("yes")
 }
 
 /// The first percentage of `pactl get-source-volume` (digits followed by `%`).
-pub fn volume_percent(out: &str) -> Option<u32> {
+pub(crate) fn volume_percent(out: &str) -> Option<u32> {
     let bytes = out.as_bytes();
     for (i, byte) in bytes.iter().enumerate() {
         if *byte != b'%' {
@@ -144,7 +144,7 @@ pub fn volume_percent(out: &str) -> Option<u32> {
 }
 
 /// The VAD threshold of a Purified Voice config; `None` when absent or unreadable.
-pub fn voice_threshold(conf: &str) -> Option<u32> {
+pub(crate) fn voice_threshold(conf: &str) -> Option<u32> {
     let (_, rest) = conf.split_once("\"VAD Threshold (%)\" = ")?;
     let end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
     rest[..end].parse().ok()
@@ -167,7 +167,7 @@ pub struct DtsDevice {
 }
 
 /// Whether a label names a headset-like output (those get a headphone EQ).
-pub fn is_headset_label(label: &str) -> bool {
+pub(crate) fn is_headset_label(label: &str) -> bool {
     const WORDS: [&str; 11] = [
         "headset",
         "headphone",
@@ -202,7 +202,7 @@ fn parse_dts_row(line: &str) -> Option<(String, String, String)> {
 
 /// Reads `acerultrax-cli devices`: a row per output (`* ` marks the current one) followed by an
 /// indented line with the reference `--device` takes. A row without a reference is dropped.
-pub fn parse_dts_devices(out: &str) -> Vec<DtsDevice> {
+pub(crate) fn parse_dts_devices(out: &str) -> Vec<DtsDevice> {
     let mut devices: Vec<DtsDevice> = Vec::new();
     for line in out.lines() {
         let line = line.trim_end_matches('\r');

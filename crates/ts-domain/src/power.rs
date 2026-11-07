@@ -27,18 +27,18 @@ use ts_foundation::fsx;
 use ts_platform::hw::CommandRunner;
 
 /// The smallest PL1 or PL2 ever written, in watts.
-pub const MIN_W: u32 = 25;
+pub(crate) const MIN_W: u32 = 25;
 /// The largest PL1 or PL2 ever written, in watts. The 13700HX laptop's stock limit is 80 W.
-pub const MAX_W: u32 = 120;
+pub(crate) const MAX_W: u32 = 120;
 
 /// PL1 (sustained) range that is "safe": inside it the cooling keeps up (stock is 80 W).
-pub const SAFE_PL1_W: (u32, u32) = (35, 80);
+pub(crate) const SAFE_PL1_W: (u32, u32) = (35, 80);
 /// PL2 (burst) range that is "safe".
-pub const SAFE_PL2_W: (u32, u32) = (35, 100);
+pub(crate) const SAFE_PL2_W: (u32, u32) = (35, 100);
 /// Past this PL1 the cooling cannot keep up and the CPU throttles hard or overheats.
-pub const DANGER_PL1_W: u32 = 100;
+pub(crate) const DANGER_PL1_W: u32 = 100;
 /// Past this PL2 the cooling cannot keep up.
-pub const DANGER_PL2_W: u32 = 115;
+pub(crate) const DANGER_PL2_W: u32 = 115;
 
 /// The powercap zone of the CPU package. `constraint_0` is PL1 (long term), `constraint_1` is
 /// PL2 (short term).

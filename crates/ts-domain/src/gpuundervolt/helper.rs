@@ -35,7 +35,7 @@ pub const HELPER_NAME: &str = "truesense-nvml";
 pub const HELPER_PATH: &str = "/usr/lib/truesense/truesense-nvml";
 /// How long one helper run may take. NVML answers in milliseconds; a driver that does not answer
 /// within this time is reported as an error.
-pub const CALL_TIMEOUT: Duration = Duration::from_secs(10);
+pub(crate) const CALL_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Longest piece of a helper answer quoted in an error message.
 const QUOTE_LIMIT: usize = 120;
@@ -123,7 +123,7 @@ pub trait Nvml: Send + Sync {
 
 /// Where the helper is, evaluated on every use because the installer can add it while the
 /// daemon runs.
-pub type Locator = Arc<dyn Fn() -> Result<PathBuf, NvmlError> + Send + Sync>;
+pub(crate) type Locator = Arc<dyn Fn() -> Result<PathBuf, NvmlError> + Send + Sync>;
 
 /// [`Nvml`] by running the helper once per call.
 pub struct HelperNvml {
@@ -204,7 +204,10 @@ pub fn helper_candidates(env_override: Option<&str>, exe: Option<&Path>) -> Vec<
 }
 
 /// The first candidate that `usable` accepts, or [`NvmlError::HelperMissing`].
-pub fn find_helper(candidates: &[PathBuf], usable: &dyn Fn(&Path) -> bool) -> Result<PathBuf, NvmlError> {
+pub(crate) fn find_helper(
+    candidates: &[PathBuf],
+    usable: &dyn Fn(&Path) -> bool,
+) -> Result<PathBuf, NvmlError> {
     candidates.iter().find(|c| usable(c)).cloned().ok_or(NvmlError::HelperMissing)
 }
 
@@ -220,7 +223,7 @@ fn quote(line: &str) -> String {
 
 /// Reads the helper's answer: `ok [numbers]` or `err <what>`. Anything else, a number that is not
 /// a number, a missing answer, an unknown error word: a typed error, never a panic.
-pub fn parse_reply(out: &str) -> Result<Vec<i64>, NvmlError> {
+pub(crate) fn parse_reply(out: &str) -> Result<Vec<i64>, NvmlError> {
     let line = out.trim();
     let mut words = line.split_whitespace();
     match words.next() {

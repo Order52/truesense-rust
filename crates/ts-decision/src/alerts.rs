@@ -34,9 +34,9 @@
 use ts_foundation::config::AlertsConfig;
 
 /// An episode of a temperature or battery alert ends this far below its limit.
-pub const REARM_BELOW: f64 = 5.0;
+pub(crate) const REARM_BELOW: f64 = 5.0;
 /// The least time in seconds between two messages of any kind: one a minute across all sensors.
-pub const MIN_GAP_S: f64 = 60.0;
+pub(crate) const MIN_GAP_S: f64 = 60.0;
 
 /// How serious an alert is. There is no "critical" on purpose (see the module documentation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -31,25 +31,25 @@ use serde_json::{Map, Value, json};
 use crate::json::{at, f64_at, list_at, str_at};
 
 /// The power modes, in the order the firmware and the pages list them.
-pub const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
+pub(crate) const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
 
 /// The gestures of the table, in the order the page shows them (the JSON names of `[keys]`).
 pub const GESTURES: [&str; 5] = ["tap", "double", "triple", "long", "fn_esc"];
 
 /// The lowest manual fan duty a key may set: a key can never stop a fan.
-pub const FAN_MIN: u64 = 20;
+pub(crate) const FAN_MIN: u64 = 20;
 /// The highest fan duty.
-pub const FAN_MAX: u64 = 100;
+pub(crate) const FAN_MAX: u64 = 100;
 /// How many favourites exist (`favourite:N` counts from 1 to this).
-pub const FAVOURITE_MAX: u64 = 24;
+pub(crate) const FAVOURITE_MAX: u64 = 24;
 
 /// Long press range, step and default of the built-in profiles (milliseconds).
-pub const LONG_MS: Range = Range { min: 300, max: 2000, step: 50, default: 800 };
+pub(crate) const LONG_MS: Range = Range { min: 300, max: 2000, step: 50, default: 800 };
 /// Multi-tap window range, step and default (milliseconds).
-pub const MULTI_MS: Range = Range { min: 200, max: 1000, step: 50, default: 450 };
+pub(crate) const MULTI_MS: Range = Range { min: 200, max: 1000, step: 50, default: 450 };
 
 /// The profile names that ship with the program and cannot be overwritten or deleted.
-pub const BUILTIN_PROFILES: [&str; 5] = ["native", "default", "gaming", "work", "lights"];
+pub(crate) const BUILTIN_PROFILES: [&str; 5] = ["native", "default", "gaming", "work", "lights"];
 
 /// The longest profile name the library accepts.
 const NAME_MAX: usize = 40;

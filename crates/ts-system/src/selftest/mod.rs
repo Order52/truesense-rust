@@ -134,7 +134,7 @@ fn never() -> bool {
 }
 
 /// Runs the doctor, writes its report to the writer and returns its exit code.
-pub type DoctorRun<'a> = &'a dyn Fn(&mut dyn Write) -> i32;
+pub(crate) type DoctorRun<'a> = &'a dyn Fn(&mut dyn Write) -> i32;
 
 /// Everything the self-test touches besides the firmware.
 pub struct Deps<'a> {

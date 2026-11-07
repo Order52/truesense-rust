@@ -19,7 +19,7 @@ const PARAMS: &[ParamDef] = &[
     choice("react", &["Off", "On"], 0.0),
 ];
 
-pub static BEACON: EffectDef =
+pub(crate) static BEACON: EffectDef =
     EffectDef::software("beacon", "Beacon", PARAMS, create).with_optional(&[Need::Keys]);
 
 /// Press waves kept at once (a ring of them).

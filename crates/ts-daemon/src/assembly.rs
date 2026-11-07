@@ -38,7 +38,7 @@ use crate::daemon::{
 /// in `RestartPreventExitStatus=`: restarting every second cannot make the other daemon go away,
 /// and each failed start would run the unit's `ExecStopPost` hand-back against a daemon that is
 /// driving the fans.
-pub const EXIT_ALREADY_RUNNING: i32 = 78;
+pub(crate) const EXIT_ALREADY_RUNNING: i32 = 78;
 
 /// Where the root service's home is when `HOME` is not set (systemd units run it as root).
 const ROOT_HOME: &str = "/root";

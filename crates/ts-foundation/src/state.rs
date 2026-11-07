@@ -23,7 +23,7 @@ use crate::config::Config;
 use crate::fsx::{self, FsError};
 
 /// Where the daemon keeps its settings when nothing overrides it.
-pub const STATE_PATH: &str = "/var/lib/truesense/state.json";
+pub(crate) const STATE_PATH: &str = "/var/lib/truesense/state.json";
 
 /// The runtime directory of the service; the live state file is `state` inside it.
 pub const RUN_DIR: &str = "/run/truesense";

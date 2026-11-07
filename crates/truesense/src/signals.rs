@@ -32,7 +32,7 @@ extern "C" fn on_signal(_signal: libc::c_int) {
 /// (`ts_foundation::wake`), so sleepers wake at once. It never polls: with no signal it is
 /// not scheduled at all (it used to look at a static every 50 ms, 20 wake-ups a second in
 /// each service). The command code only ever sees a plain `Arc<AtomicBool>`.
-pub fn interrupt_flag() -> Arc<AtomicBool> {
+pub(crate) fn interrupt_flag() -> Arc<AtomicBool> {
     static FLAG: OnceLock<Arc<AtomicBool>> = OnceLock::new();
     FLAG.get_or_init(|| {
         let flag = Arc::new(AtomicBool::new(false));

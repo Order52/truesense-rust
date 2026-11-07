@@ -17,7 +17,7 @@ const PARAMS: &[ParamDef] = &[
     choice("flow", &["Both ways", "Left to right", "Right to left"], 0.0),
 ];
 
-pub static CYCLES: EffectDef = EffectDef::software("cycles", "Light Cycles", PARAMS, create);
+pub(crate) static CYCLES: EffectDef = EffectDef::software("cycles", "Light Cycles", PARAMS, create);
 
 /// The grid: columns and rows over the keyboard.
 const NC: i32 = 19;

@@ -387,7 +387,7 @@ impl ServiceChecks for FakeServices {
 
 /// A runner that starts nothing: every program "is not installed".
 #[derive(Debug, Clone, Copy, Default)]
-pub struct NullRunner;
+pub(crate) struct NullRunner;
 
 impl CommandRunner for NullRunner {
     fn output(&self, program: &str, _args: &[&str], _timeout: Duration) -> io::Result<Vec<u8>> {

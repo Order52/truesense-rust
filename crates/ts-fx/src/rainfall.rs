@@ -16,7 +16,7 @@ const PARAMS: &[ParamDef] = &[
     choice("storm", &["Off", "On"], 0.0),
 ];
 
-pub static RAINFALL: EffectDef = EffectDef::software("rainfall", "Rainfall", PARAMS, create);
+pub(crate) static RAINFALL: EffectDef = EffectDef::software("rainfall", "Rainfall", PARAMS, create);
 
 /// Drops kept at once (a ring of them: the 29th drop replaces the first).
 const DN: usize = 28;

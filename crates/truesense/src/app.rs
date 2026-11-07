@@ -30,8 +30,14 @@ pub fn run(args: &[String]) -> i32 {
     }
     match rest.first().map(String::as_str) {
         // Nothing to build for these.
+        // `--version --long` adds the commit and the build date, for bug reports; the short form
+        // is what scripts compare.
         Some("-V" | "--version") => {
-            println!("truesense {}", buildinfo::VERSION);
+            if rest.get(1).map(String::as_str) == Some("--long") {
+                println!("truesense {}", buildinfo::long_version());
+            } else {
+                println!("{}", buildinfo::version_line());
+            }
             0
         }
         Some("daemon") if rest.len() == 1 => run_daemon(),
@@ -106,6 +112,7 @@ mod tests {
     fn the_version_needs_nothing_built() {
         assert_eq!(run(&args(&["truesense", "--version"])), 0);
         assert_eq!(run(&args(&["/usr/bin/truesense", "-V"])), 0);
+        assert_eq!(run(&args(&["truesense", "--version", "--long"])), 0);
     }
 
     #[test]

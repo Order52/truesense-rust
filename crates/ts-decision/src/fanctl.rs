@@ -25,9 +25,9 @@ use ts_foundation::config::FanConfig;
 use crate::curves::{Curve, Follower, Side};
 
 /// A fan may only be stopped while the CPU is below this temperature (degC) ...
-pub const STOP_START_CPU_C: f64 = 60.0;
+pub(crate) const STOP_START_CPU_C: f64 = 60.0;
 /// ... and the GPU below this one.
-pub const STOP_START_GPU_C: f64 = 55.0;
+pub(crate) const STOP_START_GPU_C: f64 = 55.0;
 /// The watchdog gives all fans back to the firmware at this CPU temperature (degC) ...
 pub const STOP_MAX_CPU_C: f64 = 70.0;
 /// ... or at this GPU temperature.
@@ -140,7 +140,7 @@ pub struct Inputs {
 /// The activity floor: a game or a heavy job needs air even before the temperature has moved,
 /// and a hot board or VRM (the chassis sensor) raises it further. Never forces the fans on
 /// when the laptop is idle or browsing.
-pub fn floor_pct(activity: Activity, gpu_power_w: f64, tchassis: Option<f64>) -> u8 {
+pub(crate) fn floor_pct(activity: Activity, gpu_power_w: f64, tchassis: Option<f64>) -> u8 {
     let mut f = match activity {
         Activity::Gaming if gpu_power_w >= 80.0 => 60,
         Activity::Gaming => 50,
@@ -358,7 +358,7 @@ pub fn plan_off(confirm: bool, temps: Temps) -> Result<ManualPlan, FanError> {
 
 /// Whether a fan may be stopped at these temperatures: the CPU temperature must be known and
 /// under 60 degC, the GPU's (0 when unknown) under 55 degC.
-pub fn can_stop(temps: Temps) -> Result<(), FanError> {
+pub(crate) fn can_stop(temps: Temps) -> Result<(), FanError> {
     let gpu = temps.gpu.unwrap_or(0.0);
     match temps.cpu {
         Some(cpu) if cpu < STOP_START_CPU_C && gpu < STOP_START_GPU_C => Ok(()),

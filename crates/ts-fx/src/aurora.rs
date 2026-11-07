@@ -17,7 +17,7 @@ const PARAMS: &[ParamDef] = &[
     choice("stars", &["Off", "On"], 1.0),
 ];
 
-pub static AURORA: EffectDef = EffectDef::software("aurora", "Aurora", PARAMS, create);
+pub(crate) static AURORA: EffectDef = EffectDef::software("aurora", "Aurora", PARAMS, create);
 
 /// Where the logo LED samples the curtains, as fractions of the keyboard's width.
 const XS: [f64; 3] = [0.2, 0.5, 0.8];

@@ -16,7 +16,7 @@ use ts_system::services::Step;
 use crate::{hooks, signals};
 
 /// The launcher of the real program: it holds the application layer the foreground modes use.
-pub struct SystemLauncher {
+pub(crate) struct SystemLauncher {
     api: Arc<Api>,
 }
 
@@ -79,7 +79,7 @@ fn exec_native_app(app: &std::path::Path, page: Option<&str>) -> i32 {
 }
 
 /// Starts `truesense gui` detached from this terminal (the terminal UI's "open the window" button).
-pub fn open_window_detached() -> Result<(), String> {
+pub(crate) fn open_window_detached() -> Result<(), String> {
     use std::os::unix::process::CommandExt;
     let mut child = Command::new(current_exe())
         .arg("gui")
@@ -186,7 +186,7 @@ impl Launcher for SystemLauncher {
 
 /// Whether a stop was requested (kept for symmetry with the services that poll it).
 #[allow(dead_code)]
-pub fn stop_requested(flag: &AtomicBool) -> bool {
+pub(crate) fn stop_requested(flag: &AtomicBool) -> bool {
     flag.load(Ordering::SeqCst)
 }
 

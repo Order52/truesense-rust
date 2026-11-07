@@ -18,11 +18,11 @@ use crate::json::{at, bool_at, f64_at, list_at, str_at};
 use crate::settings::UiSettings;
 
 /// The address updates may link to; anything else in a release's `url` is not offered as a link.
-pub const RELEASE_URL_PREFIX: &str = "https://github.com/";
+pub(crate) const RELEASE_URL_PREFIX: &str = "https://github.com/";
 /// Where the installer writes its log, named in the message when it exits with an error.
-pub const INSTALL_LOG: &str = "/var/log/truesense-install.log";
+pub(crate) const INSTALL_LOG: &str = "/var/log/truesense-install.log";
 /// Most characters of the licence file the About box shows (the file is a few kilobytes).
-pub const LICENCE_MAX_CHARS: usize = 60_000;
+pub(crate) const LICENCE_MAX_CHARS: usize = 60_000;
 
 /// The allowed range of one alert setting, as the daemon enforces it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,7 +37,7 @@ pub struct Range {
 
 /// The integer alert settings and their ranges: temperature limits 70 to 100 C, repeat 1 to 240
 /// minutes, debounce 1 to 30 samples, battery low 5 to 50 % or 0 for off.
-pub const ALERT_FIELDS: &[(&str, Range)] = &[
+pub(crate) const ALERT_FIELDS: &[(&str, Range)] = &[
     ("cpu_limit_c", Range { min: 70, max: 100, also: None }),
     ("gpu_limit_c", Range { min: 70, max: 100, also: None }),
     ("repeat_minutes", Range { min: 1, max: 240, also: None }),
@@ -45,7 +45,7 @@ pub const ALERT_FIELDS: &[(&str, Range)] = &[
     ("battery_low_pct", Range { min: 5, max: 50, also: Some(0) }),
 ];
 /// The yes/no alert settings.
-pub const ALERT_FLAGS: &[&str] = &["enabled", "throttling", "sensor_lost"];
+pub(crate) const ALERT_FLAGS: &[&str] = &["enabled", "throttling", "sensor_lost"];
 
 fn alert_default(field: &str) -> Value {
     match field {
@@ -73,7 +73,7 @@ pub enum Refusal {
 ///
 /// # Errors
 /// [`Refusal`] with the reason.
-pub fn alert_value(field: &str, value: &Value) -> Result<Value, Refusal> {
+pub(crate) fn alert_value(field: &str, value: &Value) -> Result<Value, Refusal> {
     if ALERT_FLAGS.contains(&field) {
         return value.as_bool().map(Value::Bool).ok_or(Refusal::Type);
     }
@@ -106,7 +106,7 @@ pub fn alerts_validate(args: &Value) -> Value {
 
 /// `alerts_ranges`: every integer setting with its range, so the page builds its sliders from the
 /// same numbers the validation uses.
-pub fn alerts_ranges() -> Value {
+pub(crate) fn alerts_ranges() -> Value {
     let mut out = Map::new();
     for (name, r) in ALERT_FIELDS {
         out.insert((*name).to_owned(), json!({ "min": r.min, "max": r.max, "also": r.also, "default": alert_default(name) }));
@@ -138,7 +138,7 @@ pub fn alerts_view(alerts: &Value) -> Value {
 /// `ui_validate`: `{"key", "value"}` for the window's own settings (theme, language, text size,
 /// reduced motion, tray), judged by the rules of the settings file itself. Gives `{"ok": true}` or
 /// `{"ok": false, "error"}`.
-pub fn ui_validate(args: &Value) -> Value {
+pub(crate) fn ui_validate(args: &Value) -> Value {
     let key = str_at(args, "key").unwrap_or("");
     match UiSettings::default().set(key, args.get("value").unwrap_or(&Value::Null)) {
         Ok(()) => json!({ "ok": true }),
@@ -339,7 +339,7 @@ pub fn reset_summary(result: &Value) -> Value {
 /// (a list of services, a failed read). QML therefore wraps what it passes as `{"value": x}`, and
 /// every view-model of this page set unwraps it here; an object with any other members is the
 /// argument itself.
-pub fn unwrap_value(args: &Value) -> &Value {
+pub(crate) fn unwrap_value(args: &Value) -> &Value {
     match args.as_object() {
         Some(map) if map.len() == 1 => map.get("value").unwrap_or(args),
         _ => args,
