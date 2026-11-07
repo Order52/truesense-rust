@@ -786,6 +786,7 @@ dependencies = [
  "serde",
  "serde_json",
  "ts-foundation",
+ "ts-fx",
  "ts-platform",
 ]
 

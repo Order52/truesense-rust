@@ -20,6 +20,7 @@ use ts_foundation::userstate::{self, Store};
 use ts_platform::hw::{Coded, Hw, HwError, Rear as HwRear, RearMode, RearSettings, Rgb};
 
 use crate::keyboard::{self, Keyboard, KeyboardError};
+use crate::themes::ThemeSpec;
 
 /// Where the daemon keeps the boot look unless `TRUESENSE_BOOT_LOOK` says otherwise.
 pub const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
@@ -89,6 +90,14 @@ pub struct Look {
     /// The rear light part.
     #[serde(default)]
     pub rear: Option<Rear>,
+    /// A theme the key service draws on the keyboard while this look is the current one.
+    ///
+    /// Optional and additive: the `keyboard` part is the static look written when the look is
+    /// applied (and put back when the theme stops), so a program that does not know themes
+    /// applies a themed look as its static look and ignores this member (`Look` does not deny
+    /// unknown fields in the Rust edition, and no edition rewrites a look it only applies).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<ThemeSpec>,
 }
 
 /// The rear light bar as the hardware layer remembers it (`rear_state` in the user state).
@@ -160,10 +169,11 @@ impl Look {
         serde_json::from_str(text).map_err(|source| LooksError::Parse { what: "look".to_owned(), source })
     }
 
-    /// Whether the look changes nothing: both parts missing or empty.
+    /// Whether the look changes nothing: no part, or only empty ones.
     pub fn is_empty(&self) -> bool {
         self.keyboard.as_ref().is_none_or(keyboard::State::is_empty)
             && self.rear.as_ref().is_none_or(Rear::is_empty)
+            && self.theme.is_none()
     }
 
     /// The look as one line, as `truesense look show` prints it.
@@ -186,7 +196,10 @@ impl Look {
             ),
             None => "rear unchanged".to_owned(),
         };
-        format!("{keyboard}; {rear}")
+        match &self.theme {
+            Some(t) => format!("{keyboard}; {rear}; theme {}", t.name),
+            None => format!("{keyboard}; {rear}"),
+        }
     }
 }
 
@@ -210,6 +223,7 @@ fn native() -> Look {
             direction: Some(1),
             zones: None,
         }),
+        theme: None,
     }
 }
 
@@ -342,10 +356,12 @@ impl LookStore {
             .get(userstate::keys::REAR_STATE)
             .filter(|v| v.as_object().is_some_and(|m| !m.is_empty()));
         let rear = rear.and_then(|v| serde_json::from_value::<Rear>(v).ok());
-        if keyboard.is_none() && rear.is_none() {
+        // A theme that is running is part of what is on the keyboard now.
+        let theme = self.state.get_as::<crate::themes::Active>(crate::themes::ACTIVE_KEY).map(|a| a.spec);
+        if keyboard.is_none() && rear.is_none() && theme.is_none() {
             return Err(invalid("nothing to save yet: set the keyboard or rear light first"));
         }
-        Ok(Look { keyboard, rear })
+        Ok(Look { keyboard, rear, theme })
     }
 
     /// Stores a look under `name`; `None` saves the current lights ([`LookStore::capture`]).
@@ -360,6 +376,9 @@ impl LookStore {
             Some(l) => l.clone(),
             None => self.capture()?,
         };
+        if let Some(theme) = &look.theme {
+            theme.check_shape().map_err(|e| invalid(e.to_string()))?;
+        }
         let path = self.path(name)?;
         fsx::write_atomic_mkdir(&path, &to_pretty_json(&look)?, 0o644).map_err(file_error("save look"))?;
         Ok(look)
