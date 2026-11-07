@@ -5,7 +5,8 @@
 #   tools/install.sh --check           read-only report of what is missing (no root needed)
 # Options:
 #   --no-deps        do not install missing prerequisites (just report them)
-#   --no-gui         accepted for compatibility (the window is part of the program now and needs no extra package)
+#   --no-gui         accepted for compatibility (does nothing: the web window is part of the program; use --no-qt to leave out the Qt window)
+#   --no-qt          do not install the Qt window (truesense-qt); `truesense gui` then opens the built-in web window
 #   --with-audio     also install the RNNoise plugin for microphone noise reduction where the distribution packages it
 #   --no-services    install files but do not enable or start services
 #   --module-only    only migrate old drivers and install the kernel module
@@ -15,6 +16,9 @@
 #   --uninstall      remove TrueSense (same as tools/uninstall.sh; with --purge also your settings)
 # The program: bin/truesense of a release bundle, else target/x86_64-unknown-linux-musl/release/truesense (make build), else built here with cargo as the user who ran sudo;
 # TRUESENSE_BIN=/path names one explicitly. A program whose version differs from this tree's Cargo.toml is refused (a stale build).
+# The Qt window (truesense-qt, optional, needs Qt 6 at run time): TRUESENSE_QT_BIN=/path, else bin/truesense-qt of a bundle, else target/release/truesense-qt (make qt-release), else
+# built here as the desktop user when Rust, qmake6 and the Qt 6 declarative and svg development files are present. Without it everything else installs and `truesense gui` opens the
+# web window. A truesense-qt of another version than this tree is not installed (a named TRUESENSE_QT_BIN of another version stops the install).
 # Safety: the module is test-built before anything on your system changes; the program files are swapped atomically and rolled back if the service does not start.
 set -Eeuo pipefail
 # >>> sandbox (the same text in install.sh, uninstall.sh, install_kernel_module.sh and migrate-legacy.sh: tools/shelltest keeps the four copies equal)
@@ -131,7 +135,7 @@ sandbox_dkms() {
   esac
 }
 # <<< sandbox
-PREFIX=/usr/local; MODULE_ONLY=0; AUDIO=0; SERVICES=1; FORCE=0; DEPS=1; CHECK=0; TARGET_USER=""; UNINSTALL=0; PURGE=0
+PREFIX=/usr/local; MODULE_ONLY=0; AUDIO=0; SERVICES=1; FORCE=0; DEPS=1; CHECK=0; TARGET_USER=""; UNINSTALL=0; PURGE=0; QT=1; QT_BIN=""; QT_WHY=
 say() { printf '  %s\n' "$*"; }; step() { printf '\n== %s\n' "$*"; }; die() { printf '!! %s\n' "$*" >&2; exit 1; }
 
 # ---- which distribution is this? -----------------------------------------------------------------------------------------------------
@@ -284,6 +288,125 @@ find_binary() {
   [ -z "$want" ] || [ "$got" = "$want" ] || die "$BIN is version $got but this source tree is $want: rebuild it (make build) so you do not install a stale program"
 }
 
+# ---- the Qt window (truesense-qt): optional, dynamic (needs Qt 6 at run time), never a reason to fail the install ------------------------------
+# Without it `truesense gui` opens the built-in web window, so every step below that cannot be done says why (QT_WHY) and leaves QT_BIN empty.
+
+# the Qt 6 run-time packages of the distribution (the libraries truesense-qt links: base, declarative = QML and Qt Quick Controls, svg)
+qt_runtime_pkgs() {
+  case $FAMILY in
+    arch) echo "qt6-base qt6-declarative qt6-svg";;
+    debian) echo "libqt6svg6 qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qt-labs-platform";;
+    fedora) echo "qt6-qtbase-gui qt6-qtdeclarative qt6-qtsvg";;
+    suse) echo "libQt6Svg6 qt6-declarative-imports";;
+    *) echo "Qt 6 base, declarative (QML) and svg";;
+  esac
+}
+# the Qt 6 development packages, only needed to build truesense-qt from source (a C++ compiler comes with the module toolchain)
+qt_dev_pkgs() {
+  case $FAMILY in
+    arch) echo "qt6-base qt6-declarative qt6-svg qt6-tools";;
+    debian) echo "qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools qt6-svg-dev qt6-l10n-tools libgl-dev";;
+    fedora) echo "qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel qt6-qttools-devel";;
+    suse) echo "qt6-base-devel qt6-declarative-devel qt6-svg-devel qt6-tools-devel";;
+    *) echo "the Qt 6 base, declarative, svg and tools development files";;
+  esac
+}
+
+# 0 when the libraries the program names are not all installed (the loader says "not found"); sandbox: the file DIR/sim/qt_runtime_missing
+qt_libs_missing() {
+  if [ "$SANDBOX" = 1 ]; then sim qt_runtime_missing; else ldd "$1" 2>&1 | grep -q 'not found'; fi
+}
+
+# QT_RUN: how to run something as the desktop user with ~/.cargo/bin on its PATH (rustup keeps cargo there and sudo's PATH does not have it); sandbox: no user switch
+qt_runner() {
+  local home
+  QT_RUN=(env "PATH=$PATH")
+  if [ "$SANDBOX" != 1 ] && [ -n "${USER_NAME:-}" ] && [ "$USER_NAME" != root ]; then
+    home=$(getent passwd "$USER_NAME" | cut -d: -f6); QT_RUN=(runuser -u "$USER_NAME" -- env "PATH=$home/.cargo/bin:$PATH")
+  fi
+}
+# a program of the builder's PATH: the real thing as the desktop user, the sandbox's `have`
+qt_have() { if [ "$SANDBOX" = 1 ]; then have "$1"; else "${QT_RUN[@]}" sh -c 'command -v "$1"' sh "$1" >/dev/null 2>&1; fi; }
+
+# sets QT_QMAKE and returns 0 when a Qt 6 qmake with the QtQml, QtQuick and QtSvg headers is there (sandbox: the file DIR/sim/qt_dev)
+qt_dev_present() {
+  QT_QMAKE=""
+  if [ "$SANDBOX" = 1 ]; then sim qt_dev || return 1; QT_QMAKE=qmake6; return 0; fi
+  local q h
+  for q in "${QMAKE:-}" qmake6 qmake-qt6 qmake; do
+    [ -n "$q" ] && qt_have "$q" || continue
+    q=$("${QT_RUN[@]}" sh -c 'command -v "$1"' sh "$q")
+    case $("${QT_RUN[@]}" "$q" -query QT_VERSION 2>/dev/null) in 6.*) ;; *) continue;; esac
+    h=$("${QT_RUN[@]}" "$q" -query QT_INSTALL_HEADERS 2>/dev/null)
+    if [ -d "$h/QtQml" ] && [ -d "$h/QtQuick" ] && [ -d "$h/QtSvg" ]; then QT_QMAKE=$q; return 0; fi
+  done
+  return 1
+}
+
+# Builds truesense-qt from this source tree as the desktop user (never as root: root-owned files in their tree). Sets QT_BIN, or QT_WHY when it cannot.
+build_qt_from_source() {
+  qt_runner
+  if [ ! -f "$ROOT/Cargo.toml" ] || [ ! -d "$ROOT/crates/ts-qt" ]; then QT_WHY="there is no truesense-qt next to this script and this is not a source tree to build it from"; return 0; fi
+  if ! qt_have cargo; then QT_WHY="no prebuilt truesense-qt was found and there is no Rust toolchain to build it (rustup: https://rustup.rs)"; return 0; fi
+  if ! { qt_have c++ || qt_have g++ || qt_have clang++; }; then QT_WHY="building truesense-qt needs a C++ compiler (g++) and there is none"; return 0; fi
+  if ! qt_dev_present; then QT_WHY="building truesense-qt needs qmake6 and the Qt 6 development files, which are missing (install: $(qt_dev_pkgs))"; return 0; fi
+  if [ "$SANDBOX" != 1 ] && ! "${QT_RUN[@]}" sh -c 'test -r "$1/Cargo.toml" && test -x "$1"' sh "$ROOT"; then
+    QT_WHY="the source tree $ROOT cannot be read by $USER_NAME, so it was not built here (run make qt-release as yourself, then this installer again)"; return 0
+  fi
+  say "building the Qt window from source (release build: this takes a few minutes)"
+  if [ "$SANDBOX" = 1 ]; then
+    sys cargo build --release --locked -p ts-qt || { QT_WHY="the Qt window did not build (see the messages above)"; return 0; }
+    if [ -e "$R/sim/qt_built" ]; then mkdir -p "$ROOT/target/release"; cp "$R/sim/qt_built" "$ROOT/target/release/truesense-qt"; fi
+  else
+    mkdir -p "$ROOT/target"; sys chown "$USER_NAME" "$ROOT/target" 2>/dev/null || true
+    "${QT_RUN[@]}" sh -c 'cd "$1" && export CARGO_TARGET_DIR="$1/target" QMAKE="$2" && cargo build --release --locked -p ts-qt' sh "$ROOT" "$QT_QMAKE" \
+      || { QT_WHY="the Qt window did not build (see the messages above)"; return 0; }
+  fi
+  [ -x "$ROOT/target/release/truesense-qt" ] && QT_BIN=$ROOT/target/release/truesense-qt || QT_WHY="the build finished but made no target/release/truesense-qt"
+  return 0
+}
+
+# the Qt 6 run-time packages are missing: install them (they are what `truesense gui` needs to hand over to the Qt window instead of the web one). Fails when it cannot.
+qt_runtime_ensure() {
+  local pkgs; pkgs=$(qt_runtime_pkgs)
+  say "the Qt 6 run-time libraries are missing: $pkgs"
+  [ "$DEPS" = 1 ] || { QT_WHY="the Qt 6 run-time libraries are missing and --no-deps was given (install: $pkgs)"; return 1; }
+  [ "$FAMILY" != unknown ] || { QT_WHY="the Qt 6 run-time libraries are missing and this distribution is not recognised (install: $pkgs)"; return 1; }
+  say "installing them with the system package manager ($FAMILY)"
+  # shellcheck disable=SC2086  # the package names are a list
+  pkg_install $pkgs || { QT_WHY="installing the Qt 6 run-time libraries failed (install them yourself: $pkgs)"; return 1; }
+  if [ "$SANDBOX" = 1 ]; then sim qt_runtime_stays || rm -f "$R/sim/qt_runtime_missing"; fi
+  if qt_libs_missing "$QT_BIN"; then QT_WHY="the Qt 6 run-time libraries are still missing after installing $pkgs"; return 1; fi
+}
+
+# QT_BIN is not usable: a program the user named is an error (nothing was changed yet), one found by itself is left out with the reason
+qt_unusable() {
+  if [ -n "${TRUESENSE_QT_BIN:-}" ] && [ "$QT_BIN" = "$TRUESENSE_QT_BIN" ]; then die "$1"; fi
+  QT_WHY=$1; QT_BIN=""
+}
+
+# Finds the Qt window to install (order: TRUESENSE_QT_BIN, bin/truesense-qt of a bundle, target/release/truesense-qt, a build from source) and checks that it runs and is this
+# tree's version. Sets QT_BIN, or leaves it empty with QT_WHY saying why not. Never fails the install, except for a named TRUESENSE_QT_BIN that is unusable.
+find_qt_app() {
+  local c want got
+  QT_BIN=""; QT_WHY=""
+  [ "$QT" = 1 ] || { QT_WHY="--no-qt was given"; return 0; }
+  if [ -n "${TRUESENSE_QT_BIN:-}" ]; then
+    [ -x "$TRUESENSE_QT_BIN" ] && [ -f "$TRUESENSE_QT_BIN" ] || die "TRUESENSE_QT_BIN=$TRUESENSE_QT_BIN is not an executable file"
+    QT_BIN=$TRUESENSE_QT_BIN
+  else
+    for c in "$ROOT/bin/truesense-qt" "$ROOT/target/release/truesense-qt"; do [ -x "$c" ] && { QT_BIN=$c; break; }; done
+    [ -n "$QT_BIN" ] || build_qt_from_source
+  fi
+  [ -n "$QT_BIN" ] || return 0
+  if qt_libs_missing "$QT_BIN"; then qt_runtime_ensure || { QT_BIN=""; return 0; }; fi
+  want=$(tree_version "$ROOT/Cargo.toml") || true
+  got=$("$QT_BIN" --version 2>/dev/null | awk '{print $2}') || true
+  [ -n "$got" ] || { qt_unusable "$QT_BIN does not run on this machine (a Qt 6 or glibc older than the one it was built with?)"; return 0; }
+  [ -z "$want" ] || [ "$got" = "$want" ] || qt_unusable "$QT_BIN is version $got but this source tree is $want: rebuild it (make qt-release) so you do not install a stale window"
+  return 0
+}
+
 # the service is up when systemd says active AND the daemon's control socket exists (the socket is what the program's own commands need)
 sock_ready() { if [ "$SANDBOX" = 1 ]; then [ -e "$R/run/truesense/truesense.sock" ]; else [ -S /run/truesense/truesense.sock ]; fi; }
 wait_for_service() { local _; for _ in $(seq 1 "${1:-30}"); do sys systemctl is-active --quiet truesense.service && sock_ready && return 0; nap 0.5; done; return 1; }
@@ -312,6 +435,8 @@ fans_to_firmware() { if [ -e "$R/dev/truesense" ]; then dev_write "$R/dev/truese
 
 rollback() {
   echo "!! the service did not start with the new version: restoring the previous one"
+  # the window goes back with the daemon it was installed with (a new window next to an old daemon could speak another dialect)
+  if [ -e "$R$PREFIX/bin/truesense-qt.prev" ]; then mv -f "$R$PREFIX/bin/truesense-qt.prev" "$R$PREFIX/bin/truesense-qt"; fi
   if [ -e "$R$PREFIX/bin/truesense.prev" ]; then
     restore_units
     mv -f "$R$PREFIX/bin/truesense.prev" "$R$PREFIX/bin/truesense"
@@ -323,12 +448,44 @@ rollback() {
   { sys journalctl -u truesense.service -n 15 --no-pager 2>/dev/null | sed 's/^/    /'; } || true
 }
 
+# truesense-qt is swapped in like the program: written beside, the old one kept as truesense-qt.prev (the rollback), then ONE rename. An interrupted earlier run that already put THIS
+# window in place keeps the older copy it made.
+install_qt_app() {
+  [ -n "$QT_BIN" ] || return 0
+  local B=$R$PREFIX/bin
+  rm -f "$B/truesense-qt.new" "$B/truesense-qt.prev.new"
+  install -m755 "$QT_BIN" "$B/truesense-qt.new"
+  if [ -e "$B/truesense-qt" ] && ! { [ -e "$B/truesense-qt.prev" ] && cmp -s "$QT_BIN" "$B/truesense-qt"; }; then
+    cp -p "$B/truesense-qt" "$B/truesense-qt.prev.new"; mv -f "$B/truesense-qt.prev.new" "$B/truesense-qt.prev"
+  fi
+  mv -f "$B/truesense-qt.new" "$B/truesense-qt"
+}
+
+# the read-only report of the optional Qt window: it never changes the verdict of --check (the return value comes from the prerequisites above)
+check_qt() {
+  local c found=""
+  step "optional: the Qt window (truesense-qt)"
+  say "without it nothing is lost: 'truesense gui' opens the built-in web window. With it the window is the native app."
+  say "run-time packages (Qt 6 base, declarative, svg), needed to run it: $(qt_runtime_pkgs)"
+  for c in "${TRUESENSE_QT_BIN:-}" "$ROOT/bin/truesense-qt" "$ROOT/target/release/truesense-qt"; do [ -n "$c" ] && [ -x "$c" ] && { found=$c; break; }; done
+  if [ -n "$found" ]; then
+    say "found a window to install: $found"
+    if qt_libs_missing "$found"; then say "its Qt 6 libraries are NOT all installed: the installer would install the run-time packages above"; else say "its Qt 6 libraries are installed"; fi
+  else
+    qt_runner
+    say "no prebuilt truesense-qt next to this script (bin/truesense-qt or target/release/truesense-qt)"
+    say "to build it here: a Rust toolchain ($(qt_have cargo && echo found || echo missing)), a C++ compiler ($({ qt_have g++ || qt_have c++; } && echo found || echo missing)), qmake6 with the Qt 6 development files ($(qt_dev_present && echo found || echo missing))"
+    qt_dev_present || say "development packages for that: $(qt_dev_pkgs)"
+  fi
+  if [ -x "$R$PREFIX/bin/truesense-qt" ]; then say "installed now: $PREFIX/bin/truesense-qt"; else say "installed now: no"; fi
+}
+
 main() {
   local a
   for a in "$@"; do case "$a" in
-    --check|--dry-run) CHECK=1;; --no-deps) DEPS=0;; --no-gui) ;; --module-only) MODULE_ONLY=1;; --with-audio) AUDIO=1;; --no-services) SERVICES=0;; --force) FORCE=1;;
+    --check|--dry-run) CHECK=1;; --no-deps) DEPS=0;; --no-gui) ;; --no-qt) QT=0;; --module-only) MODULE_ONLY=1;; --with-audio) AUDIO=1;; --no-services) SERVICES=0;; --force) FORCE=1;;
     --prefix=*) PREFIX=${a#*=};; --user=*) TARGET_USER=${a#*=};; --uninstall) UNINSTALL=1;; --purge) PURGE=1;;
-    -h|--help) sed -n '2,21p' "$0"; exit 0;; *) echo "unknown option: $a (see --help)" >&2; exit 2;; esac; done
+    -h|--help) sed -n '2,22p' "$0"; exit 0;; *) echo "unknown option: $a (see --help)" >&2; exit 2;; esac; done
   # the prefix ends up in unit files (ExecStart=) and in sed commands: it must be an absolute path made of plain characters
   case $PREFIX in /*) ;; *) echo "--prefix must be an absolute path (got '$PREFIX')" >&2; exit 2;; esac
   case $PREFIX in *[!A-Za-z0-9_./+@:-]*) echo "--prefix may only contain letters, digits and _ . / + @ : - (got '$PREFIX')" >&2; exit 2;; esac
@@ -347,6 +504,7 @@ main() {
     for p in "${PROBLEMS[@]}"; do say "problem: $p"; done
     if [ "${#MISSING[@]}" -eq 0 ] && [ "${#PROBLEMS[@]}" -eq 0 ]; then say "everything needed is present: sudo tools/install.sh will go straight to installing"
     else [ "${#MISSING[@]}" -eq 0 ] || say "would install: ${MISSING[*]}"; fi
+    check_qt
     [ "${#MISSING[@]}" -eq 0 ] && [ "${#PROBLEMS[@]}" -eq 0 ]; return
   fi
 
@@ -383,6 +541,8 @@ main() {
   precompile_module
   # the program is found (or built) now, while nothing on the system has changed: a missing or stale program must not be discovered after the old helpers are gone
   [ "$MODULE_ONLY" = 1 ] || find_binary
+  # the optional Qt window is found (or built) now too, for the same reason; it can only ever be left out, never stop the install
+  [ "$MODULE_ONLY" = 1 ] || find_qt_app
 
 step "removing legacy helpers (backed up first)"
 "$ROOT/tools/migrate-legacy.sh"
@@ -416,6 +576,7 @@ if [ -e "$B/truesense" ] && ! { [ -e "$B/truesense.prev" ] && cmp -s "$BIN" "$B/
 fi
 mv -f "$B/truesense.new" "$B/truesense"
 ln -s truesense "$B/.truesense-fast.new"; mv -f -T "$B/.truesense-fast.new" "$B/truesense-fast"                # one binary: the name selects the instant status-bar client
+install_qt_app
 [ -d "$ROOT/packaging/profiles" ] && install -m644 "$ROOT"/packaging/profiles/*.toml "$R$PREFIX/share/truesense/profiles/"
 if [ ! -e "$R/etc/truesense/config.toml" ]; then
   printf '# TrueSense system configuration (see docs/USAGE.md). Built-in defaults apply to everything not set here.\nuser = "%s"\n\n# First install: the PREDATOR key behaves like PredatorSense on Windows (it opens the app). Change it in the app: PREDATOR key.\n[keys]\nprofile = "native"\ntap = "exec:truesense gui"\ndouble = "none"\nlong = "none"\n' "$U" > "$R/etc/truesense/config.toml.new"
@@ -426,16 +587,27 @@ for sh in bash zsh fish; do
   install -d "$(dirname "$d")"; "$B/truesense" completion $sh > "$d" 2>/dev/null || rm -f "$d"
 done
 say "installed $PREFIX/bin/truesense (version $("$B/truesense" --version | awk '{print $2}'))"
+if [ -n "$QT_BIN" ]; then say "installed $PREFIX/bin/truesense-qt (version $("$B/truesense-qt" --version | awk '{print $2}'))"
+elif [ -x "$B/truesense-qt" ]; then say "the Qt window was NOT updated: $QT_WHY. The one installed ($("$B/truesense-qt" --version 2>/dev/null | awk '{print $2}')) stays."
+else say "the Qt window was NOT installed: $QT_WHY. 'truesense gui' opens the built-in web window; everything else works. (Optional later: build it with make qt-release, then run this installer again; see docs/INSTALL.md.)"; fi
 
 step "services"
 MODPROBE=/usr/sbin/modprobe; [ "$SANDBOX" = 1 ] || MODPROBE=$(command -v modprobe)
 SNAP=$L/units.prev/system
 for u in truesense.service truesense-health.service truesense-health.timer; do render_to "$ROOT/packaging/$u" "$R/etc/systemd/system/$u" -e "s|@PREFIX@|$PREFIX|g" -e "s|@MODPROBE@|$MODPROBE|g"; done
 install -Dm644 "$ROOT/LICENSE" "$R$PREFIX/share/licenses/truesense/LICENSE"
+# the attribution texts the About box of the Qt window looks for (Settings page: share/doc/truesense, then share/licenses/truesense)
+for d in doc licenses; do
+  [ ! -f "$ROOT/THIRD_PARTY.md" ] || install -Dm644 "$ROOT/THIRD_PARTY.md" "$R$PREFIX/share/$d/truesense/THIRD_PARTY.md"
+  [ ! -f "$ROOT/crates/ts-fx/NOTICE.md" ] || install -Dm644 "$ROOT/crates/ts-fx/NOTICE.md" "$R$PREFIX/share/$d/truesense/NOTICE-ts-fx.md"
+done
 install -Dm644 "$ROOT/packaging/icons/truesense.svg" "$R$PREFIX/share/icons/hicolor/scalable/apps/truesense.svg"; install -Dm644 "$ROOT/packaging/icons/truesense-256.png" "$R$PREFIX/share/icons/hicolor/256x256/apps/truesense.png"
 if have gtk-update-icon-cache; then sys gtk-update-icon-cache -q -t -f "$R$PREFIX/share/icons/hicolor" 2>/dev/null || true; fi
 install -d "$R/usr/share/applications"; unset SNAP
-for u in truesense.desktop truesense-tui.desktop; do render_to "$ROOT/packaging/$u" "$R/usr/share/applications/$u" "s|@PREFIX@|$PREFIX|g"; done
+# the launcher's page shortcuts (Desktop Actions) start truesense-qt itself, so they are left out while no Qt window is installed (`truesense gui` is the entry that works either way)
+QT_ACTIONS=(-e '/^Actions=/d' -e '/^\[Desktop Action /,$d'); [ ! -x "$B/truesense-qt" ] || QT_ACTIONS=()
+render_to "$ROOT/packaging/truesense.desktop" "$R/usr/share/applications/truesense.desktop" -e "s|@PREFIX@|$PREFIX|g" ${QT_ACTIONS[@]+"${QT_ACTIONS[@]}"}
+render_to "$ROOT/packaging/truesense-tui.desktop" "$R/usr/share/applications/truesense-tui.desktop" "s|@PREFIX@|$PREFIX|g"
 install -d "$R/etc/systemd/user"; SNAP=$L/units.prev/user
 for u in truesense-keys.service truesense-audio.service truesense-startup.service truesense-update.service truesense-update.timer; do render_to "$ROOT/packaging/$u" "$R/etc/systemd/user/$u" -e "s|@PREFIX@|$PREFIX|g"; done
 unset SNAP
@@ -445,7 +617,7 @@ if [ "$SERVICES" = 1 ]; then
   sys systemctl enable truesense.service truesense-health.timer >/dev/null 2>&1
   sys systemctl restart truesense.service || true    # `enable --now` would NOT restart a running service, so upgrades would keep the old code
   if ! wait_for_service; then rollback; die "the new version did not start (the previous one was restored if there was one)"; fi
-  rm -f "$B/truesense.prev"; rm -r -f "$L/units.prev"
+  rm -f "$B/truesense.prev" "$B/truesense-qt.prev"; rm -r -f "$L/units.prev"
   rm -r -f "$L/truesense" "$R$PREFIX/lib/truesense.prev"                                                      # the Python program of 0.3.x (the Go edition left nothing here), replaced by the binary
   sys systemctl start truesense-health.timer
   for u in truesense-keys.service truesense-audio.service truesense-startup.service truesense-update.timer; do sys systemctl --global enable "$u" >/dev/null 2>&1 || say "(could not enable $u for the user sessions)"; done

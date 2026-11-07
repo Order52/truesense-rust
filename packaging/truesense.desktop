@@ -3,9 +3,27 @@ Type=Application
 Name=TrueSense
 GenericName=Predator control
 Comment=Power, fans, lighting, battery and audio for the Acer Predator Helios 16
+# `truesense gui` hands over to the Qt window (truesense-qt) when it is installed and falls back to the built-in web window when it is not, so this one entry works on every
+# install. StartupWMClass is the window class of both windows. The actions below start truesense-qt itself: the installer leaves them out while it is not installed.
 Exec=@PREFIX@/bin/truesense gui
 Icon=truesense
 Terminal=false
 StartupWMClass=truesense
 Categories=Settings;HardwareSettings;System;
 Keywords=predator;acer;fan;rgb;keyboard;power;
+Actions=Monitor;Cooling;Lighting;
+
+[Desktop Action Monitor]
+Name=Monitor
+Exec=@PREFIX@/bin/truesense-qt --page monitor
+Icon=truesense
+
+[Desktop Action Cooling]
+Name=Cooling
+Exec=@PREFIX@/bin/truesense-qt --page cooling
+Icon=truesense
+
+[Desktop Action Lighting]
+Name=Lighting
+Exec=@PREFIX@/bin/truesense-qt --page lighting
+Icon=truesense
