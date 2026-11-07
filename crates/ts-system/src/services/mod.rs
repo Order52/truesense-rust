@@ -131,10 +131,11 @@ impl Runner for SystemRunner {
         };
         let (stdout, stderr) = (drain(stdout), drain(stderr));
         let deadline = Instant::now() + self.timeout;
+        let mut backoff = ts_foundation::backoff::Backoff::new();
         let status = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break Some(status),
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
+                Ok(None) if Instant::now() < deadline => backoff.wait(),
                 Ok(None) | Err(_) => {
                     let _ = child.kill();
                     let _ = child.wait();

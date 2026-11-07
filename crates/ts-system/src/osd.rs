@@ -104,10 +104,11 @@ impl SessionRunner for ProcessSessionRunner {
             out
         });
         let deadline = Instant::now() + HELPER_TIMEOUT;
+        let mut backoff = ts_foundation::backoff::Backoff::new();
         let status = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break status,
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
+                Ok(None) if Instant::now() < deadline => backoff.wait(),
                 _ => {
                     let _ = child.kill();
                     let _ = child.wait();

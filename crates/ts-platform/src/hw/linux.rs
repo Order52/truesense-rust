@@ -81,6 +81,7 @@ impl CommandRunner for ProcessRunner {
             stderr.take(MAX_STDERR).read_to_end(&mut out).map(|_| out)
         });
         let deadline = Instant::now() + timeout;
+        let mut backoff = ts_foundation::backoff::Backoff::new();
         let status = loop {
             if let Some(status) = child.try_wait()? {
                 break status;
@@ -95,7 +96,7 @@ impl CommandRunner for ProcessRunner {
                     format!("{program} did not finish in time"),
                 ));
             }
-            thread::sleep(Duration::from_millis(10));
+            backoff.wait();
         };
         let stdout = out_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;
         let stderr = err_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;

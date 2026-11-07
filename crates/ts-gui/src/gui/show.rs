@@ -114,6 +114,7 @@ fn run_with_timeout(program: &str, args: &[&str], timeout: Duration) -> Result<S
         })
     });
     let started = Instant::now();
+    let mut backoff = ts_foundation::backoff::Backoff::new();
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Ok(status),
@@ -122,7 +123,7 @@ fn run_with_timeout(program: &str, args: &[&str], timeout: Duration) -> Result<S
                 let _ = child.wait();
                 break Err(format!("{program}: did not finish in {} s", timeout.as_secs()));
             }
-            Ok(None) => thread::sleep(Duration::from_millis(10)),
+            Ok(None) => backoff.wait(),
             Err(e) => break Err(format!("{program}: {e}")),
         }
     };
