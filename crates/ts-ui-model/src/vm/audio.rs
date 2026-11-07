@@ -165,6 +165,7 @@ pub fn options() -> Value {
 /// # Errors
 /// The text for an unknown verb.
 pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
+    let args = super::settings::unwrap_value(args);
     match verb {
         "state" => Ok(state(args)),
         "next_output" => Ok(json!(next_output(str_at(args, "active"), bool_at(args, "jack_plugged")))),

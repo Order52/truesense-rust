@@ -279,6 +279,7 @@ pub fn history_series(args: &Value) -> Value {
 /// # Errors
 /// The text for an unknown verb.
 pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
+    let args = super::settings::unwrap_value(args);
     match verb {
         "summary" => Ok(summary(args)),
         "readback" => Ok(readback(args)),
@@ -521,6 +522,12 @@ mod tests {
         assert_eq!(empty["values"], json!([]));
         assert_eq!(empty["low"], Value::Null);
         assert_eq!(empty["span_s"], 0.0);
+    }
+
+    #[test]
+    fn a_wrapped_null_reaches_full_state_as_no_daemon() {
+        assert_eq!(call("full_state", &json!({"value": null})).unwrap()["state"], "unavailable");
+        assert_eq!(call("full_state", &json!({"value": {"active": true}})).unwrap()["state"], "active");
     }
 
     #[test]

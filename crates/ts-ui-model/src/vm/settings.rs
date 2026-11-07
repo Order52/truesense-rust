@@ -335,11 +335,23 @@ pub fn reset_summary(result: &Value) -> Value {
     json!({ "ok_count": steps.len() - failed.len(), "failed": failed, "all_ok": failed.is_empty() })
 }
 
+/// The bus accepts only JSON *objects* as arguments, but several commands answer an array or `null`
+/// (a list of services, a failed read). QML therefore wraps what it passes as `{"value": x}`, and
+/// every view-model of this page set unwraps it here; an object with any other members is the
+/// argument itself.
+pub fn unwrap_value(args: &Value) -> &Value {
+    match args.as_object() {
+        Some(map) if map.len() == 1 => map.get("value").unwrap_or(args),
+        _ => args,
+    }
+}
+
 /// See the module documentation for the verbs.
 ///
 /// # Errors
 /// The text for an unknown verb.
 pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
+    let args = unwrap_value(args);
     match verb {
         "checklist" => Ok(checklist(args)),
         "alerts_view" => Ok(alerts_view(args)),
@@ -620,6 +632,20 @@ mod tests {
         assert_eq!(r["failed"][1], json!({"step": "odd", "error": ""}));
         assert_eq!(reset_summary(&json!({"steps": []}))["all_ok"], true);
         assert_eq!(reset_summary(&json!(null))["ok_count"], 0);
+    }
+
+    #[test]
+    fn wrapped_arguments_are_unwrapped_and_other_objects_are_left_alone() {
+        assert_eq!(unwrap_value(&json!({"value": [1, 2]})), &json!([1, 2]));
+        assert_eq!(unwrap_value(&json!({"value": null})), &json!(null));
+        assert_eq!(unwrap_value(&json!({"value": 1, "x": 2})), &json!({"value": 1, "x": 2}));
+        assert_eq!(unwrap_value(&json!({"other": 1})), &json!({"other": 1}));
+        assert_eq!(unwrap_value(&json!([1])), &json!([1]));
+        assert_eq!(call("checklist", &json!({"value": null})).unwrap()["available"], false);
+        assert_eq!(
+            call("alerts_validate", &json!({"value": {"field": "enabled", "value": true}})).unwrap()["ok"],
+            true
+        );
     }
 
     #[test]

@@ -277,6 +277,7 @@ pub fn config(problems: &Value) -> Value {
 /// # Errors
 /// The text for an unknown verb.
 pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
+    let args = super::settings::unwrap_value(args);
     match verb {
         "doctor" => Ok(doctor(args)),
         "services" => Ok(services(args)),
@@ -482,6 +483,15 @@ mod tests {
             json!({"valid": false, "problems": ["[alerts] cpu_limit_c must be 70..100"]})
         );
         assert_eq!(config(&json!(null))["valid"], false, "no answer is not a clean bill of health");
+    }
+
+    #[test]
+    fn arrays_arrive_wrapped_because_the_bus_takes_objects_only() {
+        let rows = json!({"value": [{"unit": "a.service", "scope": "user", "ok": false, "fix": "f"}]});
+        assert_eq!(call("services", &rows).unwrap()["bad"], 1);
+        assert_eq!(call("repair", &json!({"value": [{"step": "s", "ok": true}]})).unwrap()["all_ok"], true);
+        assert_eq!(call("config", &json!({"value": ["bad"]})).unwrap()["valid"], false);
+        assert_eq!(call("capabilities", &json!({"value": null})).unwrap()["available"], false);
     }
 
     #[test]
