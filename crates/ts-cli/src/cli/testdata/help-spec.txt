@@ -1,0 +1,1568 @@
+usage: truesense [-h] [--json] [-V] area ...
+
+truesense: command line for the Acer Predator Helios 16 (PH16-71).   truesense <area> <verb> ...   (every setting has on / off / toggle / status; --json for scripts)
+
+positional arguments:
+  area
+    status       everything at a glance
+    sensors      temperatures and fan RPM
+    power        power mode (quiet balanced performance turbo eco) and the
+                 automatic profile
+    fan          fans: firmware auto, max, manual %, smart curve
+    battery      80 % charge limit, charge to full once, calibration, USB
+                 power-off charging
+    display      LCD overdrive
+    boot         boot animation and sound
+    gpu          GPU mode (MUX); a change needs a reboot
+    rear         rear light bar
+    update       check for a newer TrueSense and install it
+    look         saved lighting looks (keyboard effect/brightness/colours +
+                 rear light)
+    startup      what the lights and profile do at login
+    keyboard     keyboard lighting
+    audio        output, microphone, headset jack, Purified Voice, DTS
+    keys         PREDATOR key and Fn+Esc: what each gesture does
+    profile      named bundles of settings (gaming, quiet, battery-saver,
+                 yours)
+    cpu          CPU power limits and the guarded undervolt
+    touchpad     touchpad on/off (Fn+F10)
+    service      the daemon
+    config       configuration
+    doctor       check the whole stack and say how to fix problems
+    selftest     set -> read back -> restore every firmware feature
+    completion   shell completion script
+    gui          the small optional window
+    probe        read-only report of this laptop for model support (never
+                 writes a setting)
+    tui          the full control surface in the terminal (keyboard and mouse)
+    daemon       run the daemon (systemd does this)
+
+options:
+  -h, --help     show this help message and exit
+  --json         machine-readable output
+  -V, --version  show program's version number and exit
+
+Examples:
+  truesense status
+  truesense power set turbo
+  truesense fan set 60
+  truesense rear set breathing --color 00ff88
+  truesense keyboard effect wave --brightness 50
+  truesense keys set double output-toggle
+  truesense profile apply gaming
+  truesense doctor
+
+======================================================================
+AREA status
+usage: truesense status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA sensors
+usage: truesense sensors [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA power
+usage: truesense power [-h]
+                       {status,list,set,next,prev,smart,auto,hold,release,managers,game} ...
+
+positional arguments:
+  {status,list,set,next,prev,smart,auto,hold,release,managers,game}
+    smart               Smart auto profiles: list | current | show NAME | use
+                        NAME | copy NAME [NEW] | save NAME [--from BASE] --set
+                        key=value ... | delete NAME (built-in profiles are
+                        read-only: copy them to edit)
+    auto                automatic power mode: off | native (PredatorSense-
+                        like: power source only) | smart (heat, load and
+                        battery aware); on = smart
+    hold                keep the current power mode against the automatic
+                        profile
+    release             end a hold
+    managers            other power managers (auto-cpufreq, TLP, tuned, power-
+                        profiles-daemon, system76-power): list | stop
+                        (TrueSense manages power: stops them, sets sane CPU
+                        defaults, remembers) | restore
+    game                game rules: a program raises the power mode while it
+                        runs: list | add NAME MODE | remove NAME | clear
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB power status
+usage: truesense power status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power list
+usage: truesense power list [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power set
+usage: truesense power set [-h] {quiet,balanced,performance,turbo,eco}
+
+positional arguments:
+  {quiet,balanced,performance,turbo,eco}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB power next
+usage: truesense power next [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power prev
+usage: truesense power prev [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power smart
+usage: truesense power smart [-h] [--from BASE] [--set KEY=VALUE]
+                             [{list,current,show,use,copy,save,delete}] [name]
+                             [new]
+
+positional arguments:
+  {list,current,show,use,copy,save,delete}
+  name
+  new
+
+options:
+  -h, --help            show this help message and exit
+  --from BASE
+  --set KEY=VALUE
+
+--------------------------------------------------
+VERB power auto
+usage: truesense power auto [-h] [{off,native,smart,on,toggle,status}]
+
+positional arguments:
+  {off,native,smart,on,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB power hold
+usage: truesense power hold [-h] [minutes]
+
+positional arguments:
+  minutes
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power release
+usage: truesense power release [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB power managers
+usage: truesense power managers [-h] [{list,stop,restore}]
+
+positional arguments:
+  {list,stop,restore}
+
+options:
+  -h, --help           show this help message and exit
+
+--------------------------------------------------
+VERB power game
+usage: truesense power game [-h]
+                            [{list,add,remove,clear}] [name]
+                            [{quiet,balanced,performance,turbo,eco}]
+
+positional arguments:
+  {list,add,remove,clear}
+  name
+  {quiet,balanced,performance,turbo,eco}
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA fan
+usage: truesense fan [-h] {status,auto,max,off,set,curve,smart} ...
+
+positional arguments:
+  {status,auto,max,off,set,curve,smart}
+    auto                firmware control (0 rpm when cool)
+    off                 stop both fans (needs --confirm; only when cool; the
+                        service returns them to Auto if it gets warm)
+    set                 manual duty per fan, 20..100 %, or 0 to stop that fan
+                        (needs --confirm, only when cool)
+    curve               smart-fan curves: list | current | show NAME | use
+                        NAME | copy NAME [NEW] | save NAME --cpu PTS --gpu PTS
+                        | delete NAME (built-in curves are read-only: copy
+                        them to edit)
+    smart               the daemon's smart curve
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB fan status
+usage: truesense fan status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB fan auto
+usage: truesense fan auto [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB fan max
+usage: truesense fan max [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB fan off
+usage: truesense fan off [-h] [--confirm]
+
+options:
+  -h, --help  show this help message and exit
+  --confirm   I understand the laptop can overheat with the fans off
+
+--------------------------------------------------
+VERB fan set
+usage: truesense fan set [-h] [--confirm] cpu [gpu]
+
+positional arguments:
+  cpu
+  gpu
+
+options:
+  -h, --help  show this help message and exit
+  --confirm   I understand a stopped fan can let the laptop overheat
+
+--------------------------------------------------
+VERB fan curve
+usage: truesense fan curve [-h] [--cpu CPU] [--gpu GPU]
+                           [--hysteresis HYSTERESIS] [--down-rate DOWN_RATE]
+                           [--predict PREDICT] [--couple COUPLE]
+                           [--battery-shift BATTERY_SHIFT] [--from BASE]
+                           [{list,current,show,use,save,delete,copy}] [name]
+                           [new]
+
+positional arguments:
+  {list,current,show,use,save,delete,copy}
+  name
+  new                   copy: the new name
+
+options:
+  -h, --help            show this help message and exit
+  --cpu CPU             CPU points, e.g. 52:0,60:35,70:55,80:75,89:100
+                        (temperature:percent, 0 = firmware auto)
+  --gpu GPU             GPU points
+  --hysteresis HYSTERESIS
+  --down-rate DOWN_RATE
+  --predict PREDICT
+  --couple COUPLE
+  --battery-shift BATTERY_SHIFT
+  --from BASE           start from this curve and change only what you give
+
+--------------------------------------------------
+VERB fan smart
+usage: truesense fan smart [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA battery
+usage: truesense battery [-h] {full,limit,calibration,usb-charge,status} ...
+
+positional arguments:
+  {full,limit,calibration,usb-charge,status}
+    full                charge to 100 % once: the 80 % limit comes back by
+                        itself (unplug, full for 5 minutes, or 24 hours)
+    usb-charge          USB charging while powered off: stop level 0 (off) 10
+                        20 30
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB battery full
+usage: truesense battery full [-h] [{start,cancel,status}]
+
+positional arguments:
+  {start,cancel,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB battery limit
+usage: truesense battery limit [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB battery calibration
+usage: truesense battery calibration [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB battery usb-charge
+usage: truesense battery usb-charge [-h] [{status,0,10,20,30}]
+
+positional arguments:
+  {status,0,10,20,30}
+
+options:
+  -h, --help           show this help message and exit
+
+--------------------------------------------------
+VERB battery status
+usage: truesense battery status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA display
+usage: truesense display [-h] {overdrive} ...
+
+positional arguments:
+  {overdrive}
+
+options:
+  -h, --help   show this help message and exit
+
+--------------------------------------------------
+VERB display overdrive
+usage: truesense display overdrive [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA boot
+usage: truesense boot [-h] {sound} ...
+
+positional arguments:
+  {sound}
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB boot sound
+usage: truesense boot sound [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA gpu
+usage: truesense gpu [-h] {status,set,undervolt} ...
+
+positional arguments:
+  {status,set,undervolt}
+    undervolt           GPU undervolt profiles (clock-curve offset + clock
+                        cap; reset on reboot; applying needs --confirm): get |
+                        list | show NAME | use NAME --confirm | reset | copy
+                        NAME [NEW] | save NAME --offset MHZ [--cap MHZ] |
+                        delete NAME | boot NAME|off --confirm
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB gpu status
+usage: truesense gpu status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB gpu set
+usage: truesense gpu set [-h] {optimus,nvidia,auto}
+
+positional arguments:
+  {optimus,nvidia,auto}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB gpu undervolt
+usage: truesense gpu undervolt [-h] [--offset OFFSET] [--cap CAP] [--confirm]
+                               [--force]
+                               {get,list,show,use,reset,copy,save,delete,boot}
+                               [name] [new]
+
+positional arguments:
+  {get,list,show,use,reset,copy,save,delete,boot}
+  name
+  new
+
+options:
+  -h, --help            show this help message and exit
+  --offset OFFSET
+  --cap CAP
+  --confirm             I understand this can crash games or the driver
+  --force               allow values beyond the danger line
+
+======================================================================
+AREA rear
+usage: truesense rear [-h] {status,on,off,toggle,set} ...
+
+positional arguments:
+  {status,on,off,toggle,set}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB rear status
+usage: truesense rear status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB rear on
+usage: truesense rear on [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB rear off
+usage: truesense rear off [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB rear toggle
+usage: truesense rear toggle [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB rear set
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+
+positional arguments:
+  {static,breathing,neon,wave,twinkling}
+
+options:
+  -h, --help            show this help message and exit
+  --color COLOR
+  --speed SPEED
+  --brightness BRIGHTNESS
+  --direction {0,1}
+  --zones ZONES         static only: one colour, or three (left,middle,right),
+                        e.g. ff0000,00ff00,0000ff
+
+======================================================================
+AREA update
+usage: truesense update [-h] {check,apply,auto,auto-run} ...
+
+positional arguments:
+  {check,apply,auto,auto-run}
+    check               ask GitHub for the newest release
+    apply               download the newest release and run its installer
+                        (asks for administrator rights)
+    auto                check for updates by itself once a day (a desktop
+                        notification, nothing is installed)
+    auto-run            ==SUPPRESS==
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB update check
+usage: truesense update check [-h] [--force]
+
+options:
+  -h, --help  show this help message and exit
+  --force     ignore the daily cache
+
+--------------------------------------------------
+VERB update apply
+usage: truesense update apply [-h] [--yes] [--version VERSION]
+
+options:
+  -h, --help         show this help message and exit
+  --yes              do not ask first
+  --version VERSION  install this version instead of the newest, e.g. 0.3.1
+
+--------------------------------------------------
+VERB update auto
+usage: truesense update auto [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB update auto-run
+usage: truesense update auto-run [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA look
+usage: truesense look [-h] {list,save,apply,show,delete} ...
+
+positional arguments:
+  {list,save,apply,show,delete}
+    save                save what is on the lights now
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB look list
+usage: truesense look list [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB look save
+usage: truesense look save [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB look apply
+usage: truesense look apply [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB look show
+usage: truesense look show [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB look delete
+usage: truesense look delete [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA startup
+usage: truesense startup [-h] {show,apply,boot,set} ...
+
+positional arguments:
+  {show,apply,boot,set}
+    apply               do it now (the user service does this at login)
+    boot                the look applied at BOOT (before login) and after
+                        suspend: NAME | current | clear (no argument: show)
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB startup show
+usage: truesense startup show [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB startup apply
+usage: truesense startup apply [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB startup boot
+usage: truesense startup boot [-h] [what]
+
+positional arguments:
+  what
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB startup set
+usage: truesense startup set [-h] {keyboard,rear,profile} value
+
+positional arguments:
+  {keyboard,rear,profile}
+  value                 keyboard: last|default|none|off|profile:NAME rear:
+                        last|default|none|off profile: a profile name or none
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA keyboard
+usage: truesense keyboard [-h]
+                          {status,on,off,toggle,restore,list-keys,effect,fx,speed,color,paint,layout,design,image,fill,gradient,rainbow,keys,brightness,timeout,operating,profile} ...
+
+positional arguments:
+  {status,on,off,toggle,restore,list-keys,effect,fx,speed,color,paint,layout,design,image,fill,gradient,rainbow,keys,brightness,timeout,operating,profile}
+    restore             back to the stock cyan per-key state
+    fx                  per-key animation on chosen keys (drawn by the key
+                        service, about 5 frames a second): off | pulse | wave
+                        | cycle | twinkle | rainbow | scanner | comet | ripple
+                        | rain | matrix | fire | plasma | aurora | lightning |
+                        confetti | starlight | mood | breathing
+    speed               animation speed of the running effect, 1 (slowest) ..
+                        12 (fastest)
+    color               change the colour of the current effect (stays in the
+                        same mode)
+    paint               colour some keys and keep the rest, e.g. paint
+                        w=ff0000 arrows=00ff00 esc=ffffff
+    layout              key names and positions (for other tools)
+    design              still designs: list | apply NAME | save NAME (yours go
+                        in ~/.config/truesense/designs/NAME.json)
+    image               paint a picture across the keys (needs Pillow)
+    keys                per-key colours, e.g. keys "wasd=ff0000" "esc=00ff00"
+                        --base 101010
+    brightness          0..50 (also Fn+F11/F12)
+    timeout             backlight off after 30 s of no typing
+    operating           colour follows the power mode
+    profile             saved lighting profiles
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB keyboard status
+usage: truesense keyboard status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard on
+usage: truesense keyboard on [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard off
+usage: truesense keyboard off [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard toggle
+usage: truesense keyboard toggle [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard restore
+usage: truesense keyboard restore [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard list-keys
+usage: truesense keyboard list-keys [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard effect
+usage: truesense keyboard effect [-h] [--color COLOR] [--speed SPEED]
+                                 [--brightness BRIGHTNESS]
+                                 [--direction DIRECTION]
+                                 name
+
+positional arguments:
+  name
+
+options:
+  -h, --help            show this help message and exit
+  --color COLOR
+  --speed SPEED
+  --brightness BRIGHTNESS
+  --direction DIRECTION
+
+--------------------------------------------------
+VERB keyboard fx
+usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+
+positional arguments:
+  {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+
+options:
+  -h, --help            show this help message and exit
+  --speed SPEED         1..10
+  --keys KEYS           comma list of keys or groups, e.g. wasd,arrows,f5
+                        (default: all keys)
+
+--------------------------------------------------
+VERB keyboard speed
+usage: truesense keyboard speed [-h] level
+
+positional arguments:
+  level
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard color
+usage: truesense keyboard color [-h] color
+
+positional arguments:
+  color
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard paint
+usage: truesense keyboard paint [-h] [--brightness BRIGHTNESS]
+                                items [items ...]
+
+positional arguments:
+  items
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard layout
+usage: truesense keyboard layout [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard design
+usage: truesense keyboard design [-h] [--brightness BRIGHTNESS]
+                                 {list,apply,save} [name]
+
+positional arguments:
+  {list,apply,save}
+  name
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard image
+usage: truesense keyboard image [-h] [--brightness BRIGHTNESS] file
+
+positional arguments:
+  file
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard fill
+usage: truesense keyboard fill [-h] [--brightness BRIGHTNESS] color
+
+positional arguments:
+  color
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard gradient
+usage: truesense keyboard gradient [-h] [--brightness BRIGHTNESS]
+                                   from_color to_color
+
+positional arguments:
+  from_color
+  to_color
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard rainbow
+usage: truesense keyboard rainbow [-h] [--brightness BRIGHTNESS]
+
+options:
+  -h, --help            show this help message and exit
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard keys
+usage: truesense keyboard keys [-h] [--base BASE] [--brightness BRIGHTNESS]
+                               items [items ...]
+
+positional arguments:
+  items
+
+options:
+  -h, --help            show this help message and exit
+  --base BASE
+  --brightness BRIGHTNESS
+
+--------------------------------------------------
+VERB keyboard brightness
+usage: truesense keyboard brightness [-h] [level]
+
+positional arguments:
+  level
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keyboard timeout
+usage: truesense keyboard timeout [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB keyboard operating
+usage: truesense keyboard operating [-h] [{on,off,status}]
+
+positional arguments:
+  {on,off,status}
+
+options:
+  -h, --help       show this help message and exit
+
+--------------------------------------------------
+VERB keyboard profile
+usage: truesense keyboard profile [-h]
+                                  {list,load,save,delete} [name] [spec ...]
+
+positional arguments:
+  {list,load,save,delete}
+  name
+  spec                  save: fill COLOR | gradient C1 C2 | rainbow
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA audio
+usage: truesense audio [-h]
+                       {output,mic,jack,voice,repair,speaker-filter,dts} ...
+
+positional arguments:
+  {output,mic,jack,voice,repair,speaker-filter,dts}
+    output              speakers / headphones while the aux jack is plugged in
+    jack                what the codec sees on the 3.5 mm jack; `jack
+                        headphones|headset|auto` sets how the jack is used
+    voice               Purified Voice (AI mic noise reduction)
+    repair              no sound? restart WirePlumber so it probes the sound
+                        card again, and check that an output exists
+    speaker-filter      noise filter on the output (off by default: it also
+                        gates music)
+    dts                 Acer DTS sound through AcerUltraX
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB audio output
+usage: truesense audio output [-h] [{status,speakers,headphones,toggle,cycle}]
+
+positional arguments:
+  {status,speakers,headphones,toggle,cycle}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB audio mic
+usage: truesense audio mic [-h] [--default-only]
+                           [{status,mute,unmute,toggle,volume,boost}] [value]
+
+positional arguments:
+  {status,mute,unmute,toggle,volume,boost}
+  value
+
+options:
+  -h, --help            show this help message and exit
+  --default-only        act on the default input only (default: every input)
+
+--------------------------------------------------
+VERB audio jack
+usage: truesense audio jack [-h] [{auto,headphones,headset}]
+
+positional arguments:
+  {auto,headphones,headset}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB audio voice
+usage: truesense audio voice [-h]
+                             [{status,set,enable,disable,next,apply,watch,notify}]
+                             [a] [b]
+
+positional arguments:
+  {status,set,enable,disable,next,apply,watch,notify}
+  a
+  b
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB audio repair
+usage: truesense audio repair [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB audio speaker-filter
+usage: truesense audio speaker-filter [-h] [{on,off,status}]
+
+positional arguments:
+  {on,off,status}
+
+options:
+  -h, --help       show this help message and exit
+
+--------------------------------------------------
+VERB audio dts
+usage: truesense audio dts [-h]
+                           [{status,on,off,mode,profiles,devices,all,setup}]
+                           [name]
+
+positional arguments:
+  {status,on,off,mode,profiles,devices,all,setup}
+  name
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA keys
+usage: truesense keys [-h]
+                      {show,actions,run,set,reset,test,profile,timing} ...
+
+positional arguments:
+  {show,actions,run,set,reset,test,profile,timing}
+    run                 run the key service in the foreground (what the
+                        systemd user service does)
+    profile             key binding profiles: list | current | show NAME | use
+                        NAME | copy NAME [NEW] | save NAME [--from BASE]
+                        [--tap A --double A ...] | delete NAME (built-in
+                        profiles are read-only: copy to edit)
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB keys show
+usage: truesense keys show [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keys actions
+usage: truesense keys actions [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keys run
+usage: truesense keys run [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keys set
+usage: truesense keys set [-h] {tap,double,triple,long,fn_esc} action
+
+positional arguments:
+  {tap,double,triple,long,fn_esc}
+  action                see: truesense keys actions
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB keys reset
+usage: truesense keys reset [-h] [{tap,double,triple,long,fn_esc}]
+
+positional arguments:
+  {tap,double,triple,long,fn_esc}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB keys test
+usage: truesense keys test [-h] action
+
+positional arguments:
+  action      run an action now, as the key would
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB keys profile
+usage: truesense keys profile [-h] [--from BASE] [--tap TAP] [--double DOUBLE]
+                              [--triple TRIPLE] [--long LONG]
+                              [--fn-esc FN_ESC] [--long-ms LONG_MS]
+                              [--multi-ms MULTI_MS]
+                              [{list,current,show,use,copy,save,delete}]
+                              [name] [new]
+
+positional arguments:
+  {list,current,show,use,copy,save,delete}
+  name
+  new
+
+options:
+  -h, --help            show this help message and exit
+  --from BASE
+  --tap TAP
+  --double DOUBLE
+  --triple TRIPLE
+  --long LONG
+  --fn-esc FN_ESC
+  --long-ms LONG_MS
+  --multi-ms MULTI_MS
+
+--------------------------------------------------
+VERB keys timing
+usage: truesense keys timing [-h] [--long-ms LONG_MS] [--multi-ms MULTI_MS]
+
+options:
+  -h, --help           show this help message and exit
+  --long-ms LONG_MS
+  --multi-ms MULTI_MS
+
+======================================================================
+AREA profile
+usage: truesense profile [-h] {list,next,show,apply,save,delete} ...
+
+positional arguments:
+  {list,next,show,apply,save,delete}
+    save                save the CURRENT state as a profile
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB profile list
+usage: truesense profile list [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB profile next
+usage: truesense profile next [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB profile show
+usage: truesense profile show [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB profile apply
+usage: truesense profile apply [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB profile save
+usage: truesense profile save [-h] [--description DESCRIPTION] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help            show this help message and exit
+  --description DESCRIPTION
+
+--------------------------------------------------
+VERB profile delete
+usage: truesense profile delete [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA cpu
+usage: truesense cpu [-h] {info,limits,undervolt} ...
+
+positional arguments:
+  {info,limits,undervolt}
+    limits              CPU power limits PL1 (sustained) and PL2 (burst) in
+                        watts; no argument shows them; --auto goes back to
+                        automatic
+    undervolt           CPU undervolt profiles (reset on reboot; applying
+                        needs --confirm): get | list | show NAME | use NAME
+                        --confirm | reset | copy NAME [NEW] | save NAME --core
+                        MV --cache MV | delete NAME | boot NAME|off --confirm
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB cpu info
+usage: truesense cpu info [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB cpu limits
+usage: truesense cpu limits [-h] [--auto] [--force] [pl1] [pl2]
+
+positional arguments:
+  pl1
+  pl2
+
+options:
+  -h, --help  show this help message and exit
+  --auto
+  --force     allow values beyond the danger line
+
+--------------------------------------------------
+VERB cpu undervolt
+usage: truesense cpu undervolt [-h] [--core CORE] [--cache CACHE] [--confirm]
+                               [--force] [--plane {0,2}]
+                               {get,list,show,use,reset,copy,save,delete,boot,set}
+                               [name] [new]
+
+positional arguments:
+  {get,list,show,use,reset,copy,save,delete,boot,set}
+  name
+  new
+
+options:
+  -h, --help            show this help message and exit
+  --core CORE
+  --cache CACHE
+  --confirm             I understand this can freeze or reboot the laptop
+  --force               allow values beyond the danger line
+  --plane {0,2}         set: 0 core, 2 cache
+
+======================================================================
+AREA touchpad
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB touchpad on
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB touchpad off
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB touchpad toggle
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB touchpad status
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+
+positional arguments:
+  {on,off,toggle,status}
+
+options:
+  -h, --help            show this help message and exit
+
+======================================================================
+AREA service
+usage: truesense service [-h] {status,restart,logs,check,repair} ...
+
+positional arguments:
+  {status,restart,logs,check,repair}
+    check               every unit, the kernel module and the control socket
+                        (read-only)
+    repair              get the daemon, its health timer, the module and your
+                        user services running again (safe to repeat; touches
+                        no setting)
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB service status
+usage: truesense service status [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB service restart
+usage: truesense service restart [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB service logs
+usage: truesense service logs [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB service check
+usage: truesense service check [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB service repair
+usage: truesense service repair [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA config
+usage: truesense config [-h] {show,validate,path} ...
+
+positional arguments:
+  {show,validate,path}
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB config show
+usage: truesense config show [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB config validate
+usage: truesense config validate [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB config path
+usage: truesense config path [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA doctor
+usage: truesense doctor [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA selftest
+usage: truesense selftest [-h] [--skip-fans]
+
+options:
+  -h, --help   show this help message and exit
+  --skip-fans
+
+======================================================================
+AREA completion
+usage: truesense completion [-h] {bash,zsh,fish}
+
+positional arguments:
+  {bash,zsh,fish}
+
+options:
+  -h, --help       show this help message and exit
+
+--------------------------------------------------
+VERB completion bash
+usage: truesense completion [-h] {bash,zsh,fish}
+
+positional arguments:
+  {bash,zsh,fish}
+
+options:
+  -h, --help       show this help message and exit
+
+--------------------------------------------------
+VERB completion zsh
+usage: truesense completion [-h] {bash,zsh,fish}
+
+positional arguments:
+  {bash,zsh,fish}
+
+options:
+  -h, --help       show this help message and exit
+
+--------------------------------------------------
+VERB completion fish
+usage: truesense completion [-h] {bash,zsh,fish}
+
+positional arguments:
+  {bash,zsh,fish}
+
+options:
+  -h, --help       show this help message and exit
+
+======================================================================
+AREA gui
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {home,keys,audio,settings}
+                        open on this page
+
+--------------------------------------------------
+VERB gui home
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {home,keys,audio,settings}
+                        open on this page
+
+--------------------------------------------------
+VERB gui keys
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {home,keys,audio,settings}
+                        open on this page
+
+--------------------------------------------------
+VERB gui audio
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {home,keys,audio,settings}
+                        open on this page
+
+--------------------------------------------------
+VERB gui settings
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {home,keys,audio,settings}
+                        open on this page
+
+======================================================================
+AREA probe
+usage: truesense probe [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA tui
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui dashboard
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui fans
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui power
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui lighting
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui audio
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui profiles
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+--------------------------------------------------
+VERB tui system
+usage: truesense tui [-h]
+                     [--page {dashboard,fans,power,lighting,audio,profiles,system}]
+
+options:
+  -h, --help            show this help message and exit
+  --page {dashboard,fans,power,lighting,audio,profiles,system}
+                        open on this page
+
+======================================================================
+AREA daemon
+usage: truesense daemon [-h]
+
+options:
+  -h, --help  show this help message and exit
+

@@ -1,0 +1,120 @@
+status
+--json status
+sensors
+--json sensors
+power status
+--json power status
+power list
+--json power list
+power set turbo
+power status
+--json power set quiet
+power auto
+power auto on
+power smart list
+power smart current
+power smart show
+power smart show native
+power smart copy truesense mine
+power smart save mine2 --set ac_busy=turbo
+power smart save mine3 --set bogus=1
+power smart show mine
+power smart use mine
+power smart delete mine
+power hold 15
+power release
+power managers
+power managers stop
+power game
+power game add foo.exe turbo
+power game add foo.exe
+power game remove
+fan status
+--json fan status
+fan auto
+fan max
+fan set 50
+fan set 50 60
+fan set 10
+fan set 0
+fan set 0 --confirm
+fan off
+fan off --confirm
+fan smart
+fan smart on
+fan curve list
+fan curve current
+fan curve show
+fan curve show quiet
+--json fan curve show native
+fan curve copy truesense mine
+fan curve list
+--json fan curve list
+fan curve save mine --hysteresis 5
+fan curve save custom --cpu 52:0,60:35,89:100 --gpu 48:0,78:100
+--json fan curve save custom2 --cpu 52:0,60:35,89:100 --gpu 48:0,78:100
+fan curve save bad --cpu 52:0
+fan curve use mine
+fan curve delete mine
+fan curve delete mine
+fan curve delete quiet
+battery status
+--json battery status
+battery limit
+battery limit off
+battery limit toggle
+--json battery limit
+battery calibration
+battery calibration on
+battery usb-charge
+battery usb-charge 20
+battery usb-charge 0
+battery usb-charge 5
+battery full
+battery full start
+display overdrive
+display overdrive on
+display overdrive toggle
+boot sound
+boot sound off
+gpu status
+gpu set nvidia
+--json gpu status
+gpu undervolt list
+gpu undervolt show
+gpu undervolt get
+gpu undervolt save mygpu --offset 100 --cap 2400
+gpu undervolt save mygpu2
+gpu undervolt show mygpu
+gpu undervolt copy mygpu
+gpu undervolt copy truesense
+gpu undervolt delete mygpu
+gpu undervolt delete mygpu
+gpu undervolt use mygpu --confirm
+gpu undervolt boot off
+rear status
+--json rear status
+rear set breathing --color 00ff88
+rear set static --zones ff0000,00ff00,0000ff
+rear set static --zones ff0000,00ff00
+rear set wave --speed 5 --brightness 50 --direction 0
+rear status
+rear set neon --color zz
+look list
+look save mylook
+look list
+look show mylook
+look apply mylook
+look apply nothing
+look delete mylook
+look delete mylook
+--json look list
+startup show
+--json startup show
+startup set keyboard last
+startup set keyboard profile:nope
+startup set rear default
+startup set profile nope
+startup set profile none
+startup show
+startup boot

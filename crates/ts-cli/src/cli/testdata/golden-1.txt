@@ -1,0 +1,1055 @@
+$ status
+rc 0
+--- out
+{
+  "power_mode": "eco",
+  "sensors": {
+    "cpu_temp": 50,
+    "sys_temp": 52,
+    "gpu_temp": 48,
+    "cpu_fan_rpm": 0,
+    "gpu_fan_rpm": 0
+  },
+  "fans": {
+    "behavior_raw": "0x41",
+    "mode": "auto",
+    "duty_register_pct": {
+      "cpu": 30,
+      "gpu": 30
+    }
+  },
+  "daemon": "ERROR: the TrueSense daemon is not running (sudo systemctl start truesense)",
+  "battery_limit": false,
+  "usb_charge_stop": 30,
+  "overdrive": true,
+  "boot_sound": false,
+  "kb_backlight_timeout": true,
+  "gpu_mode": "nvidia",
+  "rear": {
+    "raw": "00000300000100aec703000000000000",
+    "mode": "static",
+    "speed": 3,
+    "brightness": 0,
+    "direction": 1,
+    "color": "00aec7"
+  },
+  "touchpad": true,
+  "audio_output": "ERROR: sound card not found",
+  "jack": {
+    "Headphone Jack": null,
+    "Headset Mic Jack": null
+  },
+  "voice": {
+    "headset": "off",
+    "array": "off"
+  }
+}
+--- err
+=== end
+$ --json status
+rc 0
+--- out
+{
+  "power_mode": "eco",
+  "sensors": {
+    "cpu_temp": 50,
+    "sys_temp": 52,
+    "gpu_temp": 48,
+    "cpu_fan_rpm": 0,
+    "gpu_fan_rpm": 0
+  },
+  "fans": {
+    "behavior_raw": "0x41",
+    "mode": "auto",
+    "duty_register_pct": {
+      "cpu": 30,
+      "gpu": 30
+    }
+  },
+  "daemon": "ERROR: the TrueSense daemon is not running (sudo systemctl start truesense)",
+  "battery_limit": false,
+  "usb_charge_stop": 30,
+  "overdrive": true,
+  "boot_sound": false,
+  "kb_backlight_timeout": true,
+  "gpu_mode": "nvidia",
+  "rear": {
+    "raw": "00000300000100aec703000000000000",
+    "mode": "static",
+    "speed": 3,
+    "brightness": 0,
+    "direction": 1,
+    "color": "00aec7"
+  },
+  "touchpad": true,
+  "audio_output": "ERROR: sound card not found",
+  "jack": {
+    "Headphone Jack": null,
+    "Headset Mic Jack": null
+  },
+  "voice": {
+    "headset": "off",
+    "array": "off"
+  }
+}
+--- err
+=== end
+$ sensors
+rc 0
+--- out
+CPU 50 C   GPU 48 C   board 52 C   fans 0 / 0 rpm
+--- err
+=== end
+$ --json sensors
+rc 0
+--- out
+{
+  "cpu_temp": 50,
+  "sys_temp": 52,
+  "gpu_temp": 48,
+  "cpu_fan_rpm": 0,
+  "gpu_fan_rpm": 0
+}
+--- err
+=== end
+$ power status
+rc 0
+--- out
+power mode: eco
+--- err
+=== end
+$ --json power status
+rc 0
+--- out
+{
+  "mode": "eco",
+  "supported": [
+    "quiet",
+    "balanced",
+    "performance",
+    "turbo",
+    "eco"
+  ]
+}
+--- err
+=== end
+$ power list
+rc 0
+--- out
+quiet  balanced  performance  turbo  eco
+--- err
+=== end
+$ --json power list
+rc 0
+--- out
+[
+  "quiet",
+  "balanced",
+  "performance",
+  "turbo",
+  "eco"
+]
+--- err
+=== end
+$ power set turbo
+rc 0
+--- out
+power mode: turbo   (held 30 min against the automatic profile; `truesense power release` to end)
+--- err
+=== end
+$ power status
+rc 0
+--- out
+power mode: eco
+--- err
+=== end
+$ --json power set quiet
+rc 0
+--- out
+"quiet"
+--- err
+=== end
+$ power auto
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power auto on
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power smart list
+rc 0
+--- out
+  native  - PredatorSense default: Balanced on power, Eco on battery, nothing else (no load or heat logic, like Native auto)
+  truesense  - Our profile for this laptop: Balanced day to day, Performance when you game, Turbo only when sustained and cool, Eco on battery
+  steady  - For long games and cooling that is not the laptop's own (external fans): Performance when busy, never Turbo, and it changes mode only after minutes of quiet
+  battery-first  - Longest battery and quietest: no Turbo, light modes everywhere
+  performance-first  - Fastest: Performance for everyday use on power, Turbo after 10 s of heavy load
+  silent  - As quiet as possible: Quiet and Balanced only, no Turbo
+--- err
+=== end
+$ power smart current
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power smart show
+rc 0
+--- out
+truesense
+  ac_idle = balanced
+  ac_browsing = balanced
+  ac_busy = performance
+  ac_turbo = True
+  turbo_after_s = 30
+  turbo_max_cpu = 85
+  turbo_max_gpu = 75
+  backoff_hold_s = 90
+  idle_after_s = 60
+  battery_idle = eco
+  battery_browsing = eco
+  battery_busy = balanced
+  battery_hot = quiet
+  battery_low_pct = 20
+  up_dwell_s = 5
+  down_dwell_s = 60
+  busy_hold_s = 60
+  min_change_s = 45
+  turbo_margin_c = 6
+  turbo_retry_s = 180
+--- err
+=== end
+$ power smart show native
+rc 0
+--- out
+native
+  ac_idle = balanced
+  ac_browsing = balanced
+  ac_busy = balanced
+  ac_turbo = False
+  turbo_after_s = 30
+  turbo_max_cpu = 85
+  turbo_max_gpu = 75
+  backoff_hold_s = 90
+  idle_after_s = 60
+  battery_idle = eco
+  battery_browsing = eco
+  battery_busy = eco
+  battery_hot = eco
+  battery_low_pct = 20
+  up_dwell_s = 2
+  down_dwell_s = 2
+  busy_hold_s = 0
+  min_change_s = 2
+  turbo_margin_c = 0
+  turbo_retry_s = 10
+--- err
+=== end
+$ power smart copy truesense mine
+rc 0
+--- out
+copied 'truesense' to 'mine' (edit: truesense power smart save mine --set ac_busy=turbo)
+--- err
+=== end
+$ power smart save mine2 --set ac_busy=turbo
+rc 0
+--- out
+saved smart profile 'mine2' (use it: truesense power smart use mine2)
+--- err
+=== end
+$ power smart save mine3 --set bogus=1
+rc 1
+--- out
+--- err
+error: --set key=value, key one of: ac_idle, ac_browsing, ac_busy, ac_turbo, turbo_after_s, turbo_max_cpu, turbo_max_gpu, backoff_hold_s, idle_after_s, battery_idle, battery_browsing, battery_busy, battery_hot, battery_low_pct, up_dwell_s, down_dwell_s, busy_hold_s, min_change_s, turbo_margin_c, turbo_retry_s
+=== end
+$ power smart show mine
+rc 0
+--- out
+mine
+  ac_idle = balanced
+  ac_browsing = balanced
+  ac_busy = performance
+  ac_turbo = True
+  turbo_after_s = 30
+  turbo_max_cpu = 85
+  turbo_max_gpu = 75
+  backoff_hold_s = 90
+  idle_after_s = 60
+  battery_idle = eco
+  battery_browsing = eco
+  battery_busy = balanced
+  battery_hot = quiet
+  battery_low_pct = 20
+  up_dwell_s = 5
+  down_dwell_s = 60
+  busy_hold_s = 60
+  min_change_s = 45
+  turbo_margin_c = 6
+  turbo_retry_s = 180
+--- err
+=== end
+$ power smart use mine
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power smart delete mine
+rc 0
+--- out
+deleted smart profile 'mine'
+--- err
+=== end
+$ power hold 15
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power release
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power managers
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power managers stop
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power game
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power game add foo.exe turbo
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power game add foo.exe
+rc 1
+--- out
+--- err
+error: usage: truesense power game add PROGRAM MODE   (e.g. add eldenring.exe turbo)
+=== end
+$ power game remove
+rc 1
+--- out
+--- err
+error: usage: truesense power game remove PROGRAM
+=== end
+$ fan status
+rc 0
+--- out
+fans: auto   CPU 0 rpm   GPU 0 rpm   smart curve: unknown
+--- err
+=== end
+$ --json fan status
+rc 0
+--- out
+{
+  "behavior_raw": "0x41",
+  "mode": "auto",
+  "duty_register_pct": {
+    "cpu": 30,
+    "gpu": 30
+  },
+  "cpu_fan_rpm": 0,
+  "gpu_fan_rpm": 0,
+  "smart": null
+}
+--- err
+=== end
+$ fan auto
+rc 0
+--- out
+fans: firmware auto (they stop when cool)
+--- err
+=== end
+$ fan max
+rc 0
+--- out
+fans: MAX  (`truesense fan smart on` hands them back)
+--- err
+=== end
+$ fan set 50
+rc 0
+--- out
+fans: manual 50 % / 50 %
+--- err
+=== end
+$ fan set 50 60
+rc 0
+--- out
+fans: manual 50 % / 60 %
+--- err
+=== end
+$ fan set 10
+rc 1
+--- out
+--- err
+error: manual fan duty is 20..100 % per fan, or 0 to stop that fan
+=== end
+$ fan set 0
+rc 1
+--- out
+--- err
+error: stopping a fan needs the TrueSense service (it brings the fans back when it gets warm)
+=== end
+$ fan set 0 --confirm
+rc 1
+--- out
+--- err
+error: stopping a fan needs the TrueSense service (it brings the fans back when it gets warm)
+=== end
+$ fan off
+rc 1
+--- out
+--- err
+error: turning the fans off needs the TrueSense service (it brings them back when it gets warm)
+=== end
+$ fan off --confirm
+rc 1
+--- out
+--- err
+error: turning the fans off needs the TrueSense service (it brings them back when it gets warm)
+=== end
+$ fan smart
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan smart on
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan curve list
+rc 0
+--- out
+  native  - PredatorSense default: the firmware controls the fans exactly as it does on Windows (they stop when cool). Nothing of ours runs
+  truesense  - Our curve for this laptop: silent when cool, early and smooth ramp, full speed before throttling
+  quiet  - Lowest noise: the fans stay off longer and ramp later
+  performance  - Cooler and louder: starts early and ramps hard
+  max-cooling  - Fans at full speed above 60 C
+--- err
+=== end
+$ fan curve current
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan curve show
+rc 0
+--- out
+truesense
+  cpu [[52, 0], [56, 30], [62, 38], [68, 48], [74, 58], [80, 70], [85, 85], [89, 100]]
+  gpu [[48, 0], [54, 30], [60, 38], [65, 48], [70, 60], [74, 78], [78, 100]]
+  hysteresis=4.0  down_rate=1.5  predict=5.0  couple=15  battery_shift=3.0
+--- err
+=== end
+$ fan curve show quiet
+rc 0
+--- out
+quiet
+  cpu [[58, 0], [66, 30], [72, 40], [78, 55], [84, 75], [89, 100]]
+  gpu [[52, 0], [60, 30], [66, 40], [72, 58], [77, 80], [80, 100]]
+  hysteresis=4.0  down_rate=1.0  predict=3.0  couple=15  battery_shift=3.0
+--- err
+=== end
+$ --json fan curve show native
+rc 0
+--- out
+{
+  "hysteresis": 4.0,
+  "down_rate": 1.5,
+  "predict": 5.0,
+  "couple": 15,
+  "battery_shift": 3.0,
+  "description": "PredatorSense default: the firmware controls the fans exactly as it does on Windows (they stop when cool). Nothing of ours runs",
+  "native": true,
+  "cpu": [
+    [
+      52,
+      0
+    ],
+    [
+      89,
+      100
+    ]
+  ],
+  "gpu": [
+    [
+      48,
+      0
+    ],
+    [
+      78,
+      100
+    ]
+  ]
+}
+--- err
+=== end
+$ fan curve copy truesense mine
+rc 0
+--- out
+copied 'truesense' to 'mine' (edit it: truesense fan curve save mine --cpu ...)
+--- err
+=== end
+$ fan curve list
+rc 0
+--- out
+  native  - PredatorSense default: the firmware controls the fans exactly as it does on Windows (they stop when cool). Nothing of ours runs
+  truesense  - Our curve for this laptop: silent when cool, early and smooth ramp, full speed before throttling
+  quiet  - Lowest noise: the fans stay off longer and ramp later
+  performance  - Cooler and louder: starts early and ramps hard
+  max-cooling  - Fans at full speed above 60 C
+  mine
+--- err
+=== end
+$ --json fan curve list
+rc 0
+--- out
+[
+  "native",
+  "truesense",
+  "quiet",
+  "performance",
+  "max-cooling",
+  "mine"
+]
+--- err
+=== end
+$ fan curve save mine --hysteresis 5
+rc 0
+--- out
+saved fan curve 'mine' (use it: truesense fan curve use mine)
+--- err
+=== end
+$ fan curve save custom --cpu 52:0,60:35,89:100 --gpu 48:0,78:100
+rc 0
+--- out
+saved fan curve 'custom' (use it: truesense fan curve use custom)
+--- err
+=== end
+$ --json fan curve save custom2 --cpu 52:0,60:35,89:100 --gpu 48:0,78:100
+rc 0
+--- out
+{
+  "hysteresis": 4.0,
+  "down_rate": 1.5,
+  "predict": 5.0,
+  "couple": 15,
+  "battery_shift": 3.0,
+  "cpu": [
+    [
+      52,
+      0
+    ],
+    [
+      60,
+      35
+    ],
+    [
+      89,
+      100
+    ]
+  ],
+  "gpu": [
+    [
+      48,
+      0
+    ],
+    [
+      78,
+      100
+    ]
+  ]
+}
+--- err
+=== end
+$ fan curve save bad --cpu 52:0
+rc 1
+--- out
+--- err
+error: give --cpu and --gpu points (or --from an existing curve)
+=== end
+$ fan curve use mine
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan curve delete mine
+rc 0
+--- out
+deleted fan curve 'mine'
+--- err
+=== end
+$ fan curve delete mine
+rc 1
+--- out
+--- err
+error: no fan curve 'mine'
+=== end
+$ fan curve delete quiet
+rc 1
+--- out
+--- err
+error: 'quiet' is built in and cannot be deleted
+=== end
+$ battery status
+rc 0
+--- out
+{
+  "limit_80": false,
+  "calibration": false,
+  "usb_charge_stop": 30
+}
+--- err
+=== end
+$ --json battery status
+rc 0
+--- out
+{
+  "limit_80": false,
+  "calibration": false,
+  "usb_charge_stop": 30
+}
+--- err
+=== end
+$ battery limit
+rc 0
+--- out
+80 % battery limit: off
+--- err
+=== end
+$ battery limit off
+rc 0
+--- out
+80 % battery limit: off
+--- err
+=== end
+$ battery limit toggle
+rc 0
+--- out
+80 % battery limit: on
+--- err
+=== end
+$ --json battery limit
+rc 0
+--- out
+false
+--- err
+=== end
+$ battery calibration
+rc 0
+--- out
+battery calibration (needs AC, takes hours): off
+--- err
+=== end
+$ battery calibration on
+rc 0
+--- out
+battery calibration (needs AC, takes hours): on
+--- err
+=== end
+$ battery usb-charge
+rc 0
+--- out
+USB charging while off, stop level: 30
+--- err
+=== end
+$ battery usb-charge 20
+rc 0
+--- out
+USB charging while off, stop level: 20
+--- err
+=== end
+$ battery usb-charge 0
+rc 0
+--- out
+USB charging while off, stop level: 0
+--- err
+=== end
+$ battery usb-charge 5
+rc 2
+--- out
+--- err
+usage: truesense battery usb-charge [-h] [{status,0,10,20,30}]
+truesense battery usb-charge: error: argument level: invalid choice: '5' (choose from 'status', '0', '10', '20', '30')
+=== end
+$ battery full
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ battery full start
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ display overdrive
+rc 0
+--- out
+LCD overdrive: on
+--- err
+=== end
+$ display overdrive on
+rc 0
+--- out
+LCD overdrive: on
+--- err
+=== end
+$ display overdrive toggle
+rc 0
+--- out
+LCD overdrive: off
+--- err
+=== end
+$ boot sound
+rc 0
+--- out
+boot sound: off
+--- err
+=== end
+$ boot sound off
+rc 0
+--- out
+boot sound: off
+--- err
+=== end
+$ gpu status
+rc 0
+--- out
+GPU mode: nvidia
+--- err
+=== end
+$ gpu set nvidia
+rc 0
+--- out
+GPU mode: nvidia   (takes effect after a reboot)
+--- err
+=== end
+$ --json gpu status
+rc 0
+--- out
+"nvidia"
+--- err
+=== end
+$ gpu undervolt list
+rc 0
+--- out
+  native      offset   +0 MHz  cap  none  - PredatorSense default: no offset and no clock cap
+  truesense   offset +120 MHz  cap  2400  - Our profile for the RTX 4060 Laptop: a moderate curve shift with a clock cap, aiming for less power and heat at about the same speed. Unverified on your unit: test under load
+  mild        offset  +60 MHz  cap  2500  - Very safe: small shift, high cap
+  cool        offset +100 MHz  cap  2100  - Cooler and quieter: lower cap, bigger shift
+  efficient   offset +150 MHz  cap  1800  - Lowest power for light gaming: some games will run slower
+--- err
+=== end
+$ gpu undervolt show
+rc 0
+--- out
+truesense: offset +120 MHz, cap 2400 MHz   Our profile for the RTX 4060 Laptop: a moderate curve shift with a clock cap, aiming for less power and heat at about the same speed. Unverified on your unit: test under load
+--- err
+=== end
+$ gpu undervolt get
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ gpu undervolt save mygpu --offset 100 --cap 2400
+rc 0
+--- out
+saved GPU undervolt profile 'mygpu' (use it: truesense gpu undervolt use mygpu --confirm)
+--- err
+=== end
+$ gpu undervolt save mygpu2
+rc 1
+--- out
+--- err
+error: usage: truesense gpu undervolt save NAME --offset 100 --cap 2400
+=== end
+$ gpu undervolt show mygpu
+rc 0
+--- out
+mygpu: offset +100 MHz, cap 2400 MHz   
+--- err
+=== end
+$ gpu undervolt copy mygpu
+rc 0
+--- out
+copied 'mygpu' to 'mygpu-copy'
+--- err
+=== end
+$ gpu undervolt copy truesense
+rc 0
+--- out
+copied 'truesense' to 'truesense-copy'
+--- err
+=== end
+$ gpu undervolt delete mygpu
+rc 0
+--- out
+deleted GPU undervolt profile 'mygpu'
+--- err
+=== end
+$ gpu undervolt delete mygpu
+rc 1
+--- out
+--- err
+error: no GPU undervolt profile 'mygpu'
+=== end
+$ gpu undervolt use mygpu --confirm
+rc 1
+--- out
+--- err
+error: no GPU undervolt profile 'mygpu' (truesense gpu undervolt list)
+=== end
+$ gpu undervolt boot off
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ rear status
+rc 0
+--- out
+{
+  "raw": "00000300000100aec703000000000000",
+  "mode": "static",
+  "speed": 3,
+  "brightness": 0,
+  "direction": 1,
+  "color": "00aec7"
+}
+--- err
+=== end
+$ --json rear status
+rc 0
+--- out
+{
+  "raw": "00000300000100aec703000000000000",
+  "mode": "static",
+  "speed": 3,
+  "brightness": 0,
+  "direction": 1,
+  "color": "00aec7"
+}
+--- err
+=== end
+$ rear set breathing --color 00ff88
+rc 0
+--- out
+{
+  "raw": "00010364000100ff8803020000000000",
+  "mode": "breathing",
+  "speed": 3,
+  "brightness": 100,
+  "direction": 1,
+  "color": "00ff88"
+}
+--- err
+=== end
+$ rear set static --zones ff0000,00ff00,0000ff
+rc 0
+--- out
+{
+  "raw": "000003640001ff000003020000000000",
+  "mode": "static",
+  "speed": 3,
+  "brightness": 100,
+  "direction": 1,
+  "color": "ff0000",
+  "zones": [
+    "ff0000",
+    "00ff00",
+    "0000ff"
+  ]
+}
+--- err
+=== end
+$ rear set static --zones ff0000,00ff00
+rc 1
+--- out
+--- err
+error: zones: give one colour, or three (left middle right)
+=== end
+$ rear set wave --speed 5 --brightness 50 --direction 0
+rc 0
+--- out
+{
+  "raw": "000305320000ffffff03020000000000",
+  "mode": "wave",
+  "speed": 5,
+  "brightness": 50,
+  "direction": 0,
+  "color": "ffffff"
+}
+--- err
+=== end
+$ rear status
+rc 0
+--- out
+{
+  "raw": "00000300000100aec703000000000000",
+  "mode": "static",
+  "speed": 3,
+  "brightness": 0,
+  "direction": 1,
+  "color": "00aec7"
+}
+--- err
+=== end
+$ rear set neon --color zz
+rc 1
+--- out
+--- err
+error: color must be RRGGBB hex
+=== end
+$ look list
+rc 0
+--- out
+native
+--- err
+=== end
+$ look save mylook
+rc 0
+--- out
+saved look 'mylook': keyboard unchanged; rear wave brightness 50
+--- err
+=== end
+$ look list
+rc 0
+--- out
+native
+mylook
+--- err
+=== end
+$ look show mylook
+rc 0
+--- out
+mylook: keyboard unchanged; rear wave brightness 50
+--- err
+=== end
+$ look apply mylook
+rc 0
+--- out
+rear: wave
+--- err
+=== end
+$ look apply nothing
+rc 1
+--- out
+--- err
+error: no look 'nothing' (truesense look list)
+=== end
+$ look delete mylook
+rc 0
+--- out
+deleted look 'mylook'
+--- err
+=== end
+$ look delete mylook
+rc 1
+--- out
+--- err
+error: no look 'mylook'
+=== end
+$ --json look list
+rc 0
+--- out
+[
+  "native"
+]
+--- err
+=== end
+$ startup show
+rc 0
+--- out
+{
+  "profile": "",
+  "keyboard": "last",
+  "rear": "last"
+}
+--- err
+=== end
+$ --json startup show
+rc 0
+--- out
+{
+  "profile": "",
+  "keyboard": "last",
+  "rear": "last"
+}
+--- err
+=== end
+$ startup set keyboard last
+rc 0
+--- out
+at login, keyboard: last
+--- err
+=== end
+$ startup set keyboard profile:nope
+rc 1
+--- out
+--- err
+error: no lighting profile 'nope': 
+=== end
+$ startup set rear default
+rc 0
+--- out
+at login, rear: default
+--- err
+=== end
+$ startup set profile nope
+rc 1
+--- out
+--- err
+error: no profile 'nope': 
+=== end
+$ startup set profile none
+rc 0
+--- out
+at login, profile: none
+--- err
+=== end
+$ startup show
+rc 0
+--- out
+{
+  "profile": "",
+  "keyboard": "last",
+  "rear": "default"
+}
+--- err
+=== end
+$ startup boot
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end

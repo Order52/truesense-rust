@@ -1,0 +1,136 @@
+keyboard status
+--json keyboard status
+keyboard list-keys
+--json keyboard layout
+keyboard restore
+keyboard effect wave --brightness 50
+keyboard effect operatingmode --color ff0000
+keyboard effect neon
+keyboard effect bogus
+keyboard effect wave --brightness 99
+keyboard color 112233
+keyboard color zz
+keyboard speed 7
+keyboard speed 99
+keyboard paint w=ff0000 arrows=00ff00
+keyboard paint w
+keyboard paint nokey=ff0000
+keyboard design list
+--json keyboard design list
+keyboard design apply
+keyboard design apply nothing
+keyboard design save mydesign
+keyboard design list
+keyboard fill 0000ff --brightness 20
+keyboard gradient ff0000 0000ff
+keyboard rainbow --brightness 10
+keyboard keys wasd=ff0000 esc=00ff00 --base 101010
+keyboard keys wasd
+keyboard brightness
+keyboard brightness 30
+keyboard brightness 99
+keyboard timeout
+keyboard timeout off
+keyboard operating
+keyboard fx pulse --speed 3 --keys wasd,arrows
+keyboard fx off
+keyboard fx pulse --keys nokeys
+keyboard profile list
+keyboard profile save mine fill ff0000
+keyboard profile list
+keyboard profile load mine
+keyboard profile delete mine
+keyboard profile load mine
+keyboard image /nonexistent/x.png
+keys show
+--json keys show
+keys actions
+keys set tap power-next
+keys set tap bogus-action
+keys show
+keys reset tap
+keys reset
+keys timing
+keys timing --long-ms 900
+keys show
+keys profile list
+keys profile current
+keys profile show
+keys profile show gaming
+--json keys profile show gaming
+keys profile copy gaming mykeys
+keys profile save mykeys --tap power-next --long-ms 700
+keys profile show mykeys
+keys profile use mykeys
+keys profile current
+--json keys profile current
+keys profile delete mykeys
+keys profile delete default
+keys profile use nothing
+profile list
+--json profile list
+profile show nothing
+profile apply nothing
+profile save mine --description hello
+profile list
+profile next
+profile delete mine
+cpu info
+--json cpu info
+cpu limits
+cpu limits 45 80
+cpu limits --auto
+cpu undervolt list
+cpu undervolt show
+cpu undervolt get
+cpu undervolt save myuv --core -50 --cache -40
+cpu undervolt save myuv2 --core -50
+cpu undervolt show myuv
+cpu undervolt copy myuv
+cpu undervolt delete myuv
+cpu undervolt delete myuv
+cpu undervolt set -10
+cpu undervolt set
+cpu undervolt use myuv --confirm
+cpu undervolt boot off
+touchpad
+touchpad on
+config path
+--json config path
+config validate
+completion bash
+completion zsh
+completion fish
+completion powershell
+version
+--json version
+audio
+audio output
+audio output speakers
+audio output toggle
+audio mic
+audio mic mute
+audio mic volume
+audio mic volume 200
+audio mic boost 5
+audio jack
+audio jack headset
+audio jack bogus
+audio voice
+audio voice set headset bogus
+audio voice set headset
+audio voice notify maybe
+audio voice notify on
+audio repair
+audio speaker-filter
+audio speaker-filter on
+audio dts
+audio dts mode
+audio dts devices
+audio dts all
+audio dts profiles
+service check
+service repair --system
+update auto
+update auto on
+startup show

@@ -1,0 +1,2370 @@
+$ keyboard status
+rc 0
+--- out
+{
+  "look": {},
+  "brightness": 25,
+  "max": 50,
+  "backlight_timeout": true,
+  "lighting_profiles": []
+}
+--- err
+=== end
+$ --json keyboard status
+rc 0
+--- out
+{
+  "look": {},
+  "brightness": 25,
+  "max": 50,
+  "backlight_timeout": true,
+  "lighting_profiles": []
+}
+--- err
+=== end
+$ keyboard list-keys
+rc 0
+--- out
+{
+  "keys": [
+    "'",
+    "*",
+    "+",
+    ",",
+    "-",
+    ".",
+    "/",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    ";",
+    "=",
+    "[",
+    "\\",
+    "]",
+    "`",
+    "a",
+    "b",
+    "backspace",
+    "backward",
+    "c",
+    "caps",
+    "ctrl",
+    "d",
+    "del",
+    "down",
+    "e",
+    "enter",
+    "esc",
+    "f",
+    "f1",
+    "f10",
+    "f11",
+    "f12",
+    "f2",
+    "f3",
+    "f4",
+    "f5",
+    "f6",
+    "f7",
+    "f8",
+    "f9",
+    "fn",
+    "forward",
+    "g",
+    "h",
+    "i",
+    "ins",
+    "j",
+    "k",
+    "l",
+    "lalt",
+    "left",
+    "lshift",
+    "m",
+    "minus",
+    "n",
+    "num.",
+    "num/",
+    "num0",
+    "num1",
+    "num2",
+    "num3",
+    "num4",
+    "num5",
+    "num6",
+    "num7",
+    "num8",
+    "num9",
+    "numenter",
+    "numlock",
+    "o",
+    "options",
+    "p",
+    "playpause",
+    "power",
+    "predator",
+    "prtsc",
+    "q",
+    "r",
+    "ralt",
+    "rctrl",
+    "return",
+    "right",
+    "rshift",
+    "s",
+    "space",
+    "t",
+    "tab",
+    "u",
+    "up",
+    "v",
+    "w",
+    "win",
+    "windows",
+    "x",
+    "y",
+    "z"
+  ],
+  "groups": [
+    "all",
+    "arrows",
+    "fkeys",
+    "letters",
+    "numpad",
+    "numrow",
+    "wasd"
+  ]
+}
+--- err
+=== end
+$ --json keyboard layout
+rc 0
+--- out
+{
+  "keys": {
+    "ctrl": [
+      {
+        "cell": 0,
+        "col": 0,
+        "row": 0
+      }
+    ],
+    "lshift": [
+      {
+        "cell": 1,
+        "col": 0,
+        "row": 1
+      }
+    ],
+    "esc": [
+      {
+        "cell": 2,
+        "col": 0,
+        "row": 2
+      }
+    ],
+    "tab": [
+      {
+        "cell": 3,
+        "col": 0,
+        "row": 3
+      }
+    ],
+    "`": [
+      {
+        "cell": 4,
+        "col": 0,
+        "row": 4
+      }
+    ],
+    "caps": [
+      {
+        "cell": 5,
+        "col": 0,
+        "row": 5
+      }
+    ],
+    "fn": [
+      {
+        "cell": 6,
+        "col": 1,
+        "row": 0
+      }
+    ],
+    "1": [
+      {
+        "cell": 10,
+        "col": 1,
+        "row": 4
+      }
+    ],
+    "f1": [
+      {
+        "cell": 11,
+        "col": 1,
+        "row": 5
+      }
+    ],
+    "windows": [
+      {
+        "cell": 12,
+        "col": 2,
+        "row": 0
+      }
+    ],
+    "\\": [
+      {
+        "cell": 13,
+        "col": 2,
+        "row": 1
+      }
+    ],
+    "q": [
+      {
+        "cell": 15,
+        "col": 2,
+        "row": 3
+      }
+    ],
+    "2": [
+      {
+        "cell": 16,
+        "col": 2,
+        "row": 4
+      }
+    ],
+    "f2": [
+      {
+        "cell": 17,
+        "col": 2,
+        "row": 5
+      }
+    ],
+    "lalt": [
+      {
+        "cell": 18,
+        "col": 3,
+        "row": 0
+      }
+    ],
+    "z": [
+      {
+        "cell": 19,
+        "col": 3,
+        "row": 1
+      }
+    ],
+    "a": [
+      {
+        "cell": 20,
+        "col": 3,
+        "row": 2
+      }
+    ],
+    "w": [
+      {
+        "cell": 21,
+        "col": 3,
+        "row": 3
+      }
+    ],
+    "3": [
+      {
+        "cell": 22,
+        "col": 3,
+        "row": 4
+      }
+    ],
+    "f3": [
+      {
+        "cell": 23,
+        "col": 3,
+        "row": 5
+      }
+    ],
+    "space": [
+      {
+        "cell": 24,
+        "col": 4,
+        "row": 0
+      }
+    ],
+    "x": [
+      {
+        "cell": 25,
+        "col": 4,
+        "row": 1
+      }
+    ],
+    "s": [
+      {
+        "cell": 26,
+        "col": 4,
+        "row": 2
+      }
+    ],
+    "e": [
+      {
+        "cell": 27,
+        "col": 4,
+        "row": 3
+      }
+    ],
+    "4": [
+      {
+        "cell": 28,
+        "col": 4,
+        "row": 4
+      }
+    ],
+    "f4": [
+      {
+        "cell": 29,
+        "col": 4,
+        "row": 5
+      }
+    ],
+    "c": [
+      {
+        "cell": 31,
+        "col": 5,
+        "row": 1
+      }
+    ],
+    "d": [
+      {
+        "cell": 32,
+        "col": 5,
+        "row": 2
+      }
+    ],
+    "r": [
+      {
+        "cell": 33,
+        "col": 5,
+        "row": 3
+      }
+    ],
+    "5": [
+      {
+        "cell": 34,
+        "col": 5,
+        "row": 4
+      }
+    ],
+    "f5": [
+      {
+        "cell": 35,
+        "col": 5,
+        "row": 5
+      }
+    ],
+    "v": [
+      {
+        "cell": 37,
+        "col": 6,
+        "row": 1
+      }
+    ],
+    "f": [
+      {
+        "cell": 38,
+        "col": 6,
+        "row": 2
+      }
+    ],
+    "t": [
+      {
+        "cell": 39,
+        "col": 6,
+        "row": 3
+      }
+    ],
+    "6": [
+      {
+        "cell": 40,
+        "col": 6,
+        "row": 4
+      }
+    ],
+    "f6": [
+      {
+        "cell": 41,
+        "col": 6,
+        "row": 5
+      }
+    ],
+    "b": [
+      {
+        "cell": 43,
+        "col": 7,
+        "row": 1
+      }
+    ],
+    "g": [
+      {
+        "cell": 44,
+        "col": 7,
+        "row": 2
+      }
+    ],
+    "y": [
+      {
+        "cell": 45,
+        "col": 7,
+        "row": 3
+      }
+    ],
+    "7": [
+      {
+        "cell": 46,
+        "col": 7,
+        "row": 4
+      }
+    ],
+    "f7": [
+      {
+        "cell": 47,
+        "col": 7,
+        "row": 5
+      }
+    ],
+    "n": [
+      {
+        "cell": 49,
+        "col": 8,
+        "row": 1
+      }
+    ],
+    "h": [
+      {
+        "cell": 50,
+        "col": 8,
+        "row": 2
+      }
+    ],
+    "u": [
+      {
+        "cell": 51,
+        "col": 8,
+        "row": 3
+      }
+    ],
+    "8": [
+      {
+        "cell": 52,
+        "col": 8,
+        "row": 4
+      }
+    ],
+    "f8": [
+      {
+        "cell": 53,
+        "col": 8,
+        "row": 5
+      }
+    ],
+    "m": [
+      {
+        "cell": 55,
+        "col": 9,
+        "row": 1
+      }
+    ],
+    "j": [
+      {
+        "cell": 56,
+        "col": 9,
+        "row": 2
+      }
+    ],
+    "i": [
+      {
+        "cell": 57,
+        "col": 9,
+        "row": 3
+      }
+    ],
+    "9": [
+      {
+        "cell": 58,
+        "col": 9,
+        "row": 4
+      }
+    ],
+    "f9": [
+      {
+        "cell": 59,
+        "col": 9,
+        "row": 5
+      }
+    ],
+    "ralt": [
+      {
+        "cell": 60,
+        "col": 10,
+        "row": 0
+      }
+    ],
+    ",": [
+      {
+        "cell": 61,
+        "col": 10,
+        "row": 1
+      }
+    ],
+    "k": [
+      {
+        "cell": 62,
+        "col": 10,
+        "row": 2
+      }
+    ],
+    "o": [
+      {
+        "cell": 63,
+        "col": 10,
+        "row": 3
+      }
+    ],
+    "0": [
+      {
+        "cell": 64,
+        "col": 10,
+        "row": 4
+      }
+    ],
+    "f10": [
+      {
+        "cell": 65,
+        "col": 10,
+        "row": 5
+      }
+    ],
+    ".": [
+      {
+        "cell": 67,
+        "col": 11,
+        "row": 1
+      }
+    ],
+    "l": [
+      {
+        "cell": 68,
+        "col": 11,
+        "row": 2
+      }
+    ],
+    "p": [
+      {
+        "cell": 69,
+        "col": 11,
+        "row": 3
+      }
+    ],
+    "minus": [
+      {
+        "cell": 70,
+        "col": 11,
+        "row": 4
+      }
+    ],
+    "f11": [
+      {
+        "cell": 71,
+        "col": 11,
+        "row": 5
+      }
+    ],
+    "options": [
+      {
+        "cell": 72,
+        "col": 12,
+        "row": 0
+      }
+    ],
+    "/": [
+      {
+        "cell": 73,
+        "col": 12,
+        "row": 1
+      }
+    ],
+    ";": [
+      {
+        "cell": 74,
+        "col": 12,
+        "row": 2
+      }
+    ],
+    "[": [
+      {
+        "cell": 75,
+        "col": 12,
+        "row": 3
+      }
+    ],
+    "=": [
+      {
+        "cell": 76,
+        "col": 12,
+        "row": 4
+      }
+    ],
+    "f12": [
+      {
+        "cell": 77,
+        "col": 12,
+        "row": 5
+      }
+    ],
+    "rctrl": [
+      {
+        "cell": 78,
+        "col": 13,
+        "row": 0
+      }
+    ],
+    "'": [
+      {
+        "cell": 80,
+        "col": 13,
+        "row": 2
+      }
+    ],
+    "]": [
+      {
+        "cell": 81,
+        "col": 13,
+        "row": 3
+      }
+    ],
+    "backspace": [
+      {
+        "cell": 82,
+        "col": 13,
+        "row": 4
+      }
+    ],
+    "prtsc": [
+      {
+        "cell": 83,
+        "col": 13,
+        "row": 5
+      }
+    ],
+    "left": [
+      {
+        "cell": 84,
+        "col": 14,
+        "row": 0
+      }
+    ],
+    "rshift": [
+      {
+        "cell": 85,
+        "col": 14,
+        "row": 1
+      }
+    ],
+    "return": [
+      {
+        "cell": 86,
+        "col": 14,
+        "row": 2
+      }
+    ],
+    "ins": [
+      {
+        "cell": 89,
+        "col": 14,
+        "row": 5
+      }
+    ],
+    "up": [
+      {
+        "cell": 90,
+        "col": 15,
+        "row": 0
+      }
+    ],
+    "del": [
+      {
+        "cell": 95,
+        "col": 15,
+        "row": 5
+      }
+    ],
+    "down": [
+      {
+        "cell": 96,
+        "col": 16,
+        "row": 0
+      }
+    ],
+    "num7": [
+      {
+        "cell": 99,
+        "col": 16,
+        "row": 3
+      }
+    ],
+    "num1": [
+      {
+        "cell": 100,
+        "col": 16,
+        "row": 4
+      }
+    ],
+    "num4": [
+      {
+        "cell": 101,
+        "col": 16,
+        "row": 5
+      }
+    ],
+    "right": [
+      {
+        "cell": 102,
+        "col": 17,
+        "row": 0
+      }
+    ],
+    "forward": [
+      {
+        "cell": 103,
+        "col": 17,
+        "row": 1
+      }
+    ],
+    "backward": [
+      {
+        "cell": 104,
+        "col": 17,
+        "row": 2
+      }
+    ],
+    "playpause": [
+      {
+        "cell": 105,
+        "col": 17,
+        "row": 3
+      }
+    ],
+    "predator": [
+      {
+        "cell": 106,
+        "col": 17,
+        "row": 4
+      }
+    ],
+    "power": [
+      {
+        "cell": 107,
+        "col": 17,
+        "row": 5
+      }
+    ],
+    "num0": [
+      {
+        "cell": 108,
+        "col": 18,
+        "row": 0
+      }
+    ],
+    "num2": [
+      {
+        "cell": 109,
+        "col": 18,
+        "row": 1
+      }
+    ],
+    "num5": [
+      {
+        "cell": 110,
+        "col": 18,
+        "row": 2
+      }
+    ],
+    "num8": [
+      {
+        "cell": 111,
+        "col": 18,
+        "row": 3
+      }
+    ],
+    "numlock": [
+      {
+        "cell": 112,
+        "col": 18,
+        "row": 4
+      }
+    ],
+    "num.": [
+      {
+        "cell": 114,
+        "col": 19,
+        "row": 0
+      }
+    ],
+    "num3": [
+      {
+        "cell": 115,
+        "col": 19,
+        "row": 1
+      }
+    ],
+    "num6": [
+      {
+        "cell": 116,
+        "col": 19,
+        "row": 2
+      }
+    ],
+    "num9": [
+      {
+        "cell": 117,
+        "col": 19,
+        "row": 3
+      }
+    ],
+    "num/": [
+      {
+        "cell": 118,
+        "col": 19,
+        "row": 4
+      }
+    ],
+    "numenter": [
+      {
+        "cell": 120,
+        "col": 20,
+        "row": 0
+      }
+    ],
+    "+": [
+      {
+        "cell": 122,
+        "col": 20,
+        "row": 2
+      }
+    ],
+    "-": [
+      {
+        "cell": 123,
+        "col": 20,
+        "row": 3
+      }
+    ],
+    "*": [
+      {
+        "cell": 124,
+        "col": 20,
+        "row": 4
+      }
+    ],
+    "enter": [
+      {
+        "cell": 86,
+        "col": 14,
+        "row": 2
+      }
+    ],
+    "win": [
+      {
+        "cell": 12,
+        "col": 2,
+        "row": 0
+      }
+    ]
+  },
+  "groups": [
+    "all",
+    "arrows",
+    "fkeys",
+    "letters",
+    "numpad",
+    "numrow",
+    "wasd"
+  ]
+}
+--- err
+=== end
+$ keyboard restore
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard effect wave --brightness 50
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard effect operatingmode --color ff0000
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard effect neon
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard effect bogus
+rc 1
+--- out
+--- err
+error: effect: off, static, breathing, wave, snake, ripple, neon, raindrop, lightning, spot, star, fireball, snow, heartbeat
+=== end
+$ keyboard effect wave --brightness 99
+rc 1
+--- out
+--- err
+error: speed 1..12, brightness 0..50
+=== end
+$ keyboard color 112233
+rc 1
+--- out
+--- err
+error: the neon effect has no colour; pick another effect (or use `keyboard fill`)
+=== end
+$ keyboard color zz
+rc 1
+--- out
+--- err
+error: colour must be RRGGBB
+=== end
+$ keyboard speed 7
+rc 0
+--- out
+keyboard effect speed: 7 / 11
+--- err
+=== end
+$ keyboard speed 99
+rc 1
+--- out
+--- err
+error: speed 1..12
+=== end
+$ keyboard paint w=ff0000 arrows=00ff00
+rc 0
+--- out
+painted 2 key(s)
+--- err
+=== end
+$ keyboard paint w
+rc 1
+--- out
+--- err
+error: 'w': use key=RRGGBB
+=== end
+$ keyboard paint nokey=ff0000
+rc 1
+--- out
+--- err
+error: unknown key 'nokey' (see: truesense keyboard list-keys)
+=== end
+$ keyboard design list
+rc 0
+--- out
+  arrows       built-in  only the arrow keys and WASD
+  coding       built-in  dark board, function keys and Esc picked out
+  ember        built-in  warm red and orange
+  gaming       built-in  WASD and the keys around it lit for play
+  ice          built-in  cool blue to white
+  stealth      built-in  almost off, just the letters
+--- err
+=== end
+$ --json keyboard design list
+rc 0
+--- out
+{
+  "gaming": {
+    "info": "WASD and the keys around it lit for play",
+    "source": "built-in"
+  },
+  "coding": {
+    "info": "dark board, function keys and Esc picked out",
+    "source": "built-in"
+  },
+  "arrows": {
+    "info": "only the arrow keys and WASD",
+    "source": "built-in"
+  },
+  "ice": {
+    "info": "cool blue to white",
+    "source": "built-in"
+  },
+  "ember": {
+    "info": "warm red and orange",
+    "source": "built-in"
+  },
+  "stealth": {
+    "info": "almost off, just the letters",
+    "source": "built-in"
+  }
+}
+--- err
+=== end
+$ keyboard design apply
+rc 1
+--- out
+--- err
+error: give a design name
+=== end
+$ keyboard design apply nothing
+rc 1
+--- out
+--- err
+error: no design 'nothing' (see: truesense keyboard design list)
+=== end
+$ keyboard design save mydesign
+rc 0
+--- out
+saved to <TMP>/home/.config/truesense/designs/mydesign.json
+--- err
+=== end
+$ keyboard design list
+rc 0
+--- out
+  arrows       built-in  only the arrow keys and WASD
+  coding       built-in  dark board, function keys and Esc picked out
+  ember        built-in  warm red and orange
+  gaming       built-in  WASD and the keys around it lit for play
+  ice          built-in  cool blue to white
+  mydesign     yours     saved from the keyboard
+  stealth      built-in  almost off, just the letters
+--- err
+=== end
+$ keyboard fill 0000ff --brightness 20
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard gradient ff0000 0000ff
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard rainbow --brightness 10
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard keys wasd=ff0000 esc=00ff00 --base 101010
+rc 0
+--- out
+sent
+--- err
+=== end
+$ keyboard keys wasd
+rc 1
+--- out
+--- err
+error: 'wasd': use key=RRGGBB
+=== end
+$ keyboard brightness
+rc 0
+--- out
+keyboard brightness: 25 / 50
+--- err
+=== end
+$ keyboard brightness 30
+rc 0
+--- out
+keyboard brightness: 30 / 50
+--- err
+=== end
+$ keyboard brightness 99
+rc 1
+--- out
+--- err
+error: brightness 0..50
+=== end
+$ keyboard timeout
+rc 0
+--- out
+backlight timeout (off after 30 s): on
+--- err
+=== end
+$ keyboard timeout off
+rc 0
+--- out
+backlight timeout (off after 30 s): off
+--- err
+=== end
+$ keyboard operating
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ keyboard fx pulse --speed 3 --keys wasd,arrows
+rc 0
+--- out
+per-key animation: pulse on wasd,arrows (needs the key service: systemctl --user status truesense-keys)
+--- err
+=== end
+$ keyboard fx off
+rc 0
+--- out
+per-key animation: off
+--- err
+=== end
+$ keyboard fx pulse --keys nokeys
+rc 1
+--- out
+--- err
+error: unknown key 'nokeys' (see: truesense keyboard list-keys)
+=== end
+$ keyboard profile list
+rc 0
+--- out
+(no lighting profiles)
+--- err
+=== end
+$ keyboard profile save mine fill ff0000
+rc 0
+--- out
+saved lighting profile 'mine'
+--- err
+=== end
+$ keyboard profile list
+rc 0
+--- out
+mine
+--- err
+=== end
+$ keyboard profile load mine
+rc 0
+--- out
+loaded lighting profile 'mine'
+--- err
+=== end
+$ keyboard profile delete mine
+rc 0
+--- out
+deleted lighting profile 'mine'
+--- err
+=== end
+$ keyboard profile load mine
+rc 1
+--- out
+--- err
+error: no profile 'mine' (truesense keyboard profile list)
+=== end
+$ keyboard image /nonexistent/x.png
+rc 1
+--- out
+--- err
+error: cannot read the image: [Errno 2] No such file or directory: '/nonexistent/x.png'
+=== end
+$ keys show
+rc 0
+--- out
+tap      power-next
+double   output-toggle
+triple   none
+long     fan-max-toggle
+fn_esc   none
+(long press after 800 ms; taps within 450 ms count together)
+--- err
+=== end
+$ --json keys show
+rc 0
+--- out
+{
+  "profile": "default",
+  "tap": "power-next",
+  "double": "output-toggle",
+  "triple": "none",
+  "long": "fan-max-toggle",
+  "fn_esc": "none",
+  "long_ms": 800,
+  "multi_ms": 450,
+  "power_cycle": [
+    "eco",
+    "quiet",
+    "balanced",
+    "performance",
+    "turbo"
+  ]
+}
+--- err
+=== end
+$ keys actions
+rc 0
+--- out
+An action is `name` or `name:argument`. Each returns a short message (shown on screen by the caller). Unknown names are rejected when configuring, never at key-press time.
+
+  none
+  power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)
+  fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle
+  profile:<name> | profile-next                                              saved profiles (see `truesense profile`)
+  output-toggle | output-cycle | output:speakers | output:headphones
+  mic-toggle | mic:mute | mic:unmute | voice-next
+  touchpad-toggle | touchpad:on | touchpad:off
+  keyboard:on | keyboard:off | keyboard:toggle | keyboard-effect-next | keyboard-profile:<name>
+  rear:on | rear:off | rear:toggle | rear-effect-next
+  battery-limit-toggle | overdrive-toggle
+  look:<name> | auto:<off|native|smart> | auto-next                           lighting looks (truesense look), the mode control
+  exec:<shell command>      runs as you, detached      |      notify:<text>
+--- err
+=== end
+$ keys set tap power-next
+rc 0
+--- out
+tap -> power-next   (the key service reloads by itself; save it as a profile: truesense keys profile save NAME)
+--- err
+=== end
+$ keys set tap bogus-action
+rc 1
+--- out
+--- err
+error: unknown action 'bogus-action'   (truesense keys actions)
+=== end
+$ keys show
+rc 0
+--- out
+tap      power-next
+double   output-toggle
+triple   none
+long     fan-max-toggle
+fn_esc   none
+(long press after 800 ms; taps within 450 ms count together)
+--- err
+=== end
+$ keys reset tap
+rc 0
+--- out
+reset: tap
+--- err
+=== end
+$ keys reset
+rc 0
+--- out
+reset: tap, double, triple, long, fn_esc
+--- err
+=== end
+$ keys timing
+rc 0
+--- out
+{
+  "long_ms": 800,
+  "multi_ms": 450
+}
+--- err
+=== end
+$ keys timing --long-ms 900
+rc 0
+--- out
+timing: {'long_ms': 900}
+--- err
+=== end
+$ keys show
+rc 0
+--- out
+tap      power-next
+double   output-toggle
+triple   none
+long     fan-max-toggle
+fn_esc   none
+(long press after 900 ms; taps within 450 ms count together)
+--- err
+=== end
+$ keys profile list
+rc 0
+--- out
+  native  - PredatorSense default: the PREDATOR key opens the app, nothing else is bound
+  default  - The standard behaviour: tap steps the power mode, double tap switches speakers/headphones, long press toggles Max fans
+  gaming  - Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto, Fn+Esc mutes the microphone
+  work  - Work: tap steps Eco, Quiet and Balanced, double tap switches audio, triple tap mutes the microphone, long press toggles the touchpad
+  lights  - Lighting: tap the next keyboard effect, double tap the next rear effect, triple tap the keyboard light, long press the rear light
+--- err
+=== end
+$ keys profile current
+rc 0
+--- out
+key profile in use: custom
+  Tap         power-next
+  Double tap  output-toggle
+  Triple tap  none
+  Long press  fan-max-toggle
+  Fn + Esc    none
+  long press after 900 ms; taps within 450 ms count together
+--- err
+=== end
+$ keys profile show
+rc 0
+--- out
+default
+  Tap         power-next
+  Double tap  output-toggle
+  Triple tap  none
+  Long press  fan-max-toggle
+  Fn + Esc    none
+  long press after 800 ms; taps within 450 ms count together
+--- err
+=== end
+$ keys profile show gaming
+rc 0
+--- out
+gaming
+  Tap         power-cycle:performance,turbo
+  Double tap  fan-max-toggle
+  Triple tap  keyboard-effect-next
+  Long press  auto-next
+  Fn + Esc    mic-toggle
+  long press after 800 ms; taps within 450 ms count together
+--- err
+=== end
+$ --json keys profile show gaming
+rc 0
+--- out
+{
+  "description": "Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto, Fn+Esc mutes the microphone",
+  "tap": "power-cycle:performance,turbo",
+  "double": "fan-max-toggle",
+  "triple": "keyboard-effect-next",
+  "long": "auto-next",
+  "fn_esc": "mic-toggle",
+  "long_ms": 800,
+  "multi_ms": 450
+}
+--- err
+=== end
+$ keys profile copy gaming mykeys
+rc 0
+--- out
+copied 'gaming' to 'mykeys' (edit: truesense keys profile save mykeys --tap power:turbo)
+--- err
+=== end
+$ keys profile save mykeys --tap power-next --long-ms 700
+rc 0
+--- out
+saved key profile 'mykeys' (use it: truesense keys profile use mykeys)
+--- err
+=== end
+$ keys profile show mykeys
+rc 0
+--- out
+mykeys
+  Tap         power-next
+  Double tap  fan-max-toggle
+  Triple tap  keyboard-effect-next
+  Long press  auto-next
+  Fn + Esc    mic-toggle
+  long press after 700 ms; taps within 450 ms count together
+--- err
+=== end
+$ keys profile use mykeys
+rc 0
+--- out
+key profile in use: mykeys   (the key service reloads by itself)
+--- err
+=== end
+$ keys profile current
+rc 0
+--- out
+key profile in use: mykeys
+  Tap         power-next
+  Double tap  fan-max-toggle
+  Triple tap  keyboard-effect-next
+  Long press  auto-next
+  Fn + Esc    mic-toggle
+  long press after 700 ms; taps within 450 ms count together
+--- err
+=== end
+$ --json keys profile current
+rc 0
+--- out
+{
+  "tap": "power-next",
+  "double": "fan-max-toggle",
+  "triple": "keyboard-effect-next",
+  "long": "auto-next",
+  "fn_esc": "mic-toggle",
+  "long_ms": 700,
+  "multi_ms": 450,
+  "profile": "mykeys"
+}
+--- err
+=== end
+$ keys profile delete mykeys
+rc 0
+--- out
+deleted key profile 'mykeys'
+--- err
+=== end
+$ keys profile delete default
+rc 1
+--- out
+--- err
+error: 'default' is built in and cannot be deleted
+=== end
+$ keys profile use nothing
+rc 1
+--- out
+--- err
+error: no key profile 'nothing' (truesense keys profile list)
+=== end
+$ profile list
+rc 0
+--- out
+(no profiles)
+--- err
+=== end
+$ --json profile list
+rc 0
+--- out
+[]
+--- err
+=== end
+$ profile show nothing
+rc 1
+--- out
+--- err
+error: no profile 'nothing' (truesense profile list)
+=== end
+$ profile apply nothing
+rc 1
+--- out
+--- err
+error: no profile 'nothing' (truesense profile list)
+=== end
+$ profile save mine --description hello
+rc 0
+--- out
+saved the current state as profile 'mine'
+--- err
+=== end
+$ profile list
+rc 0
+--- out
+mine             [  yours] hello
+--- err
+=== end
+$ profile next
+rc 0
+--- out
+Profile 'mine' applied (8 settings)
+--- err
+=== end
+$ profile delete mine
+rc 0
+--- out
+deleted mine
+--- err
+=== end
+$ cpu info
+rc 0
+--- out
+{
+  "pl1_w": 80.0,
+  "pl2_w": 80.0,
+  "rapl_enabled": "1",
+  "msr_lock_bit": "unreadable (needs root + msr module)",
+  "nvidia_power_limit_w": null
+}
+--- err
+=== end
+$ --json cpu info
+rc 0
+--- out
+{
+  "pl1_w": 80.0,
+  "pl2_w": 80.0,
+  "rapl_enabled": "1",
+  "msr_lock_bit": "unreadable (needs root + msr module)",
+  "nvidia_power_limit_w": null
+}
+--- err
+=== end
+$ cpu limits
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu limits 45 80
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu limits --auto
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu undervolt list
+rc 0
+--- out
+  native       core    0 mV  cache    0 mV  - PredatorSense default: no undervolt (0 mV)
+  truesense    core  -50 mV  cache  -40 mV  - Our profile for the i7-13700HX: a conservative offset that usually gives a few degrees less heat at the same speed. Unverified on your unit: test under load
+  mild         core  -30 mV  cache  -30 mV  - Very safe: small offset
+  balanced     core  -70 mV  cache  -50 mV  - Moderate: more heat saved, more chance of instability
+  aggressive   core -100 mV  cache  -80 mV  - Maximum offered: only if you have tested it; can freeze or reboot
+--- err
+=== end
+$ cpu undervolt show
+rc 0
+--- out
+truesense: core -50 mV, cache -40 mV   Our profile for the i7-13700HX: a conservative offset that usually gives a few degrees less heat at the same speed. Unverified on your unit: test under load
+--- err
+=== end
+$ cpu undervolt get
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu undervolt save myuv --core -50 --cache -40
+rc 0
+--- out
+saved undervolt profile 'myuv' (use it: truesense cpu undervolt use myuv --confirm)
+--- err
+=== end
+$ cpu undervolt save myuv2 --core -50
+rc 1
+--- out
+--- err
+error: usage: truesense cpu undervolt save NAME --core -50 --cache -40
+=== end
+$ cpu undervolt show myuv
+rc 0
+--- out
+myuv: core -50 mV, cache -40 mV   
+--- err
+=== end
+$ cpu undervolt copy myuv
+rc 0
+--- out
+copied 'myuv' to 'myuv-copy'
+--- err
+=== end
+$ cpu undervolt delete myuv
+rc 0
+--- out
+deleted undervolt profile 'myuv'
+--- err
+=== end
+$ cpu undervolt delete myuv
+rc 1
+--- out
+--- err
+error: no undervolt profile 'myuv'
+=== end
+$ cpu undervolt set -10
+rc 1
+--- out
+--- err
+error: usage: truesense cpu undervolt set -10 --confirm   (or use a profile)
+=== end
+$ cpu undervolt set
+rc 1
+--- out
+--- err
+error: usage: truesense cpu undervolt set -10 --confirm   (or use a profile)
+=== end
+$ cpu undervolt use myuv --confirm
+rc 1
+--- out
+--- err
+error: no undervolt profile 'myuv' (truesense cpu undervolt list)
+=== end
+$ cpu undervolt boot off
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ touchpad
+rc 0
+--- out
+touchpad: on
+--- err
+=== end
+$ touchpad on
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ config path
+rc 0
+--- out
+[
+  "/etc/truesense/config.toml",
+  "<TMP>/home/.config/truesense/config.toml"
+]
+--- err
+=== end
+$ --json config path
+rc 0
+--- out
+[
+  "/etc/truesense/config.toml",
+  "<TMP>/home/.config/truesense/config.toml"
+]
+--- err
+=== end
+$ config validate
+rc 0
+--- out
+configuration valid
+--- err
+=== end
+$ completion bash
+rc 0
+--- out
+_truesense() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  case "${COMP_WORDS[1]}" in
+    status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    sensors) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    power) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status list set next prev smart auto hold release managers game --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        prev) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --set" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "off native smart on toggle status --help" -- "$cur") ); return;;
+        hold) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        release) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        managers) COMPREPLY=( $(compgen -W "list stop restore --help" -- "$cur") ); return;;
+        game) COMPREPLY=( $(compgen -W "list add remove clear quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    fan) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status auto max off set curve smart --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        max) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        curve) COMPREPLY=( $(compgen -W "list current show use save delete copy --help --cpu --gpu --hysteresis --down-rate --predict --couple --battery-shift --from" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    battery) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "full limit calibration usb-charge status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        full) COMPREPLY=( $(compgen -W "start cancel status --help" -- "$cur") ); return;;
+        limit) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        calibration) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        usb-charge) COMPREPLY=( $(compgen -W "status 0 10 20 30 --help" -- "$cur") ); return;;
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    display) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "overdrive --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        overdrive) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    boot) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "sound --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        sound) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status set undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "optimus nvidia auto --help" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot --help --offset --cap --confirm --force" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    rear) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "static breathing neon wave twinkling --help --color --speed --brightness --direction --zones" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    update) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "check apply auto auto-run --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        check) COMPREPLY=( $(compgen -W "--help --force" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help --yes --version" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        auto-run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    look) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list save apply show delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    startup) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show apply boot set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        boot) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "keyboard rear profile --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keyboard) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle restore list-keys effect fx speed color paint layout design image fill gradient rainbow keys brightness timeout operating profile --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        layout) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        design) COMPREPLY=( $(compgen -W "list apply save --help --brightness" -- "$cur") ); return;;
+        image) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        fill) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        gradient) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        rainbow) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        keys) COMPREPLY=( $(compgen -W "--help --base --brightness" -- "$cur") ); return;;
+        brightness) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        timeout) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        operating) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list load save delete --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    audio) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "output mic jack voice repair speaker-filter dts --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        output) COMPREPLY=( $(compgen -W "status speakers headphones toggle cycle --help" -- "$cur") ); return;;
+        mic) COMPREPLY=( $(compgen -W "status mute unmute toggle volume boost --help --default-only" -- "$cur") ); return;;
+        jack) COMPREPLY=( $(compgen -W "auto headphones headset --help" -- "$cur") ); return;;
+        voice) COMPREPLY=( $(compgen -W "status set enable disable next apply watch notify --help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        speaker-filter) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        dts) COMPREPLY=( $(compgen -W "status on off mode profiles devices all setup --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keys) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show actions run set reset test profile timing --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
+        timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    profile) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list next show apply save delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        limits) COMPREPLY=( $(compgen -W "--help --auto --force" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot set --help --core --cache --confirm --force --plane" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    touchpad) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    service) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status restart logs check repair --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restart) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        logs) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        check) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help --system" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    config) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show validate path --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        validate) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        path) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    doctor) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    selftest) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --skip-fans" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    completion) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "bash zsh fish --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    probe) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    tui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    daemon) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    version) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+  esac
+}
+complete -F _truesense truesense
+--- err
+=== end
+$ completion zsh
+rc 0
+--- out
+autoload -U +X bashcompinit && bashcompinit
+_truesense() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  case "${COMP_WORDS[1]}" in
+    status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    sensors) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    power) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status list set next prev smart auto hold release managers game --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        prev) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --set" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "off native smart on toggle status --help" -- "$cur") ); return;;
+        hold) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        release) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        managers) COMPREPLY=( $(compgen -W "list stop restore --help" -- "$cur") ); return;;
+        game) COMPREPLY=( $(compgen -W "list add remove clear quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    fan) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status auto max off set curve smart --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        max) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        curve) COMPREPLY=( $(compgen -W "list current show use save delete copy --help --cpu --gpu --hysteresis --down-rate --predict --couple --battery-shift --from" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    battery) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "full limit calibration usb-charge status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        full) COMPREPLY=( $(compgen -W "start cancel status --help" -- "$cur") ); return;;
+        limit) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        calibration) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        usb-charge) COMPREPLY=( $(compgen -W "status 0 10 20 30 --help" -- "$cur") ); return;;
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    display) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "overdrive --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        overdrive) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    boot) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "sound --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        sound) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status set undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "optimus nvidia auto --help" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot --help --offset --cap --confirm --force" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    rear) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "static breathing neon wave twinkling --help --color --speed --brightness --direction --zones" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    update) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "check apply auto auto-run --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        check) COMPREPLY=( $(compgen -W "--help --force" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help --yes --version" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        auto-run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    look) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list save apply show delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    startup) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show apply boot set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        boot) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "keyboard rear profile --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keyboard) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle restore list-keys effect fx speed color paint layout design image fill gradient rainbow keys brightness timeout operating profile --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        layout) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        design) COMPREPLY=( $(compgen -W "list apply save --help --brightness" -- "$cur") ); return;;
+        image) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        fill) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        gradient) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        rainbow) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        keys) COMPREPLY=( $(compgen -W "--help --base --brightness" -- "$cur") ); return;;
+        brightness) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        timeout) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        operating) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list load save delete --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    audio) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "output mic jack voice repair speaker-filter dts --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        output) COMPREPLY=( $(compgen -W "status speakers headphones toggle cycle --help" -- "$cur") ); return;;
+        mic) COMPREPLY=( $(compgen -W "status mute unmute toggle volume boost --help --default-only" -- "$cur") ); return;;
+        jack) COMPREPLY=( $(compgen -W "auto headphones headset --help" -- "$cur") ); return;;
+        voice) COMPREPLY=( $(compgen -W "status set enable disable next apply watch notify --help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        speaker-filter) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        dts) COMPREPLY=( $(compgen -W "status on off mode profiles devices all setup --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keys) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show actions run set reset test profile timing --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
+        timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    profile) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list next show apply save delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        limits) COMPREPLY=( $(compgen -W "--help --auto --force" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot set --help --core --cache --confirm --force --plane" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    touchpad) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    service) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status restart logs check repair --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restart) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        logs) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        check) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help --system" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    config) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show validate path --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        validate) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        path) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    doctor) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    selftest) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --skip-fans" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    completion) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "bash zsh fish --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    probe) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    tui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    daemon) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    version) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+  esac
+}
+complete -F _truesense truesense
+--- err
+=== end
+$ completion fish
+rc 0
+--- out
+complete -c truesense -f
+complete -c truesense -n '__fish_use_subcommand' -a status
+complete -c truesense -n '__fish_use_subcommand' -a sensors
+complete -c truesense -n '__fish_use_subcommand' -a power
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'list'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'set'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'next'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'prev'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'smart'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'auto'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'hold'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'release'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'managers'
+complete -c truesense -n '__fish_seen_subcommand_from power' -a 'game'
+complete -c truesense -n '__fish_use_subcommand' -a fan
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'auto'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'max'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'off'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'set'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'curve'
+complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'smart'
+complete -c truesense -n '__fish_use_subcommand' -a battery
+complete -c truesense -n '__fish_seen_subcommand_from battery' -a 'full'
+complete -c truesense -n '__fish_seen_subcommand_from battery' -a 'limit'
+complete -c truesense -n '__fish_seen_subcommand_from battery' -a 'calibration'
+complete -c truesense -n '__fish_seen_subcommand_from battery' -a 'usb-charge'
+complete -c truesense -n '__fish_seen_subcommand_from battery' -a 'status'
+complete -c truesense -n '__fish_use_subcommand' -a display
+complete -c truesense -n '__fish_seen_subcommand_from display' -a 'overdrive'
+complete -c truesense -n '__fish_use_subcommand' -a boot
+complete -c truesense -n '__fish_seen_subcommand_from boot' -a 'sound'
+complete -c truesense -n '__fish_use_subcommand' -a gpu
+complete -c truesense -n '__fish_seen_subcommand_from gpu' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from gpu' -a 'set'
+complete -c truesense -n '__fish_seen_subcommand_from gpu' -a 'undervolt'
+complete -c truesense -n '__fish_use_subcommand' -a rear
+complete -c truesense -n '__fish_seen_subcommand_from rear' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from rear' -a 'on'
+complete -c truesense -n '__fish_seen_subcommand_from rear' -a 'off'
+complete -c truesense -n '__fish_seen_subcommand_from rear' -a 'toggle'
+complete -c truesense -n '__fish_seen_subcommand_from rear' -a 'set'
+complete -c truesense -n '__fish_use_subcommand' -a update
+complete -c truesense -n '__fish_seen_subcommand_from update' -a 'check'
+complete -c truesense -n '__fish_seen_subcommand_from update' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from update' -a 'auto'
+complete -c truesense -n '__fish_seen_subcommand_from update' -a 'auto-run'
+complete -c truesense -n '__fish_use_subcommand' -a look
+complete -c truesense -n '__fish_seen_subcommand_from look' -a 'list'
+complete -c truesense -n '__fish_seen_subcommand_from look' -a 'save'
+complete -c truesense -n '__fish_seen_subcommand_from look' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from look' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from look' -a 'delete'
+complete -c truesense -n '__fish_use_subcommand' -a startup
+complete -c truesense -n '__fish_seen_subcommand_from startup' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from startup' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from startup' -a 'boot'
+complete -c truesense -n '__fish_seen_subcommand_from startup' -a 'set'
+complete -c truesense -n '__fish_use_subcommand' -a keyboard
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'on'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'off'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'toggle'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'restore'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'list-keys'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'effect'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'fx'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'speed'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'color'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'paint'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'layout'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'design'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'image'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'fill'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'gradient'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'rainbow'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'keys'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'brightness'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'timeout'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'operating'
+complete -c truesense -n '__fish_seen_subcommand_from keyboard' -a 'profile'
+complete -c truesense -n '__fish_use_subcommand' -a audio
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'output'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'mic'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'jack'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'voice'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'repair'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'speaker-filter'
+complete -c truesense -n '__fish_seen_subcommand_from audio' -a 'dts'
+complete -c truesense -n '__fish_use_subcommand' -a keys
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'actions'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'run'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'set'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'reset'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'test'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'profile'
+complete -c truesense -n '__fish_seen_subcommand_from keys' -a 'timing'
+complete -c truesense -n '__fish_use_subcommand' -a profile
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'list'
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'next'
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'save'
+complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'delete'
+complete -c truesense -n '__fish_use_subcommand' -a cpu
+complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'info'
+complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'limits'
+complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'undervolt'
+complete -c truesense -n '__fish_use_subcommand' -a touchpad
+complete -c truesense -n '__fish_seen_subcommand_from touchpad' -a 'on'
+complete -c truesense -n '__fish_seen_subcommand_from touchpad' -a 'off'
+complete -c truesense -n '__fish_seen_subcommand_from touchpad' -a 'toggle'
+complete -c truesense -n '__fish_seen_subcommand_from touchpad' -a 'status'
+complete -c truesense -n '__fish_use_subcommand' -a service
+complete -c truesense -n '__fish_seen_subcommand_from service' -a 'status'
+complete -c truesense -n '__fish_seen_subcommand_from service' -a 'restart'
+complete -c truesense -n '__fish_seen_subcommand_from service' -a 'logs'
+complete -c truesense -n '__fish_seen_subcommand_from service' -a 'check'
+complete -c truesense -n '__fish_seen_subcommand_from service' -a 'repair'
+complete -c truesense -n '__fish_use_subcommand' -a config
+complete -c truesense -n '__fish_seen_subcommand_from config' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from config' -a 'validate'
+complete -c truesense -n '__fish_seen_subcommand_from config' -a 'path'
+complete -c truesense -n '__fish_use_subcommand' -a doctor
+complete -c truesense -n '__fish_use_subcommand' -a selftest
+complete -c truesense -n '__fish_use_subcommand' -a completion
+complete -c truesense -n '__fish_seen_subcommand_from completion' -a 'bash'
+complete -c truesense -n '__fish_seen_subcommand_from completion' -a 'zsh'
+complete -c truesense -n '__fish_seen_subcommand_from completion' -a 'fish'
+complete -c truesense -n '__fish_use_subcommand' -a gui
+complete -c truesense -n '__fish_use_subcommand' -a probe
+complete -c truesense -n '__fish_use_subcommand' -a tui
+complete -c truesense -n '__fish_use_subcommand' -a daemon
+complete -c truesense -n '__fish_use_subcommand' -a version
+--- err
+=== end
+$ completion powershell
+rc 2
+--- out
+--- err
+usage: truesense completion [-h] {bash,zsh,fish}
+truesense completion: error: argument shell: invalid choice: 'powershell' (choose from 'bash', 'zsh', 'fish')
+=== end
+$ version
+rc 0
+--- out
+truesense 0.3.17
+--- err
+=== end
+$ --json version
+rc 0
+--- out
+{
+  "truesense": "0.3.17"
+}
+--- err
+=== end
+$ audio
+rc 1
+--- out
+--- err
+error: choose: output | mic | jack | voice | speaker-filter | dts   (truesense audio -h)
+=== end
+$ audio output
+rc 1
+--- out
+--- err
+error: sound card not found
+=== end
+$ audio output speakers
+rc 1
+--- out
+--- err
+error: sound card not found
+=== end
+$ audio output toggle
+rc 1
+--- out
+--- err
+error: sound card not found
+=== end
+$ audio mic
+rc 0
+--- out
+{
+  "default": "",
+  "muted": false,
+  "sources": {},
+  "volume": null
+}
+--- err
+=== end
+$ audio mic mute
+rc 0
+--- out
+muted
+--- err
+=== end
+$ audio mic volume
+rc 0
+--- out
+microphone volume: None %
+--- err
+=== end
+$ audio mic volume 200
+rc 1
+--- out
+--- err
+error: mic volume is 0..150 %
+=== end
+$ audio mic boost 5
+rc 1
+--- out
+--- err
+error: headset mic boost is 0..3
+=== end
+$ audio jack
+rc 0
+--- out
+{
+  "headphones": false,
+  "headset_mic": false,
+  "raw": {
+    "Headphone Jack": null,
+    "Headset Mic Jack": null
+  },
+  "setting": "auto",
+  "microphone_in_use": "array"
+}
+--- err
+=== end
+$ audio jack headset
+rc 0
+--- out
+3.5 mm jack: headset  (headset microphone is used even if the codec does not detect it)
+--- err
+=== end
+$ audio jack bogus
+rc 2
+--- out
+--- err
+usage: truesense audio jack [-h] [{auto,headphones,headset}]
+truesense audio jack: error: argument use: invalid choice: 'bogus' (choose from 'auto', 'headphones', 'headset')
+=== end
+$ audio voice
+rc 0
+--- out
+{
+  "modes": {
+    "headset": "off",
+    "array": "off"
+  },
+  "jack": false,
+  "default_source": "",
+  "notify": true
+}
+--- err
+=== end
+$ audio voice set headset bogus
+rc 1
+--- out
+--- err
+error: mode: off | conference | personal
+=== end
+$ audio voice set headset
+rc 1
+--- out
+--- err
+error: usage: truesense audio voice set headset|array off|conference|personal
+=== end
+$ audio voice notify maybe
+rc 1
+--- out
+--- err
+error: usage: truesense audio voice notify on|off
+=== end
+$ audio voice notify on
+rc 0
+--- out
+mic mode notification: on
+--- err
+=== end
+$ audio repair
+rc 0
+--- out
+no sound card found in PipeWire: no sound card known to PipeWire
+--- err
+=== end
+$ audio speaker-filter
+rc 0
+--- out
+speaker filter: off
+--- err
+=== end
+$ audio speaker-filter on
+rc 0
+--- out
+speaker filter: on
+--- err
+=== end
+$ audio dts
+rc 1
+--- out
+--- err
+error: AcerUltraX is not installed (https://github.com/fawaz7/AcerUltraX); TrueSense only drives it, it does not bundle Acer's files
+=== end
+$ audio dts mode
+rc 1
+--- out
+--- err
+error: usage: truesense audio dts mode music|movie|voice|game1|game2|game3|off|plain|"custom audio"   (every output; [audio] dts_all = false: only the one playing)
+=== end
+$ audio dts devices
+rc 1
+--- out
+--- err
+error: AcerUltraX is not installed (https://github.com/fawaz7/AcerUltraX); TrueSense only drives it, it does not bundle Acer's files
+=== end
+$ audio dts all
+rc 1
+--- out
+--- err
+error: AcerUltraX is not installed (https://github.com/fawaz7/AcerUltraX); TrueSense only drives it, it does not bundle Acer's files
+=== end
+$ audio dts profiles
+rc 1
+--- out
+--- err
+error: AcerUltraX is not installed (https://github.com/fawaz7/AcerUltraX); TrueSense only drives it, it does not bundle Acer's files
+=== end
+$ service check
+rc 1
+--- out
+  [!! ] truesense.service                  system unknown   unknown   -> sudo truesense service repair
+  [!! ] truesense-health.timer             system unknown   unknown   -> sudo truesense service repair
+  [!! ] truesense-keys.service             user   unknown   unknown   -> truesense service repair
+  [!! ] truesense-audio.service            user   unknown   unknown   -> truesense service repair
+  [!! ] truesense-startup.service          user   unknown   unknown   -> truesense service repair
+  [!! ] truesense-update.timer             user   unknown   unknown   -> truesense service repair
+  [ok ] kernel module (/dev/truesense)     system -         present
+  [!! ] control socket                     system -         silent   -> sudo truesense service repair
+
+something is not running: truesense service repair
+--- err
+=== end
+$ service repair --system
+rc 1
+--- out
+--- err
+error: the system part needs root: sudo truesense service repair
+=== end
+$ update auto
+rc 0
+--- out
+check for updates once a day: off
+--- err
+=== end
+$ update auto on
+rc 0
+--- out
+check for updates once a day: on
+--- err
+=== end
+$ startup show
+rc 0
+--- out
+{
+  "profile": "",
+  "keyboard": "last",
+  "rear": "last"
+}
+--- err
+=== end

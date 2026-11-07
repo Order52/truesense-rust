@@ -1,0 +1,1548 @@
+$ power set
+rc 2
+--- out
+--- err
+usage: truesense power set [-h] {quiet,balanced,performance,turbo,eco}
+truesense power set: error: the following arguments are required: mode
+=== end
+$ power set -- turbo
+rc 0
+--- out
+power mode: turbo   (held 30 min against the automatic profile; `truesense power release` to end)
+--- err
+=== end
+$ power -- set turbo
+rc 0
+--- out
+power mode: turbo   (held 30 min against the automatic profile; `truesense power release` to end)
+--- err
+=== end
+$ fan set 50 --confirm
+rc 0
+--- out
+fans: manual 50 % / 50 %
+--- err
+=== end
+$ fan set --confirm 50
+rc 0
+--- out
+fans: manual 50 % / 50 %
+--- err
+=== end
+$ fan set 50 60 70
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: 70
+=== end
+$ fan set
+rc 2
+--- out
+--- err
+usage: truesense fan set [-h] [--confirm] cpu [gpu]
+truesense fan set: error: the following arguments are required: cpu
+=== end
+$ fan set abc
+rc 2
+--- out
+--- err
+usage: truesense fan set [-h] [--confirm] cpu [gpu]
+truesense fan set: error: argument cpu: invalid int value: 'abc'
+=== end
+$ fan set 5.5
+rc 2
+--- out
+--- err
+usage: truesense fan set [-h] [--confirm] cpu [gpu]
+truesense fan set: error: argument cpu: invalid int value: '5.5'
+=== end
+$ fan set +50
+rc 0
+--- out
+fans: manual 50 % / 50 %
+--- err
+=== end
+$ fan set 050
+rc 0
+--- out
+fans: manual 50 % / 50 %
+--- err
+=== end
+$ rear set breathing --col 00ff88
+rc 0
+--- out
+{
+  "raw": "00010364000100ff8803020000000000",
+  "mode": "breathing",
+  "speed": 3,
+  "brightness": 100,
+  "direction": 1,
+  "color": "00ff88"
+}
+--- err
+=== end
+$ rear set breathing --color=00ff88
+rc 0
+--- out
+{
+  "raw": "00010364000100ff8803020000000000",
+  "mode": "breathing",
+  "speed": 3,
+  "brightness": 100,
+  "direction": 1,
+  "color": "00ff88"
+}
+--- err
+=== end
+$ rear set breathing --colo
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: argument --color: expected one argument
+=== end
+$ rear set breathing --color
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: argument --color: expected one argument
+=== end
+$ rear set breathing --speed=7 --brightness=70
+rc 1
+--- out
+--- err
+error: speed 1..5, brightness 0..100, direction 0|1
+=== end
+$ rear set breathing --zones
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: argument --zones: expected one argument
+=== end
+$ rear set --zones ff0000
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: the following arguments are required: effect
+=== end
+$ rear set
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: the following arguments are required: effect
+=== end
+$ rear set glitter
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: argument effect: invalid choice: 'glitter' (choose from 'static', 'breathing', 'neon', 'wave', 'twinkling')
+=== end
+$ rear set wave --direction 2
+rc 2
+--- out
+--- err
+usage: truesense rear set [-h] [--color COLOR] [--speed SPEED]
+                          [--brightness BRIGHTNESS] [--direction {0,1}]
+                          [--zones ZONES]
+                          {static,breathing,neon,wave,twinkling}
+truesense rear set: error: argument --direction: invalid choice: '2' (choose from '0', '1')
+=== end
+$ rear set wave --direction=1
+rc 0
+--- out
+{
+  "raw": "000303640001ffffff03020000000000",
+  "mode": "wave",
+  "speed": 3,
+  "brightness": 100,
+  "direction": 1,
+  "color": "ffffff"
+}
+--- err
+=== end
+$ keyboard fx
+rc 2
+--- out
+--- err
+usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+truesense keyboard fx: error: the following arguments are required: mode
+=== end
+$ keyboard fx pulse --speed
+rc 2
+--- out
+--- err
+usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+truesense keyboard fx: error: argument --speed: expected one argument
+=== end
+$ keyboard fx wave --speed 11
+rc 1
+--- out
+--- err
+error: speed 1..10
+=== end
+$ keyboard effect
+rc 2
+--- out
+--- err
+usage: truesense keyboard effect [-h] [--color COLOR] [--speed SPEED]
+                                 [--brightness BRIGHTNESS]
+                                 [--direction DIRECTION]
+                                 name
+truesense keyboard effect: error: the following arguments are required: name
+=== end
+$ keyboard effect wave --speed x
+rc 2
+--- out
+--- err
+usage: truesense keyboard effect [-h] [--color COLOR] [--speed SPEED]
+                                 [--brightness BRIGHTNESS]
+                                 [--direction DIRECTION]
+                                 name
+truesense keyboard effect: error: argument --speed: invalid int value: 'x'
+=== end
+$ keyboard paint --brightness 5
+rc 2
+--- out
+--- err
+usage: truesense keyboard paint [-h] [--brightness BRIGHTNESS]
+                                items [items ...]
+truesense keyboard paint: error: the following arguments are required: items
+=== end
+$ keyboard paint --brightness 5 w=ff0000
+rc 0
+--- out
+painted 1 key(s)
+--- err
+=== end
+$ keyboard paint w=ff0000 --brightness 5
+rc 0
+--- out
+painted 1 key(s)
+--- err
+=== end
+$ keyboard paint w=ff0000 --brightness
+rc 2
+--- out
+--- err
+usage: truesense keyboard paint [-h] [--brightness BRIGHTNESS]
+                                items [items ...]
+truesense keyboard paint: error: argument --brightness: expected one argument
+=== end
+$ status --bogus
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: --bogus
+=== end
+$ status -x
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: -x
+=== end
+$ status extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ -h status
+rc 0
+--- out
+usage: truesense [-h] [--json] [-V] area ...
+
+truesense: command line for the Acer Predator Helios 16 (PH16-71).   truesense <area> <verb> ...   (every setting has on / off / toggle / status; --json for scripts)
+
+positional arguments:
+  area
+    status       everything at a glance
+    sensors      temperatures and fan RPM
+    power        power mode (quiet balanced performance turbo eco) and the
+                 automatic profile
+    fan          fans: firmware auto, max, manual %, smart curve
+    battery      80 % charge limit, charge to full once, calibration, USB
+                 power-off charging
+    display      LCD overdrive
+    boot         boot animation and sound
+    gpu          GPU mode (MUX); a change needs a reboot
+    rear         rear light bar
+    update       check for a newer TrueSense and install it
+    look         saved lighting looks (keyboard effect/brightness/colours +
+                 rear light)
+    startup      what the lights and profile do at login
+    keyboard     keyboard lighting
+    audio        output, microphone, headset jack, Purified Voice, DTS
+    keys         PREDATOR key and Fn+Esc: what each gesture does
+    profile      named bundles of settings (gaming, quiet, battery-saver,
+                 yours)
+    cpu          CPU power limits and the guarded undervolt
+    touchpad     touchpad on/off (Fn+F10)
+    service      the daemon
+    config       configuration
+    doctor       check the whole stack and say how to fix problems
+    selftest     set -> read back -> restore every firmware feature
+    completion   shell completion script
+    gui          the small optional window
+    probe        read-only report of this laptop for model support (never
+                 writes a setting)
+    tui          the full control surface in the terminal (keyboard and mouse)
+    daemon       run the daemon (systemd does this)
+
+options:
+  -h, --help     show this help message and exit
+  --json         machine-readable output
+  -V, --version  show program's version number and exit
+
+Examples:
+  truesense status
+  truesense power set turbo
+  truesense fan set 60
+  truesense rear set breathing --color 00ff88
+  truesense keyboard effect wave --brightness 50
+  truesense keys set double output-toggle
+  truesense profile apply gaming
+  truesense doctor
+--- err
+=== end
+$ -hV
+rc 0
+--- out
+usage: truesense [-h] [--json] [-V] area ...
+
+truesense: command line for the Acer Predator Helios 16 (PH16-71).   truesense <area> <verb> ...   (every setting has on / off / toggle / status; --json for scripts)
+
+positional arguments:
+  area
+    status       everything at a glance
+    sensors      temperatures and fan RPM
+    power        power mode (quiet balanced performance turbo eco) and the
+                 automatic profile
+    fan          fans: firmware auto, max, manual %, smart curve
+    battery      80 % charge limit, charge to full once, calibration, USB
+                 power-off charging
+    display      LCD overdrive
+    boot         boot animation and sound
+    gpu          GPU mode (MUX); a change needs a reboot
+    rear         rear light bar
+    update       check for a newer TrueSense and install it
+    look         saved lighting looks (keyboard effect/brightness/colours +
+                 rear light)
+    startup      what the lights and profile do at login
+    keyboard     keyboard lighting
+    audio        output, microphone, headset jack, Purified Voice, DTS
+    keys         PREDATOR key and Fn+Esc: what each gesture does
+    profile      named bundles of settings (gaming, quiet, battery-saver,
+                 yours)
+    cpu          CPU power limits and the guarded undervolt
+    touchpad     touchpad on/off (Fn+F10)
+    service      the daemon
+    config       configuration
+    doctor       check the whole stack and say how to fix problems
+    selftest     set -> read back -> restore every firmware feature
+    completion   shell completion script
+    gui          the small optional window
+    probe        read-only report of this laptop for model support (never
+                 writes a setting)
+    tui          the full control surface in the terminal (keyboard and mouse)
+    daemon       run the daemon (systemd does this)
+
+options:
+  -h, --help     show this help message and exit
+  --json         machine-readable output
+  -V, --version  show program's version number and exit
+
+Examples:
+  truesense status
+  truesense power set turbo
+  truesense fan set 60
+  truesense rear set breathing --color 00ff88
+  truesense keyboard effect wave --brightness 50
+  truesense keys set double output-toggle
+  truesense profile apply gaming
+  truesense doctor
+--- err
+=== end
+$ --ver
+rc 0
+--- out
+truesense 0.3.17
+--- err
+=== end
+$ --vers
+rc 0
+--- out
+truesense 0.3.17
+--- err
+=== end
+$ power --h
+rc 0
+--- out
+usage: truesense power [-h]
+                       {status,list,set,next,prev,smart,auto,hold,release,managers,game} ...
+
+positional arguments:
+  {status,list,set,next,prev,smart,auto,hold,release,managers,game}
+    smart               Smart auto profiles: list | current | show NAME | use
+                        NAME | copy NAME [NEW] | save NAME [--from BASE] --set
+                        key=value ... | delete NAME (built-in profiles are
+                        read-only: copy them to edit)
+    auto                automatic power mode: off | native (PredatorSense-
+                        like: power source only) | smart (heat, load and
+                        battery aware); on = smart
+    hold                keep the current power mode against the automatic
+                        profile
+    release             end a hold
+    managers            other power managers (auto-cpufreq, TLP, tuned, power-
+                        profiles-daemon, system76-power): list | stop
+                        (TrueSense manages power: stops them, sets sane CPU
+                        defaults, remembers) | restore
+    game                game rules: a program raises the power mode while it
+                        runs: list | add NAME MODE | remove NAME | clear
+
+options:
+  -h, --help            show this help message and exit
+--- err
+=== end
+$ power set -h turbo
+rc 0
+--- out
+usage: truesense power set [-h] {quiet,balanced,performance,turbo,eco}
+
+positional arguments:
+  {quiet,balanced,performance,turbo,eco}
+
+options:
+  -h, --help            show this help message and exit
+--- err
+=== end
+$ -V status
+rc 0
+--- out
+truesense 0.3.17
+--- err
+=== end
+$ --
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: --
+=== end
+$ -- status
+rc 0
+--- out
+{
+  "power_mode": "eco",
+  "sensors": {
+    "cpu_temp": 50,
+    "sys_temp": 52,
+    "gpu_temp": 48,
+    "cpu_fan_rpm": 0,
+    "gpu_fan_rpm": 0
+  },
+  "fans": {
+    "behavior_raw": "0x41",
+    "mode": "auto",
+    "duty_register_pct": {
+      "cpu": 30,
+      "gpu": 30
+    }
+  },
+  "daemon": "ERROR: the TrueSense daemon is not running (sudo systemctl start truesense)",
+  "battery_limit": false,
+  "usb_charge_stop": 30,
+  "overdrive": true,
+  "boot_sound": false,
+  "kb_backlight_timeout": true,
+  "gpu_mode": "nvidia",
+  "rear": {
+    "raw": "00000300000100aec703000000000000",
+    "mode": "static",
+    "speed": 3,
+    "brightness": 0,
+    "direction": 1,
+    "color": "00aec7"
+  },
+  "touchpad": true,
+  "audio_output": "ERROR: sound card not found",
+  "jack": {
+    "Headphone Jack": null,
+    "Headset Mic Jack": null
+  },
+  "voice": {
+    "headset": "off",
+    "array": "off"
+  }
+}
+--- err
+=== end
+$ power set turbo extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ fan curve --cpu=52:0,89:100 --gpu 48:0,78:100 save zz
+rc 0
+--- out
+saved fan curve 'zz' (use it: truesense fan curve use zz)
+--- err
+=== end
+$ fan curve --c 1
+rc 2
+--- out
+--- err
+usage: truesense fan curve [-h] [--cpu CPU] [--gpu GPU]
+                           [--hysteresis HYSTERESIS] [--down-rate DOWN_RATE]
+                           [--predict PREDICT] [--couple COUPLE]
+                           [--battery-shift BATTERY_SHIFT] [--from BASE]
+                           [{list,current,show,use,save,delete,copy}] [name]
+                           [new]
+truesense fan curve: error: ambiguous option: --c could match --cpu, --couple
+=== end
+$ fan curve --co 1
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan curve --cp 52:0,89:100 --gp 48:0,78:100 save zz2
+rc 0
+--- out
+saved fan curve 'zz2' (use it: truesense fan curve use zz2)
+--- err
+=== end
+$ fan curve save zz3 --from nothing
+rc 1
+--- out
+--- err
+error: no fan curve 'nothing' (truesense fan curve list)
+=== end
+$ fan curve use zz
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ fan curve show zz
+rc 0
+--- out
+zz
+  cpu [[52, 0], [89, 100]]
+  gpu [[48, 0], [78, 100]]
+  hysteresis=4.0  down_rate=1.5  predict=5.0  couple=15  battery_shift=3.0
+--- err
+=== end
+$ fan curve --hysteresis x show
+rc 2
+--- out
+--- err
+usage: truesense fan curve [-h] [--cpu CPU] [--gpu GPU]
+                           [--hysteresis HYSTERESIS] [--down-rate DOWN_RATE]
+                           [--predict PREDICT] [--couple COUPLE]
+                           [--battery-shift BATTERY_SHIFT] [--from BASE]
+                           [{list,current,show,use,save,delete,copy}] [name]
+                           [new]
+truesense fan curve: error: argument --hysteresis: invalid float value: 'x'
+=== end
+$ keys profile --tap
+rc 2
+--- out
+--- err
+usage: truesense keys profile [-h] [--from BASE] [--tap TAP] [--double DOUBLE]
+                              [--triple TRIPLE] [--long LONG]
+                              [--fn-esc FN_ESC] [--long-ms LONG_MS]
+                              [--multi-ms MULTI_MS]
+                              [{list,current,show,use,copy,save,delete}]
+                              [name] [new]
+truesense keys profile: error: argument --tap: expected one argument
+=== end
+$ keys set tap
+rc 2
+--- out
+--- err
+usage: truesense keys set [-h] {tap,double,triple,long,fn_esc} action
+truesense keys set: error: the following arguments are required: action
+=== end
+$ keys set tap a b
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: b
+=== end
+$ keys reset foo
+rc 2
+--- out
+--- err
+usage: truesense keys reset [-h] [{tap,double,triple,long,fn_esc}]
+truesense keys reset: error: argument gesture: invalid choice: 'foo' (choose from 'tap', 'double', 'triple', 'long', 'fn_esc')
+=== end
+$ keys test
+rc 2
+--- out
+--- err
+usage: truesense keys test [-h] action
+truesense keys test: error: the following arguments are required: action
+=== end
+$ battery usb-charge 10 20
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: 20
+=== end
+$ look save a b
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: b
+=== end
+$ power game add a b c d
+rc 2
+--- out
+--- err
+usage: truesense power game [-h]
+                            [{list,add,remove,clear}] [name]
+                            [{quiet,balanced,performance,turbo,eco}]
+truesense power game: error: argument mode: invalid choice: 'b' (choose from 'quiet', 'balanced', 'performance', 'turbo', 'eco')
+=== end
+$ power game add a bogus
+rc 2
+--- out
+--- err
+usage: truesense power game [-h]
+                            [{list,add,remove,clear}] [name]
+                            [{quiet,balanced,performance,turbo,eco}]
+truesense power game: error: argument mode: invalid choice: 'bogus' (choose from 'quiet', 'balanced', 'performance', 'turbo', 'eco')
+=== end
+$ power game list extra
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ audio mic volume x
+rc 2
+--- out
+--- err
+usage: truesense audio mic [-h] [--default-only]
+                           [{status,mute,unmute,toggle,volume,boost}] [value]
+truesense audio mic: error: argument value: invalid int value: 'x'
+=== end
+$ audio mic volume 12abc
+rc 2
+--- out
+--- err
+usage: truesense audio mic [-h] [--default-only]
+                           [{status,mute,unmute,toggle,volume,boost}] [value]
+truesense audio mic: error: argument value: invalid int value: '12abc'
+=== end
+$ audio mic volume -5
+rc 1
+--- out
+--- err
+error: mic volume is 0..150 %
+=== end
+$ audio mic boost
+rc 0
+--- out
+headset mic boost: None (0..3, +10 dB per step)
+--- err
+=== end
+$ cpu limits abc
+rc 2
+--- out
+--- err
+usage: truesense cpu limits [-h] [--auto] [--force] [pl1] [pl2]
+truesense cpu limits: error: argument pl1: invalid float value: 'abc'
+=== end
+$ cpu limits 1e1
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu limits 1_0
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu limits -- 45
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu limits -45
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ cpu undervolt
+rc 2
+--- out
+--- err
+usage: truesense cpu undervolt [-h] [--core CORE] [--cache CACHE] [--confirm]
+                               [--force] [--plane {0,2}]
+                               {get,list,show,use,reset,copy,save,delete,boot,set}
+                               [name] [new]
+truesense cpu undervolt: error: the following arguments are required: action
+=== end
+$ cpu undervolt bogus
+rc 2
+--- out
+--- err
+usage: truesense cpu undervolt [-h] [--core CORE] [--cache CACHE] [--confirm]
+                               [--force] [--plane {0,2}]
+                               {get,list,show,use,reset,copy,save,delete,boot,set}
+                               [name] [new]
+truesense cpu undervolt: error: argument action: invalid choice: 'bogus' (choose from 'get', 'list', 'show', 'use', 'reset', 'copy', 'save', 'delete', 'boot', 'set')
+=== end
+$ cpu undervolt get --plane 5
+rc 2
+--- out
+--- err
+usage: truesense cpu undervolt [-h] [--core CORE] [--cache CACHE] [--confirm]
+                               [--force] [--plane {0,2}]
+                               {get,list,show,use,reset,copy,save,delete,boot,set}
+                               [name] [new]
+truesense cpu undervolt: error: argument --plane: invalid choice: '5' (choose from '0', '2')
+=== end
+$ cpu undervolt get --plane=2
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ gpu undervolt save a --offset x
+rc 2
+--- out
+--- err
+usage: truesense gpu undervolt [-h] [--offset OFFSET] [--cap CAP] [--confirm]
+                               [--force]
+                               {get,list,show,use,reset,copy,save,delete,boot}
+                               [name] [new]
+truesense gpu undervolt: error: argument --offset: invalid int value: 'x'
+=== end
+$ gpu undervolt save a --offset 5 --cap 2k
+rc 2
+--- out
+--- err
+usage: truesense gpu undervolt [-h] [--offset OFFSET] [--cap CAP] [--confirm]
+                               [--force]
+                               {get,list,show,use,reset,copy,save,delete,boot}
+                               [name] [new]
+truesense gpu undervolt: error: argument --cap: invalid int value: '2k'
+=== end
+$ gpu undervolt save a --offset -50
+rc 0
+--- out
+saved GPU undervolt profile 'a' (use it: truesense gpu undervolt use a --confirm)
+--- err
+=== end
+$ gpu undervolt save a --offset=-50
+rc 0
+--- out
+saved GPU undervolt profile 'a' (use it: truesense gpu undervolt use a --confirm)
+--- err
+=== end
+$ config path extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ completion
+rc 2
+--- out
+--- err
+usage: truesense completion [-h] {bash,zsh,fish}
+truesense completion: error: the following arguments are required: shell
+=== end
+$ completion fish extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ completion bash
+rc 0
+--- out
+_truesense() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  case "${COMP_WORDS[1]}" in
+    status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    sensors) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    power) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status list set next prev smart auto hold release managers game --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        prev) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --set" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "off native smart on toggle status --help" -- "$cur") ); return;;
+        hold) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        release) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        managers) COMPREPLY=( $(compgen -W "list stop restore --help" -- "$cur") ); return;;
+        game) COMPREPLY=( $(compgen -W "list add remove clear quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    fan) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status auto max off set curve smart --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        max) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "--help --confirm" -- "$cur") ); return;;
+        curve) COMPREPLY=( $(compgen -W "list current show use save delete copy --help --cpu --gpu --hysteresis --down-rate --predict --couple --battery-shift --from" -- "$cur") ); return;;
+        smart) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    battery) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "full limit calibration usb-charge status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        full) COMPREPLY=( $(compgen -W "start cancel status --help" -- "$cur") ); return;;
+        limit) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        calibration) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        usb-charge) COMPREPLY=( $(compgen -W "status 0 10 20 30 --help" -- "$cur") ); return;;
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    display) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "overdrive --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        overdrive) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    boot) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "sound --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        sound) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status set undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "optimus nvidia auto --help" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot --help --offset --cap --confirm --force" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    rear) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "static breathing neon wave twinkling --help --color --speed --brightness --direction --zones" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    update) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "check apply auto auto-run --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        check) COMPREPLY=( $(compgen -W "--help --force" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help --yes --version" -- "$cur") ); return;;
+        auto) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        auto-run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    look) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list save apply show delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    startup) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show apply boot set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        boot) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "keyboard rear profile --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keyboard) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status on off toggle restore list-keys effect fx speed color paint layout design image fill gradient rainbow keys brightness timeout operating profile --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        on) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        off) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        toggle) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        layout) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        design) COMPREPLY=( $(compgen -W "list apply save --help --brightness" -- "$cur") ); return;;
+        image) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        fill) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        gradient) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        rainbow) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
+        keys) COMPREPLY=( $(compgen -W "--help --base --brightness" -- "$cur") ); return;;
+        brightness) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        timeout) COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); return;;
+        operating) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list load save delete --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    audio) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "output mic jack voice repair speaker-filter dts --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        output) COMPREPLY=( $(compgen -W "status speakers headphones toggle cycle --help" -- "$cur") ); return;;
+        mic) COMPREPLY=( $(compgen -W "status mute unmute toggle volume boost --help --default-only" -- "$cur") ); return;;
+        jack) COMPREPLY=( $(compgen -W "auto headphones headset --help" -- "$cur") ); return;;
+        voice) COMPREPLY=( $(compgen -W "status set enable disable next apply watch notify --help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        speaker-filter) COMPREPLY=( $(compgen -W "on off status --help" -- "$cur") ); return;;
+        dts) COMPREPLY=( $(compgen -W "status on off mode profiles devices all setup --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    keys) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show actions run set reset test profile timing --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
+        timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    profile) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list next show apply save delete --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
+        delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        limits) COMPREPLY=( $(compgen -W "--help --auto --force" -- "$cur") ); return;;
+        undervolt) COMPREPLY=( $(compgen -W "get list show use reset copy save delete boot set --help --core --cache --confirm --force --plane" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    touchpad) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    service) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status restart logs check repair --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        restart) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        logs) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        check) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        repair) COMPREPLY=( $(compgen -W "--help --system" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    config) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show validate path --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        validate) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        path) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    doctor) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    selftest) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --skip-fans" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    completion) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "bash zsh fish --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    gui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    probe) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    tui) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help --page" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    daemon) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    version) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+  esac
+}
+complete -F _truesense truesense
+--- err
+=== end
+$ look
+rc 0
+--- out
+native
+--- err
+=== end
+$ look bogus
+rc 2
+--- out
+--- err
+usage: truesense look [-h] {list,save,apply,show,delete} ...
+truesense look: error: argument verb: invalid choice: 'bogus' (choose from 'list', 'save', 'apply', 'show', 'delete')
+=== end
+$ startup
+rc 0
+--- out
+{
+  "profile": "",
+  "keyboard": "last",
+  "rear": "last"
+}
+--- err
+=== end
+$ startup bogus
+rc 2
+--- out
+--- err
+usage: truesense startup [-h] {show,apply,boot,set} ...
+truesense startup: error: argument verb: invalid choice: 'bogus' (choose from 'show', 'apply', 'boot', 'set')
+=== end
+$ startup set
+rc 2
+--- out
+--- err
+usage: truesense startup set [-h] {keyboard,rear,profile} value
+truesense startup set: error: the following arguments are required: target, value
+=== end
+$ startup set keyboard
+rc 2
+--- out
+--- err
+usage: truesense startup set [-h] {keyboard,rear,profile} value
+truesense startup set: error: the following arguments are required: value
+=== end
+$ startup set bogus x
+rc 2
+--- out
+--- err
+usage: truesense startup set [-h] {keyboard,rear,profile} value
+truesense startup set: error: argument target: invalid choice: 'bogus' (choose from 'keyboard', 'rear', 'profile')
+=== end
+$ startup boot a b
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: b
+=== end
+$ service
+rc 1
+--- out
+--- err
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/__main__.py", line 4, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 716, in main
+    r = globals()["h_" + a.area.replace("-", "_")](a)
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 655, in h_service
+    if v == "status": subprocess.run(["systemctl", "--no-pager", "status", "truesense.service"])
+                      ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 1990, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'systemctl'
+=== end
+$ service bogus
+rc 2
+--- out
+--- err
+usage: truesense service [-h] {status,restart,logs,check,repair} ...
+truesense service: error: argument verb: invalid choice: 'bogus' (choose from 'status', 'restart', 'logs', 'check', 'repair')
+=== end
+$ profile
+rc 0
+--- out
+(no profiles)
+--- err
+=== end
+$ profile bogus
+rc 2
+--- out
+--- err
+usage: truesense profile [-h] {list,next,show,apply,save,delete} ...
+truesense profile: error: argument verb: invalid choice: 'bogus' (choose from 'list', 'next', 'show', 'apply', 'save', 'delete')
+=== end
+$ profile show
+rc 2
+--- out
+--- err
+usage: truesense profile show [-h] name
+truesense profile show: error: the following arguments are required: name
+=== end
+$ profile save
+rc 2
+--- out
+--- err
+usage: truesense profile save [-h] [--description DESCRIPTION] name
+truesense profile save: error: the following arguments are required: name
+=== end
+$ profile save x --description
+rc 2
+--- out
+--- err
+usage: truesense profile save [-h] [--description DESCRIPTION] name
+truesense profile save: error: argument --description: expected one argument
+=== end
+$ update bogus
+rc 2
+--- out
+--- err
+usage: truesense update [-h] {check,apply,auto,auto-run} ...
+truesense update: error: argument verb: invalid choice: 'bogus' (choose from 'check', 'apply', 'auto', 'auto-run')
+=== end
+$ update auto maybe
+rc 2
+--- out
+--- err
+usage: truesense update auto [-h] [{on,off,toggle,status}]
+truesense update auto: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ touchpad maybe
+rc 2
+--- out
+--- err
+usage: truesense touchpad [-h] [{on,off,toggle,status}]
+truesense touchpad: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ touchpad on off
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: off
+=== end
+$ battery
+rc 0
+--- out
+{
+  "limit_80": false,
+  "calibration": false,
+  "usb_charge_stop": 30
+}
+--- err
+=== end
+$ battery bogus
+rc 2
+--- out
+--- err
+usage: truesense battery [-h] {full,limit,calibration,usb-charge,status} ...
+truesense battery: error: argument verb: invalid choice: 'bogus' (choose from 'full', 'limit', 'calibration', 'usb-charge', 'status')
+=== end
+$ battery limit maybe
+rc 2
+--- out
+--- err
+usage: truesense battery limit [-h] [{on,off,toggle,status}]
+truesense battery limit: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ battery full maybe
+rc 2
+--- out
+--- err
+usage: truesense battery full [-h] [{start,cancel,status}]
+truesense battery full: error: argument action: invalid choice: 'maybe' (choose from 'start', 'cancel', 'status')
+=== end
+$ display
+rc 1
+--- out
+--- err
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/__main__.py", line 4, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 716, in main
+    r = globals()["h_" + a.area.replace("-", "_")](a)
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 337, in h_display
+    tri(a.action, hw.get_overdrive, hw.set_overdrive, "LCD overdrive")
+        ^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'action'
+=== end
+$ display overdrive maybe
+rc 2
+--- out
+--- err
+usage: truesense display overdrive [-h] [{on,off,toggle,status}]
+truesense display overdrive: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ boot
+rc 1
+--- out
+--- err
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/__main__.py", line 4, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 716, in main
+    r = globals()["h_" + a.area.replace("-", "_")](a)
+  File "/tmp/claude-1000/-home-sloppy-Documents-RPredatorSense/e99d2eb1-0711-4dda-83d6-1bfed0761db5/scratchpad/py/src/truesense/cli.py", line 341, in h_boot
+    tri(a.action, hw.get_boot_sound, hw.set_boot_sound, "boot sound")
+        ^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'action'
+=== end
+$ boot sound maybe
+rc 2
+--- out
+--- err
+usage: truesense boot sound [-h] [{on,off,toggle,status}]
+truesense boot sound: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ gpu
+rc 0
+--- out
+GPU mode: nvidia
+--- err
+=== end
+$ gpu set maybe
+rc 2
+--- out
+--- err
+usage: truesense gpu set [-h] {optimus,nvidia,auto}
+truesense gpu set: error: argument mode: invalid choice: 'maybe' (choose from 'optimus', 'nvidia', 'auto')
+=== end
+$ gpu set
+rc 2
+--- out
+--- err
+usage: truesense gpu set [-h] {optimus,nvidia,auto}
+truesense gpu set: error: the following arguments are required: mode
+=== end
+$ gpu undervolt
+rc 2
+--- out
+--- err
+usage: truesense gpu undervolt [-h] [--offset OFFSET] [--cap CAP] [--confirm]
+                               [--force]
+                               {get,list,show,use,reset,copy,save,delete,boot}
+                               [name] [new]
+truesense gpu undervolt: error: the following arguments are required: action
+=== end
+$ gpu undervolt bogus
+rc 2
+--- out
+--- err
+usage: truesense gpu undervolt [-h] [--offset OFFSET] [--cap CAP] [--confirm]
+                               [--force]
+                               {get,list,show,use,reset,copy,save,delete,boot}
+                               [name] [new]
+truesense gpu undervolt: error: argument action: invalid choice: 'bogus' (choose from 'get', 'list', 'show', 'use', 'reset', 'copy', 'save', 'delete', 'boot')
+=== end
+$ selftest --bogus
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: --bogus
+=== end
+$ selftest --skip
+rc 1
+--- out
+== firmware features (set -> read back -> restore)
+PASS  power modes (all supported)  (cycled quiet,balanced,performance,turbo,eco, restored eco)
+PASS  sensors  ({'cpu_temp': 50, 'sys_temp': 52, 'gpu_temp': 48, 'cpu_fan_rpm': 0, 'gpu_fan_rpm': 0})
+SKIP  fans: --skip-fans
+PASS  LCD overdrive  (True -> False -> restored)
+PASS  boot animation/sound  (False -> True -> restored)
+PASS  battery 80 % limit  (False -> True -> restored)
+PASS  battery calibration flag  (False -> True -> restored)
+PASS  USB charging level  (30 -> 10 -> restored)
+PASS  keyboard backlight timeout  (True -> False -> restored)
+PASS  GPU mode (read)  (nvidia)
+PASS  rear light (read)  ({'raw': '00000300000100aec703000000000000', 'mode': 'static', 'speed': 3, 'brightness': 0, 'direction': 1, 'color': '00aec7'})
+PASS  keyboard lighting interface  (brightness 25/50 read back from the keyboard)
+FAIL  audio output profile: sound card not found
+PASS  headset mic boost  (no headset mic boost control on this card (skipped))
+FAIL  microphone mute: mute did not read back
+FAIL  CPU power limits (read): the TrueSense daemon is not running (sudo systemctl start truesense)
+
+== stack health (doctor)
+TrueSense 0.3.17 doctor (7.3.0-4-cachyos)
+  [OK  ] Model            Predator PH16-71, BIOS V1.18
+  [OK  ] Python           Python 3.14
+  [OK  ] Kernel           kernel 7.3.0-4-cachyos
+  [OK  ] Kernel headers   kernel headers for 7.3.0-4-cachyos: present
+  [OK  ] DKMS             installed for 6.18.55-2-cachyos-lts, 7.3.0-4-cachyos
+  [OK  ] Kernel module    truesense_wmi 0.4.0 loaded
+  [OK  ] Device           interfaces: game=yes, apge=yes, battery=yes
+  [OK  ] Conflicts        no conflicting driver loaded; old drivers are blocked from loading
+  [OK  ] Power managers   no other power manager is running
+  [OK  ] CPU turbo        CPU turbo boost is on
+  [INFO] Start-up speed   running from a source checkout (the Python bytecode cache check applies to the installed copy)
+  [FAIL] Daemon           truesense.service is not running
+         fix: sudo systemctl enable --now truesense.service ; journalctl -u truesense -b
+  [INFO] Service version  service not running
+  [WARN] User services    truesense-keys=inactive, truesense-audio=inactive, truesense-startup=inactive
+         fix: systemctl --user enable --now truesense-keys.service truesense-audio.service truesense-startup.service
+  [OK  ] udev / keyboard  rule installed; Fn-key interface /dev/hidraw4 readable
+  [OK  ] Config           configuration valid
+  [INFO] Secure Boot      Secure Boot off or unknown; module signer: none
+  [WARN] Audio            PipeWire NOT running; RNNoise plugin found; AcerUltraX not installed (optional); jack: headphones out, headset mic not detected
+         fix: systemctl --user start pipewire
+  [OK  ] Fans             fans: firmware auto
+  [INFO] Window           the window (truesense gui) needs python-pyqt6; everything works from the command line without it
+  [INFO] Status bars      socat not found: status-bar buttons fall back to the slower command line
+
+PROBLEMS FOUND: 1 failure(s), 2 warning(s)
+
+12/16 passed
+--- err
+=== end
+$ doctor extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ sensors extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ version extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ gui --page
+rc 2
+--- out
+--- err
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+truesense gui: error: argument --page: expected one argument
+=== end
+$ gui --page x
+rc 2
+--- out
+--- err
+usage: truesense gui [-h] [--page {home,keys,audio,settings}]
+truesense gui: error: argument --page: invalid choice: 'x' (choose from 'home', 'keys', 'audio', 'settings')
+=== end
+$ gui --pag keys
+rc 1
+--- out
+The window needs python-pyqt6 (No module named 'PyQt6.QtCore').  Arch: sudo pacman -S python-pyqt6.  Everything works from the command line without it.
+--- err
+=== end
+$ tui --page=fans
+rc 1
+--- out
+--- err
+truesense tui needs a terminal
+=== end
+$ keyboard status extra
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: extra
+=== end
+$ keyboard brightness x
+rc 2
+--- out
+--- err
+usage: truesense keyboard brightness [-h] [level]
+truesense keyboard brightness: error: argument level: invalid int value: 'x'
+=== end
+$ keyboard brightness 1 2
+rc 2
+--- out
+--- err
+usage: truesense [-h] [--json] [-V] area ...
+truesense: error: unrecognized arguments: 2
+=== end
+$ keyboard speed
+rc 2
+--- out
+--- err
+usage: truesense keyboard speed [-h] level
+truesense keyboard speed: error: the following arguments are required: level
+=== end
+$ keyboard speed x
+rc 2
+--- out
+--- err
+usage: truesense keyboard speed [-h] level
+truesense keyboard speed: error: argument level: invalid int value: 'x'
+=== end
+$ keyboard timeout maybe
+rc 2
+--- out
+--- err
+usage: truesense keyboard timeout [-h] [{on,off,toggle,status}]
+truesense keyboard timeout: error: argument action: invalid choice: 'maybe' (choose from 'on', 'off', 'toggle', 'status')
+=== end
+$ keyboard operating toggle
+rc 2
+--- out
+--- err
+usage: truesense keyboard operating [-h] [{on,off,status}]
+truesense keyboard operating: error: argument action: invalid choice: 'toggle' (choose from 'on', 'off', 'status')
+=== end
+$ keyboard design
+rc 2
+--- out
+--- err
+usage: truesense keyboard design [-h] [--brightness BRIGHTNESS]
+                                 {list,apply,save} [name]
+truesense keyboard design: error: the following arguments are required: action
+=== end
+$ keyboard design bogus
+rc 2
+--- out
+--- err
+usage: truesense keyboard design [-h] [--brightness BRIGHTNESS]
+                                 {list,apply,save} [name]
+truesense keyboard design: error: argument action: invalid choice: 'bogus' (choose from 'list', 'apply', 'save')
+=== end
+$ keyboard image
+rc 2
+--- out
+--- err
+usage: truesense keyboard image [-h] [--brightness BRIGHTNESS] file
+truesense keyboard image: error: the following arguments are required: file
+=== end
+$ keyboard keys
+rc 2
+--- out
+--- err
+usage: truesense keyboard keys [-h] [--base BASE] [--brightness BRIGHTNESS]
+                               items [items ...]
+truesense keyboard keys: error: the following arguments are required: items
+=== end
+$ keyboard profile
+rc 2
+--- out
+--- err
+usage: truesense keyboard profile [-h]
+                                  {list,load,save,delete} [name] [spec ...]
+truesense keyboard profile: error: the following arguments are required: verb2
+=== end
+$ keyboard profile bogus
+rc 2
+--- out
+--- err
+usage: truesense keyboard profile [-h]
+                                  {list,load,save,delete} [name] [spec ...]
+truesense keyboard profile: error: argument verb2: invalid choice: 'bogus' (choose from 'list', 'load', 'save', 'delete')
+=== end
+$ audio output bogus
+rc 2
+--- out
+--- err
+usage: truesense audio output [-h] [{status,speakers,headphones,toggle,cycle}]
+truesense audio output: error: argument action: invalid choice: 'bogus' (choose from 'status', 'speakers', 'headphones', 'toggle', 'cycle')
+=== end
+$ audio mic bogus
+rc 2
+--- out
+--- err
+usage: truesense audio mic [-h] [--default-only]
+                           [{status,mute,unmute,toggle,volume,boost}] [value]
+truesense audio mic: error: argument action: invalid choice: 'bogus' (choose from 'status', 'mute', 'unmute', 'toggle', 'volume', 'boost')
+=== end
+$ audio jack bogus
+rc 2
+--- out
+--- err
+usage: truesense audio jack [-h] [{auto,headphones,headset}]
+truesense audio jack: error: argument use: invalid choice: 'bogus' (choose from 'auto', 'headphones', 'headset')
+=== end
+$ audio voice bogus
+rc 2
+--- out
+--- err
+usage: truesense audio voice [-h]
+                             [{status,set,enable,disable,next,apply,watch,notify}]
+                             [a] [b]
+truesense audio voice: error: argument action: invalid choice: 'bogus' (choose from 'status', 'set', 'enable', 'disable', 'next', 'apply', 'watch', 'notify')
+=== end
+$ audio dts bogus
+rc 2
+--- out
+--- err
+usage: truesense audio dts [-h]
+                           [{status,on,off,mode,profiles,devices,all,setup}]
+                           [name]
+truesense audio dts: error: argument action: invalid choice: 'bogus' (choose from 'status', 'on', 'off', 'mode', 'profiles', 'devices', 'all', 'setup')
+=== end
+$ audio speaker-filter toggle
+rc 2
+--- out
+--- err
+usage: truesense audio speaker-filter [-h] [{on,off,status}]
+truesense audio speaker-filter: error: argument action: invalid choice: 'toggle' (choose from 'on', 'off', 'status')
+=== end
+$ power auto bogus
+rc 2
+--- out
+--- err
+usage: truesense power auto [-h] [{off,native,smart,on,toggle,status}]
+truesense power auto: error: argument action: invalid choice: 'bogus' (choose from 'off', 'native', 'smart', 'on', 'toggle', 'status')
+=== end
+$ power managers bogus
+rc 2
+--- out
+--- err
+usage: truesense power managers [-h] [{list,stop,restore}]
+truesense power managers: error: argument action: invalid choice: 'bogus' (choose from 'list', 'stop', 'restore')
+=== end
+$ power hold -5
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power hold 1e400
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power hold nan
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end
+$ power hold inf
+rc 1
+--- out
+--- err
+error: the TrueSense daemon is not running (sudo systemctl start truesense)
+=== end

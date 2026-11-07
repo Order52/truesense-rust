@@ -1,0 +1,149 @@
+power set
+power set -- turbo
+power -- set turbo
+fan set 50 --confirm
+fan set --confirm 50
+fan set 50 60 70
+fan set
+fan set abc
+fan set 5.5
+fan set +50
+fan set 050
+rear set breathing --col 00ff88
+rear set breathing --color=00ff88
+rear set breathing --colo
+rear set breathing --color
+rear set breathing --speed=7 --brightness=70
+rear set breathing --zones
+rear set --zones ff0000
+rear set
+rear set glitter
+rear set wave --direction 2
+rear set wave --direction=1
+keyboard fx
+keyboard fx pulse --speed
+keyboard fx wave --speed 11
+keyboard effect
+keyboard effect wave --speed x
+keyboard paint --brightness 5
+keyboard paint --brightness 5 w=ff0000
+keyboard paint w=ff0000 --brightness 5
+keyboard paint w=ff0000 --brightness
+status --bogus
+status -x
+status extra
+-h status
+-hV
+--ver
+--vers
+power --h
+power set -h turbo
+-V status
+--
+-- status
+power set turbo extra
+fan curve --cpu=52:0,89:100 --gpu 48:0,78:100 save zz
+fan curve --c 1
+fan curve --co 1
+fan curve --cp 52:0,89:100 --gp 48:0,78:100 save zz2
+fan curve save zz3 --from nothing
+fan curve use zz
+fan curve show zz
+fan curve --hysteresis x show
+keys profile --tap
+keys set tap
+keys set tap a b
+keys reset foo
+keys test
+battery usb-charge 10 20
+look save a b
+power game add a b c d
+power game add a bogus
+power game list extra
+audio mic volume x
+audio mic volume 12abc
+audio mic volume -5
+audio mic boost
+cpu limits abc
+cpu limits 1e1
+cpu limits 1_0
+cpu limits -- 45
+cpu limits -45
+cpu undervolt
+cpu undervolt bogus
+cpu undervolt get --plane 5
+cpu undervolt get --plane=2
+gpu undervolt save a --offset x
+gpu undervolt save a --offset 5 --cap 2k
+gpu undervolt save a --offset -50
+gpu undervolt save a --offset=-50
+config path extra
+completion
+completion fish extra
+completion bash
+look
+look bogus
+startup
+startup bogus
+startup set
+startup set keyboard
+startup set bogus x
+startup boot a b
+service
+service bogus
+profile
+profile bogus
+profile show
+profile save
+profile save x --description
+update bogus
+update auto maybe
+touchpad maybe
+touchpad on off
+battery
+battery bogus
+battery limit maybe
+battery full maybe
+display
+display overdrive maybe
+boot
+boot sound maybe
+gpu
+gpu set maybe
+gpu set
+gpu undervolt
+gpu undervolt bogus
+selftest --bogus
+selftest --skip
+doctor extra
+sensors extra
+version extra
+gui --page
+gui --page x
+gui --pag keys
+tui --page=fans
+keyboard status extra
+keyboard brightness x
+keyboard brightness 1 2
+keyboard speed
+keyboard speed x
+keyboard timeout maybe
+keyboard operating toggle
+keyboard design
+keyboard design bogus
+keyboard image
+keyboard keys
+keyboard profile
+keyboard profile bogus
+audio output bogus
+audio mic bogus
+audio jack bogus
+audio voice bogus
+audio dts bogus
+audio speaker-filter toggle
+power auto bogus
+power managers bogus
+power hold -5
+power hold 1e400
+power hold nan
+power hold inf
