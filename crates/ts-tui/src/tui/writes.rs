@@ -137,6 +137,14 @@ impl Model {
                 RunOpts { ok: OkText::Text(format!("Profile {name} applied")), ..RunOpts::default() },
             ),
             Id::Look(name) => self.run(&format!("Look {name}"), Op::Look(name), RunOpts::default()),
+            Id::Favourite(kind, name) => self.run(
+                &format!("Favourite {}", kind.label()),
+                Op::Favourite(kind, name.clone()),
+                RunOpts {
+                    ok: OkText::Text(format!("{} {name} applied", kind.label())),
+                    ..RunOpts::default()
+                },
+            ),
             Id::OpenWindow => self.run("Opening the window", Op::OpenWindow, RunOpts::default()),
             Id::RunDoctor => self.run(
                 "Checking everything",

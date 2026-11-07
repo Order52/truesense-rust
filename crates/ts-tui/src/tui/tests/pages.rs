@@ -381,3 +381,66 @@ fn open_the_window_runs_the_hook_and_says_so_without_one() {
     let none = ApiBackend::new(Arc::new(Api::new(Services::simulated(&dir.0).expect("services").0)), None);
     assert!(none.execute(&Op::OpenWindow).unwrap_err().contains("truesense gui"));
 }
+
+/// A harness whose catalogue was read after these items were starred (the screen reads its lists
+/// once, when it opens).
+fn harness_with_favourites() -> Harness {
+    use ts_api::api::FavouriteKind;
+    let mut h = Harness::new(110, 40);
+    h.api().favourite_add(FavouriteKind::Profile, "gaming").expect("star a profile");
+    h.api().favourite_add(FavouriteKind::Look, "native").expect("star a look");
+    h.rig.bundles.add("doomed", "");
+    h.api().favourite_add(FavouriteKind::Profile, "doomed").expect("star a profile");
+    h.api().delete_profile("doomed").expect("delete it again");
+    h.model = Model::new(&h.backend.catalog(), "test", true, std::sync::Arc::new(|| WALL.to_owned()), h.now);
+    h
+}
+
+#[test]
+fn the_profiles_page_has_no_favourites_section_until_something_is_starred() {
+    let mut h = Harness::new(110, 40);
+    h.goto(5);
+    let text = h.text();
+    assert!(!text.contains("Favourites"), "{text}");
+    assert!(h.backend.catalog().favourites.is_empty());
+}
+
+#[test]
+fn starred_items_are_listed_first_in_the_users_order_and_a_missing_one_says_so() {
+    let mut h = harness_with_favourites();
+    h.goto(5);
+    let labels: Vec<String> = h.model.current().rows.iter().map(|r| r.label.clone()).collect();
+    let at =
+        |l: &str| labels.iter().position(|x| x == l).unwrap_or_else(|| panic!("{l} missing: {labels:?}"));
+    assert!(at("Profile: gaming") < at("Look: native") && at("Look: native") < at("Profile: doomed"));
+    assert!(at("Profile: doomed") < at("gaming"), "the favourites come before the Profiles list");
+    let text = h.text();
+    assert!(text.contains("Favourites"), "{text}");
+    let doomed = h.sel("Profile: doomed", 0);
+    assert!(h.model.pages[doomed.0].rows[doomed.1].hint.contains("no longer exists"));
+}
+
+#[test]
+fn applying_a_favourite_goes_by_kind_and_name_and_says_what_was_applied() {
+    let mut h = harness_with_favourites();
+    h.goto(5);
+    h.sel("Profile: gaming", 0);
+    h.key(Key::Enter);
+    assert_eq!(h.model.msg.text, "Profile gaming applied");
+    assert_eq!(h.rig.bundles.applied(), vec!["gaming".to_owned()]);
+    assert_eq!(h.backend.count("Favourite(Profile, \"gaming\")"), 1);
+    h.sel("Look: native", 0);
+    h.key(Key::Enter);
+    assert_eq!(h.model.msg.text, "Look native applied");
+}
+
+#[test]
+fn applying_a_favourite_whose_item_is_gone_is_reported_not_raised() {
+    let mut h = harness_with_favourites();
+    h.goto(5);
+    h.sel("Profile: doomed", 0);
+    h.key(Key::Enter);
+    let (text, st) = h.message();
+    assert_eq!(st, St::Bad);
+    assert!(text.contains("doomed"), "{text}");
+}

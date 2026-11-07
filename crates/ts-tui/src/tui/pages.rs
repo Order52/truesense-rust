@@ -277,7 +277,28 @@ pub(crate) fn build(cat: &Catalog) -> Vec<Page> {
         false,
     );
 
-    let mut rows = vec![Row::header("Profiles: a whole setup in one go (power, fans, lighting, audio)")];
+    // The starred items come first: they are what the person reaches for. The section is left out
+    // while there are none, so a person who never stars anything sees the page as it always was.
+    let mut rows = Vec::new();
+    if !cat.favourites.is_empty() {
+        rows.push(Row::header("Favourites: your starred items, in your order (truesense favourite)"));
+        for (kind, name, exists) in &cat.favourites {
+            let hint = if *exists {
+                "Applies it the way its own list does."
+            } else {
+                "This no longer exists: remove the star with truesense favourite remove."
+            };
+            rows.push(
+                Row::button(
+                    Id::Favourite(*kind, name.clone()),
+                    &format!("{}: {name}", kind.label()),
+                    "Apply",
+                )
+                .hint(hint),
+            );
+        }
+    }
+    rows.push(Row::header("Profiles: a whole setup in one go (power, fans, lighting, audio)"));
     for (name, line) in &cat.profiles {
         rows.push(Row::button(Id::Profile(name.clone()), name, "Apply").hint(line));
     }
@@ -456,7 +477,7 @@ pub(crate) fn reading(id: &Id, c: &Ctx) -> Option<Value> {
         | Id::DtsEverywhere
         | Id::OpenWindow
         | Id::RunDoctor => None,
-        Id::Profile(_) | Id::Look(_) => None,
+        Id::Profile(_) | Id::Look(_) | Id::Favourite(..) => None,
         Id::BatteryLimit => d.bool(ReadKey::Limit).map(Value::Bool),
         Id::Calibration => d.bool(ReadKey::Calibration).map(Value::Bool),
         Id::UsbCharge => d.int(ReadKey::UsbCharge).map(Value::Int),

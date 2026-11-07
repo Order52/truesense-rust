@@ -7,6 +7,8 @@
 
 use std::time::{Duration, Instant};
 
+use ts_api::api::FavouriteKind;
+
 /// How long a freshly chosen value stays on screen after its write finished, so that a slow
 /// hardware reading does not flash the old value back.
 pub(crate) const VALUE_GRACE: Duration = Duration::from_millis(1500);
@@ -113,6 +115,7 @@ pub(crate) enum Id {
     Profile(String),
     NoProfiles,
     Look(String),
+    Favourite(FavouriteKind, String),
     // System
     Version,
     ModuleVersion,
