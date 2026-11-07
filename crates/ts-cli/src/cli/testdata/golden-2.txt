@@ -1216,6 +1216,7 @@ An action is `name` or `name:argument`. Each returns a short message (shown on s
   power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)
   fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle
   profile:<name> | profile-next                                              saved profiles (see `truesense profile`)
+  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles and profiles (see `truesense favourite`); N counts from 1
   output-toggle | output-cycle | output:speakers | output:headphones
   mic-toggle | mic:mute | mic:unmute | voice-next
   touchpad-toggle | touchpad:on | touchpad:off
@@ -1636,7 +1637,7 @@ rc 0
 --- out
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1766,6 +1767,14 @@ _truesense() {
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
         delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -1826,7 +1835,7 @@ rc 0
 autoload -U +X bashcompinit && bashcompinit
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1956,6 +1965,14 @@ _truesense() {
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
         delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -2124,6 +2141,13 @@ complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'show'
 complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'apply'
 complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'save'
 complete -c truesense -n '__fish_seen_subcommand_from profile' -a 'delete'
+complete -c truesense -n '__fish_use_subcommand' -a favourite
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'list'
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'add'
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'remove'
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'move'
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'next'
 complete -c truesense -n '__fish_use_subcommand' -a cpu
 complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'info'
 complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'limits'

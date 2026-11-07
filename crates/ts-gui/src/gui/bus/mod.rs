@@ -13,6 +13,7 @@
 
 mod alerts;
 mod args;
+mod favourites;
 mod hardware;
 mod info;
 mod keys;
@@ -196,7 +197,8 @@ impl Commands for ApiCommands {
             .or_else(|| modebind::dispatch(&ctx, &key, &a))
             .or_else(|| system::dispatch(&ctx, &key, &a))
             .or_else(|| info::dispatch(&ctx, &key, &a))
-            .or_else(|| alerts::dispatch(&ctx, &key, &a));
+            .or_else(|| alerts::dispatch(&ctx, &key, &a))
+            .or_else(|| favourites::dispatch(&ctx, &key, &a));
         done.unwrap_or_else(|| Err(CommandError::unknown(area, verb)))
     }
 

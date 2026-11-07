@@ -11,11 +11,13 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 
 use super::facade::{
-    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, HostError, LightingFacade,
-    LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite, SettingsSource, Spawner, truthy,
+    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, FavouritesFacade, HostError,
+    LightingFacade, LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite, SettingsSource,
+    Spawner, truthy,
 };
 use super::parse::{Action, KB_EFFECTS, REAR_EFFECTS, Switch, TouchpadAction, Validator};
 use super::{ActionError, ActionRunner};
+use crate::favourites::{Favourite, Kind, next_position};
 
 /// What a rear light comes back as when nothing was remembered.
 const REAR_DEFAULT_COLOR: &str = "00aec7";
@@ -57,7 +59,12 @@ pub struct Env {
 pub struct Runner {
     env: Env,
     validator: Validator,
+    favourites: Option<Arc<dyn FavouritesFacade>>,
 }
+
+/// Where `favourite-next` remembers the position it reached (an index into the list), in the
+/// user state like the other `*-next` actions.
+const FAVOURITE_KEY: &str = "favourite";
 
 fn host(op: &'static str) -> impl Fn(HostError) -> ActionError {
     move |source| ActionError::Host { op, source }
@@ -86,7 +93,16 @@ impl Runner {
     pub fn new(env: Env) -> Runner {
         let lighting = Arc::clone(&env.lighting);
         let validator = Validator::with_looks(Arc::new(move || lighting.look_names()));
-        Runner { env, validator }
+        Runner { env, validator, favourites: None }
+    }
+
+    /// Gives the runner the user's favourites, which `favourite:N` and `favourite-next` need.
+    /// Without them those actions answer that favourites are not available (a process that has
+    /// no favourites file, such as a bare test environment).
+    #[must_use]
+    pub fn with_favourites(mut self, favourites: Arc<dyn FavouritesFacade>) -> Runner {
+        self.favourites = Some(favourites);
+        self
     }
 
     /// Checks an action the way [`Runner::run`] will, saved looks included. Configuration code
@@ -146,6 +162,8 @@ impl Runner {
                 let next = self.env.profiles.next_name().map_err(host("profile"))?;
                 self.env.profiles.apply(&next).map_err(host("profile"))
             }
+            Action::Favourite(n) => self.favourite(*n),
+            Action::FavouriteNext => self.favourite_next(),
             Action::OutputToggle => {
                 self.env.audio.output_toggle().map_err(host("audio output"))?;
                 Ok(String::new())
@@ -202,6 +220,63 @@ impl Runner {
                 None => Err(ActionError::Unavailable("exec: actions are not available here".into())),
             },
         }
+    }
+
+    fn favourites(&self) -> Result<(&dyn FavouritesFacade, Vec<Favourite>), ActionError> {
+        let facade = self
+            .favourites
+            .as_deref()
+            .ok_or_else(|| ActionError::Unavailable("favourites are not available here".into()))?;
+        let list = facade.favourites().map_err(host("favourites"))?;
+        Ok((facade, list))
+    }
+
+    /// Applies the favourite at 1-based position `n`. The message says what was applied, so the
+    /// on-screen display tells which star the key reached.
+    fn favourite(&self, n: usize) -> Result<String, ActionError> {
+        let (facade, list) = self.favourites()?;
+        match n.checked_sub(1).and_then(|i| list.get(i)) {
+            Some(fav) => self.apply_favourite(facade, fav, n, list.len()),
+            None => Err(ActionError::Invalid(missing_favourite(n, list.len()))),
+        }
+    }
+
+    /// Applies the favourite after the one reached last. The position is remembered before the
+    /// apply, so a favourite whose item was deleted fails once and the next press moves on
+    /// instead of sticking on it.
+    fn favourite_next(&self) -> Result<String, ActionError> {
+        let (facade, list) = self.favourites()?;
+        let previous = self.env.state.get(FAVOURITE_KEY).as_ref().and_then(as_int);
+        let Some(at) = next_position(previous, list.len()) else {
+            return Err(ActionError::Invalid(missing_favourite(1, 0)));
+        };
+        self.remember(FAVOURITE_KEY, json!(at));
+        match list.get(at) {
+            Some(fav) => self.apply_favourite(facade, fav, at + 1, list.len()),
+            None => Err(ActionError::Invalid(missing_favourite(at + 1, list.len()))),
+        }
+    }
+
+    /// One favourite through the same calls the library pages and the matching key actions use.
+    /// A failure is the machine side's own text (for a deleted item, the library's "no ..."
+    /// message), so a dangling favourite fails like any other bad name.
+    fn apply_favourite(
+        &self,
+        facade: &dyn FavouritesFacade,
+        fav: &Favourite,
+        position: usize,
+        total: usize,
+    ) -> Result<String, ActionError> {
+        let name = fav.name.as_str();
+        match fav.kind {
+            Kind::Look => self.env.lighting.look_apply(name).map_err(host("look"))?,
+            Kind::FanCurve => self.env.daemon.use_fan_curve(name).map_err(host("fan curve"))?,
+            Kind::SmartProfile => facade.use_smart_profile(name).map_err(host("smart profile"))?,
+            Kind::Profile => {
+                self.env.profiles.apply(name).map_err(host("profile"))?;
+            }
+        }
+        Ok(format!("Favourite {position}/{total}: {} {name}", fav.kind.label()))
     }
 
     fn settings(&self) -> Result<ActionSettings, ActionError> {
@@ -449,6 +524,15 @@ impl Runner {
 impl ActionRunner for Runner {
     fn run(&self, spec: &str) -> Result<String, ActionError> {
         Runner::run(self, spec)
+    }
+}
+
+/// What a key press says when the favourite it names is not there.
+fn missing_favourite(position: usize, total: usize) -> String {
+    match total {
+        0 => "no favourites yet (star one: truesense favourite add look NAME)".to_owned(),
+        1 => format!("no favourite {position}: you have 1"),
+        _ => format!("no favourite {position}: you have {total}"),
     }
 }
 

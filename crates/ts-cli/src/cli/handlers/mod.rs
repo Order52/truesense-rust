@@ -147,6 +147,7 @@ fn run_path(cx: &mut Cx<'_, '_>, path: &[&str], m: &Matches) -> Outcome {
         "audio" => audio::audio(cx, verb, m),
         "keys" => keys::keys(cx, verb, m),
         "profile" => profile::profile(cx, verb, m),
+        "favourite" => super::favourite::run(cx, verb, m),
         "cpu" => cpu::cpu(cx, verb, m),
         "service" => system::service(cx, verb, m),
         "config" => system::config(cx, verb),

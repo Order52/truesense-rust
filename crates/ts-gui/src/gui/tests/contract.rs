@@ -87,8 +87,17 @@ fn the_table_and_the_scanner_see_the_whole_contract() {
     assert_eq!(literal_pair("name, \"set\""), None);
 }
 
-/// Documented commands the server answers itself or that the page never sends.
-const SERVER_ONLY: [&str; 2] = ["gui/ping", "gui/quit"];
+/// Documented commands the server answers itself or that the page never sends. The favourites
+/// belong to the Qt app and the PREDATOR key; the web page has no star buttons.
+const SERVER_ONLY: [&str; 7] = [
+    "gui/ping",
+    "gui/quit",
+    "favourite/list",
+    "favourite/toggle",
+    "favourite/remove",
+    "favourite/move",
+    "favourite/apply",
+];
 
 /// Commands of the native apps: the web page is being retired and never calls them, but they are
 /// implemented and still checked by `every_documented_command_exists_in_the_implementation`.

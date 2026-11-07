@@ -2,7 +2,7 @@
 
 import { call, tryCall } from "../api.js";
 import { h, card, row, hint, button, select, slider, field, run, toast, confirmDialog, errText } from "../ui.js";
-import { ACTION_TYPES, FAN_CHOICES, AUTO_CHOICES, POWER_MODES, typeOf, parseSpec, buildSpec, defaultsFor } from "../actions.js";
+import { ACTION_TYPES, FAN_CHOICES, AUTO_CHOICES, FAVOURITE_CHOICES, POWER_MODES, typeOf, parseSpec, buildSpec, defaultsFor } from "../actions.js";
 import { capitalize, validName, NAME_HELP } from "../format.js";
 
 const GESTURES = [["tap", "Tap"], ["double", "Double tap"], ["triple", "Triple tap"], ["long", "Long press"], ["fn_esc", "Fn + Esc"]];
@@ -27,7 +27,7 @@ function actionEditor(gestureLabel, lists) {
     const t = typeOf(st.id);
     type.set(st.id, true);
     const k = t.kind;
-    const opts = { mode: POWER_MODES, auto: AUTO_CHOICES, fan: FAN_CHOICES, profile: lists().profiles, look: lists().looks }[k];
+    const opts = { mode: POWER_MODES, auto: AUTO_CHOICES, fan: FAN_CHOICES, profile: lists().profiles, look: lists().looks, favourite: FAVOURITE_CHOICES }[k];
     choice.el.hidden = !opts;
     if (opts) {
       choice.setOptions(opts.map((o) => ({ value: o, label: k === "mode" || k === "auto" ? capitalize(o) : o })), st.choice);

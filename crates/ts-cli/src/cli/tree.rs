@@ -74,6 +74,7 @@ pub(super) fn build(version: &str) -> Command {
         audio(),
         keys(),
         profile(),
+        super::favourite::command(),
         cpu(),
         tri_verb("touchpad").help("touchpad on/off (Fn+F10)"),
         super::alerts::command(),

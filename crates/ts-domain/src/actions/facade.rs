@@ -17,6 +17,7 @@ use ts_foundation::config::Config;
 use ts_foundation::userstate;
 
 use super::parse::TouchpadAction;
+use crate::favourites::Favourite;
 
 /// A failure reported by the machine side of an action. The text is meant for the user and is
 /// displayed unchanged.
@@ -283,6 +284,17 @@ pub trait ProfilesFacade: Send + Sync {
     fn apply(&self, name: &str) -> HostResult<String>;
     /// The profile after the last one applied (the first when none was).
     fn next_name(&self) -> HostResult<String>;
+}
+
+/// The user's favourites, as the actions `favourite:N` and `favourite-next` see them. The
+/// favourites file is the user's own, so the key service (which runs as the user) reads it
+/// directly; applying one reuses the facades above for looks, fan curves and whole-setup
+/// profiles. Only the Smart auto profile has no facade of its own, so it is here.
+pub trait FavouritesFacade: Send + Sync {
+    /// The favourites in order (empty when there are none or the file is unreadable).
+    fn favourites(&self) -> HostResult<Vec<Favourite>>;
+    /// Makes a Smart auto profile the one the daemon runs.
+    fn use_smart_profile(&self, name: &str) -> HostResult<()>;
 }
 
 /// Starts an `exec:` command. It must run as the calling user, detached (its own session, no

@@ -158,7 +158,7 @@ impl Services {
             Arc::new(NoBundles),
             keybinds::syntax_check(),
         )?));
-        let facade = Arc::new(ApiFacade(private));
+        let facade = Arc::new(ApiFacade(private.clone()));
         let config = config_files(machine);
 
         // The profiles apply settings by running actions, and the `profile:` action applies
@@ -186,17 +186,22 @@ impl Services {
                 machine.path("/sys/class/input"),
             ))) as Arc<dyn LocalTouchpad>
         });
-        let runner = Arc::new(Runner::new(ActionEnv {
-            settings: Arc::new(settings_source(config)),
-            power: facade.clone(),
-            daemon: facade.clone(),
-            lighting: facade.clone(),
-            audio: facade,
-            state,
-            profiles,
-            local_touchpad,
-            spawner: Some(Arc::new(ShellSpawner)),
-        }));
+        let runner = Arc::new(
+            Runner::new(ActionEnv {
+                settings: Arc::new(settings_source(config)),
+                power: facade.clone(),
+                daemon: facade.clone(),
+                lighting: facade.clone(),
+                audio: facade,
+                state,
+                profiles,
+                local_touchpad,
+                spawner: Some(Arc::new(ShellSpawner)),
+            })
+            // `favourite:N` and `favourite-next` read the favourites file and start a Smart profile
+            // through the same private application layer the other actions use.
+            .with_favourites(private),
+        );
         slot.set(runner.clone());
 
         let check = keybinds::check_with(runner.validator().clone());

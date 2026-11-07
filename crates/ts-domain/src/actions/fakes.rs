@@ -16,12 +16,13 @@ use std::sync::Mutex;
 use serde_json::{Map, Value};
 
 use super::facade::{
-    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, FanSnapshot, HostError, HostResult,
-    LightingFacade, LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite, SettingsSource,
-    Spawner,
+    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, FanSnapshot, FavouritesFacade,
+    HostError, HostResult, LightingFacade, LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite,
+    SettingsSource, Spawner,
 };
 use super::parse::TouchpadAction;
 use super::runner::Env;
+use crate::favourites::Favourite;
 
 /// The state of the fake machine; every field is behind a lock so the traits can take `&self`.
 pub(crate) struct World {
@@ -50,6 +51,7 @@ pub(crate) struct World {
     pub cycle: Mutex<Vec<String>>,
     pub fail: Mutex<Vec<String>>,
     pub profile_names: Mutex<Vec<String>>,
+    pub favs: Mutex<Vec<Favourite>>,
 }
 
 impl World {
@@ -87,6 +89,7 @@ impl World {
             cycle: Mutex::new(["eco", "quiet", "balanced", "performance", "turbo"].map(s).to_vec()),
             fail: Mutex::new(Vec::new()),
             profile_names: Mutex::new(vec![s("a"), s("b"), s("c")]),
+            favs: Mutex::new(Vec::new()),
         })
     }
 
@@ -391,6 +394,16 @@ impl ProfilesFacade for World {
             .get(at.map_or(0, |i| (i + 1) % names.len()))
             .cloned()
             .ok_or_else(|| HostError::new("no profiles saved"))
+    }
+}
+
+impl FavouritesFacade for World {
+    fn favourites(&self) -> HostResult<Vec<Favourite>> {
+        self.rec("favourites?".into())?;
+        Ok(self.favs.lock().unwrap().clone())
+    }
+    fn use_smart_profile(&self, name: &str) -> HostResult<()> {
+        self.rec(format!("smart:{name}"))
     }
 }
 

@@ -4,6 +4,7 @@
 
 mod alerts;
 mod commands;
+mod favourite;
 mod golden;
 mod help;
 mod modebind;

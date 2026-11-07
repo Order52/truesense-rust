@@ -5,6 +5,7 @@
 mod alerts;
 mod bus;
 mod contract;
+mod favourites;
 mod harness;
 mod info;
 mod modebind;

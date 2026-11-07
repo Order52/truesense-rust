@@ -13,6 +13,7 @@ use std::sync::Arc;
 use ts_platform::hw::{Coded, PowerMode};
 
 use super::ActionError;
+use crate::favourites::MAX_FAVOURITES;
 
 /// The keyboard effects `keyboard-effect-next` steps through, in this order. The position is
 /// remembered in the user state (`kb_effect`) so the key continues where it left off.
@@ -37,7 +38,7 @@ pub const KB_EFFECTS: [&str; 13] = [
 pub const REAR_EFFECTS: [&str; 5] = ["static", "breathing", "neon", "wave", "twinkling"];
 
 /// Actions that take no argument.
-pub const FIXED_NAMES: [&str; 16] = [
+pub const FIXED_NAMES: [&str; 17] = [
     "auto-next",
     "none",
     "power-next",
@@ -45,6 +46,7 @@ pub const FIXED_NAMES: [&str; 16] = [
     "fan-max-toggle",
     "smart-fan-toggle",
     "profile-next",
+    "favourite-next",
     "output-toggle",
     "output-cycle",
     "mic-toggle",
@@ -57,13 +59,14 @@ pub const FIXED_NAMES: [&str; 16] = [
 ];
 
 /// Actions that need an argument after the first colon.
-pub const ARG_NAMES: [&str; 14] = [
+pub const ARG_NAMES: [&str; 15] = [
     "look",
     "auto",
     "power",
     "power-cycle",
     "fan",
     "profile",
+    "favourite",
     "output",
     "mic",
     "touchpad",
@@ -82,6 +85,7 @@ pub const CATALOGUE: &str = "An action is `name` or `name:argument`. Each return
   power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)\n\
   fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle\n\
   profile:<name> | profile-next                                              saved profiles (see `truesense profile`)\n\
+  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles and profiles (see `truesense favourite`); N counts from 1\n\
   output-toggle | output-cycle | output:speakers | output:headphones\n\
   mic-toggle | mic:mute | mic:unmute | voice-next\n\
   touchpad-toggle | touchpad:on | touchpad:off\n\
@@ -265,6 +269,10 @@ pub enum Action {
     Profile(String),
     /// Apply the whole-setup profile after the last one applied.
     ProfileNext,
+    /// Apply the Nth favourite (1-based, as the list shows it).
+    Favourite(usize),
+    /// Apply the favourite after the one this action reached last, wrapping.
+    FavouriteNext,
     /// Flip between speakers and headphones.
     OutputToggle,
     /// Step through the audio outputs.
@@ -401,6 +409,10 @@ impl Validator {
                 None => return bad("rear: on | off | toggle".into()),
             },
             "profile" => Action::Profile(arg.to_owned()),
+            "favourite" => match favourite_position(arg) {
+                Some(n) => Action::Favourite(n),
+                None => return bad(format!("favourite: a position from 1 to {MAX_FAVOURITES}")),
+            },
             "keyboard-profile" => Action::KeyboardProfile(arg.to_owned()),
             "exec" => Action::Exec(arg.to_owned()),
             "notify" => Action::Notify(arg.to_owned()),
@@ -434,6 +446,7 @@ fn fixed(name: &str) -> Action {
         "fan-max-toggle" => Action::FanMaxToggle,
         "smart-fan-toggle" => Action::SmartFanToggle,
         "profile-next" => Action::ProfileNext,
+        "favourite-next" => Action::FavouriteNext,
         "output-toggle" => Action::OutputToggle,
         "output-cycle" => Action::OutputCycle,
         "mic-toggle" => Action::MicToggle,
@@ -445,6 +458,17 @@ fn fixed(name: &str) -> Action {
         "overdrive-toggle" => Action::OverdriveToggle,
         _ => Action::None,
     }
+}
+
+/// A favourite position: ASCII digits only, 1..=[`MAX_FAVOURITES`]. It cannot be checked against
+/// the list here (the list changes after the key is configured); a position past the end of the
+/// list is reported when the key is pressed.
+fn favourite_position(arg: &str) -> Option<usize> {
+    if arg.is_empty() || !arg.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let n: usize = arg.parse().ok()?;
+    (1..=MAX_FAVOURITES).contains(&n).then_some(n)
 }
 
 /// A manual duty: ASCII digits only, 20..=100. A fan is never stopped by a key, so 0 is not an
@@ -484,6 +508,10 @@ mod tests {
             "smart-fan-toggle",
             "profile:gaming",
             "profile-next",
+            "favourite:1",
+            "favourite:024",
+            "favourite:24",
+            "favourite-next",
             "output-toggle",
             "output-cycle",
             "output:speakers",
@@ -545,6 +573,15 @@ mod tests {
             ("fan:\u{b2}0", "fan: smart | auto | max | 20..100"),
             ("fan:99999999999999999999999", "fan: smart | auto | max | 20..100"),
             ("fan:turbo", "fan: smart | auto | max | 20..100"),
+            ("favourite", "'favourite' needs an argument (e.g. favourite:...)"),
+            ("favourite:0", "favourite: a position from 1 to 24"),
+            ("favourite:25", "favourite: a position from 1 to 24"),
+            ("favourite:-1", "favourite: a position from 1 to 24"),
+            ("favourite:+1", "favourite: a position from 1 to 24"),
+            ("favourite:two", "favourite: a position from 1 to 24"),
+            ("favourite:\u{b2}", "favourite: a position from 1 to 24"),
+            ("favourite:99999999999999999999999", "favourite: a position from 1 to 24"),
+            ("favourite-next:2", "'favourite-next' takes no argument"),
             ("output:hdmi", "output: speakers | headphones"),
             ("mic:half", "mic: mute | unmute"),
             ("touchpad:toggle", "touchpad: on | off"),
@@ -588,6 +625,9 @@ mod tests {
         assert_eq!(v.parse("rear:toggle").ok(), Some(Action::Rear(Switch::Toggle)));
         assert_eq!(v.parse("mic:mute").ok(), Some(Action::Mic(true)));
         assert_eq!(v.parse("auto:native").ok(), Some(Action::Auto(AutoMode::Native)));
+        assert_eq!(v.parse("favourite:3").ok(), Some(Action::Favourite(3)));
+        assert_eq!(v.parse(" favourite : 12 ").ok(), Some(Action::Favourite(12)));
+        assert_eq!(v.parse("favourite-next").ok(), Some(Action::FavouriteNext));
     }
 
     #[test]
@@ -615,6 +655,7 @@ mod tests {
             "power-cycle:eco",
             "fan:50",
             "profile:x",
+            "favourite:1",
             "output:speakers",
             "mic:mute",
             "touchpad:on",
@@ -631,12 +672,13 @@ mod tests {
     }
 
     #[test]
-    fn catalogue_text_matches_the_python_edition() {
+    fn catalogue_keeps_the_python_frame_and_documents_the_favourites() {
         assert!(CATALOGUE.starts_with("An action is `name` or `name:argument`."));
+        assert!(CATALOGUE.contains("favourite:<N> | favourite-next "));
         assert!(
             CATALOGUE.ends_with("exec:<shell command>      runs as you, detached      |      notify:<text>")
         );
-        assert_eq!(CATALOGUE.lines().count(), 14);
+        assert_eq!(CATALOGUE.lines().count(), 15);
     }
 
     #[test]

@@ -409,3 +409,21 @@ fn builtin_profiles_all_validate_with_the_syntax_check() {
         assert_eq!(validate(&p.to_value(), &check), Ok(p), "{name}");
     }
 }
+
+#[test]
+fn favourite_actions_are_valid_bindings_and_bad_positions_are_refused() {
+    let tmp = Tmp::new("kb-favourites");
+    let kp = fixture(&tmp);
+    let p = parse(&kp, r#"{"tap":"favourite-next","double":"favourite:1","long":"favourite:24"}"#).unwrap();
+    assert_eq!(p.bindings.tap, "favourite-next");
+    assert_eq!(p.bindings.double, "favourite:1");
+    for (input, want) in [
+        (r#"{"tap":"favourite:0"}"#, "Tap: favourite: a position from 1 to 24"),
+        (r#"{"double":"favourite:25"}"#, "Double tap: favourite: a position from 1 to 24"),
+        (r#"{"triple":"favourite"}"#, "Triple tap: 'favourite' needs an argument"),
+        (r#"{"long":"favourite-next:2"}"#, "Long press: 'favourite-next' takes no argument"),
+    ] {
+        let e = parse(&kp, input).err().unwrap_or_else(|| panic!("{input} should be refused"));
+        assert!(e.contains(want), "{input}: got {e:?}, want {want:?}");
+    }
+}

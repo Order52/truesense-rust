@@ -284,3 +284,23 @@ fn the_health_check_and_the_profiles_answer_through_the_backend() {
     assert!(h.backend.execute(&Op::OpenWindow).is_ok());
     assert_eq!(h.window_opened.load(Ordering::SeqCst), 1);
 }
+
+#[test]
+fn favourites_are_listed_with_their_existence_and_applied_through_the_backend() {
+    use ts_api::api::FavouriteKind;
+    let h = plain();
+    assert!(h.backend.catalog().favourites.is_empty());
+    h.api().favourite_add(FavouriteKind::Profile, "gaming").unwrap();
+    h.api().favourite_add(FavouriteKind::Look, "native").unwrap();
+    assert_eq!(
+        h.backend.catalog().favourites,
+        vec![
+            (FavouriteKind::Profile, "gaming".to_owned(), true),
+            (FavouriteKind::Look, "native".to_owned(), true)
+        ]
+    );
+    assert_eq!(h.backend.execute(&Op::Favourite(FavouriteKind::Profile, "gaming".into())), Ok(Done::Unit));
+    assert_eq!(h.rig.bundles.applied(), vec!["gaming".to_owned()]);
+    assert_eq!(h.backend.execute(&Op::Favourite(FavouriteKind::Look, "native".into())), Ok(Done::Unit));
+    assert!(h.backend.execute(&Op::Favourite(FavouriteKind::Look, "ghost".into())).is_err());
+}

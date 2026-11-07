@@ -13,7 +13,7 @@ use std::fmt::Display;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use ts_api::api::{Api, AutoMode, ChargeFullAction, KeyboardLook, RearRequest, dts_is_on};
+use ts_api::api::{Api, AutoMode, ChargeFullAction, FavouriteKind, KeyboardLook, RearRequest, dts_is_on};
 use ts_domain::audio::{Output, VoiceDevice, VoiceMode};
 use ts_domain::keyboard::{MAX_BRIGHT, SPEED_MAX, SPEED_MIN};
 use ts_system::doctor::Status as DoctorStatus;
@@ -101,6 +101,7 @@ pub(crate) enum Op {
     Voice { input: VoiceInput, mode: String },
     Profile(String),
     Look(String),
+    Favourite(FavouriteKind, String),
     OpenWindow,
     RunDoctor,
 }
@@ -135,6 +136,10 @@ pub(crate) struct Catalog {
     /// Profile names with the line that says what each changes.
     pub profiles: Vec<(String, String)>,
     pub looks: Vec<String>,
+    /// The starred items in the user's order, with whether each still exists. Read when the screen
+    /// opens, like the other lists: a star set while it runs shows at the next start, and applying
+    /// goes by kind and name, so a list that moved cannot apply the wrong item.
+    pub favourites: Vec<(FavouriteKind, String, bool)>,
     pub doctor_checks: Vec<String>,
 }
 
@@ -241,6 +246,12 @@ impl Backend for ApiBackend {
                 })
                 .collect(),
             looks: self.api.looks(),
+            favourites: self
+                .api
+                .favourites()
+                .into_iter()
+                .filter_map(|f| Some((FavouriteKind::parse(f.kind)?, f.name, f.exists)))
+                .collect(),
             doctor_checks: Api::doctor_checks().into_iter().map(str::to_owned).collect(),
         }
     }
@@ -473,6 +484,7 @@ impl Backend for ApiBackend {
             }
             Op::Profile(n) => unit(api.apply_profile(n).map(drop)),
             Op::Look(n) => unit(api.apply_look(n).map(drop)),
+            Op::Favourite(kind, n) => unit(api.favourite_apply(*kind, n).map(drop)),
             Op::OpenWindow => match &self.window {
                 Some(open) => open().map(|()| Done::Unit),
                 None => Err("the window cannot be opened from here (run: truesense gui)".to_owned()),
