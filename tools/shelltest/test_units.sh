@@ -20,7 +20,7 @@ t_the_daemon_unit_hands_the_machine_back_however_it_ends() {
 t_the_unit_and_the_program_agree_on_the_already_running_exit_status() {
   local u code; u=$(cat "$P/truesense.service")
   assert_line "$u" "RestartPreventExitStatus=78"
-  code=$(sed -n 's/^pub const EXIT_ALREADY_RUNNING: i32 = \([0-9]*\);/\1/p' "$ROOT/crates/ts-daemon/src/assembly.rs")
+  code=$(sed -nE 's/^pub(\(crate\))? const EXIT_ALREADY_RUNNING: i32 = ([0-9]+);/\2/p' "$ROOT/crates/ts-daemon/src/assembly.rs")
   assert_eq "$code" 78 "EXIT_ALREADY_RUNNING"
 }
 

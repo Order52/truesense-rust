@@ -12,7 +12,7 @@ make qt-release    # release build
 make qt-test       # cargo test -p ts-qt (offscreen, end to end) + QML component tests (qmltestrunner)
 make qt-lint       # rustfmt --check and clippy -D warnings on ts-qt
 make qt-ci         # lint + test
-make ci            # unchanged: the workspace WITHOUT ts-qt (default-members), no Qt needed
+make ci            # rustfmt, clippy, tests, rustdoc of the workspace WITHOUT ts-qt (default-members), no Qt needed
 ```
 
 Run it offscreen for a look: `QT_QPA_PLATFORM=offscreen TRUESENSE_SIM=1 TRUESENSE_QT_TEST=1
@@ -75,8 +75,8 @@ visible**; a hidden or minimised window polls nothing. Tracked series are `DEFAU
 
 * A control the laptop lacks stays visible and greyed: `enabled: Caps.usable("rear-light")` and a
   `CapabilityNote { capability: "rear-light"; text: qsTrId("...") }` under it. Ids are in
-  `ts-ui-model/src/capability.rs` (`capability::id`), derived from `status get`; a future
-  `capabilities get` overrides them.
+  `ts-ui-model/src/capability.rs` (`capability::id`), derived from `status get`; the answer of
+  `capabilities get` (the application layer's capability probe) overrides them.
 * `Toasts.show(text, "info"|"ok"|"error")`; `ConfirmDialog { id: confirm }` and
   `confirm.ask({title, text, confirmText, danger, typeWord}, function () { ... })`.
 * `Ui.theme`, `Ui.fontScale`, `Ui.reducedMotion`, `Ui.rtl`; change them with `Ui.set(key, value)`

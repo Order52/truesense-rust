@@ -43,6 +43,8 @@ jobs:
           ./actionlint -color
       - name: Every file agrees on one version (and the updater can read it)
         run: tools/release.sh check
+      - name: Documentation links (README.md and docs/*.md point at files and headings that exist)
+        run: tools/ci/check-doc-links.sh
       - name: systemd units verify (placeholders filled, hardening ratchet)
         run: tools/ci/verify-units.sh
       - name: Desktop entries
