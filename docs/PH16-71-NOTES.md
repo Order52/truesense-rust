@@ -158,3 +158,77 @@ Safe, read-mostly. Do them with `truesense state` open in another terminal.
   design. Our governor (`[cpu] gov_enabled`, default on) lowers the clock cap from 88 C under smart control. Run an all-core load for five
   minutes with the smart fan on and read the `cap` live key: if it falls to 2800 MHz while the firmware alone would have held about 2600
   MHz at the same power, the governor is only costing single-thread speed and its `gov_hi`/`gov_lo` could be raised for this model.
+
+## 5. Keyboard effects: his hardware-confirmed list against ours
+
+Sources, all read-only: his `src/hardware/keyboard_rgb.rs` (`Effect`, `opcode`, `uses_color`, `uses_speed`, `uses_direction`, and the
+tests `colour_speed_and_direction_match_the_spec_table` and `all_six_wave_directions_reach_the_helper`), `src/hardware/effects/kb.rs`
+(what each firmware effect looks like, "seen on a PH16-71 (2026-10-15)"), `tools/effects-reference.js`, his README compatibility tables and
+`PH16-71-FINDINGS.md` section 7 ("The effect table for this generation is wider than the palette path's, at 14 entries").
+
+**Result: no effect is missing.** His 14 for the PH16-71's Chicony keyboard (`04F2:0117`) are exactly our 14, with the same codes:
+
+| His `Effect` | His opcode | Our name | Our code | Takes colour | Takes speed | Takes direction |
+|---|---|---|---|---|---|---|
+| Off (Static at brightness 0) | 0x01 | off | 0 | no | no | no |
+| Static | 0x01 | static | 1 | yes | no | no |
+| Breathing | 0x02 | breathing | 2 | yes | yes | no |
+| Wave | 0x03 | wave | 3 | no | yes | **yes, six values** |
+| Snake | 0x05 | snake | 5 | yes | yes | no |
+| Ripple | 0x06 | ripple | 6 | yes | yes | no |
+| Rainbow | 0x08 | neon | 8 | no | yes | no |
+| Rain | 0x0A | raindrop | 10 | yes | yes | no |
+| Lightning | 0x12 | lightning | 18 | yes | yes | no |
+| Spot | 0x25 | spot | 37 | yes | yes | no |
+| Stars | 0x26 | star | 38 | yes | yes | no |
+| Fireball | 0x27 | fireball | 39 | yes | yes | no |
+| Snow | 0x28 | snow | 40 | yes | yes | no |
+| Heartbeat | 0x29 | heartbeat | 41 | yes | yes | no |
+
+His colour rule (`!matches!(Off | Wave | Rainbow)`) is our `NO_COLOR` (`off`, `wave`, `neon`); his speed rule (not Off and not Static) is what
+the Lighting page already does. The names differ in two places only (his Rainbow is our neon; his Rain is our raindrop). The one real
+difference is `off`: he expresses it as Static at brightness 0, we send the `off` effect packet and use brightness 0 for "dark", as the
+earlier editions verified. **Direction**: he lists it for the Wave alone and tested that for all 14, so the Lighting page now offers the
+Direction control for the Wave only (it used to enable it for nine effects as a guess); every other effect is sent direction 0.
+
+**Listed by him, not confirmed on a PH16-71, therefore not offered:**
+
+* The 2024+ Sunrex keyboard (`05af:*`, PH16-72 and later) lists Off, Static, Breathing, Wave, Snake, Neon, Spot, Star, Rainbow, five Slash
+  variants, Zoom, Row Wave and Swiping. His README marks all of it "implemented, awaiting confirmation on real hardware", and it is a different
+  controller and protocol (not `04F2:0117`), so none of its codes can be sent to ours.
+* The ENEK5130 chip (PHN16S-71, PHN16-73, AN16S-61): Breathing and Neon, plus Wave, Shifting and Zoom "where the controller advertises
+  them"; the AN16S-61 report names six more native modes (hardware off, a boot blink the EC fires itself, four animations) that he has not
+  wired in. Again another chip.
+* The Helios 300 Chicony keyboard (PH317-56, the same USB id as ours): a fixed 7-colour palette and 12 effects over an older `08 00 .. BE`
+  packet family. His code gates on the model list, because the id is shared; ours does the same by DMI and refuses other models.
+
+No code of the 14 has an unexplained hole: codes between them (4, 7, 9, 11 to 17, 19 to 36) were not tested by either of us, and are not
+sent. The software sweeps (`wave-clockwise`, `wave-counter-clockwise`, per-key animations) and the themes cover the looks the firmware cannot do in every colour.
+
+## 6. Wave directions
+
+The Wave's direction byte (`08 02 03 <speed> <brightness> 01 <byte>`): the byte is `logical + 1`, and TrueSense stores the logical number.
+He confirmed all six on a PH16-71 (2026-10-15); `ts-domain` `keyboard::Direction` and the test `logical_4_is_wire_byte_5_clockwise_and_5_is_6_counter_clockwise`
+pin it:
+
+| Logical (stored, CLI number) | Wire byte | Direction |
+|---|---|---|
+| 0 | 1 | left to right |
+| 1 | 2 | right to left |
+| 2 | 3 | bottom to top |
+| 3 | 4 | top to bottom |
+| 4 | 5 | clockwise |
+| 5 | 6 | counter-clockwise |
+
+`truesense keyboard effect wave --direction clockwise` (or `4`). A value above 5 is refused for the Wave; the other effects keep the old
+0 to 254 rule. The rear light bar: our modes are the kernel module's (2 neon, 3 wave), the byte is 0 or 1 (the module refuses 2), and his
+measurement on the same bar was that his modes 3 (Rainbow) and 4 (Wave) follow a direction and Ripple does not. By code that is our wave
+(3); his mode 2 is the one code we call neon and he does not list among the directional ones, so the Direction control of the bar now stays
+on the wave only. Which of 0 and 1 is left to right on the bar is not confirmed anywhere (he sends 1 and 2 on another path), so the
+bar's control keeps its two unlabelled-by-hardware names; live check L13 settles it.
+
+* **L13, wave directions.** `truesense keyboard effect wave --direction clockwise`, then `counter-clockwise`, `bottom-to-top`,
+  `top-to-bottom`, `right-to-left`, `left-to-right`: each should move the rainbow the way its name says (clockwise and counter-clockwise
+  are the two reference-confirmed ones, bytes 5 and 6). Then `truesense rear set wave --direction 0` and `--direction 1`: note which way
+  the bar's wave travels for each, and whether `rear set neon --direction 0|1` looks the same both ways.
+
