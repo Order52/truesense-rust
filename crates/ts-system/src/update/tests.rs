@@ -1037,7 +1037,9 @@ fn a_download_cut_short_anywhere_never_reaches_extraction_and_leaves_nothing() {
     for cut in (0..blob.len()).step_by(37).chain([blob.len() - 1]) {
         world.net.serve(&asset, &blob[..cut]);
         world.serve_release("9.9.9", &blob[..cut], Some(sums.clone()));
-        let err = world.updater().download("v9.9.9").err().expect("a truncated download must be refused");
+        let Err(err) = world.updater().download("v9.9.9") else {
+            panic!("cut {cut}: a truncated download must be refused")
+        };
         assert!(matches!(err, UpdateError::ChecksumMismatch { .. }), "cut {cut}: {err}");
         assert_eq!(world.work_entries(), 0, "cut {cut}: nothing left behind");
     }
