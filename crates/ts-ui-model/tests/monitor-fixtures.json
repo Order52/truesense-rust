@@ -1,0 +1,608 @@
+{
+ "overview_full": {
+  "verb": "overview",
+  "args": {
+   "overview": {
+    "t": 1,
+    "temperatures": [
+     {
+      "kind": "cpu_package",
+      "celsius": 86,
+      "session_min_c": 44,
+      "session_max_c": 91,
+      "high_c": 100,
+      "critical_c": 100
+     },
+     {
+      "kind": "gpu",
+      "celsius": 58,
+      "session_min_c": 41,
+      "session_max_c": 72
+     },
+     {
+      "kind": "board",
+      "celsius": 47,
+      "session_min_c": 39,
+      "session_max_c": 52
+     },
+     {
+      "kind": "nvme",
+      "celsius": 44,
+      "session_min_c": 38,
+      "session_max_c": 51,
+      "high_c": 84.8,
+      "critical_c": 85.8
+     },
+     {
+      "kind": "nvme",
+      "celsius": 97,
+      "session_min_c": 40,
+      "session_max_c": 97
+     },
+     {
+      "kind": "wifi",
+      "celsius": 52,
+      "session_min_c": 45,
+      "session_max_c": 58
+     }
+    ],
+    "cpu_load_pct": 37.4,
+    "cpu_freq_mhz": 4300,
+    "memory_used_pct": 58.2,
+    "swap_used_pct": 8.1,
+    "gpu_state": "active",
+    "net_primary": "wlan0",
+    "net_rx_bps": 2411724.0,
+    "net_tx_bps": 81920.0,
+    "uptime_s": 273600
+   }
+  }
+ },
+ "overview_asleep": {
+  "verb": "overview",
+  "args": {
+   "overview": {
+    "temperatures": [
+     {
+      "kind": "cpu_package",
+      "celsius": 51
+     },
+     {
+      "kind": "gpu",
+      "celsius": 44
+     },
+     {
+      "kind": "board",
+      "celsius": 40
+     }
+    ],
+    "cpu_load_pct": 2.1,
+    "gpu_state": "suspended",
+    "net_primary": null,
+    "net_rx_bps": null,
+    "net_tx_bps": null,
+    "uptime_s": 125
+   }
+  }
+ },
+ "overview_empty": {
+  "verb": "overview",
+  "args": {
+   "overview": null
+  }
+ },
+ "facts_full": {
+  "verb": "facts",
+  "args": {
+   "system": {
+    "machine": {
+     "vendor": "Acer",
+     "product": "Predator PH16-71",
+     "bios": "V1.18",
+     "bios_date": "06/09/2026"
+    },
+    "cpu": {
+     "model": "13th Gen Intel(R) Core(TM) i7-13700HX",
+     "cores": 16,
+     "threads": 24,
+     "max_mhz": 5000
+    },
+    "memory_total_bytes": 16463798272,
+    "gpus": [
+     {
+      "vendor": "NVIDIA",
+      "device_id": "0x28e0",
+      "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "driver": "nvidia 560.35.03"
+     },
+     {
+      "vendor": "Intel",
+      "device_id": "0xa788",
+      "name": null,
+      "driver": "i915"
+     }
+    ],
+    "os": {
+     "pretty_name": "CachyOS"
+    },
+    "kernel": "7.3.0-4-cachyos",
+    "uptime_s": 273600
+   }
+  }
+ },
+ "facts_empty": {
+  "verb": "facts",
+  "args": {}
+ },
+ "cpu_full": {
+  "verb": "cpu",
+  "args": {
+   "cpu": {
+    "load_pct": 37.4,
+    "cores": [
+     {
+      "id": 0,
+      "load_pct": 8,
+      "freq_mhz": 800,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 1,
+      "load_pct": 5,
+      "freq_mhz": 800,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 2,
+      "load_pct": 36,
+      "freq_mhz": 3200,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 3,
+      "load_pct": 97,
+      "freq_mhz": 4800,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 4,
+      "load_pct": 12,
+      "freq_mhz": 1200,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 5,
+      "load_pct": null,
+      "freq_mhz": null,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 6,
+      "load_pct": 54,
+      "freq_mhz": 2600,
+      "max_freq_mhz": 5000
+     },
+     {
+      "id": 7,
+      "load_pct": 71,
+      "freq_mhz": 3900,
+      "max_freq_mhz": 5000
+     }
+    ],
+    "freq_avg_mhz": 2800,
+    "freq_max_mhz": 4800,
+    "governor": "powersave",
+    "load_avg": {
+     "one": 2.5,
+     "five": 1.75,
+     "fifteen": 1.2,
+     "running": 3,
+     "tasks": 812
+    },
+    "power_w": null,
+    "temperature_c": 71,
+    "top": [
+     {
+      "pid": 4211,
+      "name": "firefox",
+      "cmdline": "/usr/lib/firefox/firefox",
+      "user": "me",
+      "state": "R",
+      "cpu_pct": 142.5,
+      "mem_bytes": 2147483648,
+      "threads": 97
+     },
+     {
+      "pid": 1987,
+      "name": "Hyprland",
+      "cmdline": "Hyprland",
+      "user": "me",
+      "state": "S",
+      "cpu_pct": 18.2,
+      "mem_bytes": 402653184,
+      "threads": 9
+     },
+     {
+      "pid": 3320,
+      "name": "code",
+      "cmdline": "/opt/visual-studio-code/code --type=renderer",
+      "user": "me",
+      "state": "S",
+      "cpu_pct": 6.4,
+      "mem_bytes": 1073741824,
+      "threads": 31
+     },
+     {
+      "pid": 55,
+      "name": "kworker/u48:2",
+      "cmdline": "",
+      "user": "root",
+      "state": "D",
+      "cpu_pct": 0.8,
+      "mem_bytes": 0,
+      "threads": 1
+     },
+     {
+      "pid": 900,
+      "name": "",
+      "cmdline": "",
+      "user": null,
+      "state": null,
+      "cpu_pct": null,
+      "mem_bytes": null,
+      "threads": null
+     }
+    ],
+    "top_valid": true,
+    "processes": 446
+   }
+  }
+ },
+ "cpu_first": {
+  "verb": "cpu",
+  "args": {
+   "cpu": {
+    "load_pct": null,
+    "cores": [
+     {
+      "id": 0,
+      "load_pct": null,
+      "freq_mhz": 800,
+      "max_freq_mhz": 5000
+     }
+    ],
+    "freq_avg_mhz": 800,
+    "freq_max_mhz": 800,
+    "governor": null,
+    "load_avg": null,
+    "power_w": null,
+    "temperature_c": null,
+    "top": [],
+    "top_valid": false,
+    "processes": 446
+   }
+  }
+ },
+ "cpu_empty": {
+  "verb": "cpu",
+  "args": {
+   "cpu": null
+  }
+ },
+ "gpu_awake": {
+  "verb": "gpu",
+  "args": {
+   "live": {
+    "state": "active",
+    "temperature_c": 61,
+    "utilization_pct": null,
+    "power_w": null,
+    "source": "firmware",
+    "detail": null
+   },
+   "detail": {
+    "state": "active",
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "560.35.03",
+    "temperature_c": 62,
+    "utilization_pct": 34,
+    "power_w": 41.5,
+    "source": "nvidia_smi",
+    "detail_cached": false,
+    "detail_age_s": 0.8,
+    "next_detail_in_s": 4.2,
+    "error": null,
+    "detail": {
+     "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+     "vbios": "95.07.2b.00.5e",
+     "temperature_c": 62,
+     "utilization_pct": 34,
+     "memory_utilization_pct": 12,
+     "vram_total_mib": 8188,
+     "vram_used_mib": 1536,
+     "vram_free_mib": 6500,
+     "power_w": 41.5,
+     "power_limit_w": 80,
+     "power_default_limit_w": 80,
+     "power_min_limit_w": 80,
+     "power_max_limit_w": 80,
+     "clock_graphics_mhz": 1740,
+     "clock_memory_mhz": 8001,
+     "clock_graphics_max_mhz": 3105,
+     "clock_memory_max_mhz": 8001,
+     "pstate": "P2",
+     "pcie_gen": 3,
+     "pcie_gen_max": 4,
+     "pcie_width": 8,
+     "pcie_width_max": 8,
+     "fan_pct": null
+    }
+   }
+  }
+ },
+ "gpu_asleep": {
+  "verb": "gpu",
+  "args": {
+   "live": {
+    "state": "suspended",
+    "note": "asleep",
+    "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "560.35.03",
+    "temperature_c": 43,
+    "utilization_pct": null,
+    "power_w": null,
+    "source": "firmware",
+    "detail": null
+   }
+  }
+ },
+ "gpu_absent": {
+  "verb": "gpu",
+  "args": {
+   "live": {
+    "state": "absent",
+    "temperature_c": null
+   }
+  }
+ },
+ "gpu_empty": {
+  "verb": "gpu",
+  "args": {}
+ },
+ "memory_full": {
+  "verb": "memory",
+  "args": {
+   "memory": {
+    "memory": {
+     "total_bytes": 16463798272,
+     "used_bytes": 9569738752,
+     "available_bytes": 6894059520,
+     "free_bytes": 6710886400,
+     "cache_bytes": 375390208,
+     "used_pct": 58.1,
+     "swap_total_bytes": 33554432000,
+     "swap_used_bytes": 2791728742,
+     "swap_used_pct": 8.3
+    },
+    "top": [
+     {
+      "pid": 4211,
+      "name": "firefox",
+      "cmdline": "/usr/lib/firefox/firefox",
+      "user": "me",
+      "state": "R",
+      "cpu_pct": 142.5,
+      "mem_bytes": 2147483648,
+      "threads": 97
+     },
+     {
+      "pid": 3320,
+      "name": "code",
+      "cmdline": "/opt/visual-studio-code/code --type=renderer",
+      "user": "me",
+      "state": "S",
+      "cpu_pct": 6.4,
+      "mem_bytes": 1073741824,
+      "threads": 31
+     },
+     {
+      "pid": 1987,
+      "name": "Hyprland",
+      "cmdline": "Hyprland",
+      "user": "me",
+      "state": "S",
+      "cpu_pct": 18.2,
+      "mem_bytes": 402653184,
+      "threads": 9
+     },
+     {
+      "pid": 55,
+      "name": "kworker/u48:2",
+      "cmdline": "",
+      "user": "root",
+      "state": "D",
+      "cpu_pct": 0.8,
+      "mem_bytes": 0,
+      "threads": 1
+     },
+     {
+      "pid": 900,
+      "name": "",
+      "cmdline": "",
+      "user": null,
+      "state": null,
+      "cpu_pct": null,
+      "mem_bytes": null,
+      "threads": null
+     }
+    ],
+    "processes": 446
+   },
+   "disks": {
+    "filesystems": [
+     {
+      "device": "/dev/nvme1n1p2",
+      "fstype": "ext4",
+      "mount": "/",
+      "total_bytes": 1006632960000,
+      "used_bytes": 751619276800,
+      "avail_bytes": 254013683200,
+      "used_pct": 74.7
+     },
+     {
+      "device": "/dev/nvme0n1p1",
+      "fstype": "vfat",
+      "mount": "/boot",
+      "total_bytes": 1073741824,
+      "used_bytes": 1038090240,
+      "avail_bytes": 35651584,
+      "used_pct": 96.7
+     },
+     {
+      "device": "/dev/nvme0n1p2",
+      "fstype": "btrfs",
+      "mount": "/home",
+      "total_bytes": 1000204886016,
+      "used_bytes": 420000000000,
+      "avail_bytes": 580204886016,
+      "used_pct": 42.0
+     }
+    ],
+    "drives": [
+     {
+      "name": "nvme0n1",
+      "model": "SAMSUNG MZVL21T0HCLR-00B07",
+      "size_bytes": 1024209543168,
+      "kind": "nvme"
+     },
+     {
+      "name": "nvme1n1",
+      "model": "Predator SSD GM7000 1TB",
+      "size_bytes": 1024209543168,
+      "kind": "nvme"
+     },
+     {
+      "name": "mmcblk0",
+      "model": null,
+      "size_bytes": 127865454592,
+      "kind": "mmc"
+     }
+    ],
+    "nvme": [
+     {
+      "controller": "nvme0",
+      "model": "x",
+      "celsius": 43,
+      "max_c": 84.8,
+      "crit_c": 85.8
+     },
+     {
+      "controller": "nvme1",
+      "model": "y",
+      "celsius": 45
+     }
+    ]
+   }
+  }
+ },
+ "memory_empty": {
+  "verb": "memory",
+  "args": {}
+ },
+ "network_full": {
+  "verb": "network",
+  "args": {
+   "network": {
+    "primary": "wlan0",
+    "rx_bps": 2411724.0,
+    "tx_bps": 81920.0,
+    "peak_rx_bps": 9437184.0,
+    "peak_tx_bps": 1048576.0,
+    "session_rx_bytes": 3221225472,
+    "session_tx_bytes": 209715200,
+    "primary_address": "192.168.1.5",
+    "addresses": {
+     "wlan0": [
+      "192.168.1.5"
+     ],
+     "docker0": [
+      "172.17.0.1"
+     ]
+    },
+    "interfaces": [
+     {
+      "name": "lo",
+      "kind": "loopback",
+      "state": "up",
+      "rx_bps": 0.0,
+      "tx_bps": 0.0
+     },
+     {
+      "name": "docker0",
+      "kind": "virtual",
+      "state": "down",
+      "mac": "02:42:ac:11:00:01",
+      "speed_mbps": null,
+      "rx_bps": 0.0,
+      "tx_bps": 0.0,
+      "session_rx_bytes": 0,
+      "session_tx_bytes": 0,
+      "total_rx_bytes": 0,
+      "total_tx_bytes": 0
+     },
+     {
+      "name": "enp109s0",
+      "kind": "ethernet",
+      "state": "down",
+      "mac": "74:d4:dd:08:96:ab",
+      "speed_mbps": null,
+      "rx_bps": null,
+      "tx_bps": null,
+      "session_rx_bytes": 0,
+      "session_tx_bytes": 0,
+      "total_rx_bytes": 0,
+      "total_tx_bytes": 0
+     },
+     {
+      "name": "wlan0",
+      "kind": "wifi",
+      "state": "up",
+      "mac": "36:07:db:c4:d5:b8",
+      "speed_mbps": 866,
+      "rx_bps": 2411724.0,
+      "tx_bps": 81920.0,
+      "session_rx_bytes": 3221225472,
+      "session_tx_bytes": 209715200,
+      "total_rx_bytes": 9663676416,
+      "total_tx_bytes": 1073741824
+     }
+    ]
+   },
+   "rx": [
+    null,
+    120000,
+    300000,
+    900000,
+    2400000,
+    5000000,
+    2400000,
+    800000,
+    1200000,
+    2411724
+   ],
+   "tx": [
+    null,
+    5000,
+    8000,
+    81920,
+    20000,
+    300000,
+    81920
+   ]
+  }
+ },
+ "network_empty": {
+  "verb": "network",
+  "args": {}
+ }
+}
