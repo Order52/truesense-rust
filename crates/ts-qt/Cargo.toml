@@ -1,0 +1,36 @@
+[package]
+name = "ts-qt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "The TrueSense window: Qt 6 / QML over cxx-qt (binary truesense-qt)"
+build = "build.rs"
+
+[lints]
+workspace = true
+
+[lib]
+name = "ts_qt"
+path = "src/lib.rs"
+
+[[bin]]
+name = "truesense-qt"
+path = "src/main.rs"
+
+[dependencies]
+# cxx-qt is pinned exactly: its generated code and the Qt bindings change between minor versions.
+cxx = "1"
+cxx-qt = "=0.10.0"
+cxx-qt-lib = { version = "=0.10.0", features = ["qt_full"] }
+ts-api = { path = "../ts-api" }
+ts-foundation = { path = "../ts-foundation" }
+ts-gui = { path = "../ts-gui" }
+ts-keys = { path = "../ts-keys" }
+ts-ui-model = { path = "../ts-ui-model" }
+serde_json.workspace = true
+
+[build-dependencies]
+cxx-qt-build = "=0.10.0"
+qt-build-utils = "=0.10.0"

@@ -1,0 +1,23 @@
+{
+  "groups": [
+    {"id": "now", "titleId": "nav_group_now", "title": "Now"},
+    {"id": "control", "titleId": "nav_group_control", "title": "Control"},
+    {"id": "hardware", "titleId": "nav_group_hardware", "title": "Hardware"},
+    {"id": "library", "titleId": "nav_group_library", "title": "Library"},
+    {"id": "system", "titleId": "nav_group_system", "title": "System"}
+  ],
+  "pages": [
+    {"id": "home", "group": "now", "icon": "home", "titleId": "nav_home", "title": "Home", "qml": "HomePage", "aliases": ["dashboard", "start"]},
+    {"id": "monitor", "group": "now", "icon": "monitor", "titleId": "nav_monitor", "title": "Monitor", "qml": "MonitorPage", "aliases": ["temperatures", "usage", "network", "graphs", "gpu", "live"]},
+    {"id": "performance", "group": "control", "icon": "performance", "titleId": "nav_performance", "title": "Performance", "qml": "PerformancePage", "aliases": ["power", "smart", "undervolt", "limits", "tuning", "mode"]},
+    {"id": "cooling", "group": "control", "icon": "fan", "titleId": "nav_cooling", "title": "Cooling", "qml": "CoolingPage", "aliases": ["fan", "fans", "curves", "fan-curves"]},
+    {"id": "lighting", "group": "control", "icon": "palette", "titleId": "nav_lighting", "title": "Lighting", "qml": "LightingPage", "aliases": ["keyboard", "perkey", "per-key", "rear", "looks", "themes"]},
+    {"id": "keys", "group": "control", "icon": "key", "titleId": "nav_keys", "title": "Keys", "qml": "KeysPage", "aliases": ["predator", "predator-key", "fn", "hotkeys"]},
+    {"id": "battery", "group": "hardware", "icon": "battery", "titleId": "nav_battery", "title": "Battery and screen", "qml": "BatteryPage", "aliases": ["screen", "display", "charge"]},
+    {"id": "audio", "group": "hardware", "icon": "audio", "titleId": "nav_audio", "title": "Audio", "qml": "AudioPage", "aliases": ["sound", "mic", "microphone"]},
+    {"id": "profiles", "group": "library", "icon": "profiles", "titleId": "nav_profiles", "title": "Profiles and favourites", "qml": "ProfilesPage", "aliases": ["profile", "favourites", "favorites"]},
+    {"id": "health", "group": "system", "icon": "health", "titleId": "nav_health", "title": "Health", "qml": "HealthPage", "aliases": ["doctor", "selftest", "diagnostics"]},
+    {"id": "settings", "group": "system", "icon": "settings", "titleId": "nav_settings", "title": "Settings", "qml": "SettingsPage", "aliases": ["config", "about", "preferences"]}
+  ],
+  "notFound": {"qml": "NotFoundPage"}
+}
