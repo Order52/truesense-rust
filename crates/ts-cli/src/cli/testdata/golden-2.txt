@@ -1637,7 +1637,7 @@ rc 0
 --- out
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite theme cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1775,6 +1775,12 @@ _truesense() {
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    theme) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list show apply stop --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help --colourway --custom --set --speed --brightness" -- "$cur") ); return;;
+        stop) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -1835,7 +1841,7 @@ rc 0
 autoload -U +X bashcompinit && bashcompinit
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile favourite theme cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1973,6 +1979,12 @@ _truesense() {
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    theme) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list show apply stop --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help --colourway --custom --set --speed --brightness" -- "$cur") ); return;;
+        stop) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -2148,6 +2160,11 @@ complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'remove'
 complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'move'
 complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'apply'
 complete -c truesense -n '__fish_seen_subcommand_from favourite' -a 'next'
+complete -c truesense -n '__fish_use_subcommand' -a theme
+complete -c truesense -n '__fish_seen_subcommand_from theme' -a 'list'
+complete -c truesense -n '__fish_seen_subcommand_from theme' -a 'show'
+complete -c truesense -n '__fish_seen_subcommand_from theme' -a 'apply'
+complete -c truesense -n '__fish_seen_subcommand_from theme' -a 'stop'
 complete -c truesense -n '__fish_use_subcommand' -a cpu
 complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'info'
 complete -c truesense -n '__fish_seen_subcommand_from cpu' -a 'limits'

@@ -30,6 +30,8 @@ positional arguments:
                  Home page and the PREDATOR key use them): list | add KIND
                  NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
                  NAME | next
+    theme        lighting themes drawn on the keyboard by the key service:
+                 list | show NAME | apply NAME | stop
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
     alerts       desktop alerts: hot CPU/GPU, low battery, throttling
@@ -1324,6 +1326,68 @@ options:
 --------------------------------------------------
 VERB favourite next
 usage: truesense favourite next [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA theme
+usage: truesense theme [-h] {list,show,apply,stop} ...
+
+positional arguments:
+  {list,show,apply,stop}
+    list                the built-in themes, yours, and the one that runs
+    show                a theme's colours and settings
+    apply               make a theme the current look (drawn at most 15 times
+                        a second, only until something else sets the keyboard)
+    stop                stop the running theme and put the keyboard's own look
+                        back
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB theme list
+usage: truesense theme list [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB theme show
+usage: truesense theme show [-h] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB theme apply
+usage: truesense theme apply [-h] [--colourway N|NAME|custom]
+                             [--custom #RRGGBB] [--set ID=VALUE]
+                             [--speed SPEED] [--brightness BRIGHTNESS]
+                             name
+
+positional arguments:
+  name
+
+options:
+  -h, --help            show this help message and exit
+  --colourway N|NAME|custom
+                        a colourway of the theme, by position or name
+  --custom #RRGGBB      your own colour for the next slot (with --colourway
+                        custom)
+  --set ID=VALUE        a setting of the theme (see `theme show`)
+  --speed SPEED         percent of the designed speed, 10 to 100
+  --brightness BRIGHTNESS
+                        keyboard brightness while it runs, 1 to 100 (default:
+                        the keyboard's own)
+
+--------------------------------------------------
+VERB theme stop
+usage: truesense theme stop [-h]
 
 options:
   -h, --help  show this help message and exit

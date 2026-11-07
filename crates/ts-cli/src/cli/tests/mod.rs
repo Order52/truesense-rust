@@ -9,6 +9,7 @@ mod golden;
 mod help;
 mod modebind;
 mod parse;
+mod themes;
 
 use std::io::Cursor;
 use std::path::PathBuf;
