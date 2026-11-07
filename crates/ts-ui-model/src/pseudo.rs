@@ -1,6 +1,6 @@
 //! The pseudo-locale: every translatable text accented, padded by about 40 % and bracketed, so
 //! that a glance at the window shows (a) which strings do not go through `qsTrId` (they stay
-//! plain) and (b) which layouts break when a language needs more room (German, Arabic).
+//! plain) and (b) which layouts break when a language needs more room (German).
 //!
 //! This file depends on `std` only: the Qt app's `build.rs` includes it with `#[path]` to turn
 //! `i18n/en.ts` into `pseudo.ts`, and the library tests it. Placeholders (`%1`, `%n`, `%L1`) are

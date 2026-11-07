@@ -18,14 +18,13 @@ pub fn set_identity(app_id: &str, display_name: &str, icon_path: &str) {
     qobject::set_identity(&a, &d, &i)
 }
 
-/// Installs the catalogue for `code` over English and mirrors the layout when `rtl`. False when
-/// there is no catalogue for `code`.
-pub fn set_language(code: &str, rtl: bool) -> bool {
+/// Installs the catalogue for `code` over English. False when there is no catalogue for `code`.
+pub fn set_language(code: &str) -> bool {
     let c = QString::from(code);
-    qobject::set_language(&c, rtl)
+    qobject::set_language(&c)
 }
 
-/// The desktop's locale name (`ar_EG`).
+/// The desktop's locale name (`de_DE`).
 pub fn system_locale_name() -> String {
     qobject::system_locale_name().to_string()
 }

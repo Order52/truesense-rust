@@ -10,7 +10,7 @@ Popup {
     parent: Overlay.overlay
     modal: true
     focus: true
-    x: Ui.rtl ? parent.width - width - 8 : 8
+    x: 8
     y: 52
     width: Math.min(300, parent.width - 16)
     padding: 8

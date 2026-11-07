@@ -519,7 +519,7 @@ mod tests {
         assert!(ok("theme", json!("light")));
         assert!(!ok("theme", json!("blue")));
         assert!(ok("language", json!("pseudo")));
-        assert!(ok("language", json!("ar")));
+        assert!(!ok("language", json!("ar")), "Arabic was dropped");
         assert!(!ok("language", json!("fr")));
         assert!(ok("font_scale", json!(1.4)));
         assert!(!ok("font_scale", json!("big")));

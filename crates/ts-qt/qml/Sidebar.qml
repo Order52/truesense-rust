@@ -16,7 +16,6 @@ Rectangle {
         width: 1
         height: parent.height
         color: Theme.sep
-        x: Ui.rtl ? 0 : parent.width - 1
     }
 
     Flickable {

@@ -217,7 +217,7 @@ mod tests {
         assert_eq!(ui["problem"], Value::Null);
         m.set_ui("theme", &json!("light")).unwrap();
         assert!(m.set_ui("theme", &json!("x")).is_err());
-        assert_eq!(m.language("ar_SA"), "ar");
+        assert_eq!(m.language("ar_SA"), "en", "no Arabic catalogue any more");
         assert!(m.settings_problems().is_empty());
         m.set_window((1111, 700), None).unwrap();
         assert_eq!(m.settings().window_size(), (1111, 700));
