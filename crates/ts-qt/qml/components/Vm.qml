@@ -13,15 +13,29 @@ QtObject {
 
     property string lastError: ""
 
+    /// The last answer of each module.verb, as text and as the parsed object. A view-model call is
+    /// made again on every live frame (once a second); almost always the answer is the same text
+    /// as the last one, and handing back the SAME object then means nothing that depends on it is
+    /// re-evaluated, no Repeater rebuilds its delegates and no canvas repaints. (Before this, the
+    /// Home page rebuilt every tile button once a second.) The result must be treated as read-only.
+    property var _memo: ({})
+
     function call(module, verb, args) {
         var t = Api.transport
         if (t === null || t === undefined || typeof t.vm !== "function") {
             lastError = "no view-model available"
             return null
         }
-        var answer
+        var answer, text
         try {
-            answer = JSON.parse(t.vm(module, verb, JSON.stringify(args === undefined ? {} : args)))
+            text = t.vm(module, verb, JSON.stringify(args === undefined ? {} : args))
+            var key = module + "." + verb
+            var seen = _memo[key]
+            if (seen !== undefined && seen.text === text) {
+                lastError = ""
+                return seen.result
+            }
+            answer = JSON.parse(text)
         } catch (e) {
             lastError = String(e)
             return null
@@ -32,6 +46,7 @@ QtObject {
             return null
         }
         lastError = ""
+        _memo[key] = { text: text, result: answer.result }
         return answer.result
     }
 }

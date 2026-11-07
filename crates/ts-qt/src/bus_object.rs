@@ -101,6 +101,8 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn set_quit_on_last_window_closed(quit: bool);
         #[namespace = "truesense"]
+        fn tray_host_registered() -> bool;
+        #[namespace = "truesense"]
         fn allow_resource_reads();
         #[namespace = "truesense"]
         fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);
@@ -161,6 +163,12 @@ pub mod qobject {
         #[qinvokable]
         #[cxx_name = "resolvePage"]
         fn resolve_page(self: &Bus, name: &QString) -> QString;
+
+        /// Whether a panel really shows tray icons right now (see `shim.h`); asked when the window
+        /// is closed, so closing quits unless the window can be found again in a tray.
+        #[qinvokable]
+        #[cxx_name = "trayHostRegistered"]
+        fn tray_host_registered(self: &Bus) -> bool;
 
         /// Test switches as JSON: `{"enabled", "exit_after_ms", "shot"}`.
         #[qinvokable]
@@ -319,6 +327,11 @@ impl qobject::Bus {
             Err(e) => json!({"ok": false, "error": CmdError::new(e, Some(CODE_BAD_ARGS)).message}),
         };
         QString::from(answer.to_string().as_str())
+    }
+
+    /// Whether the tray has a host (see `shim.h`).
+    pub fn tray_host_registered(&self) -> bool {
+        crate::platform::tray_host_registered()
     }
 
     /// Starts or stops the live ticker.

@@ -42,11 +42,15 @@ Item {
         columnSpacing: 8
         rowSpacing: 8
 
+        // The model is the NUMBER of tiles and each tile reads its entry from `root.model`: a new
+        // array with the same tiles (every live frame builds one) then updates the bindings in
+        // place instead of destroying and recreating every button once a second.
         Repeater {
-            model: root.model
+            model: root.model.length
             delegate: Button {
                 id: tile
-                required property var modelData
+                required property int index
+                readonly property var modelData: root.model[index]
                 readonly property bool selected: root.current !== undefined && modelData.value === root.current
                 readonly property bool off: modelData.enabled === false
 

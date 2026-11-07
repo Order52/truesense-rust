@@ -24,11 +24,15 @@ Platform.SystemTrayIcon {
     signal quitRequested()
 
     /// The newest `{summary, entries}` from the view-model.
-    property var model: build(Live.frame, [], undefined)
+    property var model: ({ summary: {}, entries: [] })
+    /// When the model was last built (ms since the epoch): the live frames arrive every second and
+    /// the tooltip and the menu need nothing fresher than a few seconds, while every build is a
+    /// round trip through JSON into the view-model; see `onFrameChanged` below.
+    property double builtAt: 0
     property var favourites: []
     property var supported: undefined
     /// The last status the menu was built from (a live frame, then the answer of `status get`).
-    property var status: Live.frame
+    property var status: null
     /// Bumped to make every radio item read its state again after a click (Qt flips `checked` itself).
     property int generation: 0
 
@@ -61,6 +65,22 @@ Platform.SystemTrayIcon {
     function rebuild() {
         model = build(status, favourites, supported)
         generation++
+        builtAt = Date.now()
+    }
+
+    // The live frame no longer rebuilds the model by itself (a binding on `Live.frame` did, once a
+    // second, whether or not anybody looked at the tray): at most every 5 s. Opening the menu reads
+    // the machine afresh through `refresh()`, so nothing shown there is older than that.
+    property bool liveFed: true
+    Component.onCompleted: { status = Live.frame; rebuild() }
+    Connections {
+        target: Live
+        function onFrameChanged() {
+            if (tray.liveFed && Date.now() - tray.builtAt > 5000) {
+                tray.status = Live.frame
+                tray.rebuild()
+            }
+        }
     }
 
     /// The entry with this id, or null (a favourite slot that is not filled, the manual-fan line).

@@ -45,3 +45,8 @@ pub fn set_engine(engine: Pin<&mut QQmlApplicationEngine>) {
 pub fn allow_resource_reads() {
     qobject::allow_resource_reads();
 }
+
+/// Whether the session's StatusNotifierWatcher reports a registered host (a panel with a tray).
+pub fn tray_host_registered() -> bool {
+    qobject::tray_host_registered()
+}

@@ -40,12 +40,40 @@ TestCase {
     }
 
     function test_repaints_when_values_change_and_only_then() {
+        var first = s.paintCount
         s.values = [1, 2, 3]
-        tryVerify(function () { return s.paintCount >= 1 })
+        tryVerify(function () { return s.paintCount > first })
+        wait(120)
         var before = s.paintCount
         wait(120)
         compare(s.paintCount, before, "no repaint without a change")
         s.values = [1, 2, 3, 4]
         tryVerify(function () { return s.paintCount > before })
+    }
+
+    function test_the_same_numbers_in_a_new_array_do_not_repaint() {
+        var first = s.paintCount
+        s.values = [1, 2, 3]
+        tryVerify(function () { return s.paintCount > first })
+        wait(100)
+        var before = s.paintCount
+        s.values = [1, 2, 3]
+        wait(150)
+        compare(s.paintCount, before)
+    }
+
+    function test_a_throttled_chart_draws_a_change_when_its_time_is_up() {
+        var first = s.paintCount
+        s.values = [1, 2, 3]
+        tryVerify(function () { return s.paintCount > first })
+        wait(100)
+        s.minRepaintMs = 400
+        var before = s.paintCount
+        s.values = [1, 2, 3, 4]       // too soon after the last paint
+        wait(100)
+        compare(s.paintCount, before, "held back")
+        s.values = [1, 2, 3, 4, 5]    // the newest values win when it is drawn
+        tryVerify(function () { return s.paintCount > before }, 2000)
+        s.minRepaintMs = 0
     }
 }

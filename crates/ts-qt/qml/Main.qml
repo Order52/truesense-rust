@@ -112,7 +112,9 @@ ApplicationWindow {
         if (win.visibility === Window.Windowed)
             Bus.saveWindow(win.width, win.height, win.x, win.y,
                            Qt.platform.pluginName !== "wayland" && Qt.platform.pluginName !== "offscreen")
-        if (Ui.minimiseToTray && Ui.trayAvailable) {
+        // Hide only when the user wants it AND a panel really shows the tray icon right now:
+        // otherwise the window would vanish with no way back and the program would stay resident.
+        if (Ui.minimiseToTray && Ui.trayAvailable && Bus.trayHostRegistered()) {
             close.accepted = false
             win.hide()
         } else {

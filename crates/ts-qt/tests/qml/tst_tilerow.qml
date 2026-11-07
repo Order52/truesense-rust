@@ -49,4 +49,24 @@ TestCase {
         row.width = 480
         compare(row.columns, 3)
     }
+
+    function test_a_new_array_with_the_same_tiles_keeps_the_buttons() {
+        var first = row.children[0].children[0]
+        verify(first !== undefined)
+        var before = row.children[0].children.length
+        row.model = [
+            { value: "eco", label: "Eco", icon: "eco" },
+            { value: "quiet", label: "Quiet", icon: "quiet" },
+            { value: "turbo", label: "Turbo", icon: "turbo", enabled: false }
+        ]
+        compare(row.children[0].children.length, before)
+        verify(row.children[0].children[0] === first, "the same button object, updated in place")
+        row.model = [
+            { value: "eco", label: "Eco!", icon: "eco" },
+            { value: "quiet", label: "Quiet", icon: "quiet" },
+            { value: "turbo", label: "Turbo", icon: "turbo", enabled: false }
+        ]
+        verify(row.children[0].children[0] === first)
+        compare(row.children[0].children[0].modelData.label, "Eco!")
+    }
 }

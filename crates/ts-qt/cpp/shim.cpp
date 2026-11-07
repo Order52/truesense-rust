@@ -3,6 +3,9 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
+#include <QtDBus/QDBusConnection>
+#include <QtDBus/QDBusConnectionInterface>
+#include <QtDBus/QDBusInterface>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QIcon>
 #include <QtQml/QQmlApplicationEngine>
@@ -65,6 +68,19 @@ bool set_language(const QString &code, bool rtl) {
 QString system_locale_name() { return QLocale::system().name(); }
 
 void set_quit_on_last_window_closed(bool quit) { QGuiApplication::setQuitOnLastWindowClosed(quit); }
+
+bool tray_host_registered() {
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    if (!bus.isConnected()) return false;
+    QDBusConnectionInterface *bus_interface = bus.interface();
+    const QString service = QStringLiteral("org.kde.StatusNotifierWatcher");
+    if (bus_interface == nullptr || !bus_interface->isServiceRegistered(service)) return false;
+    QDBusInterface watcher(service, QStringLiteral("/StatusNotifierWatcher"), service, bus);
+    if (!watcher.isValid()) return false;
+    watcher.setTimeout(500);
+    const QVariant hosted = watcher.property("IsStatusNotifierHostRegistered");
+    return hosted.isValid() && hosted.toBool();
+}
 
 void allow_resource_reads() { qputenv("QML_XHR_ALLOW_FILE_READ", QByteArray("1")); }
 
