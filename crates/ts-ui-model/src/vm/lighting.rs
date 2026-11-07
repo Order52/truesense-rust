@@ -439,6 +439,30 @@ fn x_of_cell(keys: &[Key], cell: usize) -> f64 {
     keys.iter().find(|k| k.cells.contains(&cell)).map_or(0.0, |k| k.x + k.w / 2.0)
 }
 
+/// The key nearest to the one that owns `cell` in a direction (`left`, `right`, `up`, `down`), for
+/// arrow-key navigation of the picture. Keys far off the line of travel do not count.
+pub fn neighbour(keys: &[Key], cell: usize, dir: &str) -> Option<usize> {
+    let (dx, dy) = match dir {
+        "left" => (-1.0, 0.0),
+        "right" => (1.0, 0.0),
+        "up" => (0.0, -1.0),
+        "down" => (0.0, 1.0),
+        _ => return None,
+    };
+    let from = keys.iter().find(|k| k.cells.contains(&cell))?;
+    let (cx, cy) = (from.x + from.w / 2.0, from.y + from.h / 2.0);
+    keys.iter()
+        .filter(|k| !std::ptr::eq(*k, from))
+        .filter_map(|k| {
+            let (ex, ey) = (k.x + k.w / 2.0 - cx, k.y + k.h / 2.0 - cy);
+            let along = ex * dx + ey * dy;
+            let across = (ex * dy - ey * dx).abs();
+            (along >= 0.3 && across <= along * 1.6 + 0.5).then_some((along + across * 2.0, k))
+        })
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .and_then(|(_, k)| k.cells.first().copied())
+}
+
 /// The cells of a named group ("wasd", "arrows", ...); `all` is the 126 key cells.
 pub fn group_cells(group: &str, keys: &[Key]) -> Vec<usize> {
     let by_names = |pred: &dyn Fn(&str) -> bool| -> Vec<usize> {
@@ -586,13 +610,14 @@ pub const FX_MODES: [&str; 18] = [
     "plasma", "aurora", "lightning", "confetti", "starlight", "mood",
 ];
 
-/// The rear bar's effects: id, icon, and which colour control it uses.
-const REAR_EFFECTS: [(&str, &str); 5] = [
-    ("static", "lighting/static"),
-    ("breathing", "lighting/breathing"),
-    ("neon", "lighting/rainbow"),
-    ("wave", "lighting/wave"),
-    ("twinkling", "lighting/stars"),
+/// The rear bar's effects: id, icon, whether it has a speed and whether it travels (a direction
+/// only makes sense for the moving ones; [U] not measured, like the keyboard's table).
+const REAR_EFFECTS: [(&str, &str, bool, bool); 5] = [
+    ("static", "lighting/static", false, false),
+    ("breathing", "lighting/breathing", true, false),
+    ("neon", "lighting/rainbow", true, true),
+    ("wave", "lighting/wave", true, true),
+    ("twinkling", "lighting/stars", true, false),
 ];
 
 /// The arguments of `rear set` for what the controls show. The static effect colours three parts
@@ -601,7 +626,7 @@ const REAR_EFFECTS: [(&str, &str); 5] = [
 /// page to move its switch.
 pub fn rear_request(state: &Value) -> Result<Value, String> {
     let name = str_at(state, "effect").unwrap_or("static");
-    if !REAR_EFFECTS.iter().any(|(id, _)| *id == name) {
+    if !REAR_EFFECTS.iter().any(|(id, ..)| *id == name) {
         return Err(format!("unknown rear light effect: {name}"));
     }
     let colour = str_at(state, "colour").and_then(norm_hex).unwrap_or_else(|| STOCK.to_owned());
@@ -841,6 +866,229 @@ impl Bindings {
     }
 }
 
+// ---- themes -------------------------------------------------------------------------------------
+
+/// `#RRGGBB` (upper case, the catalogue's form) from user input, or `None`.
+fn theme_colour(text: &str) -> Option<String> {
+    norm_hex(text).map(|h| format!("#{}", h.to_ascii_uppercase()))
+}
+
+/// The look member a setting target (`keyboard.params.anchor`, `bar.speed`, `keyboard.dir`) writes:
+/// the path inside the theme object.
+fn target_path(target: &str) -> Option<Vec<String>> {
+    let parts: Vec<&str> = target.split('.').collect();
+    match parts.as_slice() {
+        [light @ ("keyboard" | "bar" | "logo"), field @ ("speed" | "dir")] => Some(vec![(*light).to_owned(), (*field).to_owned()]),
+        [light @ ("keyboard" | "bar" | "logo"), "params", id] if !id.is_empty() => {
+            Some(vec![(*light).to_owned(), "params".to_owned(), (*id).to_owned()])
+        }
+        _ => None,
+    }
+}
+
+fn path_get<'a>(theme: &'a Value, path: &[String]) -> Option<&'a Value> {
+    path.iter().try_fold(theme, |v, key| v.get(key))
+}
+
+/// Writes `value` at `path` when the parent object exists (a target that does not fit its look is
+/// ignored, as the engine does).
+fn path_set(theme: &mut Value, path: &[String], value: Value) {
+    let Some((last, parents)) = path.split_last() else { return };
+    let mut node = theme;
+    for key in parents {
+        match node.get_mut(key) {
+            Some(next) => node = next,
+            None => return,
+        }
+    }
+    if let Some(map) = node.as_object_mut() {
+        map.insert(last.clone(), value);
+    }
+}
+
+/// The controls of a theme's settings with the value each has now (read from the theme's looks):
+/// `[{id, label, kind: number|choice|toggle|keys|key, min, max, step, unit, clock, options, value}]`.
+/// A choice's value is the index of the option (what `theme apply` takes), a toggle's a boolean,
+/// and a number in hours (unit `h`) is shown as a clock time (`clock`).
+pub fn theme_settings(theme: &Value) -> Value {
+    let list = list_at(theme, "settings").unwrap_or_default();
+    let out: Vec<Value> = list
+        .iter()
+        .filter_map(|s| {
+            let id = str_at(s, "id")?;
+            let kind = str_at(s, "type")?;
+            let current = str_at(s, "target").and_then(target_path).and_then(|p| path_get(theme, &p).cloned());
+            let num = |v: &Option<Value>| v.as_ref().and_then(Value::as_f64);
+            let mut entry = json!({"id": id, "label": str_at(s, "label").unwrap_or(id)});
+            let (kind_out, value) = match kind {
+                "choice" => {
+                    let values: Vec<f64> =
+                        list_at(s, "values").unwrap_or_default().iter().filter_map(Value::as_f64).collect();
+                    entry["options"] = json!(list_at(s, "options").unwrap_or_default());
+                    let idx = num(&current).and_then(|c| values.iter().position(|v| (*v - c).abs() < 1e-9)).unwrap_or(0);
+                    ("choice", json!(idx))
+                }
+                "toggle" => {
+                    let on = f64_at(s, "on").unwrap_or(1.0);
+                    ("toggle", json!(num(&current).is_some_and(|c| (c - on).abs() < 1e-9)))
+                }
+                "keys" => ("keys", current.filter(Value::is_array).unwrap_or_else(|| json!([]))),
+                "key" => {
+                    let first = current.as_ref().and_then(|c| c.as_array().and_then(|a| a.first()).or(Some(c))).and_then(Value::as_str);
+                    ("key", json!(first.unwrap_or("")))
+                }
+                "number" | "time" => {
+                    let (min, max) = (f64_at(s, "min").unwrap_or(0.0), f64_at(s, "max").unwrap_or(100.0));
+                    entry["min"] = json!(min);
+                    entry["max"] = json!(max);
+                    entry["step"] = json!(f64_at(s, "step").filter(|st| *st > 0.0).unwrap_or(1.0));
+                    let unit = str_at(s, "unit").unwrap_or("");
+                    entry["unit"] = json!(unit);
+                    entry["clock"] = json!(kind == "time" || unit == "h");
+                    ("number", json!(num(&current).unwrap_or(min).clamp(min, max.max(min))))
+                }
+                _ => return None,
+            };
+            entry["kind"] = json!(kind_out);
+            entry["value"] = value;
+            Some(entry)
+        })
+        .collect();
+    json!(out)
+}
+
+/// Clock text for hours of the day (`6.5` is `06:30`).
+pub fn clock_text(hours: f64) -> String {
+    let minutes = (hours.rem_euclid(24.0) * 60.0).round() as i64 % (24 * 60);
+    format!("{:02}:{:02}", minutes / 60, minutes % 60)
+}
+
+/// The values a page holds for a theme: the colourway (`"custom"` or an index), the custom colours
+/// and one value per setting id.
+fn colourway_palette(theme: &Value, choice: &Value, custom: &[String]) -> Vec<String> {
+    let ways = list_at(theme, "colourways").unwrap_or_default();
+    let first: Vec<String> = ways
+        .first()
+        .and_then(|w| list_at(w, "palette"))
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|c| c.as_str().map(str::to_owned))
+        .collect();
+    if choice.as_str() == Some("custom") {
+        // A slot without a valid colour keeps the first colourway's (the engine's rule).
+        return first.iter().enumerate().map(|(i, c)| custom.get(i).cloned().unwrap_or_else(|| c.clone())).collect();
+    }
+    let idx = choice.as_u64().and_then(|i| usize::try_from(i).ok()).unwrap_or(0);
+    ways.get(idx.min(ways.len().saturating_sub(1)))
+        .and_then(|w| list_at(w, "palette"))
+        .map(|p| p.iter().filter_map(|c| c.as_str().map(str::to_owned)).collect())
+        .unwrap_or(first)
+}
+
+fn custom_colours(args: &Value) -> Vec<String> {
+    list_at(args, "custom").unwrap_or_default().iter().map(|c| c.as_str().and_then(theme_colour).unwrap_or_default()).collect()
+}
+
+/// The arguments of `theme apply`: the colourway (an index or `custom` with its colours), the
+/// settings by id, the speed (10..100 %) and the brightness (1..100 %). Values out of range are
+/// clamped here so that the service never has to refuse a slider.
+pub fn theme_request(args: &Value) -> Result<Value, String> {
+    let name = str_at(args, "name").filter(|n| !n.is_empty()).ok_or("a theme needs a name")?;
+    let mut out = json!({"name": name});
+    match at(args, "colourway") {
+        Some(Value::String(s)) if s == "custom" => {
+            out["colourway"] = json!("custom");
+            out["custom"] = json!(custom_colours(args).into_iter().filter(|c| !c.is_empty()).collect::<Vec<_>>());
+        }
+        Some(v) => {
+            if let Some(i) = v.as_u64() {
+                out["colourway"] = json!(i);
+            }
+        }
+        None => {}
+    }
+    if let Some(params) = at(args, "values").and_then(Value::as_object) {
+        out["params"] = Value::Object(params.clone());
+    }
+    if let Some(s) = i64_at(args, "speed") {
+        out["speed"] = json!(s.clamp(10, 100));
+    }
+    if let Some(b) = i64_at(args, "brightness") {
+        out["brightness"] = json!(b.clamp(1, 100));
+    }
+    Ok(out)
+}
+
+/// An id for a user theme from the name typed: lower case letters, digits, `-` and `_` (spaces
+/// become `-`); `None` when nothing is left.
+pub fn theme_id(name: &str) -> Option<String> {
+    let id: String = name
+        .trim()
+        .to_lowercase()
+        .chars()
+        .map(|c| if c == ' ' { '-' } else { c })
+        .filter(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_'))
+        .collect();
+    (!id.is_empty() && id.len() <= 40).then_some(id)
+}
+
+/// The theme object `theme save` takes for "keep what I chose": a copy of `theme` (as `theme show`
+/// gives it) under a new `id` and `name`, whose palette and first colourway are the colours chosen
+/// and whose settings hold the chosen values. `top` and `suits` are dropped (a user theme has no
+/// rank), and ids of `taken` (the built-in themes) are refused here with a message.
+pub fn theme_for_save(args: &Value, taken: &[String]) -> Result<Value, String> {
+    let mut theme = at(args, "theme").cloned().filter(Value::is_object).ok_or("no theme to save")?;
+    let name = str_at(args, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or("give the theme a name")?;
+    let id = theme_id(name).ok_or("the name needs letters or digits")?;
+    if taken.contains(&id) {
+        return Err(format!("'{id}' is the id of a built-in theme: choose another name"));
+    }
+    let palette = colourway_palette(&theme, at(args, "colourway").unwrap_or(&Value::Null), &custom_colours(args));
+    let way_name = if at(args, "colourway").and_then(Value::as_str) == Some("custom") {
+        "Mine".to_owned()
+    } else {
+        let idx = at(args, "colourway").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()).unwrap_or(0);
+        list_at(&theme, "colourways").and_then(|w| w.get(idx)).and_then(|w| str_at(w, "name")).unwrap_or("Mine").to_owned()
+    };
+    if let Some(values) = at(args, "values").and_then(Value::as_object) {
+        let defs: Vec<Value> = list_at(&theme, "settings").unwrap_or_default().to_vec();
+        for def in &defs {
+            let (Some(sid), Some(path)) = (str_at(def, "id"), str_at(def, "target").and_then(target_path)) else { continue };
+            let Some(v) = values.get(sid) else { continue };
+            let written = match (str_at(def, "type"), v) {
+                (Some("choice"), v) => {
+                    let values_list: Vec<f64> = list_at(def, "values").unwrap_or_default().iter().filter_map(Value::as_f64).collect();
+                    let i = v.as_f64().map_or(0, |x| x as i64).clamp(0, values_list.len() as i64 - 1);
+                    usize::try_from(i).ok().and_then(|i| values_list.get(i).copied()).map(|x| json!(x))
+                }
+                (Some("toggle"), v) => {
+                    let (on, off) = (f64_at(def, "on").unwrap_or(1.0), f64_at(def, "off").unwrap_or(0.0));
+                    Some(json!(if v.as_bool().unwrap_or(false) { on } else { off }))
+                }
+                (Some("keys"), Value::Array(a)) => Some(Value::Array(a.clone())),
+                (Some("key"), Value::String(k)) => Some(json!([k])),
+                (Some("number" | "time"), v) => v.as_f64().map(|x| json!(x)),
+                _ => None,
+            };
+            if let Some(w) = written {
+                path_set(&mut theme, &path, w);
+            }
+        }
+    }
+    theme["id"] = json!(id);
+    theme["name"] = json!(name);
+    theme["palette"] = json!(palette);
+    let mut ways: Vec<Value> = list_at(&theme, "colourways").unwrap_or_default().to_vec();
+    ways.retain(|w| str_at(w, "name") != Some(way_name.as_str()));
+    ways.insert(0, json!({"name": way_name, "palette": palette}));
+    theme["colourways"] = json!(ways);
+    if let Some(map) = theme.as_object_mut() {
+        map.remove("top");
+        map.remove("suits");
+    }
+    Ok(theme)
+}
+
 // ---- the verbs ----------------------------------------------------------------------------------
 
 fn keys_arg(args: &Value) -> Vec<Key> {
@@ -869,8 +1117,8 @@ fn state_out(b: &Bindings) -> Value {
 
 /// The verbs of the page:
 /// `effects`, `rear_effects`, `fx_modes`, `palette`, `stock_cells`, `norm_hex`, `hsv_to_hex`,
-/// `hex_to_hsv`, `wants_dark_text`, `layout`, `hit`, `select`, `stroke`, `paint`, `tool`,
-/// `pick_effect`, `rear_request`, `preview`, `look_summary`, `valid_name`, and for the strip
+/// `hex_to_hsv`, `wants_dark_text`, `inks`, `neighbour`, `layout`, `hit`, `select`, `stroke`, `paint`, `tool`,
+/// `pick_effect`, `rear_request`, `preview`, `look_summary`, `valid_name`, `theme_settings`, `theme_request`, `theme_for_save`, `clock_text`, and for the strip
 /// `bindings_load`, `bindings_select`, `bindings_choose`, `bindings_undo`, `bindings_discard`,
 /// `bindings_plan`.
 ///
@@ -879,7 +1127,12 @@ fn state_out(b: &Bindings) -> Value {
 pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
     match verb {
         "effects" => Ok(json!(EFFECTS.iter().map(effect_json).collect::<Vec<_>>())),
-        "rear_effects" => Ok(json!(REAR_EFFECTS.iter().map(|(id, icon)| json!({"id": id, "icon": icon})).collect::<Vec<_>>())),
+        "rear_effects" => Ok(json!(
+            REAR_EFFECTS
+                .iter()
+                .map(|(id, icon, speed, direction)| json!({"id": id, "icon": icon, "speed": speed, "direction": direction}))
+                .collect::<Vec<_>>()
+        )),
         "fx_modes" => Ok(json!(FX_MODES)),
         "palette" => Ok(json!(PALETTE)),
         "stock_cells" => Ok(json!(stock_cells())),
@@ -896,6 +1149,11 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
             let rgb = str_at(args, "hex").and_then(parse_rgb).ok_or("not a colour")?;
             let h = rgb_to_hsv(rgb);
             Ok(json!({"h": h.h, "s": h.s, "v": h.v}))
+        }
+        "inks" => Ok(json!(cells_from(at(args, "cells")).iter().map(|c| wants_dark_text(c)).collect::<Vec<_>>())),
+        "neighbour" => {
+            let cell = usize::try_from(i64_at(args, "cell").ok_or("neighbour needs a cell")?).map_err(|e| e.to_string())?;
+            Ok(json!(neighbour(&keys_arg(args), cell, str_at(args, "dir").unwrap_or(""))))
         }
         "wants_dark_text" => Ok(json!(wants_dark_text(str_at(args, "hex").unwrap_or("")))),
         "layout" => {
@@ -948,6 +1206,13 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
         "pick_effect" => pick_effect(str_at(args, "name").unwrap_or(""), at(args, "current").unwrap_or(&Value::Null)),
         "rear_request" => rear_request(args),
         "preview" => Ok(preview(at(args, "look").unwrap_or(&Value::Null), at(args, "cells"))),
+        "theme_settings" => Ok(theme_settings(at(args, "theme").unwrap_or(&Value::Null))),
+        "theme_request" => theme_request(args),
+        "theme_for_save" => {
+            let taken: Vec<String> = list_at(args, "taken").unwrap_or_default().iter().filter_map(|t| t.as_str().map(str::to_owned)).collect();
+            theme_for_save(args, &taken)
+        }
+        "clock_text" => Ok(json!(clock_text(f64_at(args, "hours").unwrap_or(0.0)))),
         "look_summary" => Ok(look_summary(args)),
         "valid_name" => {
             let name = str_at(args, "name").unwrap_or("");
@@ -1224,6 +1489,21 @@ mod tests {
         let diag = keys_on_segment(&l.keys, (3.8, 1.8), (3.8, 5.8));
         assert_eq!(diag.len(), 5, "{:?}", diag.iter().map(|k| &k.name).collect::<Vec<_>>());
         assert!(keys_on_segment(&l.keys, (f64::NAN, 0.0), (1.0, 1.0)).is_empty());
+    }
+
+    #[test]
+    fn arrow_navigation_moves_to_the_nearest_key_in_that_direction() {
+        let l = real_layout();
+        let cell = |n: &str| l.keys.iter().find(|k| k.name == n).unwrap().cells[0];
+        assert_eq!(neighbour(&l.keys, cell("g"), "right"), Some(cell("h")));
+        assert_eq!(neighbour(&l.keys, cell("g"), "left"), Some(cell("f")));
+        assert_eq!(neighbour(&l.keys, cell("g"), "up"), Some(cell("t")));
+        assert!(["b", "v"].iter().any(|n| neighbour(&l.keys, cell("g"), "down") == Some(cell(n))));
+        assert_eq!(neighbour(&l.keys, cell("esc"), "left"), None, "no key to the left of the corner");
+        assert_eq!(neighbour(&l.keys, cell("g"), "sideways"), None);
+        assert_eq!(neighbour(&l.keys, 500, "left"), None);
+        assert_eq!(call("neighbour", &json!({"keys": serde_json::to_value(&l.keys).unwrap(), "cell": cell("g"), "dir": "right"})).unwrap(), json!(cell("h")));
+        assert_eq!(call("inks", &json!({"cells": ["ffffff", "000000"]})).unwrap()[0], json!(true));
     }
 
     #[test]
@@ -1533,6 +1813,89 @@ mod tests {
         assert!(call("bindings_select", &json!({"state": ch["state"], "mode": "warp"})).is_err());
     }
 
+    // ---- themes ----
+
+    fn sample_theme() -> Value {
+        json!({
+            "id": "predator", "name": "Predator", "top": 1, "mood": "m", "suits": ["x"],
+            "colourways": [{"name": "Predator", "palette": ["#00E5FF", "#0090FF"]}, {"name": "Crimson", "palette": ["#FF1A3C", "#FF0080"]}],
+            "custom": ["a", "b"], "palette": ["#00E5FF", "#0090FF"],
+            "keyboard": {"effect": "beacon", "params": {"anchor": 2, "interval": 4, "wide": 1}},
+            "bar": {"hw": "ripple", "colors": [0, 1, 0], "speed": 2},
+            "logo": {"hw": "static", "colors": [0]},
+            "settings": [
+                {"id": "anchor", "label": "Start", "type": "choice", "target": "keyboard.params.anchor", "options": ["WASD", "Arrows", "Centre"], "values": [0, 1, 2]},
+                {"id": "interval", "label": "Every", "type": "number", "target": "keyboard.params.interval", "min": 1, "max": 9, "step": 1, "unit": "s"},
+                {"id": "wide", "label": "Wide", "type": "toggle", "target": "keyboard.params.wide", "on": 1, "off": 0},
+                {"id": "barspeed", "label": "Bar", "type": "number", "target": "bar.speed", "min": 0, "max": 5, "step": 1},
+                {"id": "wake", "label": "Wake", "type": "number", "target": "keyboard.params.wake", "min": 0, "max": 24, "step": 0.5, "unit": "h"},
+                {"id": "keys", "label": "Keys", "type": "keys", "target": "keyboard.params.keys"},
+                {"id": "nope", "label": "Odd", "type": "mystery", "target": "keyboard.params.x"}
+            ]
+        })
+    }
+
+    #[test]
+    fn theme_settings_read_the_values_the_looks_hold() {
+        let s = theme_settings(&sample_theme());
+        let s = s.as_array().unwrap();
+        assert_eq!(s.len(), 6, "the mystery type is skipped");
+        assert_eq!((s[0]["kind"].clone(), s[0]["value"].clone()), (json!("choice"), json!(2)), "the index of 2 in values");
+        assert_eq!((s[1]["value"].clone(), s[1]["max"].clone(), s[1]["clock"].clone()), (json!(4.0), json!(9.0), json!(false)));
+        assert_eq!((s[2]["kind"].clone(), s[2]["value"].clone()), (json!("toggle"), json!(true)));
+        assert_eq!(s[3]["value"], json!(2.0), "a bar speed target");
+        assert_eq!((s[4]["clock"].clone(), s[4]["value"].clone()), (json!(true), json!(0.0)), "missing: the minimum");
+        assert_eq!((s[5]["kind"].clone(), s[5]["value"].clone()), (json!("keys"), json!([])));
+        assert!(theme_settings(&Value::Null).as_array().unwrap().is_empty());
+        assert_eq!(clock_text(6.5), "06:30");
+        assert_eq!(clock_text(24.0), "00:00");
+        assert_eq!(clock_text(-1.0), "23:00");
+    }
+
+    #[test]
+    fn theme_requests_clamp_and_carry_the_colours() {
+        let r = theme_request(&json!({"name": "predator", "colourway": 1, "values": {"anchor": 1}, "speed": 500, "brightness": 0})).unwrap();
+        assert_eq!(r, json!({"name": "predator", "colourway": 1, "params": {"anchor": 1}, "speed": 100, "brightness": 1}));
+        let c = theme_request(&json!({"name": "x", "colourway": "custom", "custom": ["abc", "zz", "#00ff00"]})).unwrap();
+        assert_eq!(c["custom"], json!(["#AABBCC", "#00FF00"]));
+        assert_eq!(c["colourway"], "custom");
+        assert_eq!(theme_request(&json!({"name": "x", "speed": 3})).unwrap()["speed"], json!(10));
+        assert!(theme_request(&json!({})).is_err());
+    }
+
+    #[test]
+    fn theme_ids_come_from_names() {
+        assert_eq!(theme_id("My Night 2").as_deref(), Some("my-night-2"));
+        assert_eq!(theme_id("  ÄÖ  "), None);
+        assert_eq!(theme_id("a_b-c").as_deref(), Some("a_b-c"));
+        assert_eq!(theme_id(&"x".repeat(41)), None);
+    }
+
+    #[test]
+    fn saving_a_theme_keeps_the_colours_and_values_chosen() {
+        let args = json!({"theme": sample_theme(), "name": "Night Wave", "colourway": 1, "values": {"anchor": 0, "interval": 7, "wide": false, "barspeed": 4, "keys": ["w", "a"]}});
+        let t = theme_for_save(&args, &["predator".to_owned()]).unwrap();
+        assert_eq!((t["id"].clone(), t["name"].clone()), (json!("night-wave"), json!("Night Wave")));
+        assert_eq!(t["palette"], json!(["#FF1A3C", "#FF0080"]));
+        assert_eq!(t["colourways"][0], json!({"name": "Crimson", "palette": ["#FF1A3C", "#FF0080"]}));
+        assert_eq!(t["colourways"].as_array().unwrap().len(), 2, "no duplicate of the chosen way");
+        assert_eq!(t["keyboard"]["params"]["anchor"], json!(0.0));
+        assert_eq!(t["keyboard"]["params"]["interval"], json!(7.0));
+        assert_eq!(t["keyboard"]["params"]["wide"], json!(0.0));
+        assert_eq!(t["bar"]["speed"], json!(4.0));
+        assert_eq!(t["keyboard"]["params"]["keys"], json!(["w", "a"]), "a target the look lacks is not invented");
+        assert!(t.get("top").is_none() && t.get("suits").is_none());
+        // Custom colours: the unset slot keeps the first colourway's.
+        let c = theme_for_save(&json!({"theme": sample_theme(), "name": "Mine2", "colourway": "custom", "custom": ["#112233"]}), &[]).unwrap();
+        assert_eq!(c["palette"], json!(["#112233", "#0090FF"]));
+        assert_eq!(c["colourways"][0]["name"], "Mine");
+        // Refusals say why.
+        assert!(theme_for_save(&json!({"theme": sample_theme(), "name": "Predator"}), &["predator".to_owned()]).unwrap_err().contains("built-in"));
+        assert!(theme_for_save(&json!({"theme": sample_theme(), "name": ""}), &[]).is_err());
+        assert!(theme_for_save(&json!({"name": "x"}), &[]).is_err());
+        assert!(theme_for_save(&json!({"theme": sample_theme(), "name": "!!"}), &[]).is_err());
+    }
+
     // ---- the dispatcher ----
 
     #[test]
@@ -1551,7 +1914,7 @@ mod tests {
     #[test]
     fn hostile_arguments_never_panic() {
         let hostile = [json!(null), json!([]), json!("x"), json!({"keys": [{"cells": "x"}], "from": {"x": "a"}, "cells": 5, "state": 3, "selection": "x", "cell": -4, "targets": [-1, 1e30]})];
-        for verb in ["layout", "hit", "select", "stroke", "paint", "tool", "pick_effect", "rear_request", "preview", "look_summary", "valid_name", "bindings_load", "bindings_select", "bindings_choose", "bindings_undo", "bindings_discard", "bindings_plan", "hsv_to_hex", "hex_to_hsv", "norm_hex"] {
+        for verb in ["layout", "hit", "select", "stroke", "paint", "tool", "pick_effect", "rear_request", "preview", "look_summary", "valid_name", "bindings_load", "bindings_select", "bindings_choose", "bindings_undo", "bindings_discard", "bindings_plan", "theme_settings", "theme_request", "theme_for_save", "clock_text", "hsv_to_hex", "hex_to_hsv", "norm_hex"] {
             for args in &hostile {
                 let _ = call(verb, args);
             }
