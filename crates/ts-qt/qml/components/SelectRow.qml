@@ -30,6 +30,7 @@ SettingRow {
 
     ComboBox {
         id: box
+        HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
         Layout.minimumWidth: root.minimumControlWidth
         Layout.preferredHeight: Theme.controlHeight
         model: root._items

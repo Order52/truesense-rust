@@ -29,8 +29,10 @@ pub(crate) const CATALOGUES: &[&str] = &[];
 /// The colour themes.
 pub const THEMES: &[&str] = &["dark", "light", "system"];
 
-/// Smallest window the layout is designed for; saved sizes below it are raised to it.
-pub(crate) const MIN_WINDOW: (u32, u32) = (360, 480);
+/// Smallest window the layout is designed for; saved sizes below it are raised to it. Small on
+/// purpose: a tiling compositor gives the window the size of its tile, and a larger minimum makes
+/// the window overlap its neighbours (the pages scroll, so a short window loses nothing).
+pub(crate) const MIN_WINDOW: (u32, u32) = (320, 260);
 /// Largest saved window dimension: a corrupt file must not ask for a 10-million-pixel window.
 pub(crate) const MAX_WINDOW: u32 = 16_384;
 /// Where the window opens the first time.
@@ -116,6 +118,12 @@ impl UiSettings {
             }
         }
         (out, dropped)
+    }
+
+    /// A string member this version does not manage itself but keeps in the file (`renderer` is read
+    /// by the program before Qt starts, so it is not a setting the window changes).
+    pub fn extra_str(&self, key: &str) -> Option<&str> {
+        self.extra.get(key).and_then(Value::as_str)
     }
 
     /// The JSON object written to the file (known members, then the ones this version keeps for others).
@@ -416,6 +424,20 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[test]
+    fn unmanaged_string_members_are_kept_and_readable() {
+        let map = match json!({"theme": "dark", "renderer": "opengl", "other": 3}) {
+            Value::Object(m) => m,
+            _ => unreachable!(),
+        };
+        let (s, dropped) = UiSettings::from_map(&map);
+        assert!(dropped.is_empty());
+        assert_eq!(s.extra_str("renderer"), Some("opengl"));
+        assert_eq!(s.extra_str("other"), None, "not a string");
+        assert_eq!(s.extra_str("missing"), None);
+        assert_eq!(s.to_map().get("renderer"), Some(&json!("opengl")), "written back");
     }
 
     #[test]

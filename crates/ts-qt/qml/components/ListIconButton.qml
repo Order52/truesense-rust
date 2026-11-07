@@ -6,6 +6,7 @@ import org.truesense.app
 
 Button {
     id: root
+    HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
 
     property string iconName: ""
     property string tone: ""

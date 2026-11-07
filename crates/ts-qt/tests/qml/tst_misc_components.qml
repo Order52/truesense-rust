@@ -71,5 +71,25 @@ TestCase {
         compare(g.zoneColor.toString(), Theme.bad.toString())
     }
 
+    function test_gauge_snaps_to_a_new_value_so_the_live_tick_runs_no_animation() {
+        var g = createTemporaryObject(gaugeComponent, this)
+        compare(g.easeMs, 0)
+        g.value = 55
+        compare(g.shown, 55)
+        compare(g.fraction, 0.5)
+        g.value = 110
+        compare(g.fraction, 1)
+        g.value = -20
+        compare(g.fraction, 0)
+    }
+
+    function test_gauge_easing_is_opt_in_and_short() {
+        var g = createTemporaryObject(gaugeComponent, this)
+        g.easeMs = 5000                // asked for much; capped at 200 ms
+        g.value = 110
+        verify(g.shown < 110, "still moving")
+        tryVerify(function () { return g.shown === 110 }, 600)
+    }
+
     Component { id: gaugeComponent; Gauge { width: 100; height: 100; from: 0; to: 110; warnAt: 80; critAt: 95 } }
 }

@@ -31,6 +31,7 @@ Rectangle {
             model: root.model
             delegate: Button {
                 id: seg
+                HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
                 required property var modelData
                 readonly property bool selected: root.current !== undefined && modelData.value === root.current
 

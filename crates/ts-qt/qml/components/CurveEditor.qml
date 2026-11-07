@@ -19,7 +19,15 @@
 // run with a fake).
 //
 // The chart never mirrors in a right-to-left layout (temperature always grows to the right).
+//
+// Drawing: scene-graph items (QtQuick.Shapes for the grid and the curves, Rectangle and Text for the
+// rest), no script-drawn Canvas. The chart has two layers that change at different rates. The static
+// layer (the Auto band, grid, labels, limit line and the two curves) is rebuilt only when `geo`
+// changes: the points, the other side, the size. The live layer (the vertical "now" line, its dot
+// and its label) moves with `nowTemp`, which ticks every second; moving two rectangles never
+// touches the static layer. `drawCount` counts static rebuilds so a test can pin that.
 import QtQuick
+import QtQuick.Shapes
 import org.truesense.app
 
 Item {
@@ -69,7 +77,18 @@ Item {
 
     readonly property int _marginLeft: 12 + Math.ceil(4 * Theme.fontSmall * 0.62)
     readonly property var _margins: [_marginLeft, 14, 14, Theme.fontSmall + 18]
-    readonly property var geo: _geometry(points, otherPoints, side, width, height, nowTemp, _margins)
+    /// Everything static: the grid, the ticks, the limit, the curves and the dots (no live marker).
+    readonly property var geo: _geometry(points, otherPoints, side, width, height, NaN, _margins)
+    /// The live marker on this side's curve ({x, y, temp, duty}), or null. Changes with `nowTemp`
+    /// only; the static layer does not depend on it.
+    readonly property var nowAt: {
+        if (isNaN(nowTemp) || geo === null) return null
+        var g = _geometry(points, otherPoints, side, width, height, nowTemp, _margins)
+        return (g === null || g.now === undefined) ? null : g.now
+    }
+    /// How often the static layer was rebuilt (for tests: a new `nowTemp` must not count).
+    property int drawCount: 0
+    onGeoChanged: drawCount++
 
     function _answer(verb, args) {
         if (engine === null) return null
@@ -149,96 +168,157 @@ Item {
         property bool focusOn: false
     }
 
-    onGeoChanged: canvas.requestPaint()
-    onLineColorChanged: canvas.requestPaint()
-    onOtherColorChanged: canvas.requestPaint()
-    onLockedChanged: canvas.requestPaint()
     property color _grid: Theme.chartGrid
     property color _band: Theme.tile
     property color _text: Theme.muted
-    on_GridChanged: canvas.requestPaint()
-    on_BandChanged: canvas.requestPaint()
-    on_TextChanged: canvas.requestPaint()
 
-    Canvas {
-        id: canvas
+    function _pts(line) {
+        var out = []
+        if (!line || line.length < 2) return out
+        for (var i = 0; i < line.length; ++i) out.push(Qt.point(line[i][0], line[i][1]))
+        return out
+    }
+    function _alpha(c, a) { var k = Qt.color(c); return Qt.rgba(k.r, k.g, k.b, a) }
+
+    // ---- the static layer ------------------------------------------------------------------------
+    Item {
+        id: chart
         anchors.fill: parent
-        renderTarget: Canvas.Image
-        onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            var g = root.geo
-            if (g === null) return
-            var p = g.plot
-            var fs = Theme.fontSmall
-            ctx.font = fs + "px sans-serif"
-            // the Auto band: duty 0 is "the firmware runs the fan"
-            ctx.fillStyle = root._band
-            ctx.fillRect(p.left, g.auto_band.top, p.right - p.left, g.auto_band.bottom - g.auto_band.top)
-            ctx.fillStyle = root._text
-            ctx.textAlign = "left"
-            ctx.textBaseline = "middle"
-            ctx.fillText(root.autoText, p.left + 6, (g.auto_band.top + g.auto_band.bottom) / 2)
-            // grid and labels
-            ctx.lineWidth = 1
-            ctx.strokeStyle = root._grid
-            ctx.textBaseline = "middle"
-            ctx.textAlign = "right"
-            for (var i = 0; i < g.y_ticks.length; ++i) {
-                var ty = Math.round(g.y_ticks[i].px) + 0.5
-                ctx.beginPath(); ctx.moveTo(p.left, ty); ctx.lineTo(p.right, ty); ctx.stroke()
-                ctx.fillText(g.y_ticks[i].value + "%", p.left - 6, ty)
-            }
-            ctx.textAlign = "center"
-            ctx.textBaseline = "top"
-            for (var j = 0; j < g.x_ticks.length; ++j) {
-                var tx = Math.round(g.x_ticks[j].px) + 0.5
-                ctx.beginPath(); ctx.moveTo(tx, p.top); ctx.lineTo(tx, p.bottom); ctx.stroke()
-                ctx.fillText(g.x_ticks[j].value + "°", tx, p.bottom + 5)
+        visible: root.geo !== null
+        readonly property var g: root.geo
+        readonly property real pl: g ? g.plot.left : 0
+        readonly property real pr: g ? g.plot.right : 0
+        readonly property real pt: g ? g.plot.top : 0
+        readonly property real pb: g ? g.plot.bottom : 0
+        readonly property real bandTop: g ? g.auto_band.top : 0
+        readonly property real bandBottom: g ? g.auto_band.bottom : 0
+
+        // the Auto band: duty 0 is "the firmware runs the fan"
+        Rectangle {
+            x: chart.pl
+            y: chart.bandTop
+            width: chart.pr - chart.pl
+            height: chart.bandBottom - chart.bandTop
+            color: root._band
+        }
+        Text {
+            x: chart.pl + 6
+            y: (chart.bandTop + chart.bandBottom) / 2 - height / 2
+            text: root.autoText
+            color: root._text
+            font.pixelSize: Theme.fontSmall
+        }
+
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            // grid lines
+            ShapePath {
+                strokeColor: root._grid
+                strokeWidth: 1
+                fillColor: "transparent"
+                PathMultiline {
+                    paths: {
+                        var g = chart.g
+                        if (!g) return []
+                        var out = []
+                        for (var i = 0; i < g.y_ticks.length; ++i) {
+                            var ty = Math.round(g.y_ticks[i].px) + 0.5
+                            out.push([Qt.point(chart.pl, ty), Qt.point(chart.pr, ty)])
+                        }
+                        for (var j = 0; j < g.x_ticks.length; ++j) {
+                            var tx = Math.round(g.x_ticks[j].px) + 0.5
+                            out.push([Qt.point(tx, chart.pt), Qt.point(tx, chart.pb)])
+                        }
+                        return out
+                    }
+                }
             }
             // where this side must be at 100 %
-            ctx.save()
-            ctx.setLineDash([5, 4])
-            ctx.strokeStyle = root._text
-            ctx.beginPath(); ctx.moveTo(g.limit.x, p.top); ctx.lineTo(g.limit.x, p.bottom); ctx.stroke()
-            ctx.restore()
-            ctx.fillStyle = root._text
-            ctx.textAlign = "right"
-            ctx.textBaseline = "top"
-            ctx.fillText(root.limitText.arg(g.limit.temp + " °C"), g.limit.x - 4, p.top + 3)
-            ctx.lineJoin = "round"
-            // the other side, faint
-            root._stroke(ctx, g.other_line, root.otherColor, 1.5, 0.55)
-            // this side
-            root._stroke(ctx, g.line, root.lineColor, 3, root.locked ? 0.6 : 1)
-            // the live temperature and what the curve asks for there
-            if (g.now) {
-                ctx.strokeStyle = root._text
-                ctx.lineWidth = 1
-                ctx.beginPath(); ctx.moveTo(Math.round(g.now.x) + 0.5, p.top); ctx.lineTo(Math.round(g.now.x) + 0.5, p.bottom); ctx.stroke()
-                ctx.fillStyle = root.lineColor
-                ctx.beginPath(); ctx.arc(g.now.x, g.now.y, 4, 0, 2 * Math.PI); ctx.fill()
+            ShapePath {
+                strokeColor: root._text
+                strokeWidth: 1
+                strokeStyle: ShapePath.DashLine
+                dashPattern: [5, 4]
+                fillColor: "transparent"
+                PathMultiline {
+                    paths: chart.g ? [[Qt.point(chart.g.limit.x, chart.pt), Qt.point(chart.g.limit.x, chart.pb)]] : []
+                }
             }
+            // the other side, faint
+            ShapePath {
+                strokeColor: root._alpha(root.otherColor, 0.55)
+                strokeWidth: 1.5
+                fillColor: "transparent"
+                joinStyle: ShapePath.RoundJoin
+                PathPolyline { path: chart.g ? root._pts(chart.g.other_line) : [] }
+            }
+            // this side
+            ShapePath {
+                strokeColor: root._alpha(root.lineColor, root.locked ? 0.6 : 1)
+                strokeWidth: 3
+                fillColor: "transparent"
+                joinStyle: ShapePath.RoundJoin
+                PathPolyline { path: chart.g ? root._pts(chart.g.line) : [] }
+            }
+        }
+
+        Repeater {
+            model: chart.g ? chart.g.y_ticks.length : 0
+            delegate: Text {
+                required property int index
+                readonly property var tick: chart.g ? chart.g.y_ticks[index] : null
+                x: chart.pl - 6 - width
+                y: (tick ? Math.round(tick.px) + 0.5 : 0) - height / 2
+                text: tick ? tick.value + "%" : ""
+                color: root._text
+                font.pixelSize: Theme.fontSmall
+            }
+        }
+        Repeater {
+            model: chart.g ? chart.g.x_ticks.length : 0
+            delegate: Text {
+                required property int index
+                readonly property var tick: chart.g ? chart.g.x_ticks[index] : null
+                x: (tick ? Math.round(tick.px) + 0.5 : 0) - width / 2
+                y: chart.pb + 5
+                text: tick ? tick.value + "°" : ""
+                color: root._text
+                font.pixelSize: Theme.fontSmall
+            }
+        }
+        Text {
+            x: (chart.g ? chart.g.limit.x : 0) - 4 - width
+            y: chart.pt + 3
+            text: chart.g ? root.limitText.arg(chart.g.limit.temp + " °C") : ""
+            color: root._text
+            font.pixelSize: Theme.fontSmall
         }
     }
 
-    function _stroke(ctx, line, color, width, alpha) {
-        if (!line || line.length < 2) return
-        ctx.save()
-        ctx.globalAlpha = alpha
-        ctx.strokeStyle = color
-        ctx.lineWidth = width
-        ctx.beginPath()
-        ctx.moveTo(line[0][0], line[0][1])
-        for (var i = 1; i < line.length; ++i) ctx.lineTo(line[i][0], line[i][1])
-        ctx.stroke()
-        ctx.restore()
+    // ---- the live layer: the line at the live temperature and the dot on the curve -----------------
+    Rectangle {
+        visible: root.nowAt !== null && root.geo !== null
+        x: root.nowAt ? Math.round(root.nowAt.x) : 0
+        y: chart.pt
+        width: 1
+        height: chart.pb - chart.pt
+        color: root._text
+    }
+    Rectangle {
+        visible: root.nowAt !== null
+        x: root.nowAt ? root.nowAt.x - 4 : 0
+        y: root.nowAt ? root.nowAt.y - 4 : 0
+        width: 8
+        height: 8
+        radius: 4
+        color: root.lineColor
     }
 
     // The label of the live marker, in a Text so it follows the theme, the font scale and RTL text.
     Text {
-        visible: root.geo !== null && root.geo.now !== null && root.geo.now !== undefined
-        readonly property var now: root.geo === null ? null : root.geo.now
+        visible: root.geo !== null && root.nowAt !== null
+        readonly property var now: root.nowAt
         x: now ? Math.max(root.geo.plot.left + 2, Math.min(root.geo.plot.right - width - 2, now.x + 8)) : 0
         y: now ? Math.max(root.geo.plot.top + Theme.fontSmall + 8, now.y - height - 8) : 0
         text: now ? (root.nowText + ": " + Fmt.temp(now.temp) + " → " + (now.duty === 0 ? root.autoText : Fmt.percent(now.duty))) : ""

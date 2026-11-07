@@ -24,6 +24,7 @@ SettingRow {
             model: root.colors
             delegate: Button {
                 id: sw
+                HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
                 required property string modelData
                 readonly property bool selected: root.current.toLowerCase() === modelData.toLowerCase()
                 width: root.swatchSize

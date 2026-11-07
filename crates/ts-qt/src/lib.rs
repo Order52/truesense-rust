@@ -11,6 +11,17 @@
 //!   Everything it does is a thin call into `ts-ui-model`, which holds the logic and its tests.
 //! * [`run`] is the program: arguments, single instance, Qt start-up.
 //!
+//! # Rendering
+//!
+//! The scene graph runs on the **software** backend by default (about a third of the memory of the
+//! GPU ones and nothing that wakes a graphics driver; measured numbers in `tools/qtprofile`).
+//! `TRUESENSE_QT_RENDER=opengl|vulkan`, or `"renderer": "opengl"` in `ui.json`, asks for a GPU
+//! backend; it is used only when a context can really be created, else the program falls back to
+//! software. Qt's own `QT_QUICK_BACKEND` always wins. The QML must stay cheap on every backend: no
+//! script-drawn `Canvas`, no animation that runs while nothing changes (`tests/render.rs` pins it).
+//! `tools/qtprofile/qtprofile.py` measures idle CPU, wake-ups, frames per second and memory per page
+//! and backend, and `... glitch` looks for stale or corrupted pictures on a live Wayland session.
+//!
 //! The Qt application object, the engine and the window exist once per process, so the tests that
 //! need them run the real binary (`tests/app.rs`) instead of calling [`run`] in the test process.
 
@@ -101,7 +112,9 @@ fn start_qt(shared: &Shared) -> i32 {
     let language = shared.model.language(&locale);
     platform::set_language(&language);
 
-    platform::prefer_software_renderer();
+    let saved = shared.model.settings();
+    let renderer = platform::choose_renderer(saved.extra_str("renderer"));
+    bus_object::set_renderer(renderer);
     platform::allow_resource_reads();
     let mut engine = QQmlApplicationEngine::new();
     let Some(mut engine_ref) = engine.as_mut() else { return 1 };

@@ -30,11 +30,13 @@ bool tray_host_registered();
 // forbids it unless QML_XHR_ALLOW_FILE_READ is set). Our QML is the only QML that runs.
 void allow_resource_reads();
 
-// Picks the software scene graph unless the person asked for OpenGL (TRUESENSE_QT_RENDER=opengl) or
-// set QT_QUICK_BACKEND themselves. A control panel does not need a GPU: the software renderer
-// roughly halves the resident memory (no GL driver libraries) and can never wake a sleeping
-// discrete GPU. Must run before the first window exists.
-void prefer_software_renderer();
+// Chooses the Qt Quick scene-graph backend before the first window exists and returns what it
+// chose: "software", "opengl", "vulkan", "software-fallback" (a GPU backend was wanted but no
+// context could be created) or "qt:..." (Qt's own QT_QUICK_BACKEND / QMLSCENE_DEVICE decided).
+// `requested` is "software", "opengl" or "vulkan" (the Rust side applies TRUESENSE_QT_RENDER and the
+// default policy, see platform.rs); "auto" or empty follows QSG_RHI_BACKEND when set, else software. Must run after the
+// QGuiApplication exists (the probe needs the platform plugin).
+QString choose_renderer(const QString &requested);
 
 // Remembers the engine so that set_language can retranslate it. Called once from main.
 void set_engine(QQmlApplicationEngine &engine);

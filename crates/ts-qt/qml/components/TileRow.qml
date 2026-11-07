@@ -52,6 +52,7 @@ Item {
             model: root.model.length
             delegate: Button {
                 id: tile
+                HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
                 required property int index
                 readonly property var modelData: root.model[index]
                 readonly property bool selected: root.current !== undefined && modelData.value === root.current

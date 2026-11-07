@@ -13,6 +13,7 @@ SettingRow {
 
     Switch {
         id: sw
+        HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
         padding: 0
         implicitWidth: 44
         implicitHeight: 24

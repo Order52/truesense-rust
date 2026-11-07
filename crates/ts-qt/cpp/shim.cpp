@@ -1,6 +1,7 @@
 #include "shim.h"
 
 #include <QtCore/QCoreApplication>
+#include <QtCore/QLibrary>
 #include <QtCore/QLocale>
 #include <QtCore/QTranslator>
 #include <QtDBus/QDBusConnection>
@@ -8,6 +9,9 @@
 #include <QtDBus/QDBusInterface>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QIcon>
+#include <QtGui/QOffscreenSurface>
+#include <QtGui/QOpenGLContext>
+#include <QtGui/QSurfaceFormat>
 #include <QtQml/QQmlApplicationEngine>
 
 namespace truesense {
@@ -83,10 +87,54 @@ bool tray_host_registered() {
 
 void allow_resource_reads() { qputenv("QML_XHR_ALLOW_FILE_READ", QByteArray("1")); }
 
-void prefer_software_renderer() {
-    if (qEnvironmentVariableIsSet("QT_QUICK_BACKEND") || qEnvironmentVariableIsSet("QMLSCENE_DEVICE")) return;
-    if (qgetenv("TRUESENSE_QT_RENDER").toLower() == "opengl") return;
+namespace {
+// Can this process get a GL context at all (the driver is installed, the session allows it)? Qt Quick
+// does not fall back by itself: with RHI the window creation just fails, so the answer is needed
+// before the first window exists.
+bool can_create_opengl_context() {
+    QOpenGLContext context;
+    if (!context.create()) return false;
+    QOffscreenSurface surface;
+    surface.setFormat(context.format());
+    surface.create();
+    return surface.isValid() && context.makeCurrent(&surface);
+}
+
+// Only whether the Vulkan loader is there: creating an instance needs QVulkanInstance, which this
+// build of the shim does not see. Vulkan is an option for people who ask for it, not the default.
+bool can_create_vulkan_instance() {
+    QLibrary loader(QStringLiteral("vulkan"), 1);
+    return loader.load();
+}
+}  // namespace
+
+QString choose_renderer(const QString &requested) {
+    // Qt's own switches always win: whoever sets them knows what they want.
+    const QByteArray qt_backend = qgetenv("QT_QUICK_BACKEND");
+    if (!qt_backend.isEmpty()) return QStringLiteral("qt:") + QString::fromLatin1(qt_backend);
+    if (qEnvironmentVariableIsSet("QMLSCENE_DEVICE")) return QStringLiteral("qt:QMLSCENE_DEVICE");
+    const QByteArray rhi = qgetenv("QSG_RHI_BACKEND");
+    QString mode = requested.toLower();
+    if (mode.isEmpty() || mode == QStringLiteral("auto")) {
+        mode = rhi.isEmpty() ? QStringLiteral("auto") : QString::fromLatin1(rhi).toLower();
+    }
+    if (mode == QStringLiteral("auto")) mode = QStringLiteral("software");
+    if (mode == QStringLiteral("opengl") || mode == QStringLiteral("gl")) {
+        if (can_create_opengl_context()) {
+            qputenv("QSG_RHI_BACKEND", QByteArray("opengl"));
+            return QStringLiteral("opengl");
+        }
+        mode = QStringLiteral("software-fallback");
+    } else if (mode == QStringLiteral("vulkan")) {
+        if (can_create_vulkan_instance()) {
+            qputenv("QSG_RHI_BACKEND", QByteArray("vulkan"));
+            return QStringLiteral("vulkan");
+        }
+        mode = QStringLiteral("software-fallback");
+    }
+    qunsetenv("QSG_RHI_BACKEND");
     qputenv("QT_QUICK_BACKEND", QByteArray("software"));
+    return mode == QStringLiteral("software-fallback") ? mode : QStringLiteral("software");
 }
 
 void set_engine(QQmlApplicationEngine &engine) { g_engine = &engine; }

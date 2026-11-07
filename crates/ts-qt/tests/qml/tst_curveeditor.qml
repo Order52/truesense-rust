@@ -30,7 +30,9 @@ TestCase {
                 var dots = args.points.map(function (q) { return [x(p, q[0]), y(p, q[1])] })
                 return { plot: p, x_ticks: [{ value: 20, px: x(p, 20) }], y_ticks: [{ value: 0, px: y(p, 0) }],
                          auto_band: { top: y(p, 20), bottom: y(p, 0) }, limit: { temp: 95, x: x(p, 95) },
-                         line: dots, other_line: [], dots: dots, now: null }
+                         line: dots, other_line: [], dots: dots,
+                         now: args.temp === null || args.temp === undefined ? null
+                              : { x: x(p, args.temp), y: y(p, 50), temp: args.temp, duty: 50 } }
             }
             if (verb === "hit") {
                 for (var i = 0; i < args.points.length; ++i)
@@ -94,6 +96,27 @@ TestCase {
         verify(ed.geo !== null)
         compare(ed.geo.dots.length, 3)
         compare(ed.geo.plot.left > 20, true, "room for the axis labels")
+    }
+
+    function test_the_live_temperature_moves_the_marker_and_never_rebuilds_the_chart() {
+        ed.nowTemp = NaN
+        compare(ed.nowAt, null)
+        var drawn = ed.drawCount
+        for (var t = 55; t <= 85; t += 5) {
+            ed.nowTemp = t
+            verify(ed.nowAt !== null)
+            compare(ed.nowAt.temp, t)
+        }
+        wait(50)
+        compare(ed.drawCount, drawn, "the grid, labels and curves are not redrawn for a new temperature")
+        ed.nowTemp = NaN
+        compare(ed.nowAt, null)
+    }
+
+    function test_a_change_of_the_points_rebuilds_the_chart_once() {
+        var drawn = ed.drawCount
+        ed.points = [[50, 0], [70, 60], [90, 100]]
+        compare(ed.drawCount, drawn + 1)
     }
 
     function test_a_drag_edits_once_per_gesture_and_reports_every_move() {

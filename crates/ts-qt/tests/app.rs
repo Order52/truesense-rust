@@ -136,6 +136,43 @@ fn window_size_and_light_theme_come_from_ui_json() {
 }
 
 #[test]
+fn the_software_renderer_is_the_default_and_a_gpu_one_falls_back_when_it_cannot_start() {
+    let home = Home::new(None);
+    assert_eq!(run_once(&home, 300, &[])["renderer"], "software");
+
+    // Asked for in the settings file: used when a context can be made (a developer machine), else the
+    // program must still start, on software, and say so. Offscreen has no GL, so either is fine here.
+    let home = Home::new(Some(r#"{"renderer": "opengl"}"#));
+    let r = run_once(&home, 300, &[]);
+    assert!(matches!(r["renderer"].as_str(), Some("opengl" | "software-fallback")), "{r}");
+    assert_eq!(r["live_ok"], true, "the window works on whichever backend it got");
+
+    // The environment beats the file, and an unknown word is ignored.
+    let mut c = home.command(300, &[]);
+    c.env("TRUESENSE_QT_RENDER", "software");
+    assert_eq!(report_of(&c.output().unwrap())["renderer"], "software");
+    let mut c = home.command(300, &[]);
+    c.env("TRUESENSE_QT_RENDER", "direct3d");
+    let r = report_of(&c.output().unwrap());
+    assert!(matches!(r["renderer"].as_str(), Some("opengl" | "software-fallback")), "{r}");
+
+    // Qt's own switch wins over both.
+    let mut c = home.command(300, &[]);
+    c.env("QT_QUICK_BACKEND", "software");
+    assert_eq!(report_of(&c.output().unwrap())["renderer"], "qt:software");
+}
+
+#[test]
+fn the_smallest_window_is_small_enough_for_a_tile() {
+    let home = Home::new(Some(r#"{"width": 320, "height": 260}"#));
+    let r = run_once(&home, 300, &[]);
+    assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(320), Some(260)));
+    let home = Home::new(Some(r#"{"width": 100, "height": 100}"#));
+    let r = run_once(&home, 300, &[]);
+    assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(320), Some(260)), "raised to the minimum");
+}
+
+#[test]
 fn a_narrow_window_still_loads_with_the_menu_layout() {
     let home = Home::new(Some(r#"{"width": 420, "height": 700}"#));
     let r = run_once(&home, 300, &[]);
