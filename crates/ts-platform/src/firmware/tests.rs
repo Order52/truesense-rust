@@ -779,7 +779,7 @@ fn the_read_only_guard_lets_reads_through_and_nothing_else() {
 fn the_read_only_list_has_no_writer_and_every_reader_of_the_table() {
     for name in READ_ONLY_COMMANDS {
         assert!(
-            name == "version" || name == "caps" || name == "sensors" || name.starts_with("get_"),
+            name == "version" || name == "caps" || name.starts_with("sensors") || name.starts_with("get_"),
             "{name}"
         );
         assert!(!name.starts_with("set_"));

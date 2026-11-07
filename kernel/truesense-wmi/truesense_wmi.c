@@ -207,19 +207,42 @@ static int c_caps(struct ts_file *f, char *a)
 	return 0;
 }
 
-static int c_sensors(struct ts_file *f, char *a)
+/* Reads the first n of the five system-information values (each is one firmware call, an SMI). */
+static int ts_read_sensors(struct ts_file *f, int n, u64 *r)
 {
 	static const u16 ids[5] = { 0x0101, 0x0301, 0x0A01, 0x0201, 0x0601 };	/* cpu, system, gpu temp; cpu, gpu fan */
-	u64 r[5];
 	int i, ret;
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < n; i++) {
 		ret = ts_call64(TS_GAME, M_GET_SYSINFO, ids[i], &r[i]);
 		if (ret)
 			return ts_err(f, ret, "sensor read failed");
 	}
+	return 0;
+}
+
+static int c_sensors(struct ts_file *f, char *a)
+{
+	u64 r[5];
+	int ret = ts_read_sensors(f, 5, r);
+
+	if (ret)
+		return ret;
 	ts_reply(f, "ok cpu=%u sys=%u gpu=%u cpu_rpm=%u gpu_rpm=%u\n", (u32)((r[0] >> 8) & 0xff), (u32)((r[1] >> 8) & 0xff),
 		 (u32)((r[2] >> 8) & 0xff), (u32)((r[3] >> 8) & 0x1fff), (u32)((r[4] >> 8) & 0x1fff));
+	return 0;
+}
+
+/* The three temperatures only: 3 firmware calls instead of 5. The daemon's control loop needs the
+ * temperatures every tick and the fan speeds (for display) only now and then. */
+static int c_sensors_temps(struct ts_file *f, char *a)
+{
+	u64 r[5];
+	int ret = ts_read_sensors(f, 3, r);
+
+	if (ret)
+		return ret;
+	ts_reply(f, "ok cpu=%u sys=%u gpu=%u\n", (u32)((r[0] >> 8) & 0xff), (u32)((r[1] >> 8) & 0xff), (u32)((r[2] >> 8) & 0xff));
 	return 0;
 }
 
@@ -584,7 +607,8 @@ static const struct ts_cmd {
 	int (*fn)(struct ts_file *f, char *arg);
 } ts_cmds[] = {
 	{ "version", false, c_version },		{ "caps", false, c_caps },
-	{ "sensors", false, c_sensors },		{ "get_mode", false, c_get_mode },
+	{ "sensors", false, c_sensors },		{ "sensors_temps", false, c_sensors_temps },
+	{ "get_mode", false, c_get_mode },
 	{ "get_modes", false, c_get_modes },		{ "set_mode", true, c_set_mode },
 	{ "get_gpu", false, c_get_gpu },		{ "set_gpu", true, c_set_gpu },
 	{ "get_boot", false, c_get_boot },		{ "set_boot", true, c_set_boot },

@@ -507,6 +507,42 @@ fn sensors_are_one_call_with_the_json_field_names_of_the_daemon() {
 }
 
 #[test]
+fn temperatures_alone_are_three_firmware_calls_worth_and_keep_the_last_fan_speeds() {
+    let (hw, sim, _) = rig();
+    sim.set_sensors([61, 58, 55], [2400, 2300]);
+    let s = hw.sensor_temps((111, 222)).unwrap();
+    assert_eq!(s, Sensors { cpu_temp: 61, sys_temp: 58, gpu_temp: 55, cpu_fan_rpm: 111, gpu_fan_rpm: 222 });
+    let spy = Spy::passthrough();
+    let (hw, _) = spy_rig(&spy);
+    hw.sensor_temps((0, 0)).unwrap();
+    assert_eq!(spy.sent(), ["sensors_temps"]);
+}
+
+#[test]
+fn a_module_without_the_temperatures_command_is_asked_for_the_full_reading_from_then_on() {
+    let spy = Spy::new(|c, _| match c {
+        "sensors_temps" => Some(Ok("err unknown command\n".to_string())),
+        "sensors" => Some(Ok("ok cpu=1 sys=2 gpu=3 cpu_rpm=4 gpu_rpm=5\n".to_string())),
+        _ => None,
+    });
+    let (hw, _) = spy_rig(&spy);
+    let s = hw.sensor_temps((9, 9)).unwrap();
+    assert_eq!((s.cpu_temp, s.cpu_fan_rpm, s.gpu_fan_rpm), (1, 4, 5), "the full reading has real speeds");
+    hw.sensor_temps((9, 9)).unwrap();
+    assert_eq!(spy.sent(), ["sensors_temps", "sensors", "sensors"], "the unknown command is not asked twice");
+}
+
+#[test]
+fn a_failing_temperature_read_is_an_error_not_a_reason_to_stop_using_the_command() {
+    let spy =
+        Spy::new(|c, _| (c == "sensors_temps").then(|| Ok("err sensor read failed (-5)\n".to_string())));
+    let (hw, _) = spy_rig(&spy);
+    assert!(hw.sensor_temps((0, 0)).is_err());
+    assert!(hw.sensor_temps((0, 0)).is_err());
+    assert_eq!(spy.sent(), ["sensors_temps", "sensors_temps"]);
+}
+
+#[test]
 fn fan_state_decodes_the_behaviour_word() {
     let (hw, ..) = rig();
     let s = hw.fan_state().unwrap();
@@ -1062,7 +1098,7 @@ impl Drop for TempTree {
 }
 
 #[test]
-fn the_cpu_temperature_is_the_hottest_coretemp_sensor() {
+fn without_a_package_input_the_cpu_temperature_is_the_hottest_coretemp_sensor() {
     let tree = TempTree::new("cpu");
     let sensors = tree.sensors(FakeRunner::new(Err(io::ErrorKind::NotFound)));
     assert_eq!(sensors.cpu_temp(), None, "no hwmon: no temperature");
@@ -1077,11 +1113,31 @@ fn the_cpu_temperature_is_the_hottest_coretemp_sensor() {
     tree.write("sys/class/hwmon/other/name", "coretemp\n");
     tree.write("sys/class/hwmon/other/temp1_input", "97000\n");
     assert_eq!(sensors.cpu_temp(), Some(71.5), "the hottest coretemp sensor, not another device");
+    tree.write("sys/class/hwmon/hwmon3/temp2_input", "60000\n");
+    assert_eq!(sensors.cpu_temp(), Some(60.0), "values are read again every time");
+    // A sensor that goes away makes the scan run again, which finds the new one.
     tree.write("sys/class/hwmon/hwmon4/name", "coretemp");
     tree.write("sys/class/hwmon/hwmon4/temp1_input", "80000");
-    assert_eq!(sensors.cpu_temp(), Some(80.0), "any coretemp hwmon counts");
+    let fresh = tree.sensors(FakeRunner::new(Err(io::ErrorKind::NotFound)));
+    assert_eq!(fresh.cpu_temp(), Some(80.0), "any coretemp hwmon counts");
     tree.write("sys/class/hwmon/hwmon4/temp1_input", "-5000");
-    assert_eq!(sensors.cpu_temp(), Some(71.5));
+    assert_eq!(fresh.cpu_temp(), Some(60.0));
+}
+
+#[test]
+fn with_a_package_input_only_that_input_is_read() {
+    let tree = TempTree::new("cpu-package");
+    let sensors = tree.sensors(FakeRunner::new(Err(io::ErrorKind::NotFound)));
+    tree.write("sys/class/hwmon/hwmon8/name", "coretemp\n");
+    tree.write("sys/class/hwmon/hwmon8/temp1_label", "Package id 0\n");
+    tree.write("sys/class/hwmon/hwmon8/temp1_input", "52000\n");
+    tree.write("sys/class/hwmon/hwmon8/temp2_label", "Core 0\n");
+    tree.write("sys/class/hwmon/hwmon8/temp2_input", "90000\n");
+    assert_eq!(sensors.cpu_temp(), Some(52.0), "the cores are not read: each read wakes a core");
+    // The device is renumbered (module reloaded): the failed read triggers a new scan.
+    std::fs::rename(tree.0.join("sys/class/hwmon/hwmon8"), tree.0.join("sys/class/hwmon/hwmon9")).unwrap();
+    tree.write("sys/class/hwmon/hwmon9/temp1_input", "53000\n");
+    assert_eq!(sensors.cpu_temp(), Some(53.0));
 }
 
 #[test]

@@ -149,3 +149,31 @@ fn every_automatic_change_is_in_the_journal_with_its_reason() {
     assert_eq!(rig.ok("state", args())["live"]["mode_reason"], Value::from(reason(&rig)));
     assert_eq!(json!(reason(&rig).starts_with("gaming, on power")), json!(true));
 }
+
+/// Every firmware command is a system management interrupt that stalls the whole machine for a few
+/// milliseconds, so what one tick asks for is a budget, not an accident. In a steady state a tick
+/// reads the temperatures (3 calls) and, on one tick in five, the fan speeds too (2 more); the power
+/// mode is read on every third tick and the fan registers on every fifteenth. Nothing else.
+#[test]
+fn a_steady_tick_asks_the_firmware_for_no_more_than_its_budget() {
+    let rig = Rig::new();
+    rig.drive(60, 40, 40, 5.0); // settle: the first ticks write the mode and the fans once
+    // "sensors" also counts the commands that start with it, so the full reads are the rest.
+    let (full_before, temps_before, mode_before, fan_before) = (
+        rig.device.count("sensors") - rig.device.count("sensors_temps"),
+        rig.device.count("sensors_temps"),
+        rig.device.count("get_mode"),
+        rig.device.count("get_fan"),
+    );
+    for _ in 0..30 {
+        rig.daemon.guarded_step();
+        rig.clock.advance(1.0);
+    }
+    let full_after = rig.device.count("sensors") - rig.device.count("sensors_temps");
+    let (full_reads, temp_reads) =
+        (full_after - full_before, rig.device.count("sensors_temps") - temps_before);
+    assert_eq!(full_reads, 6, "the full reading, with fan speeds, is one tick in five");
+    assert_eq!(temp_reads, 24, "the other ticks read the temperatures only");
+    assert_eq!(rig.device.count("get_mode") - mode_before, 10, "the power mode is read every third tick");
+    assert!(rig.device.count("get_fan") - fan_before <= 2, "the fan registers are read every fifteenth tick");
+}

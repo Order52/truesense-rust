@@ -2,7 +2,10 @@
 
 use serde::Serialize;
 
+use std::sync::atomic::Ordering;
+
 use super::{FanDuty, FanMode, Hw, HwError};
+use crate::firmware::FirmwareError;
 
 /// One reading of every temperature (degrees C) and both fan speeds (rpm). The field names are
 /// the ones the daemon, the CLI and the window exchange as JSON.
@@ -51,6 +54,34 @@ impl Hw {
             cpu_fan_rpm: reply.int("cpu_rpm")?,
             gpu_fan_rpm: reply.int("gpu_rpm")?,
         })
+    }
+
+    /// The temperatures with three firmware calls instead of five: the module's `sensors_temps`
+    /// leaves the two fan-speed reads out (each firmware call is an SMI that stalls every core
+    /// for milliseconds). The fan speeds in the result are `last_rpm`, what the caller read
+    /// before; they are only for display, no decision uses them. A module that predates the
+    /// command answers "unknown command" once and is asked for the full reading from then on.
+    pub fn sensor_temps(&self, last_rpm: (i64, i64)) -> Result<Sensors, HwError> {
+        if self.temps_command.load(Ordering::Relaxed) {
+            match self.exec("sensors_temps") {
+                Ok(reply) => {
+                    return Ok(Sensors {
+                        cpu_temp: reply.int("cpu")?,
+                        sys_temp: reply.int("sys")?,
+                        gpu_temp: reply.int("gpu")?,
+                        cpu_fan_rpm: last_rpm.0,
+                        gpu_fan_rpm: last_rpm.1,
+                    });
+                }
+                Err(HwError::Firmware(FirmwareError::Rejected { reason, .. }))
+                    if reason == "unknown command" =>
+                {
+                    self.temps_command.store(false, Ordering::Relaxed);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        self.sensors()
     }
 
     /// The fan behaviour and duty registers.
