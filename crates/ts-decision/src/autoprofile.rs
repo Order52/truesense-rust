@@ -263,6 +263,12 @@ pub struct Engine {
     last_try: f64,
     last_say: f64,
     last_target: Option<Mode>,
+    /// A decision was issued and the caller has not confirmed it with [`Engine::applied`].
+    attempt_open: bool,
+    /// How many times in a row the same target was tried again after it failed.
+    retries: u32,
+    /// The battery counts as low (with the release margin above the line).
+    low_battery: bool,
     latched: bool,
     hold_until: f64,
     hold_ctx: Option<HoldContext>,
@@ -271,8 +277,17 @@ pub struct Engine {
 
 /// "Never": the timers that start in the far past so the first change is not held back.
 const LONG_AGO: f64 = -1e9;
-/// A target that failed to apply is not tried again for this long.
+/// A target that failed to apply is not tried again for this long; every further failure of the
+/// same target doubles the wait, up to [`RETRY_DOUBLINGS`] times. A mode the firmware keeps
+/// refusing (one this BIOS does not offer) would otherwise be written every 30 seconds for as
+/// long as the daemon runs, and every power-mode write makes the firmware blink the mode key.
 const RETRY_AFTER_S: f64 = 30.0;
+/// How many times the retry wait doubles (30, 60, 120, 240, 480 s).
+const RETRY_DOUBLINGS: u32 = 4;
+/// Once the battery has counted as low (below `battery_low_pct`) it only stops counting as low
+/// this many points above the line, or on power: a gauge that wobbles by a point under load
+/// would otherwise flip the mode between Eco and the normal battery mode at the line.
+const LOW_RELEASE_PCT: f64 = 3.0;
 /// At most one on-screen notice this often (the journal has every change).
 const NOTICE_EVERY_S: f64 = 30.0;
 /// The longest time step counted as elapsed: a stalled loop or a resume must not count as
@@ -297,6 +312,9 @@ impl Engine {
             last_try: LONG_AGO,
             last_say: LONG_AGO,
             last_target: None,
+            attempt_open: false,
+            retries: 0,
+            low_battery: false,
             latched: false,
             hold_until: 0.0,
             hold_ctx: None,
@@ -383,6 +401,8 @@ impl Engine {
     /// on-screen notice: at most one every 30 s, or at once for an urgent change.
     pub fn applied(&mut self, now: f64, urgent: bool) -> bool {
         self.mode_changed = now;
+        self.attempt_open = false;
+        self.retries = 0;
         if now - self.last_say >= NOTICE_EVERY_S || urgent {
             self.last_say = now;
             true
@@ -422,10 +442,13 @@ impl Engine {
         let reason = self.reason.clone();
         if input.cur_mode == Current::Known(target) {
             self.last_target = Some(target);
+            self.attempt_open = false;
+            self.retries = 0;
             return Decision::none(&reason);
         }
         let now = input.now;
-        if self.last_target == Some(target) && now - self.last_try < RETRY_AFTER_S {
+        let wait = RETRY_AFTER_S * f64::from(1u32 << self.retries.min(RETRY_DOUBLINGS));
+        if self.last_target == Some(target) && now - self.last_try < wait {
             return Decision::none(&reason); // it already failed recently
         }
         let up = target.rank() > input.cur_mode.rank();
@@ -436,6 +459,13 @@ impl Engine {
         if !urgent && flapping {
             return Decision::none(&reason);
         }
+        // The same target again with the last attempt never confirmed: that attempt failed.
+        self.retries = if self.attempt_open && self.last_target == Some(target) {
+            self.retries.saturating_add(1)
+        } else {
+            0
+        };
+        self.attempt_open = true;
         self.last_target = Some(target);
         self.last_try = now;
         Decision { mode: Some(target), urgent, reason }
@@ -508,6 +538,7 @@ impl Engine {
             self.turbo_block = now + f64::from(s.backoff_hold_s);
         }
         if input.ac {
+            self.low_battery = false;
             if heavy || hot {
                 let mut t = s.ac_busy;
                 if hot && input.cur_mode == Current::Known(Mode::Turbo) {
@@ -549,7 +580,9 @@ impl Engine {
             }
             return (s.ac_idle, false);
         }
-        if input.battery_pct < f64::from(s.battery_low_pct) {
+        let line = f64::from(s.battery_low_pct);
+        self.low_battery = input.battery_pct < if self.low_battery { line + LOW_RELEASE_PCT } else { line };
+        if self.low_battery {
             return (Mode::Eco, true);
         }
         if hot {
@@ -896,6 +929,100 @@ mod tests {
         l.battery = 19.9;
         assert_eq!(l.tick(1.0, 40.0, 40.0, 4.0, 0.0, 0.0), Some(Mode::Eco), "19.9 % is low: eco, urgent");
         assert!(l.log.last().expect("logged").urgent);
+    }
+
+    #[test]
+    fn a_low_battery_is_released_only_a_few_points_above_the_line() {
+        let mut l = Laptop::new(profile("truesense"));
+        l.ac = false;
+        l.drive(40, 70.0, 60.0, 90.0);
+        assert_eq!(l.mode(), Mode::Balanced, "busy on battery: balanced");
+        l.battery = 19.9;
+        l.drive(1, 70.0, 60.0, 90.0);
+        assert_eq!(l.mode(), Mode::Eco, "below the line: eco at once");
+        // The gauge wobbles by a point or two under load, as gauges do.
+        for pct in [20.4, 19.8, 20.9, 21.5, 22.9, 21.0] {
+            l.battery = pct;
+            l.drive(30, 70.0, 60.0, 90.0);
+            assert_eq!(l.mode(), Mode::Eco, "{pct} % is inside the release margin: no flip back");
+        }
+        l.battery = 23.0;
+        l.drive(70, 70.0, 60.0, 90.0);
+        assert_eq!(l.mode(), Mode::Balanced, "three points above the line it is released");
+        l.battery = 21.0;
+        l.drive(70, 70.0, 60.0, 90.0);
+        assert_eq!(
+            l.mode(),
+            Mode::Balanced,
+            "and below the release margin but above the line it is not low again"
+        );
+        l.battery = 19.9;
+        l.drive(1, 70.0, 60.0, 90.0);
+        assert_eq!(l.mode(), Mode::Eco, "a new crossing of the line");
+    }
+
+    #[test]
+    fn plugging_in_clears_the_low_battery_latch() {
+        let mut l = Laptop::new(profile("truesense"));
+        l.ac = false;
+        l.battery = 10.0;
+        l.drive(5, 40.0, 40.0, 4.0);
+        assert_eq!(l.mode(), Mode::Eco);
+        l.ac = true;
+        l.drive(70, 40.0, 40.0, 4.0);
+        assert_eq!(l.mode(), Mode::Balanced, "on power the latch is gone");
+        l.ac = false;
+        l.battery = 22.0;
+        l.drive(70, 70.0, 60.0, 90.0);
+        assert_eq!(l.mode(), Mode::Balanced, "22 % on battery after a re-plug is not low (the line is 20)");
+    }
+
+    /// Drives a native-auto engine whose writes always fail (the firmware refuses the mode) and
+    /// returns the seconds at which it asked for a write.
+    fn attempts_of_a_refused_mode(seconds: u32, confirm_at: Option<u32>) -> Vec<u32> {
+        let mut e = Engine::new(profile("truesense"), NativeModes::default());
+        let mut asked = Vec::new();
+        for t in 1..=seconds {
+            let d = e.step(&Inputs {
+                kind: AutoKind::Native,
+                now: f64::from(t),
+                wall: 1_000_000.0 + f64::from(t),
+                activity: Activity::Idle,
+                tcpu: 40.0,
+                tgpu: 40.0,
+                ac: true,
+                battery_pct: 80.0,
+                cur_mode: Current::Known(Mode::Eco),
+                game: None,
+                disabled: false,
+            });
+            if d.mode.is_some() {
+                asked.push(t);
+                if confirm_at == Some(t) {
+                    e.applied(f64::from(t), d.urgent);
+                }
+            }
+        }
+        asked
+    }
+
+    #[test]
+    fn a_mode_the_firmware_keeps_refusing_is_retried_ever_more_rarely() {
+        let asked = attempts_of_a_refused_mode(3600, None);
+        let gaps: Vec<u32> = asked.windows(2).map(|w| w[1] - w[0]).collect();
+        assert_eq!(&gaps[..6], [30, 60, 120, 240, 480, 480], "{asked:?}");
+        assert!(gaps.iter().all(|g| *g <= 480), "never rarer than every eight minutes: {gaps:?}");
+        assert!(asked.len() <= 12, "{} writes in an hour, not 120", asked.len());
+    }
+
+    #[test]
+    fn a_confirmed_write_resets_the_retry_wait() {
+        // Two refusals (waits 30 then 60), then the third attempt works and `applied` is called.
+        let asked = attempts_of_a_refused_mode(1000, Some(1 + 30 + 60));
+        assert_eq!(&asked[..3], [1, 31, 91]);
+        // The mode never actually changes in this harness, so the next ask is the post-success
+        // grace of 30 s, not the doubled wait the refusals had built up.
+        assert_eq!(asked[3] - asked[2], 30, "{asked:?}");
     }
 
     #[test]
