@@ -3695,5 +3695,801 @@
         <source>Looks</source>
         <translation>Looks</translation>
     </message>
+    <message id="risk_danger">
+        <source>Danger</source>
+        <translation>Danger</translation>
+    </message>
+    <message id="risk_caution">
+        <source>Caution</source>
+        <translation>Caution</translation>
+    </message>
+    <message id="risk_safe">
+        <source>Safe</source>
+        <translation>Safe</translation>
+    </message>
+    <message id="zone_safe">
+        <source>Safe zone</source>
+        <translation>Safe zone</translation>
+    </message>
+    <message id="zone_caution">
+        <source>Caution zone</source>
+        <translation>Caution zone</translation>
+    </message>
+    <message id="zone_danger">
+        <source>Danger zone</source>
+        <translation>Danger zone</translation>
+    </message>
+    <message id="perf_rule_empty">
+        <source>Type the program&apos;s name first.</source>
+        <translation>Type the program&apos;s name first.</translation>
+    </message>
+    <message id="perf_rule_chars">
+        <source>Program names use letters, digits, . _ + - and spaces (up to 80). A path is not a name.</source>
+        <translation>Program names use letters, digits, . _ + - and spaces (up to 80). A path is not a name.</translation>
+    </message>
+    <message id="perf_rule_too_long">
+        <source>That name is too long (up to 80 characters).</source>
+        <translation>That name is too long (up to 80 characters).</translation>
+    </message>
+    <message id="perf_rule_mode">
+        <source>Pick a power mode.</source>
+        <translation>Pick a power mode.</translation>
+    </message>
+    <message id="perf_rule_full">
+        <source>There can be at most 64 rules. Remove one first.</source>
+        <translation>There can be at most 64 rules. Remove one first.</translation>
+    </message>
+    <message id="perf_rules_title">
+        <source>Game rules</source>
+        <translation>Game rules</translation>
+    </message>
+    <message id="perf_rules_count">
+        <source>%1 rules</source>
+        <translation>%1 rules</translation>
+    </message>
+    <message id="perf_rules_help">
+        <source>While one of these programs runs, the power mode is at least the one you pick (Native and Smart auto). When it closes, automatic control takes over again. Turbo still backs off if the laptop gets too hot. A name matches the program&apos;s name, its file name, or any .exe on a Wine or Proton command line; capitals do not matter.</source>
+        <translation>While one of these programs runs, the power mode is at least the one you pick (Native and Smart auto). When it closes, automatic control takes over again. Turbo still backs off if the laptop gets too hot. A name matches the program&apos;s name, its file name, or any .exe on a Wine or Proton command line; capitals do not matter.</translation>
+    </message>
+    <message id="perf_rules_active">
+        <source>A rule is active: %1</source>
+        <translation>A rule is active: %1</translation>
+    </message>
+    <message id="perf_rules_none_active">
+        <source>No game rule is active</source>
+        <translation>No game rule is active</translation>
+    </message>
+    <message id="perf_rules_needs_service">
+        <source>Game rules need the TrueSense service.</source>
+        <translation>Game rules need the TrueSense service.</translation>
+    </message>
+    <message id="perf_rules_add_title">
+        <source>Add a rule</source>
+        <translation>Add a rule</translation>
+    </message>
+    <message id="perf_rules_program">
+        <source>Program name</source>
+        <translation>Program name</translation>
+    </message>
+    <message id="perf_rules_program_placeholder">
+        <source>e.g. eldenring.exe or hl2_linux</source>
+        <translation>e.g. eldenring.exe or hl2_linux</translation>
+    </message>
+    <message id="perf_rules_mode">
+        <source>Power mode while it runs</source>
+        <translation>Power mode while it runs</translation>
+    </message>
+    <message id="perf_rules_add">
+        <source>Add</source>
+        <translation>Add</translation>
+    </message>
+    <message id="perf_rules_replaces">
+        <source>This program already has a rule; adding it replaces that rule.</source>
+        <translation>This program already has a rule; adding it replaces that rule.</translation>
+    </message>
+    <message id="perf_rules_list_title">
+        <source>Your rules</source>
+        <translation>Your rules</translation>
+    </message>
+    <message id="perf_rules_empty">
+        <source>No game rules yet. Add the program of a game above and Turbo or Performance follows it.</source>
+        <translation>No game rules yet. Add the program of a game above and Turbo or Performance follows it.</translation>
+    </message>
+    <message id="perf_rules_running">
+        <source>Running now</source>
+        <translation>Running now</translation>
+    </message>
+    <message id="perf_rules_maybe">
+        <source>May be running</source>
+        <translation>May be running</translation>
+    </message>
+    <message id="perf_rules_remove">
+        <source>Remove</source>
+        <translation>Remove</translation>
+    </message>
+    <message id="perf_rules_clear">
+        <source>Remove all rules</source>
+        <translation>Remove all rules</translation>
+    </message>
+    <message id="perf_rules_clear_title">
+        <source>Remove every game rule?</source>
+        <translation>Remove every game rule?</translation>
+    </message>
+    <message id="perf_rules_clear_text">
+        <source>All %1 rules are deleted. Games no longer raise the power mode.</source>
+        <translation>All %1 rules are deleted. Games no longer raise the power mode.</translation>
+    </message>
+    <message id="perf_rules_clear_confirm">
+        <source>Remove all</source>
+        <translation>Remove all</translation>
+    </message>
+    <message id="perf_pl_order">
+        <source>PL2 (burst) must not be below PL1 (sustained).</source>
+        <translation>PL2 (burst) must not be below PL1 (sustained).</translation>
+    </message>
+    <message id="perf_pl_range">
+        <source>PL1 and PL2 must be between 25 and 120 W.</source>
+        <translation>PL1 and PL2 must be between 25 and 120 W.</translation>
+    </message>
+    <message id="perf_pl_number">
+        <source>Enter both limits in watts.</source>
+        <translation>Enter both limits in watts.</translation>
+    </message>
+    <message id="perf_pl_set">
+        <source>Power limits set: PL1 %1, PL2 %2</source>
+        <translation>Power limits set: PL1 %1, PL2 %2</translation>
+    </message>
+    <message id="perf_pl_confirm_title">
+        <source>Apply power limits</source>
+        <translation>Apply power limits</translation>
+    </message>
+    <message id="perf_pl_confirm_text">
+        <source>Set PL1 to %1 W and PL2 to %2 W?</source>
+        <translation>Set PL1 to %1 W and PL2 to %2 W?</translation>
+    </message>
+    <message id="perf_pl_confirm_footer">
+        <source>Save your work first.</source>
+        <translation>Save your work first.</translation>
+    </message>
+    <message id="perf_apply">
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message id="perf_pl_auto_done">
+        <source>Power limits are automatic again</source>
+        <translation>Power limits are automatic again</translation>
+    </message>
+    <message id="perf_pm_restored">
+        <source>Restored: %1</source>
+        <translation>Restored: %1</translation>
+    </message>
+    <message id="perf_pm_nothing_restore">
+        <source>nothing to restore</source>
+        <translation>nothing to restore</translation>
+    </message>
+    <message id="perf_pm_confirm_title">
+        <source>Let TrueSense manage power?</source>
+        <translation>Let TrueSense manage power?</translation>
+    </message>
+    <message id="perf_pm_confirm_text">
+        <source>The other power managers on this laptop are stopped and disabled, and the CPU is set back to sane defaults (turbo on). Turning this off puts them back exactly as they were.</source>
+        <translation>The other power managers on this laptop are stopped and disabled, and the CPU is set back to sane defaults (turbo on). Turning this off puts them back exactly as they were.</translation>
+    </message>
+    <message id="perf_pm_confirm_ok">
+        <source>Stop them</source>
+        <translation>Stop them</translation>
+    </message>
+    <message id="perf_pm_nothing_running">
+        <source>nothing was running</source>
+        <translation>nothing was running</translation>
+    </message>
+    <message id="perf_pm_stopped">
+        <source>Stopped: %1</source>
+        <translation>Stopped: %1</translation>
+    </message>
+    <message id="perf_pm_failed">
+        <source>Could not stop: %1</source>
+        <translation>Could not stop: %1</translation>
+    </message>
+    <message id="perf_pl_title">
+        <source>CPU power limits</source>
+        <translation>CPU power limits</translation>
+    </message>
+    <message id="perf_pl_now">
+        <source>PL1 %1, PL2 %2</source>
+        <translation>PL1 %1, PL2 %2</translation>
+    </message>
+    <message id="perf_pl_help">
+        <source>How much power the CPU may draw: PL1 is what it can keep up, PL2 is for short bursts. Stock is 80 W. TrueSense keeps your values until you go back to automatic.</source>
+        <translation>How much power the CPU may draw: PL1 is what it can keep up, PL2 is for short bursts. Stock is 80 W. TrueSense keeps your values until you go back to automatic.</translation>
+    </message>
+    <message id="perf_pl_locked">
+        <source>Locked by the firmware until restart</source>
+        <translation>Locked by the firmware until restart</translation>
+    </message>
+    <message id="perf_pl_unlocked">
+        <source>Not locked</source>
+        <translation>Not locked</translation>
+    </message>
+    <message id="perf_pl_lock_unknown">
+        <source>Lock state unknown</source>
+        <translation>Lock state unknown</translation>
+    </message>
+    <message id="perf_pl_yours">
+        <source>Yours: %1 / %2</source>
+        <translation>Yours: %1 / %2</translation>
+    </message>
+    <message id="perf_pl_lock_needs_root">
+        <source>Whether the firmware locked the limits needs the TrueSense service to read.</source>
+        <translation>Whether the firmware locked the limits needs the TrueSense service to read.</translation>
+    </message>
+    <message id="perf_pl_auto_text">
+        <source>Automatic: %1 normally, %2 while gaming.</source>
+        <translation>Automatic: %1 normally, %2 while gaming.</translation>
+    </message>
+    <message id="perf_pl1">
+        <source>PL1, sustained power</source>
+        <translation>PL1, sustained power</translation>
+    </message>
+    <message id="perf_pl2">
+        <source>PL2, burst power</source>
+        <translation>PL2, burst power</translation>
+    </message>
+    <message id="perf_pl_auto">
+        <source>Back to automatic</source>
+        <translation>Back to automatic</translation>
+    </message>
+    <message id="perf_pl_auto_help">
+        <source>Automatic is TrueSense&apos;s own choice of limits (a lower one normally, a higher one while gaming), set in its configuration. It is not the firmware&apos;s reset: a restart always returns the firmware&apos;s values.</source>
+        <translation>Automatic is TrueSense&apos;s own choice of limits (a lower one normally, a higher one while gaming), set in its configuration. It is not the firmware&apos;s reset: a restart always returns the firmware&apos;s values.</translation>
+    </message>
+    <message id="perf_pl_needs_service">
+        <source>Power limits need the TrueSense service.</source>
+        <translation>Power limits need the TrueSense service.</translation>
+    </message>
+    <message id="perf_pl_unreadable">
+        <source>The CPU&apos;s power limits cannot be read on this machine (the kernel offers no RAPL interface).</source>
+        <translation>The CPU&apos;s power limits cannot be read on this machine (the kernel offers no RAPL interface).</translation>
+    </message>
+    <message id="perf_gpu_title">
+        <source>GPU power limit</source>
+        <translation>GPU power limit</translation>
+    </message>
+    <message id="perf_gpu_fixed">
+        <source>The GPU power limit is fixed by this laptop&apos;s firmware: TrueSense shows it but does not change it.</source>
+        <translation>The GPU power limit is fixed by this laptop&apos;s firmware: TrueSense shows it but does not change it.</translation>
+    </message>
+    <message id="perf_gpu_current">
+        <source>Current</source>
+        <translation>Current</translation>
+    </message>
+    <message id="perf_gpu_default">
+        <source>Default</source>
+        <translation>Default</translation>
+    </message>
+    <message id="perf_gpu_min">
+        <source>Lowest</source>
+        <translation>Lowest</translation>
+    </message>
+    <message id="perf_gpu_max">
+        <source>Highest</source>
+        <translation>Highest</translation>
+    </message>
+    <message id="perf_gpu_unknown">
+        <source>The driver is not answering (the GPU may be asleep; TrueSense does not wake it to ask), so no value is shown.</source>
+        <translation>The driver is not answering (the GPU may be asleep; TrueSense does not wake it to ask), so no value is shown.</translation>
+    </message>
+    <message id="perf_pm_title">
+        <source>Other power managers</source>
+        <translation>Other power managers</translation>
+    </message>
+    <message id="perf_pm_help">
+        <source>Programs such as power-profiles-daemon, TLP, tuned or auto-cpufreq also set the CPU&apos;s speed and fight the power mode TrueSense chooses. Let TrueSense manage power to stop and disable them and put the CPU back to sane defaults; turning it off starts them again exactly as they were.</source>
+        <translation>Programs such as power-profiles-daemon, TLP, tuned or auto-cpufreq also set the CPU&apos;s speed and fight the power mode TrueSense chooses. Let TrueSense manage power to stop and disable them and put the CPU back to sane defaults; turning it off starts them again exactly as they were.</translation>
+    </message>
+    <message id="perf_pm_toggle">
+        <source>TrueSense manages power</source>
+        <translation>TrueSense manages power</translation>
+    </message>
+    <message id="perf_pm_running">
+        <source>running</source>
+        <translation>running</translation>
+    </message>
+    <message id="perf_pm_not_running">
+        <source>not running</source>
+        <translation>not running</translation>
+    </message>
+    <message id="perf_pm_enabled">
+        <source>enabled</source>
+        <translation>enabled</translation>
+    </message>
+    <message id="perf_pm_disabled">
+        <source>disabled</source>
+        <translation>disabled</translation>
+    </message>
+    <message id="perf_pm_none">
+        <source>No other power manager is running or enabled.</source>
+        <translation>No other power manager is running or enabled.</translation>
+    </message>
+    <message id="perf_pm_needs_service">
+        <source>Power managers can only be changed while the TrueSense service runs.</source>
+        <translation>Power managers can only be changed while the TrueSense service runs.</translation>
+    </message>
+    <message id="perf_smart_discard_title">
+        <source>Discard your changes?</source>
+        <translation>Discard your changes?</translation>
+    </message>
+    <message id="perf_smart_discard_text">
+        <source>You changed this profile and did not save it. Opening another profile throws the changes away.</source>
+        <translation>You changed this profile and did not save it. Opening another profile throws the changes away.</translation>
+    </message>
+    <message id="perf_discard">
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
+    <message id="perf_smart_in_use">
+        <source>Smart auto profile in use: %1</source>
+        <translation>Smart auto profile in use: %1</translation>
+    </message>
+    <message id="perf_name_help">
+        <source>Names use letters, digits, . _ - (up to 40).</source>
+        <translation>Names use letters, digits, . _ - (up to 40).</translation>
+    </message>
+    <message id="perf_smart_saved">
+        <source>Saved Smart auto profile &apos;%1&apos;. Press Use to run it.</source>
+        <translation>Saved Smart auto profile &apos;%1&apos;. Press Use to run it.</translation>
+    </message>
+    <message id="perf_smart_copied">
+        <source>Copied to &apos;%1&apos;. Change what you like, then Save and Use.</source>
+        <translation>Copied to &apos;%1&apos;. Change what you like, then Save and Use.</translation>
+    </message>
+    <message id="perf_smart_delete_title">
+        <source>Delete Smart auto profile</source>
+        <translation>Delete Smart auto profile</translation>
+    </message>
+    <message id="perf_smart_delete_text">
+        <source>Delete the profile &apos;%1&apos;? This cannot be undone.</source>
+        <translation>Delete the profile &apos;%1&apos;? This cannot be undone.</translation>
+    </message>
+    <message id="perf_delete">
+        <source>Delete</source>
+        <translation>Delete</translation>
+    </message>
+    <message id="perf_smart_deleted">
+        <source>Deleted Smart auto profile &apos;%1&apos;</source>
+        <translation>Deleted Smart auto profile &apos;%1&apos;</translation>
+    </message>
+    <message id="perf_smart_reset">
+        <source>Smart auto is back on the default profile (native)</source>
+        <translation>Smart auto is back on the default profile (native)</translation>
+    </message>
+    <message id="perf_mode_title">
+        <source>Power mode</source>
+        <translation>Power mode</translation>
+    </message>
+    <message id="perf_mode_held">
+        <source>Power mode %1, held for 30 minutes</source>
+        <translation>Power mode %1, held for 30 minutes</translation>
+    </message>
+    <message id="perf_mode_help">
+        <source>A mode you pick stays for 30 minutes, or until something changes (plug in, a game starts or stops, heat). Then the control below takes over again.</source>
+        <translation>A mode you pick stays for 30 minutes, or until something changes (plug in, a game starts or stops, heat). Then the control below takes over again.</translation>
+    </message>
+    <message id="perf_control_label">
+        <source>Who chooses the mode</source>
+        <translation>Who chooses the mode</translation>
+    </message>
+    <message id="perf_control_sub">
+        <source>Manual keeps your pick. Native does what PredatorSense does: Balanced on power, Eco on battery. Smart reacts to load and heat with the profile below.</source>
+        <translation>Manual keeps your pick. Native does what PredatorSense does: Balanced on power, Eco on battery. Smart reacts to load and heat with the profile below.</translation>
+    </message>
+    <message id="perf_control_off">
+        <source>Manual</source>
+        <translation>Manual</translation>
+    </message>
+    <message id="perf_control_native">
+        <source>Native</source>
+        <translation>Native</translation>
+    </message>
+    <message id="perf_control_smart">
+        <source>Smart</source>
+        <translation>Smart</translation>
+    </message>
+    <message id="perf_smart_needs_service">
+        <source>Smart auto needs the TrueSense service.</source>
+        <translation>Smart auto needs the TrueSense service.</translation>
+    </message>
+    <message id="perf_hold_text">
+        <source>Your pick stays for %1 more, then automatic control takes over again.</source>
+        <translation>Your pick stays for %1 more, then automatic control takes over again.</translation>
+    </message>
+    <message id="perf_hold_release">
+        <source>Release now</source>
+        <translation>Release now</translation>
+    </message>
+    <message id="perf_now_activity">
+        <source>Now: %1</source>
+        <translation>Now: %1</translation>
+    </message>
+    <message id="perf_profile_title">
+        <source>Smart auto profile</source>
+        <translation>Smart auto profile</translation>
+    </message>
+    <message id="perf_profile_builtin">
+        <source>built in</source>
+        <translation>built in</translation>
+    </message>
+    <message id="perf_profile_yours">
+        <source>yours</source>
+        <translation>yours</translation>
+    </message>
+    <message id="perf_profile_help">
+        <source>How Smart auto chooses the power mode. Built-in profiles cannot be edited: copy one, then change the copy.</source>
+        <translation>How Smart auto chooses the power mode. Built-in profiles cannot be edited: copy one, then change the copy.</translation>
+    </message>
+    <message id="perf_profile_label">
+        <source>Profile</source>
+        <translation>Profile</translation>
+    </message>
+    <message id="perf_favourite">
+        <source>Favourite</source>
+        <translation>Favourite</translation>
+    </message>
+    <message id="perf_favourite_on">
+        <source>This profile is a favourite</source>
+        <translation>This profile is a favourite</translation>
+    </message>
+    <message id="perf_favourite_off">
+        <source>Add this profile to the favourites</source>
+        <translation>Add this profile to the favourites</translation>
+    </message>
+    <message id="perf_profile_locked">
+        <source>This profile is built in and read-only. Press Copy to make your own version.</source>
+        <translation>This profile is built in and read-only. Press Copy to make your own version.</translation>
+    </message>
+    <message id="perf_use">
+        <source>Use</source>
+        <translation>Use</translation>
+    </message>
+    <message id="perf_copy">
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message id="perf_reset_default">
+        <source>Reset to default</source>
+        <translation>Reset to default</translation>
+    </message>
+    <message id="perf_save_as">
+        <source>Save as</source>
+        <translation>Save as</translation>
+    </message>
+    <message id="perf_name_placeholder">
+        <source>name</source>
+        <translation>name</translation>
+    </message>
+    <message id="perf_save">
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message id="perf_edit_modes">
+        <source>Which mode when</source>
+        <translation>Which mode when</translation>
+    </message>
+    <message id="perf_changed">
+        <source>Changed (%1)</source>
+        <translation>Changed (%1)</translation>
+    </message>
+    <message id="perf_undo_all">
+        <source>Undo all changes</source>
+        <translation>Undo all changes</translation>
+    </message>
+    <message id="perf_undo">
+        <source>Undo</source>
+        <translation>Undo</translation>
+    </message>
+    <message id="perf_edit_timing">
+        <source>Turbo and timing</source>
+        <translation>Turbo and timing</translation>
+    </message>
+    <message id="perf_turbo_allow">
+        <source>Allow Turbo on power</source>
+        <translation>Allow Turbo on power</translation>
+    </message>
+    <message id="perf_turbo_allow_sub">
+        <source>Turbo is the fastest and loudest mode. Smart auto backs off by itself when the laptop gets too hot.</source>
+        <translation>Turbo is the fastest and loudest mode. Smart auto backs off by itself when the laptop gets too hot.</translation>
+    </message>
+    <message id="perf_tune_title">
+        <source>Undervolt with care</source>
+        <translation>Undervolt with care</translation>
+    </message>
+    <message id="perf_tune_warning">
+        <source>Lowering the CPU or GPU voltage makes the laptop run cooler. Too much can freeze it, reboot it or crash games. Nothing is applied unless you confirm, and a reboot always returns to stock. Test a profile under load before relying on it.</source>
+        <translation>Lowering the CPU or GPU voltage makes the laptop run cooler. Too much can freeze it, reboot it or crash games. Nothing is applied unless you confirm, and a reboot always returns to stock. Test a profile under load before relying on it.</translation>
+    </message>
+    <message id="perf_tune_cpu">
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message id="perf_tune_gpu">
+        <source>GPU</source>
+        <translation>GPU</translation>
+    </message>
+    <message id="perf_mode_eco">
+        <source>Eco</source>
+        <translation>Eco</translation>
+    </message>
+    <message id="perf_mode_quiet">
+        <source>Quiet</source>
+        <translation>Quiet</translation>
+    </message>
+    <message id="perf_mode_balanced">
+        <source>Balanced</source>
+        <translation>Balanced</translation>
+    </message>
+    <message id="perf_mode_performance">
+        <source>Performance</source>
+        <translation>Performance</translation>
+    </message>
+    <message id="perf_mode_turbo">
+        <source>Turbo</source>
+        <translation>Turbo</translation>
+    </message>
+    <message id="perf_act_idle">
+        <source>idle</source>
+        <translation>idle</translation>
+    </message>
+    <message id="perf_act_browsing">
+        <source>everyday use</source>
+        <translation>everyday use</translation>
+    </message>
+    <message id="perf_act_heavy">
+        <source>heavy work</source>
+        <translation>heavy work</translation>
+    </message>
+    <message id="perf_act_gaming">
+        <source>gaming</source>
+        <translation>gaming</translation>
+    </message>
+    <message id="perf_act_hot">
+        <source>too hot</source>
+        <translation>too hot</translation>
+    </message>
+    <message id="perf_set_ac_idle">
+        <source>On power, idle</source>
+        <translation>On power, idle</translation>
+    </message>
+    <message id="perf_set_ac_browsing">
+        <source>On power, everyday use</source>
+        <translation>On power, everyday use</translation>
+    </message>
+    <message id="perf_set_ac_busy">
+        <source>On power, gaming or heavy work</source>
+        <translation>On power, gaming or heavy work</translation>
+    </message>
+    <message id="perf_set_battery_idle">
+        <source>On battery, idle</source>
+        <translation>On battery, idle</translation>
+    </message>
+    <message id="perf_set_battery_browsing">
+        <source>On battery, everyday use</source>
+        <translation>On battery, everyday use</translation>
+    </message>
+    <message id="perf_set_battery_busy">
+        <source>On battery, gaming or heavy work</source>
+        <translation>On battery, gaming or heavy work</translation>
+    </message>
+    <message id="perf_set_battery_hot">
+        <source>On battery, too hot</source>
+        <translation>On battery, too hot</translation>
+    </message>
+    <message id="perf_set_turbo_after_s">
+        <source>Heavy load for this long before Turbo</source>
+        <translation>Heavy load for this long before Turbo</translation>
+    </message>
+    <message id="perf_set_turbo_max_cpu">
+        <source>No Turbo above this CPU temperature</source>
+        <translation>No Turbo above this CPU temperature</translation>
+    </message>
+    <message id="perf_set_turbo_max_gpu">
+        <source>No Turbo above this GPU temperature</source>
+        <translation>No Turbo above this GPU temperature</translation>
+    </message>
+    <message id="perf_set_backoff_hold_s">
+        <source>After overheating, wait before Turbo again</source>
+        <translation>After overheating, wait before Turbo again</translation>
+    </message>
+    <message id="perf_set_idle_after_s">
+        <source>Idle for this long before the idle mode</source>
+        <translation>Idle for this long before the idle mode</translation>
+    </message>
+    <message id="perf_set_battery_low_pct">
+        <source>Below this battery level, force Eco</source>
+        <translation>Below this battery level, force Eco</translation>
+    </message>
+    <message id="perf_set_up_dwell_s">
+        <source>Wait before moving to a faster mode</source>
+        <translation>Wait before moving to a faster mode</translation>
+    </message>
+    <message id="perf_set_down_dwell_s">
+        <source>Wait before moving to a slower mode</source>
+        <translation>Wait before moving to a slower mode</translation>
+    </message>
+    <message id="perf_set_busy_hold_s">
+        <source>Stay in the gaming or heavy mode this long after the load drops</source>
+        <translation>Stay in the gaming or heavy mode this long after the load drops</translation>
+    </message>
+    <message id="perf_set_min_change_s">
+        <source>At least this long between automatic mode changes</source>
+        <translation>At least this long between automatic mode changes</translation>
+    </message>
+    <message id="perf_set_turbo_margin_c">
+        <source>Enter Turbo only this far below its temperature limits</source>
+        <translation>Enter Turbo only this far below its temperature limits</translation>
+    </message>
+    <message id="perf_set_turbo_retry_s">
+        <source>After Turbo reaches its limit, wait before trying it again</source>
+        <translation>After Turbo reaches its limit, wait before trying it again</translation>
+    </message>
+    <message id="perf_uv_cpu">
+        <source>CPU undervolt</source>
+        <translation>CPU undervolt</translation>
+    </message>
+    <message id="perf_uv_gpu">
+        <source>GPU undervolt</source>
+        <translation>GPU undervolt</translation>
+    </message>
+    <message id="perf_uv_describe_cpu">
+        <source>core %1, cache %2</source>
+        <translation>core %1, cache %2</translation>
+    </message>
+    <message id="perf_uv_describe_gpu">
+        <source>offset %1, cap %2</source>
+        <translation>offset %1, cap %2</translation>
+    </message>
+    <message id="perf_uv_none">
+        <source>none</source>
+        <translation>none</translation>
+    </message>
+    <message id="perf_uv_beyond">
+        <source>This is beyond the danger line.</source>
+        <translation>This is beyond the danger line.</translation>
+    </message>
+    <message id="perf_uv_footer">
+        <source>A reboot always returns voltages to stock. Save your work first.</source>
+        <translation>A reboot always returns voltages to stock. Save your work first.</translation>
+    </message>
+    <message id="perf_uv_apply_title">
+        <source>Apply %1</source>
+        <translation>Apply %1</translation>
+    </message>
+    <message id="perf_uv_apply_question">
+        <source>Apply &apos;%1&apos;: %2?</source>
+        <translation>Apply &apos;%1&apos;: %2?</translation>
+    </message>
+    <message id="perf_uv_applied">
+        <source>%1 applied: %2</source>
+        <translation>%1 applied: %2</translation>
+    </message>
+    <message id="perf_uv_reset_done">
+        <source>%1 reset to stock (nothing applied at boot)</source>
+        <translation>%1 reset to stock (nothing applied at boot)</translation>
+    </message>
+    <message id="perf_uv_boot_off">
+        <source>%1 at boot: off</source>
+        <translation>%1 at boot: off</translation>
+    </message>
+    <message id="perf_uv_boot_title">
+        <source>%1 at boot</source>
+        <translation>%1 at boot</translation>
+    </message>
+    <message id="perf_uv_boot_question">
+        <source>Apply &apos;%1&apos; (%2) every time the laptop starts? If it does not stay up for 10 minutes after applying it, the next boot skips it and this switches off.</source>
+        <translation>Apply &apos;%1&apos; (%2) every time the laptop starts? If it does not stay up for 10 minutes after applying it, the next boot skips it and this switches off.</translation>
+    </message>
+    <message id="perf_uv_boot_on">
+        <source>%1 at boot: %2</source>
+        <translation>%1 at boot: %2</translation>
+    </message>
+    <message id="perf_uv_saved">
+        <source>Saved %1 profile &apos;%2&apos;</source>
+        <translation>Saved %1 profile &apos;%2&apos;</translation>
+    </message>
+    <message id="perf_uv_copied">
+        <source>Copied to &apos;%1&apos;. Change it, then Save and Apply.</source>
+        <translation>Copied to &apos;%1&apos;. Change it, then Save and Apply.</translation>
+    </message>
+    <message id="perf_uv_delete_title">
+        <source>Delete profile</source>
+        <translation>Delete profile</translation>
+    </message>
+    <message id="perf_uv_deleted">
+        <source>Deleted %1 profile &apos;%2&apos;</source>
+        <translation>Deleted %1 profile &apos;%2&apos;</translation>
+    </message>
+    <message id="perf_uv_now">
+        <source>Right now</source>
+        <translation>Right now</translation>
+    </message>
+    <message id="perf_uv_now_gpu">
+        <source>offset %1</source>
+        <translation>offset %1</translation>
+    </message>
+    <message id="perf_uv_gpu_intro">
+        <source>GPU undervolt shifts the GPU&apos;s voltage and frequency curve up and caps the top clock, so it reaches its speed at a lower voltage. Neither setting survives a reboot.</source>
+        <translation>GPU undervolt shifts the GPU&apos;s voltage and frequency curve up and caps the top clock, so it reaches its speed at a lower voltage. Neither setting survives a reboot.</translation>
+    </message>
+    <message id="perf_uv_state_applied">
+        <source>Applied by TrueSense: %1.</source>
+        <translation>Applied by TrueSense: %1.</translation>
+    </message>
+    <message id="perf_uv_state_stock">
+        <source>Stock voltage, nothing applied by TrueSense.</source>
+        <translation>Stock voltage, nothing applied by TrueSense.</translation>
+    </message>
+    <message id="perf_uv_state_boot">
+        <source>At boot: %1.</source>
+        <translation>At boot: %1.</translation>
+    </message>
+    <message id="perf_uv_state_pending">
+        <source>A boot undervolt is waiting to prove it is stable.</source>
+        <translation>A boot undervolt is waiting to prove it is stable.</translation>
+    </message>
+    <message id="perf_uv_state_range">
+        <source>Driver range %1 to %2 MHz.</source>
+        <translation>Driver range %1 to %2 MHz.</translation>
+    </message>
+    <message id="perf_uv_locked">
+        <source>Built-in profiles cannot be edited. Press Copy to make your own version.</source>
+        <translation>Built-in profiles cannot be edited. Press Copy to make your own version.</translation>
+    </message>
+    <message id="perf_uv_core">
+        <source>Core offset</source>
+        <translation>Core offset</translation>
+    </message>
+    <message id="perf_uv_offset">
+        <source>Curve offset</source>
+        <translation>Curve offset</translation>
+    </message>
+    <message id="perf_uv_cache">
+        <source>Cache offset</source>
+        <translation>Cache offset</translation>
+    </message>
+    <message id="perf_uv_cap">
+        <source>Clock cap (below 600 MHz means none)</source>
+        <translation>Clock cap (below 600 MHz means none)</translation>
+    </message>
+    <message id="perf_uv_reset">
+        <source>Reset to stock</source>
+        <translation>Reset to stock</translation>
+    </message>
+    <message id="perf_uv_boot_card">
+        <source>At boot</source>
+        <translation>At boot</translation>
+    </message>
+    <message id="perf_uv_boot_label">
+        <source>Apply the values above at boot</source>
+        <translation>Apply the values above at boot</translation>
+    </message>
+    <message id="perf_uv_boot_sub">
+        <source>Off by default. This is guarded: if the laptop does not stay up for 10 minutes after the profile was applied, the next boot skips it and turns this off, so a profile that crashes the machine cannot lock you out.</source>
+        <translation>Off by default. This is guarded: if the laptop does not stay up for 10 minutes after the profile was applied, the next boot skips it and turns this off, so a profile that crashes the machine cannot lock you out.</translation>
+    </message>
+    <message id="perf_tab_mode">
+        <source>Mode and Smart</source>
+        <translation>Mode and Smart</translation>
+    </message>
+    <message id="perf_tab_rules">
+        <source>Game rules</source>
+        <translation>Game rules</translation>
+    </message>
+    <message id="perf_tab_limits">
+        <source>Power limits</source>
+        <translation>Power limits</translation>
+    </message>
+    <message id="perf_tab_tuning">
+        <source>Tuning</source>
+        <translation>Tuning</translation>
+    </message>
 </context>
 </TS>
