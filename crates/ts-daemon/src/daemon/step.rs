@@ -268,6 +268,7 @@ impl Daemon {
         self.thermal_governor(g, tcpu);
         if g.hw_ok {
             self.auto_profile(g, &frame);
+            self.mode_bindings_tick(g);
             self.operating_lighting(g);
         }
         self.publish(g, smart, &frame);

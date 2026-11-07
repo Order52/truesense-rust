@@ -35,7 +35,7 @@ use super::daemon::{Daemon, Inner};
 use super::step::hold_value;
 
 /// The commands of the table, in the order of the Python daemon.
-pub const COMMANDS: [&str; 17] = [
+pub const COMMANDS: [&str; 18] = [
     "ping",
     "state",
     "set",
@@ -53,6 +53,7 @@ pub const COMMANDS: [&str; 17] = [
     "cpu_limits",
     "cpu_info",
     "touchpad",
+    "mode_bindings",
 ];
 
 type Reply = Result<Value, String>;
@@ -106,6 +107,7 @@ impl Daemon {
         add("cpu_limits", Daemon::cmd_cpu_limits);
         add("cpu_info", Daemon::cmd_cpu_info);
         add("touchpad", Daemon::cmd_touchpad);
+        add("mode_bindings", Daemon::cmd_mode_bindings);
         router
     }
 
