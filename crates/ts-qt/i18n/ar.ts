@@ -125,7 +125,7 @@
     </message>
     <message id="settings_theme_system">
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">النظام</translation>
     </message>
     <message id="settings_language">
         <source>Language</source>
@@ -226,6 +226,502 @@
     <message id="tray_quit">
         <source>Quit</source>
         <translation>إنهاء</translation>
+    </message>
+    <message id="keys_test_done">
+        <source>Done.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_none">
+        <source>Do nothing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_power_next">
+        <source>Power mode: next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_power_prev">
+        <source>Power mode: previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_power">
+        <source>Power mode: set one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_power_cycle">
+        <source>Power mode: cycle through a list</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_auto_next">
+        <source>Mode control: next (Manual, Native, Smart)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_auto">
+        <source>Mode control: choose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_fan">
+        <source>Fans: set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_fan_max_toggle">
+        <source>Fans: toggle Max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_smart_fan_toggle">
+        <source>Fans: toggle the Smart curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_profile">
+        <source>Profile: apply one</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_profile_next">
+        <source>Profile: next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_favourite">
+        <source>Favourite: apply number N</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_favourite_next">
+        <source>Favourite: next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_output_toggle">
+        <source>Sound: switch speakers and headphones</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_output_cycle">
+        <source>Sound: cycle the outputs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_output">
+        <source>Sound: choose an output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_mic_toggle">
+        <source>Microphone: mute or unmute</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_mic">
+        <source>Microphone: choose mute or unmute</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_voice_next">
+        <source>Microphone: next voice mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_touchpad_toggle">
+        <source>Touchpad: toggle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_touchpad">
+        <source>Touchpad: choose on or off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_keyboard">
+        <source>Keyboard light: on, off or toggle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_keyboard_effect_next">
+        <source>Keyboard light: next effect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_keyboard_profile">
+        <source>Keyboard light: apply a per-key profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_rear">
+        <source>Rear light: on, off or toggle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_rear_effect_next">
+        <source>Rear light: next effect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_look">
+        <source>Lighting: apply a look</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_battery_limit_toggle">
+        <source>Battery: toggle the 80 % limit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_overdrive_toggle">
+        <source>Screen: toggle overdrive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_exec">
+        <source>Run a program or script</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_kind_notify">
+        <source>Show a message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_eco">
+        <source>Eco</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_quiet">
+        <source>Quiet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_balanced">
+        <source>Balanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_performance">
+        <source>Performance</source>
+        <translation type="unfinished">الأداء</translation>
+    </message>
+    <message id="keys_choice_turbo">
+        <source>Turbo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_on">
+        <source>On</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_toggle">
+        <source>Toggle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_native">
+        <source>Native</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_smart">
+        <source>Smart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_speakers">
+        <source>Speakers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_headphones">
+        <source>Headphones</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_mute">
+        <source>Mute</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_unmute">
+        <source>Unmute</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_manual">
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_choice_off">
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_smart">
+        <source>Smart curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_auto">
+        <source>Firmware auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_max">
+        <source>Max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_manual">
+        <source>Fixed speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_test">
+        <source>Test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_test_named">
+        <source>Run %1 now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_test_exec_title">
+        <source>Run this command now?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_test_exec_text">
+        <source>It runs as you, exactly as the key would: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_test_exec_go">
+        <source>Run it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_unreadable">
+        <source>Not an action TrueSense knows (%1). Pick one above to replace it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_speed">
+        <source>Fan speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fan_floor">
+        <source>A key never stops a fan: %1 % is the lowest speed it can set.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_cycle_help">
+        <source>Each press goes to the next mode of the list, in the order you picked them: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_cycle_empty">
+        <source>Pick at least one power mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_missing">
+        <source>“%1” no longer exists. Pick another, or the key will report an error.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_library_empty">
+        <source>Nothing saved yet: create one on its own page first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fav_number">
+        <source>Favourite number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fav_is">
+        <source>Number %1 is now: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_fav_none">
+        <source>There is no favourite number %1 yet; the key will say so.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_exec_placeholder">
+        <source>e.g. notify-send hello, or /home/me/script.sh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_notify_placeholder">
+        <source>The message to show</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_exec_help">
+        <source>Runs as you, in the background, when the key is pressed. Use Test to try it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_g_tap">
+        <source>Tap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_g_double">
+        <source>Double tap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_g_triple">
+        <source>Triple tap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_g_long">
+        <source>Long press</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_g_fn_esc">
+        <source>Fn + Esc</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gh_tap">
+        <source>One press of the PREDATOR key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gh_double">
+        <source>Two presses in quick succession.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gh_triple">
+        <source>Three presses in quick succession.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gh_long">
+        <source>Hold the PREDATOR key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gh_fn_esc">
+        <source>The Fn key and Esc together.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_started">
+        <source>The key service was started.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_saved">
+        <source>Saved the key profile “%1”.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_using">
+        <source>The PREDATOR key now uses “%1”. The key service reloads by itself.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_copied">
+        <source>Copied to “%1”. Change what you like, then save and use it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_deleted">
+        <source>Deleted the key profile “%1”.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_discard_title">
+        <source>Discard your changes?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_discard_text">
+        <source>The changes to this profile are not saved yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_discard_go">
+        <source>Discard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_title">
+        <source>Key service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_running">
+        <source>The key service is running: the PREDATOR key and Fn+Esc are active.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_stopped">
+        <source>The key service is not running, so the PREDATOR key does nothing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_unknown">
+        <source>The state of the key service could not be read.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_refresh">
+        <source>Check again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_start">
+        <source>Start it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_service_sudo">
+        <source>Starting it needs administrator rights. Run this in a terminal: sudo truesense service repair</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_daemon_down">
+        <source>The TrueSense system service is not running: actions that change the hardware will fail until it is.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_profile_title">
+        <source>Binding profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_in_use">
+        <source>In use: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_profile_help">
+        <source>A profile is a saved set of what each press does. Built-in profiles cannot be changed: copy one, then edit the copy.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_profile_pick">
+        <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_yours">
+        <source>%1 (yours)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_unsaved">
+        <source>These are the bindings in force now. They are not saved as a profile: save them under a name to keep them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_use">
+        <source>Use these keys</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_save">
+        <source>Save changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_copy">
+        <source>Copy to edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_delete">
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_delete_title">
+        <source>Delete this key profile?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_delete_text">
+        <source>“%1” will be removed. The built-in profiles stay.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_name_placeholder">
+        <source>Name to save as</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_save_as">
+        <source>Save as</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_replace_title">
+        <source>Replace this profile?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_replace_text">
+        <source>“%1” already exists and will be overwritten.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_replace_go">
+        <source>Replace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_name_chars">
+        <source>Names use letters, digits and . _ - only (up to 40).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_name_length">
+        <source>That name is too long (up to 40).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_name_builtin">
+        <source>That is the name of a built-in profile. Pick another.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_gestures_title">
+        <source>What each press does</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_readonly">
+        <source>Read-only: copy the profile to edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_changed">
+        <source>Changed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_favourites_help">
+        <source>Favourites are the looks, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_timing_title">
+        <source>Timing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_long_ms">
+        <source>Long press after</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_multi_ms">
+        <source>Taps count together within</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="keys_timing_help">
+        <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
