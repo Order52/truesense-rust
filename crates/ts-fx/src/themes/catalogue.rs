@@ -418,7 +418,7 @@ impl TryFrom<RawSetting> for SettingDef {
 ///
 /// [`Flash::Unmeasured`]: crate::engine::Flash::Unmeasured
 #[cfg(test)]
-pub const PENDING_FLASH_MEASUREMENT: &[&str] = &["storm"];
+pub(super) const PENDING_FLASH_MEASUREMENT: &[&str] = &["storm"];
 
 #[cfg(test)]
 impl Theme {

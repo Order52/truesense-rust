@@ -46,7 +46,7 @@ enum Look {
 pub(crate) static STATIC: EffectDef = EffectDef::firmware("hw.static", "Static", PARAMS, create_static);
 pub(crate) static BREATHING: EffectDef =
     EffectDef::firmware("hw.breathing", "Breathing", PARAMS, create_breathing);
-pub static WAVE: EffectDef = EffectDef::firmware("hw.wave", "Wave", PARAMS, create_wave);
+pub(crate) static WAVE: EffectDef = EffectDef::firmware("hw.wave", "Wave", PARAMS, create_wave);
 pub(crate) static RIPPLE: EffectDef = EffectDef::firmware("hw.ripple", "Ripple", PARAMS, create_ripple);
 pub(crate) static SCANNER: EffectDef = EffectDef::firmware("hw.scanner", "Scanner", PARAMS, create_scanner);
 pub(crate) static STROBE: EffectDef =

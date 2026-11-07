@@ -774,35 +774,35 @@ pub(crate) struct Follower {
 
 impl Follower {
     /// A follower on `curve` with both duties at 0 (firmware Auto).
-    pub fn new(curve: Curve) -> Follower {
+    pub(crate) fn new(curve: Curve) -> Follower {
         Follower { curve, duty: [0.0; 2] }
     }
 
     /// Switches curve and resets both duties, so the new curve takes effect cleanly.
-    pub fn set_curve(&mut self, curve: Curve) {
+    pub(crate) fn set_curve(&mut self, curve: Curve) {
         self.curve = curve;
         self.duty = [0.0; 2];
     }
 
     /// The curve in use.
-    pub fn curve(&self) -> &Curve {
+    pub(crate) fn curve(&self) -> &Curve {
         &self.curve
     }
 
     /// The current CPU and GPU duties in percent, before quantising.
-    pub fn duty(&self) -> (f64, f64) {
+    pub(crate) fn duty(&self) -> (f64, f64) {
         (self.duty[0], self.duty[1])
     }
 
     /// Forces both duties. The controller uses it when it overrides the curve: 0, 0 when the
     /// laptop is calm (the fans go back to the firmware) and 100, 100 when it is hot.
-    pub fn set_duty(&mut self, cpu: f64, gpu: f64) {
+    pub(crate) fn set_duty(&mut self, cpu: f64, gpu: f64) {
         self.duty = [cpu, gpu];
     }
 
     /// The temperature shift to pass to [`Follower::step`]: nothing on AC power, the curve's
     /// `battery_shift` on battery.
-    pub fn battery_shift(&self, on_ac: bool) -> f64 {
+    pub(crate) fn battery_shift(&self, on_ac: bool) -> f64 {
         if on_ac { 0.0 } else { self.curve.battery_shift }
     }
 
@@ -810,7 +810,7 @@ impl Follower {
     /// degrees ahead so the fans start before the heat arrives; `shift` (degC, positive on
     /// battery) delays them. The additions are in Python's order, `(temp + predict) - shift`,
     /// so the result is bit-identical.
-    pub fn target(&self, side: Side, temp: f64, rising: bool, shift: f64) -> f64 {
+    pub(crate) fn target(&self, side: Side, temp: f64, rising: bool, shift: f64) -> f64 {
         let t = temp + if rising { self.curve.predict } else { 0.0 } - shift;
         interp(self.curve.points(side), t)
     }
@@ -818,7 +818,7 @@ impl Follower {
     /// Advances one side by `dt_s` seconds and returns its new duty. A higher target is taken
     /// at once; a lower one is followed only when the temperature less the hysteresis would
     /// also give a lower duty, and then no faster than `down_rate` percent per second.
-    pub fn step(&mut self, side: Side, temp: f64, rising: bool, dt_s: f64, shift: f64) -> f64 {
+    pub(crate) fn step(&mut self, side: Side, temp: f64, rising: bool, dt_s: f64, shift: f64) -> f64 {
         let up = self.target(side, temp, rising, shift);
         let mut cur = self.duty[side.index()];
         if up >= cur {
@@ -838,7 +838,7 @@ impl Follower {
     /// value (the activity floor; 0 disables it). The two fans share heatpipes, so the quieter
     /// one never trails the louder one by more than `couple`, and when anything runs both
     /// are at least 20.
-    pub fn output(&self, floor: u8) -> (u8, u8) {
+    pub(crate) fn output(&self, floor: u8) -> (u8, u8) {
         let mut c = quantise(self.duty[0]);
         let mut g = quantise(self.duty[1]);
         if floor != 0 {

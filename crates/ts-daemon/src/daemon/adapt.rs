@@ -151,12 +151,12 @@ pub(crate) struct ProcFs {
 
 impl ProcFs {
     /// The processes listed below `root` (`/proc` in production, a fake tree in tests).
-    pub fn new(root: impl Into<PathBuf>) -> Self {
+    pub(crate) fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }
 
     /// The real `/proc`.
-    pub fn system() -> Self {
+    pub(crate) fn system() -> Self {
         Self::new(gamerules::PROC_DIR)
     }
 }
@@ -185,7 +185,7 @@ pub(crate) struct SystemSensors {
 impl SystemSensors {
     /// Sensors over `sampler` and `linux`; the GPU stream reads lines from `source`, waits
     /// between restarts with `sleeper`, and ends when `stop` is requested.
-    pub fn new(
+    pub(crate) fn new(
         sampler: Arc<Sampler>,
         linux: LinuxSensors,
         source: Arc<dyn LineSource>,

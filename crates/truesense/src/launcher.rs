@@ -22,7 +22,7 @@ pub(crate) struct SystemLauncher {
 
 impl SystemLauncher {
     /// A launcher whose window, terminal UI and key service run over `api`.
-    pub fn new(api: Arc<Api>) -> Self {
+    pub(crate) fn new(api: Arc<Api>) -> Self {
         Self { api }
     }
 }

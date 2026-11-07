@@ -21,7 +21,7 @@ use crate::signals;
 const EXIT_USAGE: i32 = 2;
 
 /// Runs the program with `args` (`args[0]` is the program name) and returns the exit code.
-pub fn run(args: &[String]) -> i32 {
+pub(crate) fn run(args: &[String]) -> i32 {
     let Some(program) = args.first() else { return EXIT_USAGE };
     let rest = &args[1..];
     let name = Path::new(program).file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -46,7 +46,7 @@ pub fn run(args: &[String]) -> i32 {
 }
 
 /// The root service: it builds its own components (see `ts_daemon::assembly`).
-pub fn run_daemon() -> i32 {
+pub(crate) fn run_daemon() -> i32 {
     match ts_daemon::assembly::run_daemon() {
         Ok(()) => 0,
         Err(e) => {

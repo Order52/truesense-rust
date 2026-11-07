@@ -31,7 +31,7 @@ pub(crate) static STATIC: EffectDef =
     EffectDef::firmware("kb.static", "Static", PARAMS, create_static).keyboard(0x01);
 pub(crate) static BREATHING: EffectDef =
     EffectDef::firmware("kb.breathing", "Breathing", PARAMS, create_breathing).keyboard(0x02);
-pub static WAVE: EffectDef =
+pub(crate) static WAVE: EffectDef =
     EffectDef::firmware("kb.wave", "Wave", WAVE_PARAMS, create_wave).keyboard(0x03).without_colour();
 pub(crate) static RAINBOW: EffectDef =
     EffectDef::firmware("kb.rainbow", "Rainbow", PARAMS, create_rainbow).keyboard(0x08).without_colour();

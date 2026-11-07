@@ -25,7 +25,7 @@ pub(crate) struct LiveOsd {
 
 impl LiveOsd {
     /// A display that takes its style and user from `config` for every message.
-    pub fn new(base: Osd, config: ConfigFiles) -> Self {
+    pub(crate) fn new(base: Osd, config: ConfigFiles) -> Self {
         Self { base, config, settle: DEFAULT_SETTLE }
     }
 

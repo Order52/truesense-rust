@@ -114,7 +114,7 @@ impl Renderer {
     /// the key service already holds, the cell numbering of the verified key map, the wall clock,
     /// the given wait and standard output as the log (the journal under systemd). The local hour is not
     /// known here, so a theme that follows the day shows noon.
-    pub fn from_api(api: &Api, sleep: Box<dyn Fn(Duration) + Send>) -> Renderer {
+    pub(crate) fn from_api(api: &Api, sleep: Box<dyn Fn(Duration) + Send>) -> Renderer {
         let services = api.services();
         Renderer::new(Env {
             themes: Box::new(ThemeStore::beside(services.config.user.as_deref(), Arc::clone(&services.user))),
@@ -176,7 +176,7 @@ pub(crate) struct Renderer {
 
 impl Renderer {
     /// A renderer over `env`. The frame rate is held between 1 and [`MAX_FPS`].
-    pub fn new(env: Env) -> Self {
+    pub(crate) fn new(env: Env) -> Self {
         let fps = env.fps.clamp(1, MAX_FPS);
         Self {
             env,
@@ -188,7 +188,7 @@ impl Renderer {
 
     /// Runs until `stop` is set. A theme that is still running is taken off the keyboard first (the
     /// static look is put back): stopping the service must not leave the last frame lit.
-    pub fn run(&mut self, stop: &AtomicBool) {
+    pub(crate) fn run(&mut self, stop: &AtomicBool) {
         while !stop.load(Ordering::SeqCst) {
             let pause = self.step();
             (self.env.sleep)(pause);
@@ -200,7 +200,7 @@ impl Renderer {
     }
 
     /// One turn of the loop; answers how long to wait before the next.
-    pub fn step(&mut self) -> Duration {
+    pub(crate) fn step(&mut self) -> Duration {
         let now = (self.env.now)();
         // A running theme looks at the record twice a second; an idle renderer on every turn. A
         // clock that was set back also makes a look due.

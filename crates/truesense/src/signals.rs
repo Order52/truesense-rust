@@ -99,7 +99,7 @@ fn install(signal: libc::c_int) {
 }
 
 /// Whether `fd` is a terminal.
-pub fn is_terminal(fd: libc::c_int) -> bool {
+pub(crate) fn is_terminal(fd: libc::c_int) -> bool {
     // SAFETY: `isatty` only inspects the descriptor and sets errno; any integer is allowed.
     unsafe { libc::isatty(fd) == 1 }
 }
