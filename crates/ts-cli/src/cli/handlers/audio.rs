@@ -233,7 +233,11 @@ fn dts(cx: &mut Cx<'_, '_>, m: &Matches) -> Result<(), Fail> {
             cx.say(&if done.is_empty() { "DTS is on for every output".to_owned() } else { done.join("\n") });
         }
         _ => {
-            let text = api.services().audio.dts(&["setup"]).map_err(fail)?;
+            let text = api
+                .services()
+                .audio
+                .dts_within(&["setup"], ts_domain::audio::DTS_SETUP_TIMEOUT)
+                .map_err(fail)?;
             cx.say(&text);
         }
     }

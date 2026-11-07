@@ -69,6 +69,9 @@ const CALL_TIMEOUT: Duration = Duration::from_secs(30);
 /// The most `acerultrax-cli` may take.
 const DTS_TIMEOUT: Duration = Duration::from_secs(30);
 
+/// The longest `acerultrax-cli setup` may run (it installs the DTS driver).
+pub const DTS_SETUP_TIMEOUT: Duration = Duration::from_secs(1800);
+
 /// Where time comes from, and how a pause is spent. Tests pass a clock that advances only when
 /// something sleeps, so waits and timeouts are deterministic and instant.
 pub trait Clock: Send + Sync {

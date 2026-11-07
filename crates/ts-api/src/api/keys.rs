@@ -164,7 +164,10 @@ impl Api {
 
     /// Binds an action to a gesture. The action is checked now; the key service reloads by itself.
     pub fn set_key_action(&self, gesture: Gesture, action: &str) -> ApiResult<()> {
-        actions::validate(action)
+        // Same rule as the key service at start-up: a `look:NAME` must name a saved look.
+        let looks = self.s.looks.names();
+        actions::Validator::with_looks(std::sync::Arc::new(move || looks.clone()))
+            .validate(action)
             .map_err(|e| ApiError::invalid(format!("{e}   (truesense keys actions)")))?;
         self.s.config.write_user(section_table(
             "keys",

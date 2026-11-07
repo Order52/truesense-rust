@@ -36,6 +36,12 @@ fn valid_profile_name(name: &str) -> bool {
 impl Audio {
     /// Runs `acerultrax-cli` with `args` and returns its trimmed output.
     pub fn dts(&self, args: &[&str]) -> Result<String, AudioError> {
+        self.dts_within(args, DTS_TIMEOUT)
+    }
+
+    /// [`dts`](Audio::dts) with its own time limit: `acerultrax-cli setup` downloads and installs
+    /// the DTS driver and may legitimately run for many minutes (Python allowed 1800 s).
+    pub fn dts_within(&self, args: &[&str], timeout: std::time::Duration) -> Result<String, AudioError> {
         let binary = (self.dts_locator)().ok_or(AudioError::DtsNotInstalled)?;
         let program = binary.to_string_lossy();
         if let Some(why) = forbidden(&program, args) {
@@ -43,7 +49,7 @@ impl Audio {
         }
         let out = self
             .runner
-            .output(&program, args, DTS_TIMEOUT)
+            .output(&program, args, timeout)
             .map_err(|e| AudioError::Dts(format!("acerultrax-cli: {e}")))?;
         Ok(String::from_utf8_lossy(&out).trim().to_owned())
     }

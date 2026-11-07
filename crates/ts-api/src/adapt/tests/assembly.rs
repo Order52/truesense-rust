@@ -235,10 +235,8 @@ fn a_saved_look_is_a_valid_action_and_a_missing_one_is_not() {
 /// KNOWN MISMATCH, in `api::keys` (not in this module): Python's `actions.validate` refuses
 /// `look:NAME` for a look that does not exist ("no saved look 'x' (truesense look list)") when the
 /// binding is configured; `Api::set_key_action` checks the syntax only, so the typo is found at
-/// the first key press instead. Remove the `ignore` when `set_key_action` uses the runner's
-/// validator.
+/// the first key press instead; `set_key_action` checks the saved looks too.
 #[test]
-#[ignore = "api::keys::set_key_action validates the syntax only (Python also checks the saved looks)"]
 fn binding_a_gesture_to_a_missing_look_is_refused_when_it_is_set() {
     let rig = Rig::new();
     let err = rig.api.set_key_action(Api::parse_gesture("tap").unwrap(), "look:ghost").unwrap_err();
