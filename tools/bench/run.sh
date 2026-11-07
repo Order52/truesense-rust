@@ -11,7 +11,8 @@
 # Why a namespace: the daemon publishes /tmp/truesense-state, and the key service looks at /dev and
 # /sys/class/hidraw. On a machine with a real TrueSense those belong to the real services, so the
 # benchmark runs in a user and mount namespace (unshare, no privileges needed) with a private /tmp,
-# a /dev that only keeps the harmless devices, and a fake Fn-key interface backed by a pipe. Nothing
+# a /dev that only keeps the harmless devices, a fake Fn-key interface backed by a pipe and a fake
+# CPU sensor. Nothing
 # outside the namespace is written. Without unshare the benchmark refuses to run.
 set -Eeuo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -41,6 +42,13 @@ inner() {
   mkdir -p /sys/class/hidraw/hidraw9/device
   printf 'HID_ID=0003:000004F2:00000117\n' > /sys/class/hidraw/hidraw9/device/uevent
   printf '\x06\x88\x00\x09\x01\xa1\x01\xc0' > /sys/class/hidraw/hidraw9/device/report_descriptor
+  # /sys/class/hwmon: one fake coretemp with a package sensor, which bench.py moves every second so
+  # that the daemon and the windows see changing temperatures, as on a real machine.
+  mkdir /tmp/hwmon && mount -t tmpfs tmpfs /tmp/hwmon && mount --bind /tmp/hwmon /sys/class/hwmon
+  mkdir /sys/class/hwmon/hwmon0
+  printf 'coretemp\n' > /sys/class/hwmon/hwmon0/name
+  printf 'Package id 0\n' > /sys/class/hwmon/hwmon0/temp1_label
+  printf '55000\n' > /sys/class/hwmon/hwmon0/temp1_input
   exec python3 "$here/bench.py" "$@"
 }
 if [ "${1:-}" = "--inner" ]; then shift; inner "$@"; fi

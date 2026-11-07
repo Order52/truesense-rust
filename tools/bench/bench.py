@@ -32,6 +32,7 @@ import statistics
 import struct
 import subprocess
 import sys
+import threading
 import time
 
 CLK = os.sysconf("SC_CLK_TCK")
@@ -45,6 +46,15 @@ HELPERS = [
 STUB = r"""#!/bin/sh
 n=${0##*/}
 echo "$n $*" >> "$TS_BENCH_CALLS"
+# A real helper takes a few milliseconds to start and talk to its server; the stubs pause for an
+# assumed 12 ms (pactl), 4 ms (amixer) and 3 ms (systemctl), so that overlapping them is visible.
+# (The long-running `pactl subscribe` of the audio watcher does not pause.)
+case "$n $1" in
+ "pactl subscribe") ;;
+ pactl*) /usr/bin/sleep 0.012;;
+ amixer*) /usr/bin/sleep 0.004;;
+ systemctl*) /usr/bin/sleep 0.003;;
+esac
 case "$n $*" in
  "pactl list short sources") printf '47\talsa_input.pci-0000_00_1f.3.analog-stereo\tPipeWire\ts32le 2ch 48000Hz\tSUSPENDED\n';;
  "pactl list short sinks") printf '48\talsa_output.pci-0000_00_1f.3.analog-stereo\tPipeWire\ts32le 2ch 48000Hz\tSUSPENDED\n';;
@@ -209,6 +219,7 @@ def measure(pid, seconds):
     else:
         use_ns = True
     c0 = cpu_ns(pid) if use_ns else own_ticks(pid)
+    m0 = memory(pid)
     k0, s0, t0 = child_ticks(pid), switches(pid), time.monotonic()
     d0 = per_thread(pid) if os.environ.get("TS_BENCH_VERBOSE") else None
     time.sleep(seconds)
@@ -221,7 +232,11 @@ def measure(pid, seconds):
     k1, s1, t1 = child_ticks(pid), switches(pid), time.monotonic()
     dt = t1 - t0
     cpu = (c1 - c0) / 1e9 if use_ns else (c1 - c0) / CLK
-    mem = memory(pid)
+    # Memory is read at both ends of the window and the larger value kept: the kernel may trim a
+    # process's resident pages at any moment (a Qt app measured 50 MB once and 99 MB the next
+    # second), and what matters is what the program holds when it is working.
+    m1 = memory(pid)
+    mem = {k: max(m0[k], m1[k]) for k in m1}
     return {
         "cpu_pct": 100.0 * cpu / dt,
         "children_cpu_pct": 100.0 * (k1 - k0) / CLK / dt,
@@ -331,6 +346,21 @@ def pty_first_frame(argv, env, rows=40, cols=120, timeout=15.0, settle=0.05):
 # ---- the measurements ------------------------------------------------------------------------------
 
 
+def wander():
+    """Moves the fake package temperature every second (52 to 60 C, a fixed pseudo-random walk), so
+    live values really change: an unchanging machine would hide most of what a live window costs."""
+    path = "/sys/class/hwmon/hwmon0/temp1_input"
+    i = 0
+    while os.path.exists(path):
+        try:
+            with open(path, "w") as f:
+                f.write(f"{52000 + (i * 7919) % 9000}\n")
+        except OSError:
+            return
+        i += 1
+        time.sleep(1)
+
+
 def fmt_kb(kb):
     return f"{kb / 1024:.1f} MB"
 
@@ -380,7 +410,8 @@ def bench_services(binary, qt, sb, seconds, only, results):
 
 def qt_env(sb):
     env = dict(sb.env)
-    env.update({"QT_QPA_PLATFORM": "offscreen", "DBUS_SESSION_BUS_ADDRESS": "disabled:",
+    # The software scene-graph renderer is what the app uses by default; offscreen has no GPU anyway.
+    env.update({"QT_QPA_PLATFORM": "offscreen", "QT_QUICK_BACKEND": "software", "DBUS_SESSION_BUS_ADDRESS": "disabled:",
                 "XDG_CONFIG_HOME": f"{sb.root}/home/.config", "XDG_CACHE_HOME": f"{sb.root}/home/.cache"})
     return env
 
@@ -520,6 +551,7 @@ def main():
     def only(name):
         return not wanted or name in wanted
 
+    threading.Thread(target=wander, daemon=True).start()
     root = f"/tmp/b{os.getpid()}"
     sb = Sandbox(root)
     sb.binary = args.bin
