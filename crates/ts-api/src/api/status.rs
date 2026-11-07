@@ -201,6 +201,41 @@ impl RaplMeter {
     }
 }
 
+/// The fan registers as the last live reading saw them. Reading them is a firmware call (an SMI that
+/// stalls every core for milliseconds) and a window asks once a second. While the daemon runs, its
+/// own label of what it wrote to the fans (`fan` in the live state) tells when they can have
+/// changed through it, so the registers are read again when that label changes and otherwise every
+/// [`FanCache::FRESH_S`] seconds, which still catches a change made behind the daemon's back.
+#[derive(Default)]
+pub(crate) struct FanCache {
+    last: Mutex<Option<(f64, String, FanState)>>,
+}
+
+impl FanCache {
+    /// How long a reading is reused while the daemon's label stays the same.
+    pub(crate) const FRESH_S: f64 = 5.0;
+
+    /// The cached state when `label` (the daemon's, `None` without a daemon) is the one it was read
+    /// under and is fresh; otherwise `read()`, remembered only when there is a label.
+    pub(crate) fn get(
+        &self,
+        now: f64,
+        label: Option<&str>,
+        read: impl FnOnce() -> Option<FanState>,
+    ) -> Option<FanState> {
+        let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
+        if let (Some(label), Some((at, was, state))) = (label, last.as_ref())
+            && was == label
+            && (0.0..Self::FRESH_S).contains(&(now - at))
+        {
+            return Some(state.clone());
+        }
+        let state = read()?;
+        *last = label.map(|l| (now, l.to_owned(), state.clone()));
+        Some(state)
+    }
+}
+
 const RAPL_ENERGY: &str = "sys/class/powercap/intel-rapl:0/energy_uj";
 
 impl Api {
@@ -211,10 +246,26 @@ impl Api {
         drop(Arc::clone(&self.s.keyboard).prewarm());
         let mut out = Status::default();
         let hw = &self.s.hw;
-        out.put("power_mode", hw.get_mode());
-        out.put("sensors", hw.sensors());
-        out.put("fans", hw.fan_state());
-        out.put("daemon", self.ask_value("state", Args::new()));
+        // What starts helper programs or waits on a socket (the sound system's `pactl` and `amixer`
+        // calls are 20 to 40 ms between them, the daemon's reply a few more) runs beside the
+        // firmware reads instead of after them. The firmware calls stay on this thread in their
+        // order: the kernel module serialises them anyway. The entries are put together in the
+        // order they always had.
+        let (daemon, audio_output, jack) = std::thread::scope(|scope| {
+            let daemon = scope.spawn(|| self.ask_value("state", Args::new()));
+            let audio = scope.spawn(|| self.s.audio.output_status());
+            let jack = scope.spawn(|| self.s.audio.jack_status().raw);
+            out.put("power_mode", hw.get_mode());
+            out.put("sensors", hw.sensors());
+            out.put("fans", hw.fan_state());
+            // A panic in a helper query is the panic it always was: it goes on up.
+            (
+                daemon.join().unwrap_or_else(|p| std::panic::resume_unwind(p)),
+                audio.join().unwrap_or_else(|p| std::panic::resume_unwind(p)),
+                jack.join().unwrap_or_else(|p| std::panic::resume_unwind(p)),
+            )
+        });
+        out.put("daemon", daemon);
         out.put("battery_limit", hw.get_battery_limit());
         out.put("usb_charge_stop", hw.get_usb_charge().map(usb_percent));
         out.put("overdrive", hw.get_overdrive());
@@ -223,8 +274,8 @@ impl Api {
         out.put("gpu_mode", hw.get_gpu_mode());
         out.put("rear", hw.rear_get());
         out.put("touchpad", Ok::<_, std::convert::Infallible>(self.s.touchpad.enabled()));
-        out.put("audio_output", self.s.audio.output_status());
-        out.put("jack", Ok::<_, std::convert::Infallible>(self.s.audio.jack_status().raw));
+        out.put("audio_output", audio_output);
+        out.put("jack", Ok::<_, std::convert::Infallible>(jack));
         out.put("voice", Ok::<_, std::convert::Infallible>(self.s.audio.voice_modes()));
         out
     }
@@ -287,7 +338,9 @@ impl Api {
             power_mode,
             ac: Some(ac),
             battery_pct: self.supply().map(|b| b.percent),
-            fans: self.s.hw.fan_state().ok(),
+            fans: self
+                .fans
+                .get(now, state.as_ref().and_then(|d| d.live_str("fan")), || self.s.hw.fan_state().ok()),
             load: LiveLoad { cpu_pct: number("cpu"), gpu_pct: number("gpu") },
             power: LivePower { cpu_w: self.cpu_power(), gpu_w: number("gpuw") },
             daemon: state,
@@ -312,5 +365,54 @@ impl Api {
             smart_fan: settings.and_then(|d| d.setting_bool("smart_fan")),
             auto_mode: settings.and_then(|d| d.setting_str("auto_mode")).map(str::to_owned),
         }
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+mod fan_cache_tests {
+    use std::cell::Cell;
+
+    use ts_platform::hw::{Duty, FanMode};
+
+    use super::*;
+
+    fn state(cpu: i64) -> FanState {
+        FanState {
+            behavior_raw: "0x41".into(),
+            mode: FanMode::Auto,
+            duty_register_pct: Duty { cpu, gpu: cpu },
+        }
+    }
+
+    #[test]
+    fn the_registers_are_read_again_when_the_daemons_label_changes_or_the_reading_is_old() {
+        let cache = FanCache::default();
+        let reads = Cell::new(0);
+        let get = |now: f64, label: Option<&str>| {
+            cache
+                .get(now, label, || {
+                    reads.set(reads.get() + 1);
+                    Some(state(reads.get()))
+                })
+                .unwrap()
+                .duty_register_pct
+                .cpu
+        };
+        assert_eq!(get(0.0, Some("auto")), 1);
+        assert_eq!(get(1.0, Some("auto")), 1, "same label, fresh: the firmware is not asked");
+        assert_eq!(get(4.9, Some("auto")), 1);
+        assert_eq!(get(5.1, Some("auto")), 2, "old: asked again");
+        assert_eq!(get(6.0, Some("manual 60")), 3, "the daemon wrote something: asked again");
+        assert_eq!(get(7.0, None), 4, "without a daemon every call asks");
+        assert_eq!(get(7.5, None), 5);
+        assert_eq!(get(6.0, Some("manual 60")), 6, "a clock that went back never serves a reading");
+    }
+
+    #[test]
+    fn a_failed_read_is_none_and_keeps_nothing() {
+        let cache = FanCache::default();
+        assert!(cache.get(0.0, Some("auto"), || None).is_none());
+        assert_eq!(cache.get(0.5, Some("auto"), || Some(state(9))).unwrap().duty_register_pct.cpu, 9);
     }
 }

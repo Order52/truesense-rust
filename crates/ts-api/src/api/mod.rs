@@ -280,6 +280,7 @@ pub struct Services {
 pub struct Api {
     pub(crate) s: Services,
     rapl: status::RaplMeter,
+    fans: status::FanCache,
     monitor: monitor::Monitor,
 }
 
@@ -287,7 +288,7 @@ impl Api {
     /// The application layer over these services.
     pub fn new(services: Services) -> Self {
         let monitor = monitor::Monitor::new(services.root.clone());
-        Self { s: services, rapl: status::RaplMeter::default(), monitor }
+        Self { s: services, rapl: status::RaplMeter::default(), fans: status::FanCache::default(), monitor }
     }
 
     /// The services this layer was built from, for a caller that needs one directly (the terminal
