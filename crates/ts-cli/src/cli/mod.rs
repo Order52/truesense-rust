@@ -25,6 +25,7 @@ mod argparse;
 mod completion;
 mod handlers;
 mod launcher;
+mod modebind;
 mod out;
 mod tree;
 

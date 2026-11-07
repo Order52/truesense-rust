@@ -60,6 +60,7 @@ pub(super) fn build(version: &str) -> Command {
         verb("status").help("everything at a glance"),
         verb("sensors").help("temperatures and fan RPM"),
         power(),
+        super::modebind::command(),
         fan(),
         battery(),
         verb("display").help("LCD overdrive").subs("verb", vec![tri_verb("overdrive")]),
