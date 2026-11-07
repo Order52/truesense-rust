@@ -136,6 +136,7 @@ fn run_path(cx: &mut Cx<'_, '_>, path: &[&str], m: &Matches) -> Outcome {
         "display" => battery::display(cx, m),
         "boot" => battery::boot(cx, m),
         "touchpad" => battery::touchpad(cx, m),
+        "alerts" => super::alerts::run(cx, verb, m),
         "gpu" => gpu::gpu(cx, verb, m),
         "rear" => rear::rear(cx, verb, m),
         "update" => update::update(cx, verb, m),

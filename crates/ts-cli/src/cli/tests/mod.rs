@@ -2,6 +2,7 @@
 //! against the simulated services, and the generated completions.
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
+mod alerts;
 mod commands;
 mod golden;
 mod help;

@@ -75,6 +75,7 @@ pub(super) fn build(version: &str) -> Command {
         profile(),
         cpu(),
         tri_verb("touchpad").help("touchpad on/off (Fn+F10)"),
+        super::alerts::command(),
         service(),
         verb("config").help("configuration").subs("verb", vec![verb("show"), verb("validate"), verb("path")]),
         verb("doctor").help("check the whole stack and say how to fix problems"),
