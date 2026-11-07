@@ -3,18 +3,22 @@
 //! summaries of an update check and of an installation, the licence text of the About box, and the
 //! summary of "reset everything".
 //!
-//! The validation here **mirrors** the rules of the layers below (`AlertsConfig::validate` in
-//! ts-foundation, `UiSettings::set` for the window's own settings) so that the page can refuse a
-//! value before sending it and say which range is allowed; the layers below stay the authority, and
+//! The validation here reads the rules of the layers below (the alert ranges of
+//! `ts_foundation::config`, `UiSettings::set` for the window's own settings) so that the page can
+//! refuse a value before sending it and say which range is allowed; the layers below stay the authority, and
 //! a value this module accepts may still be refused by them (their text is then shown as it is).
 //!
 //! Verbs: `checklist`, `alerts_view`, `alerts_validate`, `alerts_ranges`, `ui_validate`,
 //! `startup_options`, `update_summary`, `apply_summary`, `licence`, `reset_summary`.
 #![forbid(unsafe_code)]
 
+use std::ops::RangeInclusive;
+
 use serde_json::{Map, Value, json};
 
 use crate::json::{at, bool_at, f64_at, list_at, str_at};
+use ts_foundation::config;
+
 use crate::settings::UiSettings;
 
 /// The address updates may link to; anything else in a release's `url` is not offered as a link.
@@ -35,24 +39,32 @@ pub struct Range {
     pub also: Option<i64>,
 }
 
-/// The integer alert settings and their ranges: temperature limits 70 to 100 C, repeat 1 to 240
-/// minutes, debounce 1 to 30 samples, battery low 5 to 50 % or 0 for off.
+/// The range `range` of ts-foundation as the page takes it, plus a value allowed besides it.
+const fn field(range: &RangeInclusive<i64>, also: Option<i64>) -> Range {
+    Range { min: *range.start(), max: *range.end(), also }
+}
+
+/// The integer alert settings and their ranges, read from `ts_foundation::config` (the daemon's
+/// own validation): temperature limits, repeat minutes, debounce samples, battery low (or 0 for off).
 pub(crate) const ALERT_FIELDS: &[(&str, Range)] = &[
-    ("cpu_limit_c", Range { min: 70, max: 100, also: None }),
-    ("gpu_limit_c", Range { min: 70, max: 100, also: None }),
-    ("repeat_minutes", Range { min: 1, max: 240, also: None }),
-    ("debounce_samples", Range { min: 1, max: 30, also: None }),
-    ("battery_low_pct", Range { min: 5, max: 50, also: Some(0) }),
+    ("cpu_limit_c", field(&config::ALERT_LIMIT_RANGE, None)),
+    ("gpu_limit_c", field(&config::ALERT_LIMIT_RANGE, None)),
+    ("repeat_minutes", field(&config::ALERT_REPEAT_MINUTES, None)),
+    ("debounce_samples", field(&config::ALERT_DEBOUNCE_SAMPLES, None)),
+    ("battery_low_pct", field(&config::ALERT_BATTERY_LOW_PCT, Some(0))),
 ];
 /// The yes/no alert settings.
 pub(crate) const ALERT_FLAGS: &[&str] = &["enabled", "throttling", "sensor_lost"];
 
+/// What the daemon uses when a setting is missing: `AlertsConfig::default()`.
 fn alert_default(field: &str) -> Value {
+    let d = config::AlertsConfig::default();
     match field {
-        "cpu_limit_c" | "gpu_limit_c" => json!(90),
-        "repeat_minutes" => json!(5),
-        "debounce_samples" => json!(3),
-        "battery_low_pct" => json!(15),
+        "cpu_limit_c" => json!(d.cpu_limit_c),
+        "gpu_limit_c" => json!(d.gpu_limit_c),
+        "repeat_minutes" => json!(d.repeat_minutes),
+        "debounce_samples" => json!(d.debounce_samples),
+        "battery_low_pct" => json!(d.battery_low_pct),
         _ => json!(true),
     }
 }

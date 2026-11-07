@@ -24,7 +24,7 @@ use serde_json::{Value, json};
 use crate::json::{at, bool_at, f64_at, list_at, str_at};
 
 /// The power modes in the order the tiles show them.
-pub(crate) const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
+pub(crate) use crate::limits::POWER_MODES;
 /// The GPU modes in the order the tiles show them.
 pub(crate) const GPU_MODES: [&str; 3] = ["optimus", "nvidia", "auto"];
 /// The fan modes in the order the tiles show them.

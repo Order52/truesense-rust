@@ -1236,6 +1236,8 @@ dependencies = [
  "serde",
  "serde_json",
  "ts-api",
+ "ts-decision",
+ "ts-domain",
  "ts-foundation",
  "ts-gui",
  "ts-keys",

@@ -396,8 +396,14 @@ pub struct AlertsConfig {
     pub sensor_lost: bool,
 }
 
-/// The smallest and largest temperature limit an alert may use.
-pub(crate) const ALERT_LIMIT_RANGE: std::ops::RangeInclusive<i64> = 70..=100;
+/// The smallest and largest temperature limit an alert may use, in degrees C.
+pub const ALERT_LIMIT_RANGE: std::ops::RangeInclusive<i64> = 70..=100;
+/// How many minutes may pass between two messages of the same alert.
+pub const ALERT_REPEAT_MINUTES: std::ops::RangeInclusive<i64> = 1..=240;
+/// How many consecutive samples a condition must hold before it is reported.
+pub const ALERT_DEBOUNCE_SAMPLES: std::ops::RangeInclusive<i64> = 1..=30;
+/// The battery percentage an alert may use (0 switches the battery alert off).
+pub const ALERT_BATTERY_LOW_PCT: std::ops::RangeInclusive<i64> = 5..=50;
 
 fn strings(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_owned()).collect()
@@ -563,14 +569,17 @@ impl AlertsConfig {
                 out.push(format!("[alerts] {key} must be {}..{}", range.start(), range.end()));
             }
         }
-        if !(1..=240).contains(&self.repeat_minutes) {
-            out.push("[alerts] repeat_minutes must be 1..240".to_owned());
+        let repeat = ALERT_REPEAT_MINUTES;
+        if !repeat.contains(&self.repeat_minutes) {
+            out.push(format!("[alerts] repeat_minutes must be {}..{}", repeat.start(), repeat.end()));
         }
-        if !(1..=30).contains(&self.debounce_samples) {
-            out.push("[alerts] debounce_samples must be 1..30".to_owned());
+        let debounce = ALERT_DEBOUNCE_SAMPLES;
+        if !debounce.contains(&self.debounce_samples) {
+            out.push(format!("[alerts] debounce_samples must be {}..{}", debounce.start(), debounce.end()));
         }
-        if self.battery_low_pct != 0 && !(5..=50).contains(&self.battery_low_pct) {
-            out.push("[alerts] battery_low_pct must be 0 (off) or 5..50".to_owned());
+        let low = ALERT_BATTERY_LOW_PCT;
+        if self.battery_low_pct != 0 && !low.contains(&self.battery_low_pct) {
+            out.push(format!("[alerts] battery_low_pct must be 0 (off) or {}..{}", low.start(), low.end()));
         }
         out
     }

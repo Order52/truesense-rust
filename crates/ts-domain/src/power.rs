@@ -28,9 +28,9 @@ use ts_foundation::sync::locked;
 use ts_platform::hw::CommandRunner;
 
 /// The smallest PL1 or PL2 ever written, in watts.
-pub(crate) const MIN_W: u32 = 25;
+pub const MIN_W: u32 = 25;
 /// The largest PL1 or PL2 ever written, in watts. The 13700HX laptop's stock limit is 80 W.
-pub(crate) const MAX_W: u32 = 120;
+pub const MAX_W: u32 = 120;
 
 /// PL1 (sustained) range that is "safe": inside it the cooling keeps up (stock is 80 W).
 pub(crate) const SAFE_PL1_W: (u32, u32) = (35, 80);

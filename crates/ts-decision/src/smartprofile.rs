@@ -47,7 +47,7 @@ impl Mode {
     pub const ALL: [Mode; 5] = [Mode::Eco, Mode::Quiet, Mode::Balanced, Mode::Performance, Mode::Turbo];
 
     /// The lower-case name used in config files, state and on the control socket.
-    pub fn name(self) -> &'static str {
+    pub const fn name(self) -> &'static str {
         match self {
             Mode::Eco => "eco",
             Mode::Quiet => "quiet",

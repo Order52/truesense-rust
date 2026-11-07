@@ -15,6 +15,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use ts_domain::keyboard;
 
 use crate::json::{at, f64_at, i64_at, list_at, str_at};
 
@@ -573,11 +574,11 @@ pub const EFFECTS: [Effect; 13] = [
 ];
 
 /// Lowest and highest effect speed (1 slowest .. 12 fastest, the UI scale of `keyboard`).
-const SPEED_RANGE: (i64, i64) = (1, 12);
+const SPEED_RANGE: (i64, i64) = (keyboard::SPEED_MIN, keyboard::SPEED_MAX);
 /// The keyboard's brightness range.
-const KB_MAX: i64 = 50;
+const KB_MAX: i64 = keyboard::MAX_BRIGHT;
 /// The effect speed used when none is known.
-const DEFAULT_SPEED: i64 = 5;
+const DEFAULT_SPEED: i64 = keyboard::DEFAULT_SPEED;
 
 fn effect(id: &str) -> Option<&'static Effect> {
     EFFECTS.iter().find(|e| e.id == id)
@@ -715,12 +716,12 @@ fn dim_to(hex: &str, f: f64) -> String {
 
 /// Whether `name` is a usable look or design name (the rule of the web window and the stores).
 pub fn valid_name(name: &str) -> bool {
-    (1..=40).contains(&name.len()) && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+    ts_foundation::names::is_valid(name)
 }
 
 /// Whether `name` is a usable per-key set name (no dots).
 pub(crate) fn valid_set_name(name: &str) -> bool {
-    (1..=40).contains(&name.len()) && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
+    ts_foundation::names::is_valid(name) && !name.contains('.')
 }
 
 /// A look split into the facts the page words in its own language: the keyboard part (`effect`
@@ -743,7 +744,7 @@ pub fn look_summary(look: &Value) -> Value {
 // ---- per power mode bindings --------------------------------------------------------------------
 
 /// The five power modes, in the order of the strip.
-pub const MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
+pub const MODES: [&str; 5] = crate::limits::POWER_MODES;
 
 /// What one power mode has: the saved look and curve (read-only here) and the look being edited.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

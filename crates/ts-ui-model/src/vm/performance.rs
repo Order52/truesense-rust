@@ -2,14 +2,11 @@
 //! (ranges, Changed and Undo), the game-rule list, the risk bands of power limits and undervolts
 //! and the confirmation each band needs, and the plain-data views of what the daemon answers.
 //!
-//! Every number here mirrors a constant of the layer that enforces it: `ts_decision::smartprofile`
-//! (`MODE_SETTINGS`, `NUM_SETTINGS`), `ts_decision::gamerules` (`clean_name`, `MAX_RULES`),
-//! `ts_domain::power` (the PL1/PL2 bands), `ts_domain::undervolt` and `ts_domain::gpuundervolt`
-//! (the safety and danger lines), and the web page's `risk.js`. This crate does not depend on
-//! those crates, so the mirror is pinned by tests (the setting keys against
-//! `ts_api::api::SMART_SETTING_KEYS`, the bands against the Python test vectors). The daemon
-//! enforces every limit again, so a drifted mirror can only make the page ask a question too
-//! early or too late, never write an unsafe value.
+//! Every number here is read from the layer that enforces it (see [`crate::limits`]):
+//! `ts_decision::smartprofile` (the settings and their ranges), `ts_decision::gamerules`,
+//! `ts_domain::power`, `ts_domain::undervolt` and `ts_domain::gpuundervolt` (the bands: the page
+//! calls the same `risk` functions the daemon does, so the wording is the daemon's own). The
+//! daemon still enforces every limit again; the page only asks early.
 //!
 //! Verbs (QML calls `Bus.vm("performance", verb, json)`): `smart_schema`, `smart_set`,
 //! `smart_payload`, `changed`, `undo`, `copy_name`, `name_check`, `rules_model`, `rule_check`,
@@ -20,72 +17,16 @@
 #![forbid(unsafe_code)]
 
 use serde_json::{Map, Value, json};
+use ts_decision::gamerules::{self, MAX_RULES, PROGRAM_NAME_MAX};
+use ts_domain::power::{self, Level, Rating};
+use ts_domain::{gpuundervolt, undervolt};
+use ts_foundation::names;
 
 use crate::json::{at, bool_at, f64_at, list_at, str_at};
-
-/// The five power modes, slowest to fastest (the rank order of `ts_decision::smartprofile::Mode`).
-const MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
-
-/// The mode-valued settings of a Smart auto profile, in display order.
-const MODE_KEYS: [&str; 7] = [
-    "ac_idle",
-    "ac_browsing",
-    "ac_busy",
-    "battery_idle",
-    "battery_browsing",
-    "battery_busy",
-    "battery_hot",
-];
+use crate::limits::{POWER_MODES as MODES, SMART_MODE_KEYS as MODE_KEYS, SMART_NUMBERS as NUMBERS};
 
 /// The switch of a Smart auto profile.
 const TURBO_KEY: &str = "ac_turbo";
-
-/// The numeric settings with their inclusive ranges, in the daemon's `NUM_SETTINGS` order.
-const NUMBERS: [(&str, i64, i64); 12] = [
-    ("turbo_after_s", 5, 300),
-    ("turbo_max_cpu", 60, 95),
-    ("turbo_max_gpu", 55, 85),
-    ("backoff_hold_s", 10, 600),
-    ("idle_after_s", 10, 600),
-    ("battery_low_pct", 5, 50),
-    ("up_dwell_s", 2, 120),
-    ("down_dwell_s", 2, 300),
-    ("busy_hold_s", 0, 600),
-    ("min_change_s", 2, 600),
-    ("turbo_margin_c", 0, 20),
-    ("turbo_retry_s", 10, 900),
-];
-
-/// A profile name as the library accepts it: letters, digits, `.`, `_`, `-`, at most 40.
-const NAME_MAX: usize = 40;
-/// A game rule's program name is at most this long (`ts_decision::gamerules`).
-const PROGRAM_MAX: usize = 80;
-/// At most this many game rules (`ts_decision::gamerules::MAX_RULES`).
-const MAX_RULES: usize = 64;
-
-/// Smallest and largest PL1 or PL2 the daemon ever writes, in watts (`ts_domain::power`).
-const PL_MIN_W: f64 = 25.0;
-const PL_MAX_W: f64 = 120.0;
-/// PL1 and PL2 ranges that are "safe": the cooling keeps up (stock is 80 W sustained).
-const PL1_SAFE: (f64, f64) = (35.0, 80.0);
-const PL2_SAFE: (f64, f64) = (35.0, 100.0);
-/// Beyond these the cooling cannot keep up and the CPU throttles hard or overheats.
-const PL1_DANGER: f64 = 100.0;
-const PL2_DANGER: f64 = 115.0;
-
-/// CPU undervolt lines in millivolts of reduction: past SAFE it may be unstable, past CAUTION
-/// (the danger line) freezes and reboots are likely. The two planes have their own lines.
-const CPU_SAFE_CORE_MV: u32 = 60;
-const CPU_SAFE_CACHE_MV: u32 = 50;
-const CPU_DANGER_CORE_MV: u32 = 90;
-const CPU_DANGER_CACHE_MV: u32 = 70;
-
-/// GPU undervolt lines (MHz of curve offset) and the lowest clock cap that costs little speed.
-const GPU_SAFE_OFFSET_MHZ: i64 = 150;
-const GPU_DANGER_OFFSET_MHZ: i64 = 200;
-const GPU_LOW_CAP_MHZ: i64 = 1500;
-/// Smallest clock cap the driver is asked for; a slider below this means "no cap".
-const GPU_CAP_MIN_MHZ: i64 = 600;
 
 /// The word that must be typed to apply a value beyond the danger line.
 const DANGER_WORD: &str = "APPLY";
@@ -102,7 +43,7 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
         "changed" => changed(args),
         "undo" => undo(args),
         "copy_name" => Ok(json!(copy_name(args))),
-        "name_check" => Ok(json!({ "ok": valid_name(str_at(args, "name").unwrap_or("")) })),
+        "name_check" => Ok(json!({ "ok": names::is_valid(str_at(args, "name").unwrap_or("")) })),
         "rules_model" => Ok(rules_model(args)),
         "rule_check" => Ok(rule_check(args)),
         "risk_pl" => Ok(risk_pl(args)),
@@ -208,11 +149,6 @@ fn undo(args: &Value) -> Result<Value, String> {
     }
 }
 
-/// A profile name the CLI accepts: letters, digits, `.`, `_`, `-`, one to forty characters.
-fn valid_name(name: &str) -> bool {
-    (1..=NAME_MAX).contains(&name.len()) && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
-}
-
 /// The name for a copy: `base`, or `base-2`, `base-3`, ... when the library already has it.
 fn copy_name(args: &Value) -> String {
     let base = str_at(args, "base").unwrap_or("profile");
@@ -255,22 +191,34 @@ fn rules_model(args: &Value) -> Value {
     json!({ "rows": rows, "count": rows.len(), "running": running, "full": rows.len() >= MAX_RULES })
 }
 
-/// Checks a rule before it is sent, with the daemon's cleaning (trim, lower case; letters, digits,
-/// `. _ + -` and spaces, one to eighty characters). `problem` is a code QML turns into a sentence:
-/// `empty`, `chars`, `too_long`, `mode`, `full`; `replaces` says the program already has a rule.
+/// Checks a rule before it is sent, with the daemon's cleaning (`gamerules::clean_name`: trim, lower
+/// case; letters, digits, `. _ + -` and spaces, one to eighty characters). `problem` is a code QML
+/// turns into a sentence: `empty`, `chars`, `too_long`, `mode`, `full`; `replaces` says the program
+/// already has a rule.
 fn rule_check(args: &Value) -> Value {
-    let program = str_at(args, "program").unwrap_or("").trim().to_lowercase();
+    let raw = str_at(args, "program").unwrap_or("");
     let mode = str_at(args, "mode").unwrap_or("");
     let rules = at(args, "rules").and_then(Value::as_object);
+    // The daemon's verdict decides; on a refusal only the reason is worked out here, because the
+    // daemon's error does not tell the page which sentence to show.
+    let (program, name_problem) = match gamerules::clean_name(raw) {
+        Ok(program) => (program, None),
+        Err(_) => {
+            let shown = raw.trim().to_lowercase();
+            let why = if shown.is_empty() {
+                "empty"
+            } else if shown.len() > PROGRAM_NAME_MAX {
+                "too_long"
+            } else {
+                "chars"
+            };
+            (shown, Some(why))
+        }
+    };
     let replaces = rules.is_some_and(|r| r.contains_key(&program));
     let count = rules.map_or(0, Map::len);
-    let allowed = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'.' | b'_' | b'+' | b' ' | b'-');
-    let problem = if program.is_empty() {
-        Some("empty")
-    } else if program.len() > PROGRAM_MAX {
-        Some("too_long")
-    } else if !program.bytes().all(allowed) {
-        Some("chars")
+    let problem = if name_problem.is_some() {
+        name_problem
     } else if !MODES.contains(&mode) {
         Some("mode")
     } else if !replaces && count >= MAX_RULES {
@@ -283,44 +231,30 @@ fn rule_check(args: &Value) -> Value {
 
 // ---- risk bands --------------------------------------------------------------------------------
 
-fn rating(level: &str, why: impl Into<String>) -> Value {
-    json!({ "level": level, "why": why.into() })
+/// A rating as the page takes it: the daemon's level and sentence.
+fn rating(rating: Rating) -> Value {
+    json!({ "level": rating.level.as_str(), "why": rating.message })
 }
 
-/// Rates a PL1/PL2 pair in watts: the daemon's bands and wording, plus what the page needs to
-/// refuse before asking (`problem`: `order` when PL2 is below PL1, `range` outside 25..120 W,
-/// `number` when not a number).
+/// Rates a PL1/PL2 pair in watts: the daemon's bands and wording (`ts_domain::power::risk`), plus
+/// what the page needs to refuse before asking (`problem`: `order` when PL2 is below PL1, `range`
+/// outside the allowed watts, `number` when not a number). A PL2 below PL1 is rated danger here
+/// with its own sentence, because the daemon refuses it outright instead of rating it.
 fn risk_pl(args: &Value) -> Value {
     let (Some(pl1), Some(pl2)) = (f64_at(args, "pl1"), f64_at(args, "pl2")) else {
-        let mut r = rating("danger", "The limits are not numbers.");
+        let mut r = rating(Rating { level: Level::Danger, message: "The limits are not numbers.".to_owned() });
         r["problem"] = json!("number");
         return r;
     };
     let mut r = if pl2 < pl1 {
-        rating("danger", "PL2 (burst) must not be below PL1 (sustained).")
-    } else if pl1 > PL1_DANGER || pl2 > PL2_DANGER {
-        rating(
-            "danger",
-            format!(
-                "Beyond the danger line ({PL1_DANGER} W sustained / {PL2_DANGER} W burst): the cooling cannot keep up and the CPU will throttle hard or overheat."
-            ),
-        )
-    } else if pl1 > PL1_SAFE.1 || pl2 > PL2_SAFE.1 {
-        rating(
-            "caution",
-            format!(
-                "Above stock ({} W sustained / {} W burst): hotter and louder, and it may throttle.",
-                PL1_SAFE.1, PL2_SAFE.1
-            ),
-        )
-    } else if pl1 < PL1_SAFE.0 || pl2 < PL2_SAFE.0 {
-        rating("caution", "Very low limits make the laptop feel slow.")
+        rating(Rating { level: Level::Danger, message: "PL2 (burst) must not be below PL1 (sustained).".to_owned() })
     } else {
-        rating("safe", "Inside the safe range.")
+        rating(power::risk(pl1, pl2))
     };
+    let allowed = f64::from(power::MIN_W)..=f64::from(power::MAX_W);
     let problem = if pl2 < pl1 {
         Some("order")
-    } else if !(PL_MIN_W..=PL_MAX_W).contains(&pl1) || !(PL_MIN_W..=PL_MAX_W).contains(&pl2) {
+    } else if !allowed.contains(&pl1) || !allowed.contains(&pl2) {
         Some("range")
     } else {
         None
@@ -329,62 +263,19 @@ fn risk_pl(args: &Value) -> Value {
     r
 }
 
-/// Rates CPU undervolt offsets in millivolts (negative or positive; only the size counts).
+/// Rates CPU undervolt offsets in millivolts (negative or positive; only the size counts), with
+/// the daemon's own `ts_domain::undervolt::risk`.
 fn risk_cpu_uv(args: &Value) -> Value {
-    let core = f64_at(args, "core").unwrap_or(0.0).abs();
-    let cache = f64_at(args, "cache").unwrap_or(0.0).abs();
-    if core > f64::from(CPU_DANGER_CORE_MV) || cache > f64::from(CPU_DANGER_CACHE_MV) {
-        rating(
-            "danger",
-            format!(
-                "Beyond the danger line (core {CPU_DANGER_CORE_MV} mV / cache {CPU_DANGER_CACHE_MV} mV). Freezes and reboots are likely; unsaved work can be lost."
-            ),
-        )
-    } else if core > f64::from(CPU_SAFE_CORE_MV) || cache > f64::from(CPU_SAFE_CACHE_MV) {
-        rating(
-            "caution",
-            format!(
-                "Past the safety line (core {CPU_SAFE_CORE_MV} mV / cache {CPU_SAFE_CACHE_MV} mV). It may be unstable: test under load before trusting it."
-            ),
-        )
-    } else if core != 0.0 || cache != 0.0 {
-        rating("safe", "Inside the safe range.")
-    } else {
-        rating("safe", "Stock voltage.")
-    }
+    // Rounded up, so that 60.4 mV is still "past 60" as it was when the page compared the raw number.
+    let mv = |key: &str| f64_at(args, key).unwrap_or(0.0).abs().ceil().min(f64::from(i32::MAX)) as i32;
+    rating(undervolt::risk(mv("core"), mv("cache")))
 }
 
-/// Rates a GPU curve offset (MHz) and clock cap (MHz, 0 = none).
+/// Rates a GPU curve offset (MHz) and clock cap (MHz, 0 = none) with the daemon's own
+/// `ts_domain::gpuundervolt::risk`.
 fn risk_gpu_uv(args: &Value) -> Value {
-    let offset = f64_at(args, "offset").unwrap_or(0.0).round() as i64;
-    let cap = f64_at(args, "cap").unwrap_or(0.0).round() as i64;
-    if offset > GPU_DANGER_OFFSET_MHZ {
-        rating(
-            "danger",
-            format!("Beyond the danger line (+{GPU_DANGER_OFFSET_MHZ} MHz). Games and the driver can crash; the screen can glitch."),
-        )
-    } else if offset > GPU_SAFE_OFFSET_MHZ {
-        rating(
-            "caution",
-            format!("Past the safety line (+{GPU_SAFE_OFFSET_MHZ} MHz). It may crash in some games: test under load."),
-        )
-    } else if offset > 0 && cap == 0 {
-        rating(
-            "caution",
-            "A positive offset without a clock cap can push the clock above stock: set a cap (2400 MHz is typical) or keep the offset small.",
-        )
-    } else if offset < -100 {
-        rating(
-            "caution",
-            "A large negative offset only slows the GPU; it does not save voltage the way a positive offset with a cap does.",
-        )
-    } else if cap != 0 && cap < GPU_LOW_CAP_MHZ {
-        rating("caution", "A cap this low will cost a lot of speed in games.")
-    } else if offset != 0 || cap != 0 {
-        rating("safe", "Inside the safe range.")
-    } else {
-        rating("safe", "Stock.")
-    }
+    let mhz = |key: &str| f64_at(args, key).unwrap_or(0.0).round().clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32;
+    rating(gpuundervolt::risk(mhz("offset"), mhz("cap")))
 }
 
 /// What the confirmation for a risk level looks like. A value beyond the danger line is sent with
@@ -413,7 +304,7 @@ fn uv_cpu_values(args: &Value) -> Value {
 fn uv_gpu_values(args: &Value) -> Value {
     let offset = f64_at(args, "offset").unwrap_or(0.0).round() as i64;
     let slider = f64_at(args, "cap_slider").unwrap_or(0.0).round() as i64;
-    json!({ "offset": offset, "cap": if slider >= GPU_CAP_MIN_MHZ { slider } else { 0 } })
+    json!({ "offset": offset, "cap": if slider >= i64::from(gpuundervolt::CAP_MIN_MHZ) { slider } else { 0 } })
 }
 
 /// A readable view of `cpu undervolt get` or `gpu undervolt get`. `readable` is false when the
@@ -547,17 +438,6 @@ mod tests {
         let mut theirs: Vec<String> = ts_api::api::SMART_SETTING_KEYS.iter().map(|k| (*k).to_owned()).collect();
         theirs.sort();
         assert_eq!(mine, theirs, "a setting was added or renamed in ts-decision: mirror it here");
-    }
-
-    #[test]
-    fn the_ranges_are_the_daemons() {
-        // ts_decision::smartprofile::NUM_SETTINGS, written out once more on purpose.
-        let want = [
-            ("turbo_after_s", 5, 300), ("turbo_max_cpu", 60, 95), ("turbo_max_gpu", 55, 85), ("backoff_hold_s", 10, 600),
-            ("idle_after_s", 10, 600), ("battery_low_pct", 5, 50), ("up_dwell_s", 2, 120), ("down_dwell_s", 2, 300),
-            ("busy_hold_s", 0, 600), ("min_change_s", 2, 600), ("turbo_margin_c", 0, 20), ("turbo_retry_s", 10, 900),
-        ];
-        assert_eq!(NUMBERS, want);
     }
 
     #[test]
@@ -740,6 +620,23 @@ mod tests {
             let v = run("risk_pl", json!({"pl1": pl1, "pl2": pl2}));
             assert_eq!(level_of(&v), want, "risk_pl({pl1}, {pl2}) = {v}");
         }
+    }
+
+    #[test]
+    fn the_undervolt_bands_are_the_daemons_and_a_fraction_past_a_line_is_past_it() {
+        let cpu = |core: f64, cache: f64| run("risk_cpu_uv", json!({"core": core, "cache": cache}));
+        assert_eq!(level_of(&cpu(0.0, 0.0)), "safe");
+        assert_eq!(cpu(0.0, 0.0)["why"], json!("Stock voltage."));
+        assert_eq!(level_of(&cpu(60.0, 50.0)), "safe");
+        assert_eq!(level_of(&cpu(-60.4, 0.0)), "caution", "the size counts, and 60.4 is past 60");
+        assert_eq!(level_of(&cpu(90.0, 70.0)), "caution");
+        assert_eq!(level_of(&cpu(0.0, 70.2)), "danger");
+        let gpu = |offset: f64, cap: f64| run("risk_gpu_uv", json!({"offset": offset, "cap": cap}));
+        assert_eq!(level_of(&gpu(150.0, 2400.0)), "safe");
+        assert_eq!(level_of(&gpu(151.0, 2400.0)), "caution");
+        assert_eq!(level_of(&gpu(201.0, 2400.0)), "danger");
+        assert_eq!(level_of(&gpu(100.0, 0.0)), "caution", "a positive offset needs a cap");
+        assert_eq!(level_of(&gpu(0.0, 0.0)), "safe");
     }
 
     #[test]
