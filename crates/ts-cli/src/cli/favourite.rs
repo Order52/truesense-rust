@@ -1,4 +1,4 @@
-//! `favourite`: the short list of starred looks, fan curves, Smart auto profiles and whole-setup
+//! `favourite`: the short list of starred looks, fan curves, Smart auto profiles, themes and whole-setup
 //! profiles that the window's Home page and the PREDATOR key (`favourite:N`, `favourite-next`) use.
 //!
 //! New in 0.5; the Python and Go editions have no such command. It lives in one file: the command
@@ -12,13 +12,13 @@ use super::argparse::{Arg, Command, Matches};
 use super::handlers::{Cx, Outcome, fail};
 
 /// The kinds `add` and `remove` accept (the words of the favourites file and of the bus).
-const KINDS: [&str; 4] = ["look", "fan_curve", "smart_profile", "profile"];
+const KINDS: [&str; 5] = ["look", "fan_curve", "smart_profile", "profile", "theme"];
 
 /// The `favourite` area of the command tree.
 pub(super) fn command() -> Command {
     let kind = || Arg::pos("kind").choices(&KINDS);
     Command::new("favourite")
-        .help("starred looks, fan curves, Smart profiles and profiles (the Home page and the PREDATOR key use them): list | add KIND NAME | remove KIND NAME | move FROM TO | apply N | apply KIND NAME | next")
+        .help("starred looks, fan curves, Smart profiles, profiles and themes (the Home page and the PREDATOR key use them): list | add KIND NAME | remove KIND NAME | move FROM TO | apply N | apply KIND NAME | next")
         .subs(
             "verb",
             vec![

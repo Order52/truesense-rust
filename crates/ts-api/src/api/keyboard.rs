@@ -14,7 +14,7 @@ use serde::{Serialize, Serializer};
 use serde_json::json;
 use ts_domain::designs;
 use ts_domain::keyboard::{
-    DEFAULT_COLOR, DEFAULT_EFFECT_BRIGHT, DEFAULT_SPEED, MAX_BRIGHT, State, effect_names,
+    DEFAULT_COLOR, DEFAULT_EFFECT_BRIGHT, DEFAULT_SPEED, Direction, MAX_BRIGHT, State, effect_names,
 };
 use ts_domain::keymap::{self, Color, KeymapError, NUM_CELLS, ROWS};
 use ts_domain::keyprofiles::CommandOutput;
@@ -95,8 +95,37 @@ pub struct EffectRequest {
     pub speed: i64,
     /// Brightness 0..=50, or the keyboard's own.
     pub brightness: Option<i64>,
-    /// Direction, 0 or 1.
+    /// Direction, 0 to 5 for the wave (see [`wave_directions`]); the other effects ignore it.
     pub direction: i64,
+}
+
+/// One direction of the hardware wave, for a client that lists them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct WaveDirection {
+    /// The number `keyboard effect` stores and takes, 0 to 5.
+    pub value: i64,
+    /// The name every client accepts (`clockwise`, `left-to-right`, ...).
+    pub id: &'static str,
+    /// The byte the keyboard receives.
+    pub wire: u8,
+}
+
+/// The six wave directions in display order (reference-confirmed on a PH16-71).
+pub fn wave_directions() -> Vec<WaveDirection> {
+    Direction::ALL
+        .iter()
+        .map(|d| WaveDirection { value: d.logical(), id: d.id(), wire: d.wire_byte() })
+        .collect()
+}
+
+/// Reads a direction given as a name or a number into the number `EffectRequest` carries. A
+/// number is passed on as it is (only the effect knows whether it is valid: the wave takes 0 to 5,
+/// the others any byte); a name must be one of the six.
+pub fn parse_direction(text: &str) -> ApiResult<i64> {
+    if let Ok(n) = text.trim().parse::<i64>() {
+        return Ok(n);
+    }
+    Direction::parse(text).map(Direction::logical).map_err(|e| ApiError::invalid(e.to_string()))
 }
 
 impl EffectRequest {

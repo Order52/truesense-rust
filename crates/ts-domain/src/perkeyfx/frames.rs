@@ -14,10 +14,12 @@
 
 use std::f64::consts::PI;
 
+use super::sweep;
 use crate::keymap::{self, COLUMNS, Color, LIT_CELLS, NUM_CELLS, ROWS};
 
 /// The animations in display order: the name the settings carry and the label shown to the user.
-pub const MODES: [(&str, &str); 18] = [
+/// The first 18 are the earlier editions'; the sweeps after them are this edition's.
+pub const MODES: [(&str, &str); 20] = [
     ("pulse", "Pulse"),
     ("wave", "Wave"),
     ("cycle", "Colour cycle"),
@@ -36,6 +38,8 @@ pub const MODES: [(&str, &str); 18] = [
     ("confetti", "Confetti"),
     ("starlight", "Starlight"),
     ("mood", "Mood lamp"),
+    ("wave-clockwise", "Clockwise sweep"),
+    ("wave-counter-clockwise", "Counter-clockwise sweep"),
 ];
 
 /// The slowest animation speed.
@@ -123,6 +127,10 @@ fn cell_fx(mode: &str, c: usize, base: Color, t: f64, rate: f64) -> Color {
         "wave" => keymap::hsv(x - t * rate),
         "rainbow" => keymap::hsv(x * 0.8 + t * rate * 0.3 + rowf * 0.02),
         "cycle" => keymap::hsv(t * rate * 0.5),
+        "wave-clockwise" | "wave-counter-clockwise" => {
+            let lit_key = base.iter().copied().max().unwrap_or(0) > 60;
+            sweep::colour(c, base, lit_key, t, rate, mode == "wave-clockwise")
+        }
         "mood" => mix(WHITE, keymap::hsv(t / 60.0 * (rate * 10.0).max(1.0) / 5.0), 0.55),
         "twinkle" => {
             let s = (2.0 * PI * (t * rate * 0.6 + hash(cell, 1, 0))).sin().max(0.0).powf(12.0);

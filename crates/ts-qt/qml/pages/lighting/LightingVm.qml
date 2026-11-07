@@ -31,6 +31,11 @@ QtObject {
         return _decode(Bus.vm("lighting", verb, JSON.stringify(args === undefined ? {} : args)), verb)
     }
 
+    /// Calls a verb of the gallery view-model (which cards a search and a chip leave).
+    function gallery(verb, args) {
+        return _decode(Bus.vm("gallery", verb, JSON.stringify(args === undefined ? {} : args)), verb)
+    }
+
     /// Like call(), with the key picture's keys added to the arguments without encoding them again.
     function callKeys(verb, args) {
         var t = JSON.stringify(args === undefined ? {} : args)
@@ -141,6 +146,10 @@ QtObject {
         case "starlight": return qsTrId("light_anim_starlight")
         //% "Mood lamp"
         case "mood": return qsTrId("light_anim_mood")
+        //% "Clockwise sweep"
+        case "wave-clockwise": return qsTrId("light_anim_wave_cw")
+        //% "Counter-clockwise sweep"
+        case "wave-counter-clockwise": return qsTrId("light_anim_wave_ccw")
         default: return String(id)
         }
     }

@@ -20,7 +20,7 @@ use ts_domain::favourites::{
     Favourite, FavouriteStore, FavouritesError, Kind, MAX_FAVOURITES, next_position,
 };
 
-use super::{Api, ApiError, ApiResult};
+use super::{Api, ApiError, ApiResult, ThemeSpec};
 
 pub use ts_domain::favourites::Kind as FavouriteKind;
 
@@ -59,6 +59,7 @@ fn missing(kind: Kind, name: &str) -> String {
         Kind::FanCurve => format!("no fan curve '{name}' (truesense fan curve list)"),
         Kind::SmartProfile => format!("no Smart auto profile '{name}' (truesense power smart list)"),
         Kind::Profile => format!("no profile '{name}' (truesense profile list)"),
+        Kind::Theme => format!("no theme '{name}' (truesense theme list)"),
     }
 }
 
@@ -91,6 +92,7 @@ impl Api {
             Kind::FanCurve => self.s.curves.names().unwrap_or_default(),
             Kind::SmartProfile => self.s.smart.names(),
             Kind::Profile => self.s.bundles.names(),
+            Kind::Theme => self.theme_store().list().themes.into_iter().map(|t| t.id).collect(),
         }
     }
 
@@ -205,6 +207,7 @@ impl Api {
             Kind::FanCurve => self.use_fan_curve(name).map(drop),
             Kind::SmartProfile => self.use_smart_profile(name).map(drop),
             Kind::Profile => self.apply_profile(name).map(drop),
+            Kind::Theme => self.apply_theme(&ThemeSpec::new(name)).map(drop),
         }
     }
 }
@@ -225,6 +228,10 @@ impl FavouritesFacade for Api {
 
     fn use_smart_profile(&self, name: &str) -> HostResult<()> {
         Api::use_smart_profile(self, name).map(drop).map_err(|e| HostError::new(e.to_string()))
+    }
+
+    fn apply_theme(&self, name: &str) -> HostResult<()> {
+        Api::apply_theme(self, &ThemeSpec::new(name)).map(drop).map_err(|e| HostError::new(e.to_string()))
     }
 }
 
@@ -271,6 +278,29 @@ mod tests {
             names(&fx.api.favourites()),
             ["1:look:native", "2:profile:gaming", "3:fan_curve:truesense", "4:smart_profile:truesense"]
         );
+    }
+
+    #[test]
+    fn a_theme_can_be_starred_listed_and_applied_like_any_other_item() {
+        let fx = Fx::new();
+        assert!(fx.api.favourite_toggle(Kind::Theme, "hearth").unwrap());
+        assert_eq!(
+            fx.api.favourite_add(Kind::Theme, "ghost").unwrap_err().to_string(),
+            "no theme 'ghost' (truesense theme list)"
+        );
+        assert_eq!(names(&fx.api.favourites()), ["1:theme:hearth"]);
+        assert!(fx.api.favourites()[0].exists);
+        assert_eq!(fx.api.favourite_apply(Kind::Theme, "hearth").unwrap(), "Theme: hearth");
+        assert_eq!(fx.api.theme_status().active.unwrap().spec.name, "hearth");
+        // The same call the PREDATOR key's runner makes.
+        let facade: &dyn FavouritesFacade = &fx.api;
+        fx.api.stop_theme().unwrap();
+        facade.apply_theme("sunset").unwrap();
+        assert_eq!(fx.api.theme_status().active.unwrap().spec.name, "sunset");
+        assert!(facade.apply_theme("ghost").is_err());
+        assert_eq!(fx.api.favourite_apply_at(1).unwrap(), "Favourite 1/1: Theme hearth");
+        assert_eq!(fx.api.theme_status().active.unwrap().spec.name, "hearth");
+        assert!(!fx.api.favourite_toggle(Kind::Theme, "hearth").unwrap());
     }
 
     #[test]

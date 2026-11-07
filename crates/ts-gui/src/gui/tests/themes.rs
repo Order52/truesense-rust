@@ -145,3 +145,82 @@ fn a_look_with_a_theme_applied_through_the_look_command_starts_it() {
     let shown = m.ok("look", "show", &json!({"name": "fire"}));
     assert_eq!(shown["theme"]["name"], "hearth");
 }
+
+// ---- preview ---------------------------------------------------------------------------------
+
+fn cells(v: &Value) -> Vec<String> {
+    v["cells"].as_array().unwrap().iter().map(|c| c.as_str().unwrap().to_owned()).collect()
+}
+
+#[test]
+fn preview_gives_the_128_cells_of_a_still_frame_and_sends_nothing_to_the_keyboard() {
+    let m = Machine::start();
+    let p = m.ok("theme", "preview", &json!({"name": "hearth"}));
+    let c = cells(&p);
+    assert_eq!(c.len(), 128);
+    assert!(c.iter().all(|h| h.len() == 6 && h.bytes().all(|b| b.is_ascii_hexdigit())), "{c:?}");
+    assert!(c.iter().take(126).any(|h| h != "000000"));
+    assert_eq!(p["name"], "hearth");
+    // Nothing was started and the keyboard still shows what it showed.
+    assert_eq!(m.ok("theme", "list", &json!({}))["status"]["active"], Value::Null);
+    assert_eq!(m.ok("keyboard", "status", &json!({}))["look"], json!({}));
+}
+
+#[test]
+fn preview_follows_the_colourway_the_custom_colours_and_the_moment() {
+    let m = Machine::start();
+    let first = cells(&m.ok("theme", "preview", &json!({"name": "hearth"})));
+    assert_eq!(cells(&m.ok("theme", "preview", &json!({"name": "hearth", "colourway": 0}))), first);
+    let second = cells(&m.ok("theme", "preview", &json!({"name": "hearth", "colourway": 1})));
+    assert_ne!(second, first);
+    let custom = cells(&m.ok(
+        "theme",
+        "preview",
+        &json!({"name": "hearth", "colourway": "custom", "custom": ["#FF0000", "#00FF00", "#0000FF", "#FFFFFF"]}),
+    ));
+    assert_ne!(custom, first);
+    let early = cells(&m.ok("theme", "preview", &json!({"name": "synthwave", "t": 0.5})));
+    let late = cells(&m.ok("theme", "preview", &json!({"name": "synthwave", "t": 9})));
+    assert_ne!(early, late);
+}
+
+#[test]
+fn preview_refuses_what_the_theme_does_not_have_and_a_bad_moment() {
+    let m = Machine::start();
+    assert!(m.refused("theme", "preview", &json!({"name": "nobody"})).contains("no theme"));
+    assert_eq!(m.refused("theme", "preview", &json!({})), "name is needed");
+    assert!(m.refused("theme", "preview", &json!({"name": "hearth", "colourway": 99})).contains("colourway"));
+    assert!(m.refused("theme", "preview", &json!({"name": "hearth", "t": 1000})).contains("preview time"));
+    assert!(m.refused("theme", "preview", &json!({"name": "hearth", "t": -1})).contains("preview time"));
+    assert!(m.refused("theme", "preview", &json!({"name": "hearth", "t": "soon"})).contains("wrong kind"));
+}
+
+#[test]
+fn preview_of_a_built_in_theme_is_cached_and_of_the_users_own_is_not() {
+    let m = Machine::start();
+    let a = m.ok("theme", "preview", &json!({"name": "hearth", "colourway": 1}));
+    assert_eq!(m.ok("theme", "preview", &json!({"name": "hearth", "colourway": 1})), a);
+    // A user theme edited between two requests is drawn again.
+    let mut mine = mine(&m, "mine");
+    m.ok("theme", "save", &json!({"theme": mine}));
+    let before = cells(&m.ok("theme", "preview", &json!({"name": "mine"})));
+    mine["colourways"][0]["palette"] = json!(["#FF0000", "#FF0000", "#FF0000", "#FF0000"]);
+    mine["palette"] = mine["colourways"][0]["palette"].clone();
+    m.ok("theme", "save", &json!({"theme": mine}));
+    let after = cells(&m.ok("theme", "preview", &json!({"name": "mine"})));
+    assert_ne!(before, after, "the edit shows");
+}
+
+#[test]
+fn the_list_says_what_each_theme_suits() {
+    let m = Machine::start();
+    let list = m.ok("theme", "list", &json!({}));
+    let hearth = list["themes"].as_array().unwrap().iter().find(|t| t["id"] == "hearth").unwrap().clone();
+    assert_eq!(hearth["suits"], json!(["Balanced", "Quiet", "evenings"]));
+    let ways = hearth["colourways"].as_array().unwrap();
+    assert!(ways.len() >= 2);
+    assert!(
+        ways[0]["name"].is_string() && ways[0]["palette"][0].as_str().unwrap().starts_with('#'),
+        "{ways:?}"
+    );
+}

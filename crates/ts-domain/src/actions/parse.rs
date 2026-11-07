@@ -85,7 +85,7 @@ pub const CATALOGUE: &str = "An action is `name` or `name:argument`. Each return
   power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)\n\
   fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle\n\
   profile:<name> | profile-next                                              saved profiles (see `truesense profile`)\n\
-  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles and profiles (see `truesense favourite`); N counts from 1\n\
+  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles, profiles and themes (see `truesense favourite`); N counts from 1\n\
   output-toggle | output-cycle | output:speakers | output:headphones\n\
   mic-toggle | mic:mute | mic:unmute | voice-next\n\
   touchpad-toggle | touchpad:on | touchpad:off\n\

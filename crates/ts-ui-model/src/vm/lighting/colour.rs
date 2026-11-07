@@ -88,6 +88,23 @@ pub(super) fn hue_ramp(t: f64) -> Rgb {
     hsv_to_rgb(Hsv { h: t.rem_euclid(1.0) * 360.0, s: 1.0, v: 1.0 })
 }
 
+/// The hue position of a cell for the Wave's still preview in the given direction (0 to 5, see
+/// `ts_api::api::wave_directions`): along the columns, the rows, or the angle around the middle of
+/// the keyboard, the way the reference project draws the firmware wave (`kb.rs`, `make_wave`).
+pub(super) fn wave_position(cell: usize, direction: i64) -> f64 {
+    let (col, row) = ((cell / ROWS as usize) as f64, (cell % ROWS as usize) as f64);
+    let (x, y) = ((col + 0.5) / 22.0, (row + 0.5) / ROWS as f64);
+    let angle = ((y - 0.5) * ROWS as f64).atan2((x - 0.5) * 22.0) / std::f64::consts::TAU;
+    match direction {
+        1 => 1.0 - x,
+        2 => 1.0 - y,
+        3 => y,
+        4 => angle,
+        5 => -angle,
+        _ => x,
+    }
+}
+
 pub(super) fn lerp_rgb(a: Rgb, b: Rgb, t: f64) -> Rgb {
     [0, 1, 2].map(|i| clamp_byte(f64::from(a[i]) + (f64::from(b[i]) - f64::from(a[i])) * t))
 }

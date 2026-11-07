@@ -39,6 +39,9 @@ fn write_the_python_files(dir: &TempDir) {
     write(dir, "bad4", r#"{"keys": {"w": "zz"}}"#);
 }
 
+/// The six of the earlier editions and the eight templates.
+const BUILTIN_COUNT: usize = 14;
+
 fn value_of(d: &Design) -> Value {
     serde_json::to_value(d).unwrap()
 }
@@ -49,8 +52,9 @@ fn the_builtin_designs_match_python_exactly() {
     let (_dir, store) = store();
     let all = store.load_all();
     let want_names = ["gaming", "coding", "arrows", "ice", "ember", "stealth"];
-    assert_eq!(all.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>(), want_names);
-    for (name, design) in &all {
+    // The earlier editions' six come first and unchanged; the templates follow them.
+    assert_eq!(all.iter().take(EARLIER_BUILTIN).map(|(n, _)| n.as_str()).collect::<Vec<_>>(), want_names);
+    for (name, design) in all.iter().take(EARLIER_BUILTIN) {
         let want = &g[name.as_str()];
         // Python's dicts keep the order of the keys; serde_json values compare by content, so
         // the order of the painted keys is checked through the cells below.
@@ -106,7 +110,7 @@ fn a_user_file_with_the_name_of_a_builtin_replaces_it_in_place() {
     assert_eq!(all[0].1.source.name(), "yours");
     assert_eq!(all[1].1.source, Source::BuiltIn);
     assert_eq!(
-        all.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>()[6..],
+        all.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>()[BUILTIN_COUNT..],
         ["aaa", "zzz"],
         "then yours in file-name order"
     );
@@ -251,8 +255,8 @@ fn hostile_files_never_break_listing() {
     write(&dir, "empty", "");
     std::fs::create_dir(dir.join("designs/dir.json")).unwrap();
     std::fs::write(dir.join("designs/readme.txt"), "{}").unwrap();
-    assert_eq!(store.load_all().len(), 6, "only the built-in designs");
-    assert!(DesignStore::new(dir.join("missing")).load_all().len() == 6);
+    assert_eq!(store.load_all().len(), BUILTIN_COUNT, "only the built-in designs");
+    assert!(DesignStore::new(dir.join("missing")).load_all().len() == BUILTIN_COUNT);
 }
 
 #[test]
@@ -369,4 +373,127 @@ fn a_decoder_supplies_the_picture_and_its_failure_is_reported() {
     assert_eq!((cells.len(), cells[5], cells[127]), (128, [200, 10, 20], [0; 3]));
     let err = image_cells(&FakeDecoder, Path::new("/pictures/missing.png")).unwrap_err();
     assert_eq!(err.to_string(), "cannot read the image: No such file or directory");
+}
+
+// ---- the templates -----------------------------------------------------------------------------
+
+const TEMPLATE_NAMES: [&str; 8] =
+    ["fps", "moba", "typing", "media", "sunset", "neon-grid", "rainbow-rows", "night"];
+
+fn cell_of(map: &KeyMap, key: &str) -> usize {
+    map.key(key).unwrap_or_else(|| panic!("no key {key}"))[0]
+}
+
+fn template_cells(name: &str) -> Vec<Color> {
+    let (_dir, store) = store();
+    store.get(name).unwrap().cells_of(store.key_map()).unwrap()
+}
+
+#[test]
+fn eight_templates_follow_the_six_earlier_designs_and_all_of_them_check_out() {
+    let (_dir, store) = store();
+    let all = store.load_all();
+    assert_eq!(all.len(), 14);
+    let names: Vec<&str> = all.iter().map(|(n, _)| n.as_str()).collect();
+    assert_eq!(names[EARLIER_BUILTIN..], TEMPLATE_NAMES);
+    let unique: std::collections::BTreeSet<&&str> = names.iter().collect();
+    assert_eq!(unique.len(), names.len());
+    for (name, design) in &all {
+        assert_eq!(design.source, Source::BuiltIn, "{name}");
+        assert!(design.info.chars().count() <= 80 && !design.info.is_empty(), "{name}: {}", design.info);
+        assert!(name.chars().all(|c| c.is_ascii_lowercase() || c == '-'), "{name}");
+        let cells = design.cells_of(store.key_map()).unwrap();
+        assert_eq!(cells.len(), 128, "{name}");
+        assert_eq!(cells[126..], [[0; 3]; 2], "{name}: cells 126 and 127 are not keys");
+    }
+}
+
+#[test]
+fn every_template_is_a_real_picture_with_several_colours_and_every_key_is_lit_or_deliberately_dark() {
+    for name in TEMPLATE_NAMES {
+        let cells = template_cells(name);
+        let colours: std::collections::BTreeSet<Color> = cells[..LIT_CELLS].iter().copied().collect();
+        assert!(colours.len() >= 3, "{name}: {} colours", colours.len());
+    }
+}
+
+#[test]
+fn the_row_looks_paint_every_labelled_key_and_each_row_its_own_colour() {
+    let map = KeyMap::verified();
+    let key_cells: std::collections::BTreeSet<usize> =
+        map.names().iter().flat_map(|(_, c)| c.iter().copied()).collect();
+    for name in ["sunset", "neon-grid", "rainbow-rows"] {
+        let cells = template_cells(name);
+        let base = store().1.get(name).unwrap().base;
+        let base = keymap::parse_hex(&base).unwrap();
+        let unpainted: Vec<usize> = key_cells.iter().copied().filter(|c| cells[*c] == base).collect();
+        assert!(unpainted.is_empty(), "{name}: keys left at the base colour: {unpainted:?}");
+    }
+    let rainbow = template_cells("rainbow-rows");
+    let colour_of = |k: &str| rainbow[cell_of(map, k)];
+    assert_eq!(colour_of("q"), colour_of("tab"));
+    assert_eq!(colour_of("a"), colour_of("return"));
+    assert_ne!(colour_of("q"), colour_of("a"));
+    assert_ne!(colour_of("a"), colour_of("z"));
+    assert_ne!(colour_of("1"), colour_of("f5"));
+    assert_eq!(colour_of("space"), colour_of("ctrl"));
+    let rows: std::collections::BTreeSet<Color> =
+        ["esc", "1", "q", "a", "z", "space", "num5"].iter().map(|k| colour_of(k)).collect();
+    assert_eq!(rows.len(), 7, "seven rows, seven colours");
+}
+
+#[test]
+fn the_game_templates_pick_out_the_keys_a_player_uses() {
+    let map = KeyMap::verified();
+    let fps = template_cells("fps");
+    let at = |cells: &[Color], k: &str| cells[cell_of(map, k)];
+    for k in ["w", "a", "s", "d"] {
+        assert_eq!(at(&fps, k), [0xff, 0x2a, 0x2a], "{k}");
+    }
+    assert_eq!(at(&fps, "space"), [0xff, 0x88, 0x00]);
+    assert_eq!(at(&fps, "3"), [0x00, 0xe0, 0xff], "a weapon number");
+    assert_ne!(at(&fps, "8"), at(&fps, "3"), "only the first five numbers");
+    assert_eq!(at(&fps, "p"), [0x06, 0x06, 0x0c], "the rest is the dark base");
+    let moba = template_cells("moba");
+    for k in ["q", "w", "e", "r"] {
+        assert_eq!(at(&moba, k), [0xb4, 0x4d, 0xff], "{k}");
+    }
+    assert_eq!((at(&moba, "d"), at(&moba, "f")), ([0, 0xd1, 0xff], [0, 0xd1, 0xff]));
+    assert_eq!(at(&moba, "6"), [0xff, 0xcc, 0x00]);
+    assert_ne!(at(&moba, "7"), at(&moba, "6"));
+}
+
+#[test]
+fn the_typing_template_marks_the_home_row_and_the_two_bumps() {
+    let map = KeyMap::verified();
+    let typing = template_cells("typing");
+    let at = |k: &str| typing[cell_of(map, k)];
+    assert_eq!((at("f"), at("j")), ([255, 255, 255], [255, 255, 255]));
+    for k in ["a", "s", "d", "g", "h", "k", "l"] {
+        assert_eq!(at(k), [0x3a, 0xb0, 0xff], "{k}");
+    }
+    assert_ne!(at("q"), at("a"));
+    assert_ne!(at("q"), at("f"));
+}
+
+#[test]
+fn the_media_template_has_the_scrub_keys_the_play_key_and_the_media_keys() {
+    let map = KeyMap::verified();
+    let media = template_cells("media");
+    let at = |k: &str| media[cell_of(map, k)];
+    for k in ["up", "down", "left", "right"] {
+        assert_eq!(at(k), [255, 255, 255], "{k}");
+    }
+    assert_eq!(at("space"), [0, 0xe6, 0x76]);
+    assert_eq!(at("playpause"), at("space"));
+    assert_eq!((at("j"), at("k"), at("l")), ([0xff, 0x91, 0], [0xff, 0x91, 0], [0xff, 0x91, 0]));
+}
+
+#[test]
+fn the_night_template_is_dim_everywhere() {
+    let night = template_cells("night");
+    for (c, rgb) in night[..LIT_CELLS].iter().enumerate() {
+        assert!(rgb.iter().copied().max().unwrap_or(0) <= 0x4a, "cell {c}: {rgb:?}");
+    }
+    assert!(night[..LIT_CELLS].iter().any(|c| *c != [0; 3]));
 }

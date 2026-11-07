@@ -62,9 +62,12 @@ pub struct Effect {
     pub colour: bool,
     /// The effect has a speed (a static colour has none).
     pub speed: bool,
-    /// The effect travels, so a direction makes sense. This only enables the control: the byte is
-    /// always sent, and the keyboard ignores it where it means nothing. [U: which effects honour
-    /// it was never measured on the laptop.]
+    /// The effect takes a direction. Only the Wave does, with six values (0 to 5,
+    /// `ts_api::api::wave_directions`): the reference project (`predator-sense`, hardware-confirmed
+    /// on a PH16-71 on 2026-10-15) lists `uses_direction` for the Wave alone, asserts it for all 14
+    /// effects in its test `colour_speed_and_direction_match_the_spec_table`, and its
+    /// `wire_direction` documents the six bytes. No other effect was seen to react, so the control
+    /// is enabled for the Wave only and the other effects are sent direction 0.
     pub direction: bool,
     /// Lowest brightness at which picking this effect shows anything (neon was invisible at 25 and
     /// shows at 50: `docs/verification-log.md`; the others need only a visible level).
@@ -80,15 +83,15 @@ pub const EFFECTS: [Effect; 13] = [
     fx("static", "lighting/static", true, false, false, 10),
     fx("breathing", "lighting/breathing", true, true, false, 10),
     fx("wave", "lighting/wave", false, true, true, 10),
-    fx("snake", "lighting/snake", true, true, true, 10),
-    fx("ripple", "lighting/ripple", true, true, true, 10),
-    fx("neon", "lighting/rainbow", false, true, true, 50),
-    fx("raindrop", "lighting/rain", true, true, true, 10),
+    fx("snake", "lighting/snake", true, true, false, 10),
+    fx("ripple", "lighting/ripple", true, true, false, 10),
+    fx("neon", "lighting/rainbow", false, true, false, 50),
+    fx("raindrop", "lighting/rain", true, true, false, 10),
     fx("lightning", "lighting/lightning", true, true, false, 10),
     fx("spot", "lighting/spot", true, true, false, 10),
     fx("star", "lighting/stars", true, true, false, 10),
-    fx("fireball", "lighting/fireball", true, true, true, 10),
-    fx("snow", "lighting/snow", true, true, true, 10),
+    fx("fireball", "lighting/fireball", true, true, false, 10),
+    fx("snow", "lighting/snow", true, true, false, 10),
     fx("heartbeat", "lighting/heartbeat", true, true, false, 10),
 ];
 
@@ -116,7 +119,13 @@ pub fn pick_effect(name: &str, current: &Value) -> Result<Value, String> {
     let colour = str_at(current, "colour").and_then(norm_hex).unwrap_or_else(|| STOCK.to_owned());
     let speed = i64_at(current, "speed").filter(|s| (SPEED_RANGE.0..=SPEED_RANGE.1).contains(s)).unwrap_or(DEFAULT_SPEED);
     let level = i64_at(current, "brightness").unwrap_or(0).clamp(0, KB_MAX);
-    let direction = i64_at(current, "direction").filter(|d| matches!(d, 0 | 1)).unwrap_or(0);
+    // The wave keeps the direction the person chose; every other effect is sent 0 (the reference
+    // project's default, wire byte 1) because none of them was seen to honour one.
+    let direction = if e.direction {
+        i64_at(current, "direction").filter(|d| (0..6).contains(d)).unwrap_or(0)
+    } else {
+        0
+    };
     Ok(json!({
         "name": e.id, "color": colour, "speed": speed,
         "brightness": level.max(e.pick_floor), "direction": direction,
@@ -125,17 +134,19 @@ pub fn pick_effect(name: &str, current: &Value) -> Result<Value, String> {
 
 /// The software animations of the key service (`keyboard fx`): id and whether it needs the colours
 /// under it. Speeds are 1..10.
-pub(crate) const FX_MODES: [&str; 18] = [
+pub(crate) const FX_MODES: [&str; 20] = [
     "pulse", "wave", "cycle", "twinkle", "rainbow", "breathing", "scanner", "comet", "ripple", "rain", "matrix", "fire",
-    "plasma", "aurora", "lightning", "confetti", "starlight", "mood",
+    "plasma", "aurora", "lightning", "confetti", "starlight", "mood", "wave-clockwise", "wave-counter-clockwise",
 ];
 
-/// The rear bar's effects: id, icon, whether it has a speed and whether it travels (a direction
-/// only makes sense for the moving ones; [U] not measured, like the keyboard's table).
+/// The rear bar's effects: id, icon, whether it has a speed and whether it travels. The bar's
+/// modes are the kernel module's (2 neon, 3 wave); the reference project measured on the same
+/// laptop that its modes 3 and 4 follow a direction and its ripple does not, and its mode 2
+/// (code 2 is our neon) is not among those that do. So only our wave (code 3) keeps the control.
 pub(super) const REAR_EFFECTS: [(&str, &str, bool, bool); 5] = [
     ("static", "lighting/static", false, false),
     ("breathing", "lighting/breathing", true, false),
-    ("neon", "lighting/rainbow", true, true),
+    ("neon", "lighting/rainbow", true, false),
     ("wave", "lighting/wave", true, true),
     ("twinkling", "lighting/stars", true, false),
 ];

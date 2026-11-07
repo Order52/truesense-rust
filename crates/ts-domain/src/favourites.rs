@@ -61,11 +61,13 @@ pub enum Kind {
     SmartProfile,
     /// A whole-setup profile.
     Profile,
+    /// A lighting theme (built-in or the user's), drawn on the keyboard by the key service.
+    Theme,
 }
 
 impl Kind {
     /// Every kind, in the order the interfaces list them.
-    pub const ALL: [Kind; 4] = [Kind::Look, Kind::FanCurve, Kind::SmartProfile, Kind::Profile];
+    pub const ALL: [Kind; 5] = [Kind::Look, Kind::FanCurve, Kind::SmartProfile, Kind::Profile, Kind::Theme];
 
     /// The word in the file, on the bus and in JSON.
     pub fn name(self) -> &'static str {
@@ -74,6 +76,7 @@ impl Kind {
             Kind::FanCurve => "fan_curve",
             Kind::SmartProfile => "smart_profile",
             Kind::Profile => "profile",
+            Kind::Theme => "theme",
         }
     }
 
@@ -84,6 +87,7 @@ impl Kind {
             Kind::FanCurve => "Fan curve",
             Kind::SmartProfile => "Smart profile",
             Kind::Profile => "Profile",
+            Kind::Theme => "Theme",
         }
     }
 
@@ -95,6 +99,7 @@ impl Kind {
             "fan_curve" | "fan-curve" | "curve" => Some(Kind::FanCurve),
             "smart_profile" | "smart-profile" | "smart" => Some(Kind::SmartProfile),
             "profile" => Some(Kind::Profile),
+            "theme" => Some(Kind::Theme),
             _ => None,
         }
     }
@@ -484,6 +489,32 @@ mod tests {
     }
 
     #[test]
+    fn the_theme_kind_has_its_word_label_and_place() {
+        assert_eq!(Kind::ALL.last(), Some(&Kind::Theme));
+        assert_eq!((Kind::Theme.name(), Kind::Theme.label()), ("theme", "Theme"));
+        assert_eq!(Kind::parse("theme"), Some(Kind::Theme));
+        assert!(Kind::choices().ends_with("profile, theme"));
+        for kind in Kind::ALL {
+            assert_eq!(Kind::parse(kind.name()), Some(kind), "{kind:?} round trips");
+        }
+    }
+
+    #[test]
+    fn a_starred_theme_is_kept_apart_from_a_look_of_the_same_name() {
+        let dir = Dir::new();
+        let s = dir.store();
+        assert_eq!(s.add(Kind::Theme, "calm").ok(), Some(true));
+        assert_eq!(s.add(Kind::Look, "calm").ok(), Some(true));
+        assert_eq!(s.list(), vec![fav(Kind::Theme, "calm"), fav(Kind::Look, "calm")]);
+        assert_eq!(s.toggle(Kind::Theme, "calm").ok(), Some(false));
+        assert_eq!(s.list(), vec![fav(Kind::Look, "calm")]);
+        let file = dir.0.join("sub").join(FILE_NAME);
+        assert!(!std::fs::read_to_string(&file).unwrap().contains("theme"));
+        s.add(Kind::Theme, "hearth").unwrap();
+        assert!(std::fs::read_to_string(&file).unwrap().contains("\"theme\""));
+    }
+
+    #[test]
     fn missing_file_is_an_empty_list_and_add_creates_the_directory() {
         let dir = Dir::new();
         let s = dir.store();
@@ -698,11 +729,11 @@ mod tests {
         assert_eq!(Kind::parse(" look "), Some(Kind::Look));
         assert_eq!(Kind::parse("undervolt"), None);
         assert_eq!(Kind::parse(""), None);
-        assert_eq!(Kind::choices(), "look, fan_curve, smart_profile, profile");
+        assert_eq!(Kind::choices(), "look, fan_curve, smart_profile, profile, theme");
         assert_eq!("curve".parse::<Kind>().ok(), Some(Kind::FanCurve));
         assert_eq!(
             "undervolt".parse::<Kind>().expect_err("not a kind").to_string(),
-            "'undervolt': the kind is one of look, fan_curve, smart_profile, profile"
+            "'undervolt': the kind is one of look, fan_curve, smart_profile, profile, theme"
         );
     }
 

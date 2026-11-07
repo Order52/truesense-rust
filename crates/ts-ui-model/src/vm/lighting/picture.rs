@@ -3,6 +3,8 @@
 //! A part of [`super`] (the Lighting page's view-model); it shares the parent's names.
 #![forbid(unsafe_code)]
 
+use ts_api::api::key_rects;
+
 use super::*;
 
 // ---- the key picture ----------------------------------------------------------------------------
@@ -37,65 +39,6 @@ pub struct Layout {
     /// Overall height in units.
     pub height: f64,
 }
-
-/// Main block rows, top to bottom: key name and width. The function row is slightly narrower
-/// (0.93) so that it ends flush with the 15 unit wide rows below it.
-pub(super) fn main_rows() -> Vec<Vec<(String, f64)>> {
-    let one = |names: &str| -> Vec<(String, f64)> { names.chars().map(|c| (c.to_string(), 1.0)).collect() };
-    let mut f_row = vec![("esc".to_owned(), 1.0)];
-    f_row.extend((1..=12).map(|i| (format!("f{i}"), 0.93)));
-    f_row.extend(["prtsc", "ins", "del"].map(|n| (n.to_owned(), 0.93)));
-    let named = |list: &[(&str, f64)]| -> Vec<(String, f64)> {
-        list.iter().map(|(n, w)| ((*n).to_owned(), *w)).collect()
-    };
-    let cat = |parts: Vec<Vec<(String, f64)>>| parts.concat();
-    vec![
-        f_row,
-        cat(vec![one("`1234567890"), named(&[("minus", 1.0), ("=", 1.0), ("backspace", 2.0)])]),
-        cat(vec![
-            named(&[("tab", 1.5)]),
-            one("qwertyuiop"),
-            named(&[("[", 1.0), ("]", 1.0), ("\\", 1.5)]),
-        ]),
-        cat(vec![
-            named(&[("caps", 1.75)]),
-            one("asdfghjkl"),
-            named(&[(";", 1.0), ("'", 1.0), ("return", 2.25)]),
-        ]),
-        cat(vec![
-            named(&[("lshift", 2.25)]),
-            one("zxcvbnm"),
-            named(&[(",", 1.0), (".", 1.0), ("/", 1.0), ("rshift", 1.75), ("up", 1.0)]),
-        ]),
-        named(&[
-            ("ctrl", 1.25),
-            ("fn", 1.25),
-            ("windows", 1.25),
-            ("lalt", 1.25),
-            ("space", 4.75),
-            ("ralt", 1.0),
-            ("options", 1.0),
-            ("rctrl", 1.25),
-            ("left", 1.0),
-            ("down", 1.0),
-            ("right", 1.0),
-        ]),
-    ]
-}
-
-/// The numpad: name, column 0..3, width, height.
-pub(super) const PAD: [&[(&str, f64, f64, f64)]; 6] = [
-    &[("backward", 0.0, 1.0, 1.0), ("playpause", 1.0, 1.0, 1.0), ("forward", 2.0, 1.0, 1.0), ("power", 3.0, 1.0, 1.0)],
-    &[("predator", 0.0, 1.0, 1.0), ("numlock", 1.0, 1.0, 1.0), ("num/", 2.0, 1.0, 1.0), ("*", 3.0, 1.0, 1.0)],
-    &[("num7", 0.0, 1.0, 1.0), ("num8", 1.0, 1.0, 1.0), ("num9", 2.0, 1.0, 1.0), ("-", 3.0, 1.0, 1.0)],
-    &[("num4", 0.0, 1.0, 1.0), ("num5", 1.0, 1.0, 1.0), ("num6", 2.0, 1.0, 1.0), ("+", 3.0, 1.0, 1.0)],
-    &[("num1", 0.0, 1.0, 1.0), ("num2", 1.0, 1.0, 1.0), ("num3", 2.0, 1.0, 1.0), ("numenter", 3.0, 1.0, 2.0)],
-    &[("num0", 0.0, 2.0, 1.0), ("num.", 2.0, 1.0, 1.0)],
-];
-/// Where the numpad starts, in units.
-pub(super) const PAD_X: f64 = 16.5;
-/// Top edge of each key row (the function row sits close above the number row).
-pub(super) const ROW_Y: [f64; 6] = [0.0, 1.3, 2.3, 3.3, 4.3, 5.3];
 
 /// Text on special keys; single characters show themselves in capitals.
 pub(super) fn key_label(name: &str) -> String {
@@ -179,17 +122,8 @@ pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
             keys.push(Key { name: name.to_owned(), cells: cells.clone(), x, y, w, h, label: key_label(name) });
         }
     };
-    for (ri, row) in main_rows().iter().enumerate() {
-        let mut x = 0.0;
-        for (name, w) in row {
-            add(name, x, ROW_Y.get(ri).copied().unwrap_or(0.0), *w, 1.0, &mut keys);
-            x += w;
-        }
-    }
-    for (ri, row) in PAD.iter().enumerate() {
-        for (name, col, w, h) in *row {
-            add(name, PAD_X + col, ROW_Y.get(ri).copied().unwrap_or(0.0), *w, *h, &mut keys);
-        }
+    for r in key_rects() {
+        add(r.name, r.x, r.y, r.w, r.h, &mut keys);
     }
     let extra: Vec<(&String, &Vec<usize>)> = names
         .iter()

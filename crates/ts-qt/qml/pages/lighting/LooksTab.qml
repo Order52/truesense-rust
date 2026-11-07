@@ -17,6 +17,7 @@ ColumnLayout {
     property string selectedSet: ""
 
     function reload(pick) {
+        lookGallery.forget()
         LightingVm.refreshLooks(function () {
             var names = LightingVm.looks
             if (pick !== undefined) selected = pick
@@ -64,13 +65,38 @@ ColumnLayout {
         })
     }
 
-    Component.onCompleted: reload()
+    Component.onCompleted: {
+        LightingVm.loadLayout()
+        reload()
+    }
 
     ConfirmDialog { id: confirm }
 
     HelpText {
         //% "A look remembers the keyboard and the rear bar as they are now. Set the lights the way you like under Keyboard, Per-key and Rear bar, then save them here."
         text: qsTrId("light_looks_help")
+    }
+
+    Card {
+        Layout.fillWidth: true
+        //% "Your looks"
+        title: qsTrId("light_looks_pictures")
+        icon: "keyboard"
+
+        LookGallery {
+            id: lookGallery
+            Layout.fillWidth: true
+            names: LightingVm.looks
+            selected: tab.selected
+            onPicked: (name) => { tab.selected = name; tab.show() }
+            onApply: (name) => Api.call("look", "apply", { name: name }, function () {
+                Toasts.show(qsTrId("light_looks_applied").arg(name), "ok")
+            })
+        }
+        HelpText {
+            //% "A moving effect is drawn as one still frame."
+            text: qsTrId("light_looks_still_note")
+        }
     }
 
     Card {

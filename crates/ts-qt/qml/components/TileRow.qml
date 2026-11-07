@@ -19,7 +19,8 @@ import org.truesense.app
 Item {
     id: root
 
-    /// [{value, label, icon, enabled?}]
+    /// [{value, label, icon, enabled?, turn?, mirror?}]: `turn` rotates the icon by that many degrees
+    /// and `mirror` flips it left to right (a direction arrow, a counter-clockwise arrow).
     property var model: []
     /// The value of the selected tile (anything comparable; undefined selects none).
     property var current: undefined
@@ -27,6 +28,8 @@ Item {
     property string variant: "filled"
     property int tileHeight: Theme.tileHeight
     property int minTileWidth: 92
+    /// Long labels wrap onto a second line instead of being cut.
+    property bool wrapLabels: false
     readonly property int columns: Math.max(1, Math.min(model.length, Math.floor((width + 8) / (minTileWidth + 8))))
 
     signal activated(var value)
@@ -78,6 +81,11 @@ Item {
                         name: tile.modelData.icon === undefined ? "" : tile.modelData.icon
                         size: 22
                         color: tile.ink
+                        rotation: tile.modelData.turn === undefined ? 0 : tile.modelData.turn
+                        transform: Scale {
+                            origin.x: 11
+                            xScale: tile.modelData.mirror === true ? -1 : 1
+                        }
                     }
                     Text {
                         Layout.fillWidth: true
@@ -86,6 +94,8 @@ Item {
                         font.pixelSize: Theme.fontSmall + 1
                         font.bold: tile.selected
                         horizontalAlignment: Text.AlignHCenter
+                        wrapMode: root.wrapLabels ? Text.WordWrap : Text.NoWrap
+                        maximumLineCount: root.wrapLabels ? 2 : 1
                         elide: Text.ElideRight
                     }
                     Item { Layout.fillHeight: true }

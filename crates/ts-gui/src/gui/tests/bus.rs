@@ -573,6 +573,31 @@ fn overdrive_boot_sound_and_touchpad() {
 // ---- keyboard
 
 #[test]
+fn the_wave_takes_its_six_directions_by_name_or_number() {
+    let m = Machine::start();
+    for (direction, want) in [
+        (json!("clockwise"), 4),
+        (json!("counter-clockwise"), 5),
+        (json!("CCW"), 5),
+        (json!("left-to-right"), 0),
+        (json!("bottom_to_top"), 2),
+        (json!(3), 3),
+        (json!(1), 1),
+    ] {
+        let args = json!({"name": "wave", "speed": 5, "brightness": 30, "direction": direction});
+        assert_eq!(m.ok("keyboard", "effect", &args), json!("sent"), "{direction}");
+        assert_eq!(m.ok("keyboard", "status", &json!({}))["look"]["direction"], json!(want), "{direction}");
+    }
+    for bad in [json!("sideways"), json!(6), json!(-1), json!("9")] {
+        let args = json!({"name": "wave", "direction": bad});
+        let message = m.refused("keyboard", "effect", &args);
+        assert!(message.contains("0..5"), "{bad}: {message}");
+    }
+    // Another effect still takes a plain number and ignores the meaning.
+    assert_eq!(m.ok("keyboard", "effect", &json!({"name": "snake", "direction": 1})), json!("sent"));
+}
+
+#[test]
 fn keyboard_effects_brightness_color_and_speed() {
     let m = Machine::start();
     assert_eq!(
@@ -647,6 +672,11 @@ fn keyboard_animation_designs_and_lighting_profiles() {
     assert_eq!(fx["mode"], json!("pulse"), "{fx}");
     m.ok("keyboard", "fx", &json!({"mode": "off"}));
     m.refused("keyboard", "fx", &json!({"mode": "explode"}));
+    for mode in ["wave-clockwise", "wave-counter-clockwise"] {
+        let sweep = m.ok("keyboard", "fx", &json!({"mode": mode, "speed": 6}));
+        assert_eq!((sweep["mode"].clone(), sweep["speed"].clone()), (json!(mode), json!(6)), "{sweep}");
+    }
+    m.ok("keyboard", "fx", &json!({"mode": "off"}));
 
     let designs = m.ok("keyboard", "design", &json!({}));
     assert_eq!(designs["gaming"]["source"], json!("built-in"));

@@ -171,25 +171,28 @@ pub(crate) fn names(list: impl IntoIterator<Item = String>) -> Value {
 pub(crate) struct Ctx<'a> {
     pub api: &'a Api,
     pub hooks: &'a Hooks,
+    /// The theme thumbnails already drawn.
+    pub previews: &'a themes::PreviewCache,
 }
 
 /// [`Commands`] over the application layer.
 pub struct ApiCommands {
     api: Arc<Api>,
     hooks: Hooks,
+    previews: themes::PreviewCache,
 }
 
 impl ApiCommands {
     /// The window's commands over this application layer, with the few things only the binary can
     /// provide (self-test, journal, start-up apply).
     pub fn new(api: Arc<Api>, hooks: Hooks) -> Self {
-        Self { api, hooks }
+        Self { api, hooks, previews: themes::PreviewCache::default() }
     }
 }
 
 impl Commands for ApiCommands {
     fn run(&self, area: &str, verb: &str, args: &Value) -> Result<Value, CommandError> {
-        let ctx = Ctx { api: &self.api, hooks: &self.hooks };
+        let ctx = Ctx { api: &self.api, hooks: &self.hooks, previews: &self.previews };
         let a = Args::new(args)?;
         let key = format!("{area}/{verb}");
         let done = power::dispatch(&ctx, &key, &a)

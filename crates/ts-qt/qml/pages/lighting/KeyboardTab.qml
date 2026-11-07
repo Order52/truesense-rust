@@ -34,7 +34,7 @@ ColumnLayout {
     readonly property bool effectActive: kind === "effect" && rule !== null
 
     function _look() {
-        if (kind === "effect") return { mode: "effect", name: effectId, color: colour, speed: speed, brightness: brightness }
+        if (kind === "effect") return { mode: "effect", name: effectId, color: colour, speed: speed, brightness: brightness, direction: direction }
         if (kind === "perkey") return { mode: "perkey", brightness: brightness }
         if (kind === "off") return { mode: "off" }
         return {}
@@ -57,7 +57,7 @@ ColumnLayout {
                 effectId = look.name || ""
                 colour = look.color || "00aec7"
                 if (look.speed) speed = look.speed
-                direction = look.direction === 1 ? 1 : 0
+                direction = (look.direction >= 0 && look.direction <= 5) ? look.direction : 0
             } else if (look.mode === "perkey") {
                 kind = "perkey"
                 effectId = ""
@@ -237,24 +237,24 @@ ColumnLayout {
                 Api.write("kb.speed", "keyboard", "speed", { level: v })
             }
         }
-        SettingRow {
+        Text {
             Layout.fillWidth: true
-            enabled: tab.effectActive && tab.rule.direction
+            Layout.topMargin: 4
+            visible: tab.effectActive && tab.rule.direction
             //% "Direction"
-            label: qsTrId("light_kb_direction")
-            Segmented {
-                current: tab.direction
-                model: [
-                    //% "Left to right"
-                    { value: 0, label: qsTrId("light_kb_dir_ltr") },
-                    //% "Right to left"
-                    { value: 1, label: qsTrId("light_kb_dir_rtl") }
-                ]
-                onActivated: (v) => {
-                    tab.direction = v
-                    Api.write("kb.effect", "keyboard", "effect", {
-                        name: tab.effectId, color: tab.colour, speed: tab.speed, brightness: tab.brightness, direction: v })
-                }
+            text: qsTrId("light_kb_direction")
+            color: Theme.text
+            font.pixelSize: Theme.fontBody
+        }
+        DirectionPicker {
+            Layout.fillWidth: true
+            visible: tab.effectActive && tab.rule.direction
+            current: tab.direction
+            onActivated: (d) => {
+                tab.direction = d
+                tab.updatePreview()
+                Api.write("kb.effect", "keyboard", "effect", {
+                    name: tab.effectId, color: tab.colour, speed: tab.speed, brightness: tab.brightness, direction: d })
             }
         }
         HelpText {

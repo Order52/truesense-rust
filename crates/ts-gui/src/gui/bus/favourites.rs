@@ -1,4 +1,4 @@
-//! Favourites: the starred looks, fan curves, Smart auto profiles and whole-setup profiles.
+//! Favourites: the starred looks, fan curves, Smart auto profiles, themes and whole-setup profiles.
 //!
 //! The list, the star toggle and the apply of one favourite are application-layer operations
 //! (`Api::favourites`, `favourite_toggle`, `favourite_apply`, ...), so the window, the command

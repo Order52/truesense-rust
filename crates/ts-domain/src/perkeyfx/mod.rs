@@ -10,6 +10,7 @@
 mod frames;
 mod runner;
 mod settings;
+mod sweep;
 
 use std::fmt;
 
@@ -18,6 +19,7 @@ use ts_foundation::fsx::FsError;
 pub use frames::{MODES, SPEED_MAX, SPEED_MIN, hash, is_mode, mode_names, render};
 pub use runner::{BRIGHTNESS_REFRESH_S, ERROR_BACKOFF, FRAME_INTERVAL, IDLE_INTERVAL, Runner};
 pub use settings::{DEFAULT_SPEED, FxStore, Settings, epoch_seconds};
+pub use sweep::{cell_angle, phase as sweep_phase};
 
 use crate::keyboard::{Keyboard, KeyboardError};
 use crate::keymap::Color;
@@ -74,5 +76,7 @@ impl FrameSink for Keyboard {
     }
 }
 
+#[cfg(test)]
+mod sweep_tests;
 #[cfg(test)]
 mod tests;

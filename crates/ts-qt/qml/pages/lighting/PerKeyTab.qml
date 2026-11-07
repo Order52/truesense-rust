@@ -31,6 +31,11 @@ ColumnLayout {
     property int fxSpeed: 5
     property int brightness: 25
     property var designs: []
+    /// The built-in designs, in the order they ship: [{id, name, mood, builtin, top, suits}], the
+    /// cards of the Templates section, and the pictures drawn for them so far (by name).
+    property var templates: []
+    property var templatePictures: ({})
+    property string templateQuery: ""
     property string selectedDesign: ""
     readonly property bool usable: Caps.usable("keyboard-light") && Caps.usable("per_key_rgb")
 
@@ -182,8 +187,51 @@ ColumnLayout {
         Api.call("keyboard", "design", { action: "list" }, function (d) {
             var names = Object.keys(d || {}).sort()
             designs = names.map(function (n) { return { value: n, text: d[n].source ? n + "  (" + d[n].source + ")" : n } })
+            templates = Object.keys(d || {}).filter(function (n) { return d[n].source === "built-in" })
+                .map(function (n) { return { id: n, name: n, mood: d[n].info || "", builtin: true, top: 0, suits: [] } })
             selectedDesign = pick !== undefined ? pick : (names.indexOf(selectedDesign) >= 0 ? selectedDesign : (names.length ? names[0] : ""))
         }, function () {})
+    }
+
+    /// Asks for the colours of a template once; its card draws them.
+    function pictureOf(name) {
+        if (templatePictures[name] !== undefined) return templatePictures[name]
+        var p = {}
+        for (var k in templatePictures) p[k] = templatePictures[k]
+        p[name] = []
+        templatePictures = p
+        Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
+            var q = {}
+            for (var k2 in templatePictures) q[k2] = templatePictures[k2]
+            q[name] = d.cells
+            templatePictures = q
+        }, function () {})
+        return []
+    }
+
+    /// Puts a template on the keyboard and into the editor, as one step that Undo takes back.
+    function applyTemplate(name) {
+        Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
+            commit(d.cells)
+            //% "Template '%1' applied"
+            Toasts.show(qsTrId("light_pk_template_applied").arg(name), "ok")
+        })
+    }
+
+    /// Saves a template as a design of the user's (NAME-copy, numbered until the name is free), so it
+    /// can be changed on the board and kept; it is not sent to the keyboard.
+    function copyTemplate(name) {
+        var taken = designs.map(function (d) { return d.value })
+        var copy = name + "-copy"
+        for (var i = 2; taken.indexOf(copy) >= 0; ++i) copy = name + "-copy" + i
+        var target = copy
+        Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
+            Api.call("keyboard", "design", { action: "save", name: target, cells: d.cells }, function () {
+                //% "Saved a copy as '%1'. Apply it under Designs, then change it on the board."
+                Toasts.show(qsTrId("light_pk_template_copied").arg(target), "ok")
+                loadDesigns(target)
+            })
+        })
     }
 
     Component.onCompleted: {
@@ -456,6 +504,80 @@ ColumnLayout {
             value: tab.fxSpeed
             coalesceMs: 250
             onEdited: (v) => { tab.fxSpeed = v; tab.pushFx() }
+        }
+    }
+
+    Card {
+        Layout.fillWidth: true
+        enabled: tab.usable
+        visible: tab.templates.length > 0
+        //% "Templates"
+        title: qsTrId("light_pk_templates")
+        icon: "palette"
+
+        HelpText {
+            //% "Ready-made looks for gaming, typing, editing and the evening. Apply one to start from it: it goes to the keyboard and the board above, and Undo takes it back."
+            text: qsTrId("light_pk_templates_help")
+        }
+        AppTextField {
+            Layout.fillWidth: true
+            //% "Search templates"
+            placeholderText: qsTrId("light_pk_templates_search")
+            Accessible.name: placeholderText
+            text: tab.templateQuery
+            onTextEdited: tab.templateQuery = text
+            Keys.onEscapePressed: { text = ""; tab.templateQuery = "" }
+        }
+        GridLayout {
+            id: templateGrid
+            Layout.fillWidth: true
+            columns: Math.max(1, Math.floor((width + columnSpacing) / (250 + columnSpacing)))
+            columnSpacing: 10
+            rowSpacing: 10
+            Repeater {
+                model: LightingVm.gallery("filter", { themes: tab.templates, query: tab.templateQuery, chip: "all" }) || []
+                delegate: GalleryCard {
+                    id: tcard
+                    required property string modelData
+                    readonly property var entry: {
+                        for (var i = 0; i < tab.templates.length; ++i)
+                            if (tab.templates[i].id === modelData) return tab.templates[i]
+                        return null
+                    }
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.maximumWidth: 420
+                    Layout.alignment: Qt.AlignTop
+                    title: modelData
+                    subtitle: entry ? entry.mood : ""
+                    layout: LightingVm.layout
+                    cells: tab.pictureOf(modelData)
+                    onActivated: tab.applyTemplate(modelData)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        PrimaryButton {
+                            //% "Apply"
+                            text: qsTrId("light_pk_template_apply")
+                            onClicked: tab.applyTemplate(tcard.modelData)
+                        }
+                        SecondaryButton {
+                            //% "Save a copy"
+                            text: qsTrId("light_pk_template_copy")
+                            iconName: "copy"
+                            onClicked: tab.copyTemplate(tcard.modelData)
+                        }
+                    }
+                }
+            }
+        }
+        Text {
+            Layout.fillWidth: true
+            visible: templateGrid.children.length <= 1 && tab.templateQuery !== ""
+            //% "No template matches the search."
+            text: qsTrId("light_pk_templates_none")
+            color: Theme.muted
+            font.pixelSize: Theme.fontBody
         }
     }
 

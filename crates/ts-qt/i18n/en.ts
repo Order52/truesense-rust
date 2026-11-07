@@ -663,6 +663,10 @@
         <source>Profile</source>
         <translation>Profile</translation>
     </message>
+    <message id="home_kind_theme">
+        <source>Theme</source>
+        <translation>Theme</translation>
+    </message>
     <message id="home_toast_power">
         <source>Power mode: %1 (held 30 min)</source>
         <translation>Power mode: %1 (held 30 min)</translation>
@@ -938,6 +942,10 @@
     <message id="profiles_kind_profile">
         <source>Profile</source>
         <translation>Profile</translation>
+    </message>
+    <message id="profiles_kind_theme">
+        <source>Theme</source>
+        <translation>Theme</translation>
     </message>
     <message id="profiles_part_power_mode">
         <source>Power mode</source>
@@ -2911,6 +2919,22 @@
         <source>Right to left</source>
         <translation>Right to left</translation>
     </message>
+    <message id="light_kb_dir_btt">
+        <source>Bottom to top</source>
+        <translation>Bottom to top</translation>
+    </message>
+    <message id="light_kb_dir_ttb">
+        <source>Top to bottom</source>
+        <translation>Top to bottom</translation>
+    </message>
+    <message id="light_kb_dir_cw">
+        <source>Clockwise</source>
+        <translation>Clockwise</translation>
+    </message>
+    <message id="light_kb_dir_ccw">
+        <source>Counter-clockwise</source>
+        <translation>Counter-clockwise</translation>
+    </message>
     <message id="light_kb_perkey_note">
         <source>The keyboard shows your own key colours. Pick an effect to replace them.</source>
         <translation>The keyboard shows your own key colours. Pick an effect to replace them.</translation>
@@ -3075,6 +3099,14 @@
         <source>Mood lamp</source>
         <translation>Mood lamp</translation>
     </message>
+    <message id="light_anim_wave_cw">
+        <source>Clockwise sweep</source>
+        <translation>Clockwise sweep</translation>
+    </message>
+    <message id="light_anim_wave_ccw">
+        <source>Counter-clockwise sweep</source>
+        <translation>Counter-clockwise sweep</translation>
+    </message>
     <message id="light_mode_eco">
         <source>Eco</source>
         <translation>Eco</translation>
@@ -3147,6 +3179,10 @@
         <source>A look remembers the keyboard and the rear bar as they are now. Set the lights the way you like under Keyboard, Per-key and Rear bar, then save them here.</source>
         <translation>A look remembers the keyboard and the rear bar as they are now. Set the lights the way you like under Keyboard, Per-key and Rear bar, then save them here.</translation>
     </message>
+    <message id="light_looks_pictures">
+        <source>Your looks</source>
+        <translation>Your looks</translation>
+    </message>
     <message id="light_looks_title">
         <source>Looks</source>
         <translation>Looks</translation>
@@ -3166,6 +3202,10 @@
     <message id="light_looks_applied">
         <source>Look &apos;%1&apos; applied</source>
         <translation>Look &apos;%1&apos; applied</translation>
+    </message>
+    <message id="light_looks_still_note">
+        <source>A moving effect is drawn as one still frame.</source>
+        <translation>A moving effect is drawn as one still frame.</translation>
     </message>
     <message id="light_looks_copy">
         <source>Copy to edit</source>
@@ -3323,6 +3363,14 @@
         <source>The service applies the look when the power mode changes, also at boot and by Smart auto. Moving pictures need the key service.</source>
         <translation>The service applies the look when the power mode changes, also at boot and by Smart auto. Moving pictures need the key service.</translation>
     </message>
+    <message id="light_pk_template_applied">
+        <source>Template &apos;%1&apos; applied</source>
+        <translation>Template &apos;%1&apos; applied</translation>
+    </message>
+    <message id="light_pk_template_copied">
+        <source>Saved a copy as &apos;%1&apos;. Apply it under Designs, then change it on the board.</source>
+        <translation>Saved a copy as &apos;%1&apos;. Apply it under Designs, then change it on the board.</translation>
+    </message>
     <message id="light_pk_none">
         <source>This laptop has no keyboard backlight control.</source>
         <translation>This laptop has no keyboard backlight control.</translation>
@@ -3474,6 +3522,30 @@
     <message id="light_pk_anim_speed">
         <source>Speed</source>
         <translation>Speed</translation>
+    </message>
+    <message id="light_pk_templates">
+        <source>Templates</source>
+        <translation>Templates</translation>
+    </message>
+    <message id="light_pk_templates_help">
+        <source>Ready-made looks for gaming, typing, editing and the evening. Apply one to start from it: it goes to the keyboard and the board above, and Undo takes it back.</source>
+        <translation>Ready-made looks for gaming, typing, editing and the evening. Apply one to start from it: it goes to the keyboard and the board above, and Undo takes it back.</translation>
+    </message>
+    <message id="light_pk_templates_search">
+        <source>Search templates</source>
+        <translation>Search templates</translation>
+    </message>
+    <message id="light_pk_template_apply">
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message id="light_pk_template_copy">
+        <source>Save a copy</source>
+        <translation>Save a copy</translation>
+    </message>
+    <message id="light_pk_templates_none">
+        <source>No template matches the search.</source>
+        <translation>No template matches the search.</translation>
     </message>
     <message id="light_pk_designs">
         <source>Designs</source>
@@ -3674,6 +3746,70 @@
     <message id="light_theme_brightness">
         <source>Brightness</source>
         <translation>Brightness</translation>
+    </message>
+    <message id="light_gal_search">
+        <source>Search themes, moods and uses</source>
+        <translation>Search themes, moods and uses</translation>
+    </message>
+    <message id="light_gal_chip_all">
+        <source>All</source>
+        <translation>All</translation>
+    </message>
+    <message id="light_gal_chip_top">
+        <source>Top picks</source>
+        <translation>Top picks</translation>
+    </message>
+    <message id="light_gal_chip_starred">
+        <source>Starred</source>
+        <translation>Starred</translation>
+    </message>
+    <message id="light_gal_chip_gaming">
+        <source>Gaming</source>
+        <translation>Gaming</translation>
+    </message>
+    <message id="light_gal_chip_work">
+        <source>Work and typing</source>
+        <translation>Work and typing</translation>
+    </message>
+    <message id="light_gal_chip_night">
+        <source>Night</source>
+        <translation>Night</translation>
+    </message>
+    <message id="light_gal_chip_music">
+        <source>Music</source>
+        <translation>Music</translation>
+    </message>
+    <message id="light_gal_chip_calm">
+        <source>Calm</source>
+        <translation>Calm</translation>
+    </message>
+    <message id="light_gal_chip_yours">
+        <source>Yours</source>
+        <translation>Yours</translation>
+    </message>
+    <message id="light_gal_hint">
+        <source>Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery.</source>
+        <translation>Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery.</translation>
+    </message>
+    <message id="light_gal_loading">
+        <source>Loading the themes.</source>
+        <translation>Loading the themes.</translation>
+    </message>
+    <message id="light_gal_none">
+        <source>No theme matches. Clear the search or pick another filter.</source>
+        <translation>No theme matches. Clear the search or pick another filter.</translation>
+    </message>
+    <message id="light_gal_star">
+        <source>Star this theme</source>
+        <translation>Star this theme</translation>
+    </message>
+    <message id="light_gal_running">
+        <source>Running</source>
+        <translation>Running</translation>
+    </message>
+    <message id="light_gal_unavailable">
+        <source>Not available</source>
+        <translation>Not available</translation>
     </message>
     <message id="light_theme_apply">
         <source>Apply</source>

@@ -982,9 +982,17 @@ rc 0
   arrows       built-in  only the arrow keys and WASD
   coding       built-in  dark board, function keys and Esc picked out
   ember        built-in  warm red and orange
+  fps          built-in  shooter: WASD, ability keys and the weapon numbers stand out
   gaming       built-in  WASD and the keys around it lit for play
   ice          built-in  cool blue to white
+  media        built-in  editing: arrows to scrub, space to play, J K L in the middle
+  moba         built-in  Q W E R skills, D F spells, the number row for items
+  neon-grid    built-in  cyan and magenta rows over a deep purple board
+  night        built-in  a dim amber board for a dark room, easy on the eyes
+  rainbow-rows built-in  every row of the keyboard in its own colour of the rainbow
   stealth      built-in  almost off, just the letters
+  sunset       built-in  a dusk gradient from violet at the top to gold at the bottom
+  typing       built-in  home-row guide: F and J bumps white, the rest of the row blue
 --- err
 === end
 $ --json keyboard design list
@@ -1014,6 +1022,38 @@ rc 0
   "stealth": {
     "info": "almost off, just the letters",
     "source": "built-in"
+  },
+  "fps": {
+    "info": "shooter: WASD, ability keys and the weapon numbers stand out",
+    "source": "built-in"
+  },
+  "moba": {
+    "info": "Q W E R skills, D F spells, the number row for items",
+    "source": "built-in"
+  },
+  "typing": {
+    "info": "home-row guide: F and J bumps white, the rest of the row blue",
+    "source": "built-in"
+  },
+  "media": {
+    "info": "editing: arrows to scrub, space to play, J K L in the middle",
+    "source": "built-in"
+  },
+  "sunset": {
+    "info": "a dusk gradient from violet at the top to gold at the bottom",
+    "source": "built-in"
+  },
+  "neon-grid": {
+    "info": "cyan and magenta rows over a deep purple board",
+    "source": "built-in"
+  },
+  "rainbow-rows": {
+    "info": "every row of the keyboard in its own colour of the rainbow",
+    "source": "built-in"
+  },
+  "night": {
+    "info": "a dim amber board for a dark room, easy on the eyes",
+    "source": "built-in"
   }
 }
 --- err
@@ -1042,10 +1082,18 @@ rc 0
   arrows       built-in  only the arrow keys and WASD
   coding       built-in  dark board, function keys and Esc picked out
   ember        built-in  warm red and orange
+  fps          built-in  shooter: WASD, ability keys and the weapon numbers stand out
   gaming       built-in  WASD and the keys around it lit for play
   ice          built-in  cool blue to white
+  media        built-in  editing: arrows to scrub, space to play, J K L in the middle
+  moba         built-in  Q W E R skills, D F spells, the number row for items
   mydesign     yours     saved from the keyboard
+  neon-grid    built-in  cyan and magenta rows over a deep purple board
+  night        built-in  a dim amber board for a dark room, easy on the eyes
+  rainbow-rows built-in  every row of the keyboard in its own colour of the rainbow
   stealth      built-in  almost off, just the letters
+  sunset       built-in  a dusk gradient from violet at the top to gold at the bottom
+  typing       built-in  home-row guide: F and J bumps white, the rest of the row blue
 --- err
 === end
 $ keyboard fill 0000ff --brightness 20
@@ -1216,7 +1264,7 @@ An action is `name` or `name:argument`. Each returns a short message (shown on s
   power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)
   fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle
   profile:<name> | profile-next                                              saved profiles (see `truesense profile`)
-  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles and profiles (see `truesense favourite`); N counts from 1
+  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles, profiles and themes (see `truesense favourite`); N counts from 1
   output-toggle | output-cycle | output:speakers | output:headphones
   mic-toggle | mic:mute | mic:unmute | voice-next
   touchpad-toggle | touchpad:on | touchpad:off
@@ -1725,7 +1773,7 @@ _truesense() {
         restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
-        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood wave-clockwise wave-counter-clockwise --help --speed --keys" -- "$cur") ); return;;
         speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
@@ -1770,8 +1818,8 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
-        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -1929,7 +1977,7 @@ _truesense() {
         restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
-        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood wave-clockwise wave-counter-clockwise --help --speed --keys" -- "$cur") ); return;;
         speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;
@@ -1974,8 +2022,8 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
-        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;

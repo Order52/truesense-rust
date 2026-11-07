@@ -575,8 +575,54 @@ mod tests {
         assert!(!effect("static").unwrap().speed);
         assert!(effect("breathing").unwrap().speed);
         assert_eq!(effect("neon").unwrap().pick_floor, 50);
-        assert!(!effect("static").unwrap().direction && effect("wave").unwrap().direction);
+        let with_direction: Vec<&str> = EFFECTS.iter().filter(|e| e.direction).map(|e| e.id).collect();
+        assert_eq!(with_direction, ["wave"], "only the wave honours a direction (reference, PH16-71)");
         assert_eq!(call("effects", &json!({})).unwrap().as_array().unwrap().len(), 13);
+    }
+
+    #[test]
+    fn the_wave_preview_follows_its_direction() {
+        let shot = |direction: i64| {
+            let p = preview(&json!({"mode": "effect", "name": "wave", "brightness": 50, "direction": direction}), None);
+            p["cells"].as_array().unwrap().iter().map(|c| c.as_str().unwrap().to_owned()).collect::<Vec<_>>()
+        };
+        let cell = |col: usize, row: usize| col * 6 + row;
+        let (ltr, rtl, up, down) = (shot(0), shot(1), shot(2), shot(3));
+        // Left to right: same hue down a column, different along a row; right to left mirrors it.
+        assert_eq!(ltr[cell(3, 0)], ltr[cell(3, 5)]);
+        assert_ne!(ltr[cell(3, 0)], ltr[cell(15, 0)]);
+        assert_eq!(rtl[cell(3, 2)], ltr[cell(18, 2)]);
+        // Vertical directions: the same hue along a row, different down a column, opposite to each other.
+        assert_eq!(up[cell(2, 1)], up[cell(17, 1)]);
+        assert_ne!(up[cell(2, 0)], up[cell(2, 5)]);
+        assert_eq!(up[cell(2, 0)], down[cell(2, 5)]);
+        // Around the middle: the two rotations are mirror images and differ from the straight ones.
+        let (cw, ccw) = (shot(4), shot(5));
+        assert_ne!(cw, ccw);
+        assert_ne!(cw, ltr);
+        assert_ne!(cw[cell(11, 0)], ccw[cell(11, 0)], "above the middle the angle has opposite signs");
+        assert_eq!(cw[cell(11, 0)], ccw[cell(11, 5)], "the mirror image: above and below swap");
+    }
+
+    #[test]
+    fn only_the_wave_keeps_a_direction_when_picked() {
+        for d in 0..=5 {
+            let r = pick_effect("wave", &json!({"direction": d})).unwrap();
+            assert_eq!(r["direction"], d);
+        }
+        assert_eq!(pick_effect("wave", &json!({"direction": 6})).unwrap()["direction"], 0);
+        assert_eq!(pick_effect("wave", &json!({"direction": -1})).unwrap()["direction"], 0);
+        for e in EFFECTS.iter().filter(|e| e.id != "wave") {
+            assert_eq!(pick_effect(e.id, &json!({"direction": 4})).unwrap()["direction"], 0, "{}", e.id);
+        }
+    }
+
+    #[test]
+    fn the_rear_bar_keeps_the_direction_control_on_the_wave_only() {
+        let rows = call("rear_effects", &json!({})).unwrap();
+        let with: Vec<&str> =
+            rows.as_array().unwrap().iter().filter(|r| r["direction"] == true).map(|r| r["id"].as_str().unwrap()).collect();
+        assert_eq!(with, ["wave"]);
     }
 
     #[test]
@@ -869,7 +915,10 @@ mod tests {
         assert_eq!(call("hsv_to_hex", &json!({"h": 120, "s": 1, "v": 1})).unwrap(), json!("00ff00"));
         assert!(call("hex_to_hsv", &json!({"hex": "x"})).is_err());
         assert_eq!(call("palette", &json!({})).unwrap().as_array().unwrap().len(), 16);
-        assert_eq!(call("fx_modes", &json!({})).unwrap().as_array().unwrap().len(), 18);
+        let modes = call("fx_modes", &json!({})).unwrap();
+        assert_eq!(modes.as_array().unwrap().len(), 20);
+        assert_eq!(modes[18], "wave-clockwise");
+        assert_eq!(modes[19], "wave-counter-clockwise");
         assert_eq!(call("rear_effects", &json!({})).unwrap().as_array().unwrap().len(), 5);
         assert_eq!(call("stock_cells", &json!({})).unwrap().as_array().unwrap().len(), 128);
         assert!(call("layout", &json!({"keys": 5})).unwrap()["keys"].as_array().unwrap().is_empty());

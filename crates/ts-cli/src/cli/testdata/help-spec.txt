@@ -26,10 +26,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
-    favourite    starred looks, fan curves, Smart profiles and profiles (the
-                 Home page and the PREDATOR key use them): list | add KIND
-                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
-                 NAME | next
+    favourite    starred looks, fan curves, Smart profiles, profiles and
+                 themes (the Home page and the PREDATOR key use them): list |
+                 add KIND NAME | remove KIND NAME | move FROM TO | apply N |
+                 apply KIND NAME | next
     theme        lighting themes drawn on the keyboard by the key service:
                  list | show NAME | apply NAME | stop
     cpu          CPU power limits and the guarded undervolt
@@ -742,7 +742,8 @@ positional arguments:
                         service, about 5 frames a second): off | pulse | wave
                         | cycle | twinkle | rainbow | scanner | comet | ripple
                         | rain | matrix | fire | plasma | aurora | lightning |
-                        confetti | starlight | mood | breathing
+                        confetti | starlight | mood | breathing | wave-
+                        clockwise | wave-counter-clockwise
     speed               animation speed of the running effect, 1 (slowest) ..
                         12 (fastest)
     color               change the colour of the current effect (stays in the
@@ -821,14 +822,17 @@ options:
   --speed SPEED
   --brightness BRIGHTNESS
   --direction DIRECTION
+                        wave only: left-to-right | right-to-left | bottom-to-
+                        top | top-to-bottom | clockwise | counter-clockwise,
+                        or 0..5 in that order (default: left-to-right)
 
 --------------------------------------------------
 VERB keyboard fx
 usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
-                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 
 positional arguments:
-  {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+  {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 
 options:
   -h, --help            show this help message and exit
@@ -1280,10 +1284,11 @@ options:
 --------------------------------------------------
 VERB favourite add
 usage: truesense favourite add [-h]
-                               {look,fan_curve,smart_profile,profile} name
+                               {look,fan_curve,smart_profile,profile,theme}
+                               name
 
 positional arguments:
-  {look,fan_curve,smart_profile,profile}
+  {look,fan_curve,smart_profile,profile,theme}
   name
 
 options:
@@ -1292,10 +1297,11 @@ options:
 --------------------------------------------------
 VERB favourite remove
 usage: truesense favourite remove [-h]
-                                  {look,fan_curve,smart_profile,profile} name
+                                  {look,fan_curve,smart_profile,profile,theme}
+                                  name
 
 positional arguments:
-  {look,fan_curve,smart_profile,profile}
+  {look,fan_curve,smart_profile,profile,theme}
   name
 
 options:

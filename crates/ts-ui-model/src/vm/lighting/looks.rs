@@ -35,7 +35,11 @@ pub fn preview(look: &Value, cells: Option<&Value>) -> Value {
             let pattern: Vec<String> = (0..CELLS)
                 .map(|cell| {
                     if !uses_colour {
-                        // The firmware ignores the colour: a hue ramp across the columns.
+                        // The firmware ignores the colour: a hue ramp across the columns, or along
+                        // the wave's direction.
+                        if name == "wave" {
+                            return to_hex(hue_ramp(wave_position(cell, i64_at(look, "direction").unwrap_or(0))));
+                        }
                         return to_hex(hue_ramp((cell as f64 / ROWS as f64) / 22.0));
                     }
                     if still || name == "breathing" {

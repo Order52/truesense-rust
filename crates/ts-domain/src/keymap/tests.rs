@@ -181,3 +181,40 @@ fn cell_names_are_range_checked_and_ascii_only() {
     }
     assert_eq!(m.cells_for("cell0000003").unwrap(), vec![3]);
 }
+
+// ---- geometry ----------------------------------------------------------------------------------
+
+#[test]
+fn every_key_of_the_map_has_one_rectangle_and_none_overlap() {
+    use super::geometry::{HEIGHT, WIDTH, key_rects};
+    let rects = key_rects();
+    let names: std::collections::BTreeSet<&str> = rects.iter().map(|r| r.name).collect();
+    assert_eq!(names.len(), rects.len(), "a name is drawn once");
+    for r in &rects {
+        assert!(
+            r.x >= 0.0 && r.y >= 0.0 && r.x + r.w <= WIDTH + 1e-9 && r.y + r.h <= HEIGHT + 1e-9,
+            "{}",
+            r.name
+        );
+    }
+    // Every key the map knows, but the aliases of another and the Predator key's twin, has a rectangle.
+    let map = KeyMap::verified();
+    let missing: Vec<&str> = map
+        .names()
+        .iter()
+        .map(|(n, _)| n.as_str())
+        .filter(|n| !names.contains(n) && !matches!(*n, "enter" | "win"))
+        .collect();
+    assert!(missing.is_empty(), "keys without a rectangle: {missing:?}");
+    for (i, a) in rects.iter().enumerate() {
+        for b in &rects[i + 1..] {
+            let apart = a.x + a.w <= b.x + 1e-9
+                || b.x + b.w <= a.x + 1e-9
+                || a.y + a.h <= b.y + 1e-9
+                || b.y + b.h <= a.y + 1e-9;
+            assert!(apart, "{} and {} overlap", a.name, b.name);
+        }
+    }
+    let space = rects.iter().find(|r| r.name == "space").unwrap();
+    assert_eq!((space.w, space.centre().0), (4.75, space.x + 2.375));
+}

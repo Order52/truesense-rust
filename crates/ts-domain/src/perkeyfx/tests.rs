@@ -99,8 +99,12 @@ fn the_mode_list_matches_python() {
         .iter()
         .map(|m| (m[0].as_str().unwrap().to_owned(), m[1].as_str().unwrap().to_owned()))
         .collect();
-    assert_eq!(MODES.iter().map(|(n, l)| ((*n).to_owned(), (*l).to_owned())).collect::<Vec<_>>(), want);
-    assert_eq!(mode_names().len(), 18);
+    // The earlier editions' 18 come first and unchanged; the sweeps after them are this edition's.
+    assert_eq!(
+        MODES.iter().take(18).map(|(n, l)| ((*n).to_owned(), (*l).to_owned())).collect::<Vec<_>>(),
+        want
+    );
+    assert_eq!(mode_names().len(), 20);
     assert!(is_mode("pulse") && is_mode("mood"));
     assert!(!is_mode("off") && !is_mode("disco") && !is_mode("") && !is_mode("Pulse"));
 }
@@ -251,7 +255,7 @@ fn settings_are_validated_with_the_python_messages() {
     let (_dir, fx, _sink, state) = store_rig(1.0);
     assert_eq!(
         fx.set("disco", 5, &[], &[]).unwrap_err().to_string(),
-        "animation: off, pulse, wave, cycle, twinkle, rainbow, breathing, scanner, comet, ripple, rain, matrix, fire, plasma, aurora, lightning, confetti, starlight, mood"
+        "animation: off, pulse, wave, cycle, twinkle, rainbow, breathing, scanner, comet, ripple, rain, matrix, fire, plasma, aurora, lightning, confetti, starlight, mood, wave-clockwise, wave-counter-clockwise"
     );
     for speed in [0, 11, 50, -1, i64::MIN, i64::MAX] {
         assert_eq!(fx.set("wave", speed, &[], &[]).unwrap_err().to_string(), "speed 1..10", "{speed}");

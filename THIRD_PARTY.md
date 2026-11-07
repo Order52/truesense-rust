@@ -39,3 +39,13 @@ artwork.
   (the catalogue's own schema, so a user theme can be written back); `Theme::top` and
   `Theme::suits` default when absent.
 - Added by TrueSense: `cells.rs`, `themes/validate.rs`, `Theme::keyboard_effect`, `Lang::from_code`.
+
+### Facts and designs studied, no code taken (task of 2026-11-08)
+
+The wave direction table (1 left to right, 2 right to left, 3 bottom to top, 4 top to bottom, 5 clockwise, 6 counter-clockwise
+on a PH16-71, confirmed 2026-10-15), the list of the 14 firmware effects with their codes and which of them take a direction, and
+the idea of a theme gallery with a thumbnail, colourway chips, search, filters and a star per card come from his `keyboard_rgb.rs`,
+`control_model.rs` and themes UI, which were read for their facts and layout. The code that implements them here (`ts-domain`
+`keyboard::Direction`, `themes::preview`, `perkeyfx::sweep`, `designs::templates`, the `gallery` view-model and the QML components)
+is new, so none of those files carries the adaptation header.
+
