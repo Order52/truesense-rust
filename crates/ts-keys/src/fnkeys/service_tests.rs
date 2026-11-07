@@ -1067,8 +1067,16 @@ fn the_service_over_the_simulated_machine_waits_for_the_keyboard_and_stops() {
     env.log = Arc::new(move |l| poison_free(&sink).push(l.to_owned()));
     let stop = Arc::new(AtomicBool::new(false));
     let flag = Arc::clone(&stop);
+    let watched = Arc::clone(&lines);
+    // Stop the service once it has said what this test is about, however long that takes.
+    // (If it never does, the stop comes after a minute and the assertion below says so.)
     let stopper = std::thread::spawn(move || {
-        std::thread::sleep(ms(60));
+        let started = Instant::now();
+        while started.elapsed() < Duration::from_secs(60)
+            && !poison_free(&watched).iter().any(|l| l.contains("was not found; waiting for it"))
+        {
+            std::thread::sleep(ms(1));
+        }
         flag.store(true, Ordering::SeqCst);
     });
     Service::new(env).run(&stop);
@@ -1081,12 +1089,69 @@ fn the_service_over_the_simulated_machine_waits_for_the_keyboard_and_stops() {
     );
 }
 
+/// A clock that only the test moves, so that no gesture depends on how fast the machine runs.
+struct ManualClock(Mutex<Duration>);
+
+impl ManualClock {
+    fn advance(&self, by: Duration) {
+        *poison_free(&self.0) += by;
+    }
+}
+
+impl Clock for ManualClock {
+    fn now(&self) -> Duration {
+        *poison_free(&self.0)
+    }
+
+    fn sleep(&self, how_long: Duration) {
+        // Only used while there is no keyboard: really wait a little, never move the fake time.
+        std::thread::sleep(how_long.min(ms(5)));
+    }
+}
+
+/// A real descriptor that counts what the service does with it: `calls` is how often the service
+/// asked for a report, `taken` how many it got. A report is fully handled once the service asks
+/// again, which is how the test knows it may let time pass.
+struct Counted {
+    inner: HidrawFile,
+    calls: Arc<AtomicUsize>,
+    taken: Arc<AtomicUsize>,
+}
+
+impl HidReports for Counted {
+    fn read_report(&mut self, timeout: Duration) -> Result<Option<Vec<u8>>, HidError> {
+        self.read_report_watching(timeout, None)
+    }
+
+    fn read_report_watching(
+        &mut self,
+        timeout: Duration,
+        watch: Option<&Watcher>,
+    ) -> Result<Option<Vec<u8>>, HidError> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let report = self.inner.read_report_watching(timeout, watch)?;
+        if report.is_some() {
+            self.taken.fetch_add(1, Ordering::SeqCst);
+        }
+        Ok(report)
+    }
+}
+
+/// Waits (up to a minute, which only a failure ever uses) until `condition` holds.
+fn eventually(what: &str, condition: impl Fn() -> bool) {
+    let started = Instant::now();
+    while !condition() {
+        assert!(started.elapsed() < Duration::from_secs(60), "waited for {what}");
+        std::thread::sleep(ms(1));
+    }
+}
+
 #[test]
-fn real_reports_over_a_real_descriptor_run_the_bound_action_in_real_time() {
+fn real_reports_over_a_real_descriptor_run_the_bound_action_when_the_clock_says_so() {
     use std::os::fd::OwnedFd;
     use std::os::unix::net::UnixStream;
 
-    struct OnceOpener(Mutex<Option<HidrawFile>>);
+    struct OnceOpener(Mutex<Option<Counted>>);
     impl HidOpener for OnceOpener {
         fn open(&self, _node: &Path) -> Result<Box<dyn HidReports>, HidError> {
             poison_free(&self.0).take().map(|f| Box::new(f) as Box<dyn HidReports>).ok_or(HidError::Gone)
@@ -1094,29 +1159,42 @@ fn real_reports_over_a_real_descriptor_run_the_bound_action_in_real_time() {
     }
 
     let (device, mut keyboard) = UnixStream::pair().expect("pair");
-    let opener = Arc::new(OnceOpener(Mutex::new(Some(HidrawFile::from_file(std::fs::File::from(
-        OwnedFd::from(device),
-    ))))));
+    let (calls, taken) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
+    let counted = Counted {
+        inner: HidrawFile::from_file(std::fs::File::from(OwnedFd::from(device))),
+        calls: Arc::clone(&calls),
+        taken: Arc::clone(&taken),
+    };
+    let clock = Arc::new(ManualClock(Mutex::new(Duration::ZERO)));
     let rig = Rig::new(0);
     let mut env = rig.env();
-    env.opener = opener;
-    env.clock = Arc::new(MonotonicClock::new());
+    env.opener = Arc::new(OnceOpener(Mutex::new(Some(counted))));
+    env.clock = Arc::clone(&clock) as Arc<dyn Clock>;
     env.timing.max_wait = ms(10);
     *poison_free(&rig.world.config) = (Some(1), Ok(Bindings { long_ms: 400, multi_ms: 40, ..bindings() }));
     let stop = Arc::clone(&rig.world.stop);
     let world = Arc::clone(&rig.world);
     let service = std::thread::spawn(move || Service::new(env).run(&world.stop));
-    keyboard.write_all(&PRESS).expect("press");
-    std::thread::sleep(ms(20));
-    keyboard.write_all(&RELEASE).expect("release");
-    let started = Instant::now();
-    while poison_free(&rig.world.actions).is_empty() && started.elapsed() < Duration::from_secs(60) {
-        std::thread::sleep(ms(5));
-    }
-    keyboard.write_all(&FN_F10).expect("fn+f10");
-    while poison_free(&rig.world.actions).len() < 2 && started.elapsed() < Duration::from_secs(60) {
-        std::thread::sleep(ms(5));
-    }
+
+    // Sends one report and waits until the service has taken it and come back for the next one:
+    // the stream is a byte stream, so reports must not run together, and the time must not move
+    // while the service is still deciding what the report meant.
+    let mut sent = 0;
+    let mut send = |bytes: &[u8]| {
+        keyboard.write_all(bytes).expect("report");
+        sent += 1;
+        eventually("the report to be taken", || taken.load(Ordering::SeqCst) == sent);
+        let seen = calls.load(Ordering::SeqCst);
+        eventually("the report to be handled", || calls.load(Ordering::SeqCst) > seen);
+    };
+    send(&PRESS);
+    send(&RELEASE);
+    // A short press, and the multi-tap window (40 ms) still open: nothing has run yet.
+    assert!(poison_free(&rig.world.actions).is_empty());
+    clock.advance(ms(100));
+    eventually("the single tap", || !poison_free(&rig.world.actions).is_empty());
+    send(&FN_F10);
+    eventually("fn+f10", || poison_free(&rig.world.actions).len() >= 2);
     stop.store(true, Ordering::SeqCst);
     service.join().expect("service thread");
     assert_eq!(specs(&poison_free(&rig.world.actions).clone()), ["A_tap", "touchpad-toggle"]);

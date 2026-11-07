@@ -828,8 +828,10 @@ mod tests {
     fn deadline_covers_a_trickling_peer() {
         use std::io::Write;
         let (a, mut b) = UnixStream::pair().unwrap();
+        // The peer trickles a byte every 20 ms for as long as the reader keeps listening (a limit of
+        // 100 bytes would end it after 2 s, so the line limit is never what stops the reader).
         let writer = std::thread::spawn(move || {
-            for _ in 0..40 {
+            for _ in 0..1000 {
                 if b.write_all(b"a").is_err() {
                     return;
                 }
@@ -837,9 +839,10 @@ mod tests {
             }
         });
         let started = Instant::now();
-        let r = read_line(DeadlineReader::new(&a, Instant::now() + Duration::from_millis(150)), 100);
+        let r = read_line(DeadlineReader::new(&a, Instant::now() + Duration::from_millis(150)), 10_000);
         assert!(matches!(r, Err(WireError::Io(_))), "a byte every 20 ms must not keep the reader alive");
-        assert!(started.elapsed() < Duration::from_millis(600));
+        // Cut off by the deadline, long before the trickle (20 s) or any limit could end it.
+        assert!(started.elapsed() < Duration::from_secs(10));
         drop(a);
         assert!(writer.join().is_ok());
     }

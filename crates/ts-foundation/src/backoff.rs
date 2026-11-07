@@ -57,10 +57,11 @@ mod tests {
     }
 
     #[test]
-    fn a_quick_wait_costs_far_less_than_the_old_fixed_pause() {
+    fn a_quick_wait_asks_for_far_less_than_the_longest_pause() {
+        // What is checked is the pause that is asked for, not how long the machine took to give it
+        // back: a loaded machine can sleep 100 microseconds for as long as it likes.
         let mut b = Backoff::new();
-        let started = std::time::Instant::now();
+        assert!(Backoff::new().next_pause() * 10 <= LONGEST);
         b.wait();
-        assert!(started.elapsed() < Duration::from_millis(10));
     }
 }

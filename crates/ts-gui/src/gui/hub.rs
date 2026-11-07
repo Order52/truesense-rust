@@ -232,6 +232,7 @@ mod tests {
     use super::*;
     use crate::gui::bus::{CommandError, Commands};
     use std::sync::atomic::AtomicUsize;
+    use std::time::Instant;
 
     /// Counts how often it is read and answers an increasing number.
     struct Counting {
@@ -255,6 +256,25 @@ mod tests {
         (Hub::new(c.clone(), Duration::from_millis(5)), c)
     }
 
+    /// How long a test waits for something that must happen. Only a failure ever waits this long,
+    /// so a loaded machine slows a test down but cannot make it fail.
+    const PATIENCE: Duration = Duration::from_secs(30);
+
+    /// Waits until `condition` holds (polling every millisecond), failing after [`PATIENCE`].
+    fn eventually(what: &str, condition: impl Fn() -> bool) {
+        let started = Instant::now();
+        while !condition() {
+            assert!(started.elapsed() < PATIENCE, "waited for {what}");
+            thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    /// Waits until the reader thread has ended: it owns one clone of the commands, so only the hub's
+    /// and the test's remain. Proves a stop without guessing how long a stop takes.
+    fn reader_has_ended(counting: &Arc<Counting>) {
+        eventually("the reader thread to end", || Arc::strong_count(counting) == 2);
+    }
+
     fn state_n(m: Option<Message>) -> Option<i64> {
         match m {
             Some(Message::State(json)) => serde_json::from_str::<Value>(&json).ok()?.get("n")?.as_i64(),
@@ -265,25 +285,29 @@ mod tests {
     #[test]
     fn nothing_is_read_while_nobody_listens_and_reading_stops_with_the_last_page() {
         let (hub, counting) = hub(false);
-        thread::sleep(Duration::from_millis(30));
+        // No reader exists before the first page: the hub holds the only other clone of the commands.
+        assert_eq!(Arc::strong_count(&counting), 2);
         assert_eq!(counting.reads.load(Ordering::SeqCst), 0);
         let sub = hub.subscribe();
-        assert!(state_n(sub.inbox().next(Duration::from_secs(2))).is_some());
+        assert!(state_n(sub.inbox().next(PATIENCE)).is_some());
         assert_eq!(hub.listeners(), 1);
         drop(sub);
         assert_eq!(hub.listeners(), 0);
-        thread::sleep(Duration::from_millis(40));
+        reader_has_ended(&counting);
         let after = counting.reads.load(Ordering::SeqCst);
-        thread::sleep(Duration::from_millis(60));
+        assert!(after >= 1);
+        // The reader is gone, so nothing can read any more.
         assert_eq!(counting.reads.load(Ordering::SeqCst), after, "the reader stopped");
     }
 
     #[test]
     fn a_slow_page_only_misses_old_readings() {
-        let (hub, _) = hub(false);
+        let (hub, counting) = hub(false);
         let sub = hub.subscribe();
-        thread::sleep(Duration::from_millis(80));
-        let first = state_n(sub.inbox().next(Duration::from_secs(2)));
+        // The page does not look until the reader has read five times: the fifth read starts only
+        // after the fourth reading (n = 3) was published, so the mailbox holds n >= 3.
+        eventually("five readings", || counting.reads.load(Ordering::SeqCst) >= 5);
+        let first = state_n(sub.inbox().next(PATIENCE));
         assert!(first.is_some_and(|n| n >= 3), "got the newest reading, not the oldest: {first:?}");
     }
 
@@ -291,8 +315,9 @@ mod tests {
     fn a_new_page_gets_the_latest_reading_at_once() {
         let (hub, counting) = hub(false);
         let first = hub.subscribe();
-        assert!(first.inbox().next(Duration::from_secs(2)).is_some());
+        assert!(first.inbox().next(PATIENCE).is_some());
         let second = hub.subscribe();
+        // `next` waits at most a millisecond and still has a message: it was there already.
         assert!(second.inbox().next(Duration::from_millis(1)).is_some(), "no wait for a tick");
         assert_eq!(hub.listeners(), 2);
         assert!(counting.reads.load(Ordering::SeqCst) >= 1);
@@ -302,19 +327,19 @@ mod tests {
     fn a_commands_that_has_no_reading_leaves_the_page_waiting_not_failing() {
         let (hub, counting) = hub(true);
         let sub = hub.subscribe();
-        assert_eq!(sub.inbox().next(Duration::from_millis(40)), None);
-        assert!(counting.reads.load(Ordering::SeqCst) >= 2, "it keeps trying");
+        eventually("two attempts", || counting.reads.load(Ordering::SeqCst) >= 2);
+        assert_eq!(sub.inbox().next(Duration::from_millis(1)), None, "nothing was read, so nothing arrives");
     }
 
     #[test]
     fn show_requests_reach_every_page_and_come_before_readings() {
-        let (hub, _) = hub(false);
+        let (hub, counting) = hub(false);
         let (a, b) = (hub.subscribe(), hub.subscribe());
-        thread::sleep(Duration::from_millis(30));
+        eventually("a reading", || counting.reads.load(Ordering::SeqCst) >= 1);
         assert_eq!(hub.show("\"curves\""), 2);
-        assert_eq!(a.inbox().next(Duration::from_secs(1)), Some(Message::Show("\"curves\"".to_owned())));
-        assert_eq!(b.inbox().next(Duration::from_secs(1)), Some(Message::Show("\"curves\"".to_owned())));
-        assert!(matches!(a.inbox().next(Duration::from_secs(1)), Some(Message::State(_))));
+        assert_eq!(a.inbox().next(PATIENCE), Some(Message::Show("\"curves\"".to_owned())));
+        assert_eq!(b.inbox().next(PATIENCE), Some(Message::Show("\"curves\"".to_owned())));
+        assert!(matches!(a.inbox().next(PATIENCE), Some(Message::State(_))));
     }
 
     #[test]
@@ -332,12 +357,13 @@ mod tests {
     fn closing_stops_the_reader_and_refuses_a_new_one() {
         let (hub, counting) = hub(false);
         let sub = hub.subscribe();
-        assert!(sub.inbox().next(Duration::from_secs(2)).is_some());
+        assert!(sub.inbox().next(PATIENCE).is_some());
         hub.close();
-        thread::sleep(Duration::from_millis(30));
+        reader_has_ended(&counting);
         let after = counting.reads.load(Ordering::SeqCst);
         let late = hub.subscribe();
-        thread::sleep(Duration::from_millis(40));
+        // No reader was started for the late page: only the hub's and the test's clones exist.
+        assert_eq!(Arc::strong_count(&counting), 2);
         assert_eq!(counting.reads.load(Ordering::SeqCst), after);
         drop((sub, late));
     }
