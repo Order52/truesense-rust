@@ -7,6 +7,7 @@ mod bus;
 mod contract;
 mod harness;
 mod info;
+mod modebind;
 mod run;
 mod security;
 mod stream;

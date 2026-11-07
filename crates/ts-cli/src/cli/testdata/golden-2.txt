@@ -1636,7 +1636,7 @@ rc 0
 --- out
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1656,6 +1656,12 @@ _truesense() {
         release) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         managers) COMPREPLY=( $(compgen -W "list stop restore --help" -- "$cur") ); return;;
         game) COMPREPLY=( $(compgen -W "list add remove clear quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    mode) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "bindings bind unbind apply --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        bindings) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        bind) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help --look --curve" -- "$cur") ); return;;
+        unbind) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help --look --curve" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     fan) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status auto max off set curve smart --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -1820,7 +1826,7 @@ rc 0
 autoload -U +X bashcompinit && bashcompinit
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power mode fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -1840,6 +1846,12 @@ _truesense() {
         release) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         managers) COMPREPLY=( $(compgen -W "list stop restore --help" -- "$cur") ); return;;
         game) COMPREPLY=( $(compgen -W "list add remove clear quiet balanced performance turbo eco --help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    mode) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "bindings bind unbind apply --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        bindings) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        bind) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help --look --curve" -- "$cur") ); return;;
+        unbind) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help --look --curve" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "quiet balanced performance turbo eco --help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     fan) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status auto max off set curve smart --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -2016,6 +2028,11 @@ complete -c truesense -n '__fish_seen_subcommand_from power' -a 'hold'
 complete -c truesense -n '__fish_seen_subcommand_from power' -a 'release'
 complete -c truesense -n '__fish_seen_subcommand_from power' -a 'managers'
 complete -c truesense -n '__fish_seen_subcommand_from power' -a 'game'
+complete -c truesense -n '__fish_use_subcommand' -a mode
+complete -c truesense -n '__fish_seen_subcommand_from mode' -a 'bindings'
+complete -c truesense -n '__fish_seen_subcommand_from mode' -a 'bind'
+complete -c truesense -n '__fish_seen_subcommand_from mode' -a 'unbind'
+complete -c truesense -n '__fish_seen_subcommand_from mode' -a 'apply'
 complete -c truesense -n '__fish_use_subcommand' -a fan
 complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'status'
 complete -c truesense -n '__fish_seen_subcommand_from fan' -a 'auto'

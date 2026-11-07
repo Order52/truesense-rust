@@ -420,7 +420,9 @@ impl Api {
         if curve.cpu.is_empty() || curve.gpu.is_empty() {
             return Err(ApiError::invalid("give --cpu and --gpu points (or --from an existing curve)"));
         }
-        Ok(self.s.curves.save(name, &curve.to_value())?)
+        let saved = self.s.curves.save(name, &curve.to_value())?;
+        self.refresh_curve_bindings(name);
+        Ok(saved)
     }
 
     /// Saves a whole curve as it was edited (built-in names are refused).
@@ -430,7 +432,15 @@ impl Api {
         }
         let mut curve = curve.clone();
         curve.description = None;
-        Ok(self.s.curves.save(name, &curve.to_value())?)
+        let saved = self.s.curves.save(name, &curve.to_value())?;
+        self.refresh_curve_bindings(name);
+        Ok(saved)
+    }
+
+    /// A saved curve that a mode binding names must reach the service again, or its copy is
+    /// stale. The save already succeeded, so a failure here is not the caller's.
+    fn refresh_curve_bindings(&self, name: &str) {
+        let _ = self.refresh_binding_copies(ts_decision::bindings::Target::FanCurve, name);
     }
 
     /// Saves a copy under `new_name` (`NAME-copy` when none) and answers the name.

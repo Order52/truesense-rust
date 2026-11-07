@@ -17,6 +17,7 @@ mod hardware;
 mod info;
 mod keys;
 mod light;
+mod modebind;
 mod power;
 mod system;
 
@@ -192,6 +193,7 @@ impl Commands for ApiCommands {
             .or_else(|| hardware::dispatch(&ctx, &key, &a))
             .or_else(|| light::dispatch(&ctx, &key, &a))
             .or_else(|| keys::dispatch(&ctx, &key, &a))
+            .or_else(|| modebind::dispatch(&ctx, &key, &a))
             .or_else(|| system::dispatch(&ctx, &key, &a))
             .or_else(|| info::dispatch(&ctx, &key, &a))
             .or_else(|| alerts::dispatch(&ctx, &key, &a));

@@ -2,6 +2,7 @@
 
 pub mod alerts;
 pub mod autoprofile;
+pub mod bindings;
 pub mod chargefull;
 pub mod crashguard;
 pub mod curves;

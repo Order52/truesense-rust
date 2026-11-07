@@ -36,6 +36,7 @@ mod alerts;
 mod audio;
 mod battery;
 mod battery_info;
+mod bindings;
 mod capabilities;
 mod cpu;
 mod daemon;
@@ -90,6 +91,7 @@ use ts_system::touchpad::Touchpad;
 pub use alerts::{AlertsEdit, describe_alerts};
 pub use audio::{DtsInfo, JackReport, MicReport, VoiceStatus, dts_is_on};
 pub use battery::{BatteryStatus, ChargeFull, ChargeFullAction};
+pub use bindings::{BindingResult, BindingsApplied, ModeBindings};
 pub use capabilities::{Capabilities, Capability, Feature, ModelSummary};
 pub use cpu::{
     AppliedLimits, AppliedUndervolt, AutoLimits, CpuUndervolt, GpuPowerLimits, LimitsInfo, LockBit,

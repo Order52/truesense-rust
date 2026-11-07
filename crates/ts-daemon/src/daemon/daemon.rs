@@ -36,6 +36,7 @@ use ts_system::sensors::Ema;
 
 use super::DaemonError;
 use super::alerts::{AlertSettings, AlertsRuntime};
+use super::bindings::Runtime as BindRuntime;
 use super::deps::{
     BootLookPort, Clock, ClockCap, CpuUndervoltPort, Deps, GpuUndervoltPort, Level, LivePaths, Logger,
     Notice, OperatingLight, PowerLimitsPort, PowerManagersPort, ProcessList, Sensors, Sleeper, StopToken,
@@ -105,6 +106,8 @@ pub(super) struct Inner {
     pub(super) last_clock: Option<(f64, f64)>,
     /// The power mode the operating-mode light was last sent for.
     pub(super) op_mode: Option<String>,
+    /// What the mode-bindings hook remembers between ticks.
+    pub(super) bind: BindRuntime,
     /// The readings of the last tick, as the `state` request shows them.
     pub(super) live: LiveState,
     /// The pause until the next tick.
@@ -476,6 +479,7 @@ impl Inner {
             gpu_uv_guard,
             last_clock: None,
             op_mode: None,
+            bind: BindRuntime::default(),
             live: LiveState::new(),
             interval: FIRST_INTERVAL,
             notices: Vec::new(),

@@ -6,6 +6,7 @@ mod alerts;
 mod commands;
 mod golden;
 mod help;
+mod modebind;
 mod parse;
 
 use std::io::Cursor;

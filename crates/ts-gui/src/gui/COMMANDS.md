@@ -119,6 +119,10 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 | `look` | `apply` | `{"name"}` | list of what was done | `looks.apply` |
 | `look` | `delete` | `{"name"}` | name | `looks.delete` |
 | `look` | `copy` | **new**: `{"name", "new"?}` | the new name (`NAME-copy`, `-2`, ... if taken) | `looks.copy` |
+| `mode` | `bindings` | none | `{"mode": "turbo"\|null, "bindings": {"turbo": {"look": {"name", "data"}\|null, "fan_curve": {"name", "data"}\|null}}}`: the power mode now and what each bound mode applies (a mode without a binding is absent; `data` is the daemon's self-contained copy) | **new**, `ipc mode_bindings get` |
+| `mode` | `bind` | `{"mode": "eco"\|"quiet"\|"balanced"\|"performance"\|"turbo", "look"?: NAME, "curve"?: NAME}` (at least one; a part left out keeps what the mode had; names of saved or built-in looks and curves, not the native curve) | as `bindings`. The look and curve are copied into the daemon, which applies them once when the power mode changes (by Smart auto, the user, the PREDATOR key or a game rule): the look always, the curve only while the fans are in Smart mode (a manual fan setting is never ended by a mode change). Saving a look or curve that a binding names refreshes the copy | **new**, `ipc mode_bindings set` |
+| `mode` | `unbind` | `{"mode", "what"?: "look"\|"curve"\|"all"}` (default `all`) | as `bindings`; nothing is applied or undone on the machine | **new**, `ipc mode_bindings clear` |
+| `mode` | `apply` | `{"mode"?}` (default: the current mode) | `{"mode", "results": [{"target": "look"\|"fan_curve", "name", "status": "applied"\|"skipped"\|"failed", "detail"}]}`; a part that is held back (fans not in Smart mode, a manual fan setting) is `skipped`, not an error | **new**, `ipc mode_bindings apply_now` |
 | `startup` | `show` | none | `{"profile", "keyboard", "rear"}` | `config.load()["startup"]` |
 | `startup` | `set` | `{"target": "keyboard"\|"rear"\|"profile", "value"}` (values as `startup set`; `none` clears the profile) | the value | `startup.set_option` |
 | `startup` | `apply` | none | list of what was done | `startup.apply` |

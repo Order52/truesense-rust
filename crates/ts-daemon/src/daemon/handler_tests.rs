@@ -28,7 +28,7 @@ fn serve(rig: &Rig) -> (Server, Client) {
 }
 
 #[test]
-fn the_table_has_every_command_of_the_python_daemon_and_no_other() {
+fn the_table_has_the_python_daemons_commands_and_the_mode_bindings_one_and_no_other() {
     let rig = Rig::new();
     let mut want: Vec<&str> = COMMANDS.to_vec();
     want.sort_unstable();
@@ -53,7 +53,8 @@ fn the_table_has_every_command_of_the_python_daemon_and_no_other() {
             "power_managers",
             "cpu_limits",
             "cpu_info",
-            "touchpad"
+            "touchpad",
+            "mode_bindings"
         ]
     );
 }

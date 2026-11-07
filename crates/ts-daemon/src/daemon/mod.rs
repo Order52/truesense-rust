@@ -13,6 +13,8 @@
 //! * `step.rs`: one guarded tick: a panicking step is caught, never leaves the state lock held
 //!   and, when the machine is hot, puts the fans on 100 %;
 //! * `boot.rs`: restoring the saved settings at start and handing the machine back on exit;
+//! * `bindings.rs`: the `mode_bindings` command and the per-power-mode look and fan curve that
+//!   are applied when the mode changes;
 //! * `handlers.rs`: the control socket's command table, the same names, arguments and result
 //!   shapes as the Python daemon so the Python and Go clients keep working;
 //! * `publish.rs`: the live `key=value` state for status bars and `health.sh`;
@@ -30,6 +32,7 @@
 
 pub mod adapt;
 mod alerts;
+mod bindings;
 mod boot;
 #[allow(clippy::module_inception)]
 mod daemon;
@@ -40,6 +43,8 @@ mod step;
 
 #[cfg(test)]
 mod alerts_tests;
+#[cfg(test)]
+mod bindings_tests;
 #[cfg(test)]
 mod handler_tests;
 #[cfg(test)]

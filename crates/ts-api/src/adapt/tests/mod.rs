@@ -2,6 +2,7 @@
 //! the application layer, family by family. See [`rig`] for what is real and what is faked.
 
 mod assembly;
+mod bindings;
 mod fans;
 mod misc;
 mod power;

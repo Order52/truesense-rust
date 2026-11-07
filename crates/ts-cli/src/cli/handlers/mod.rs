@@ -131,6 +131,7 @@ fn run_path(cx: &mut Cx<'_, '_>, path: &[&str], m: &Matches) -> Outcome {
         "status" => status::status(cx),
         "sensors" => status::sensors(cx),
         "power" => power::power(cx, verb, m),
+        "mode" => super::modebind::run(cx, verb, m),
         "fan" => fan::fan(cx, verb, m),
         "battery" => battery::battery(cx, verb, m),
         "display" => battery::display(cx, m),

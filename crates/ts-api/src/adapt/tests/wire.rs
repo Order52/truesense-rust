@@ -39,8 +39,10 @@ const PYTHON_COMMANDS: [&str; 17] = [
 ];
 
 #[test]
-fn the_daemon_knows_exactly_the_python_commands() {
-    assert_eq!(COMMANDS, PYTHON_COMMANDS);
+fn the_daemon_knows_the_python_commands_and_the_ones_added_since() {
+    // The Python table first, in its order; what this edition added follows it.
+    assert_eq!(COMMANDS[..PYTHON_COMMANDS.len()], PYTHON_COMMANDS);
+    assert_eq!(COMMANDS[PYTHON_COMMANDS.len()..], ["mode_bindings"]);
     let rig = Rig::new();
     for cmd in PYTHON_COMMANDS {
         // Whatever the arguments, a known command never answers "unknown command".
