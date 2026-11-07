@@ -1,0 +1,418 @@
+{
+"model": "Predator Helios 16 PH16-71, Chicony 04F2:0117",
+"note": "cell -> physical key. Built by lighting each cell on this laptop and recording the key the owner pressed (3 runs; later run wins). Fn/media/Predator/Power/Win produce no Windows key event so they keep the community label. NumLock was off, so numpad keys appear as their navigation function (Num. = Delete, Num3 = PageDown, Num6 = Right, Num9 = PageUp, etc.). Left column cells 2 and 5 came out as Esc (2) and CapsLock (5) in two separate runs, i.e. swapped relative to the community map. UPDATE: the owner confirmed visually that Ctrl(0), LShift(1), CapsLock/Esc area (2,5), backtick(4), Fn(6), backslash(13), PrtSc(83), Forward(103), Backward(104), PlayPause(105), Predator(106) and Power(107) all lit white at the labelled cells and were pressed. Cell 12 (community label Windows): the owner pressed Ctrl there twice, so treat 12 as unconfirmed.",
+"cells": {
+"0": {
+"label": "Ctrl",
+"pressed": "ControlKey"
+},
+"1": {
+"label": "LShift",
+"pressed": "ShiftKey"
+},
+"2": {
+"label": "CapsLock",
+"pressed": "Escape"
+},
+"3": {
+"label": "Tab",
+"pressed": "Tab"
+},
+"4": {
+"label": "`",
+"pressed": "Oemtilde"
+},
+"5": {
+"label": "Esc",
+"pressed": "Capital"
+},
+"6": {
+"label": "Fn",
+"pressed": null
+},
+"10": {
+"label": "1",
+"pressed": "D1"
+},
+"11": {
+"label": "F1",
+"pressed": "F1"
+},
+"12": {
+"label": "Windows",
+"pressed": "ControlKey"
+},
+"13": {
+"label": "\\",
+"pressed": "Oem5"
+},
+"15": {
+"label": "Q",
+"pressed": "Q"
+},
+"16": {
+"label": "2",
+"pressed": "D2"
+},
+"17": {
+"label": "F2",
+"pressed": "F2"
+},
+"18": {
+"label": "LAlt",
+"pressed": "Menu"
+},
+"19": {
+"label": "Z",
+"pressed": "Z"
+},
+"20": {
+"label": "A",
+"pressed": "A"
+},
+"21": {
+"label": "W",
+"pressed": "W"
+},
+"22": {
+"label": "3",
+"pressed": "D3"
+},
+"23": {
+"label": "F3",
+"pressed": "F3"
+},
+"24": {
+"label": "Space",
+"pressed": "Space"
+},
+"25": {
+"label": "X",
+"pressed": "X"
+},
+"26": {
+"label": "S",
+"pressed": "S"
+},
+"27": {
+"label": "E",
+"pressed": "E"
+},
+"28": {
+"label": "4",
+"pressed": "D4"
+},
+"29": {
+"label": "F4",
+"pressed": "F4"
+},
+"31": {
+"label": "C",
+"pressed": "C"
+},
+"32": {
+"label": "D",
+"pressed": "D"
+},
+"33": {
+"label": "R",
+"pressed": "R"
+},
+"34": {
+"label": "5",
+"pressed": "D5"
+},
+"35": {
+"label": "F5",
+"pressed": "F5"
+},
+"37": {
+"label": "V",
+"pressed": "Space"
+},
+"38": {
+"label": "F",
+"pressed": "F"
+},
+"39": {
+"label": "T",
+"pressed": "T"
+},
+"40": {
+"label": "6",
+"pressed": "D6"
+},
+"41": {
+"label": "F6",
+"pressed": "F6"
+},
+"43": {
+"label": "B",
+"pressed": "B"
+},
+"44": {
+"label": "G",
+"pressed": "G"
+},
+"45": {
+"label": "Y",
+"pressed": "Y"
+},
+"46": {
+"label": "7",
+"pressed": "D7"
+},
+"47": {
+"label": "F7",
+"pressed": "F7"
+},
+"49": {
+"label": "N",
+"pressed": "N"
+},
+"50": {
+"label": "H",
+"pressed": "H"
+},
+"51": {
+"label": "U",
+"pressed": "U"
+},
+"52": {
+"label": "8",
+"pressed": "D8"
+},
+"53": {
+"label": "F8",
+"pressed": "F8"
+},
+"55": {
+"label": "M",
+"pressed": "M"
+},
+"56": {
+"label": "J",
+"pressed": "J"
+},
+"57": {
+"label": "I",
+"pressed": "I"
+},
+"58": {
+"label": "9",
+"pressed": "D9"
+},
+"59": {
+"label": "F9",
+"pressed": "F9"
+},
+"60": {
+"label": "RAlt",
+"pressed": "Menu"
+},
+"61": {
+"label": ",",
+"pressed": "Oemcomma"
+},
+"62": {
+"label": "K",
+"pressed": "K"
+},
+"63": {
+"label": "O",
+"pressed": "O"
+},
+"64": {
+"label": "0",
+"pressed": "D0"
+},
+"65": {
+"label": "F10",
+"pressed": "F10"
+},
+"67": {
+"label": ".",
+"pressed": "OemPeriod"
+},
+"68": {
+"label": "L",
+"pressed": "L"
+},
+"69": {
+"label": "P",
+"pressed": "P"
+},
+"70": {
+"label": null,
+"pressed": "OemMinus"
+},
+"71": {
+"label": "F11",
+"pressed": "F11"
+},
+"72": {
+"label": "Options",
+"pressed": "Apps"
+},
+"73": {
+"label": "/",
+"pressed": "OemQuestion"
+},
+"74": {
+"label": ";",
+"pressed": "Oem1"
+},
+"75": {
+"label": "[",
+"pressed": "OemOpenBrackets"
+},
+"76": {
+"label": "=",
+"pressed": "Oemplus"
+},
+"77": {
+"label": "F12",
+"pressed": "F12"
+},
+"78": {
+"label": "RCtrl",
+"pressed": "ControlKey"
+},
+"80": {
+"label": "'",
+"pressed": "Oem7"
+},
+"81": {
+"label": "]",
+"pressed": "Oem6"
+},
+"82": {
+"label": "Backspace",
+"pressed": "Back"
+},
+"83": {
+"label": "PrtSc",
+"pressed": null
+},
+"84": {
+"label": "Left",
+"pressed": "Left"
+},
+"85": {
+"label": "RShift",
+"pressed": "ShiftKey"
+},
+"86": {
+"label": "Return",
+"pressed": "Return"
+},
+"89": {
+"label": "Ins",
+"pressed": "Insert"
+},
+"90": {
+"label": "Up",
+"pressed": "Up"
+},
+"95": {
+"label": "Del",
+"pressed": "Delete"
+},
+"96": {
+"label": "Down",
+"pressed": "Down"
+},
+"99": {
+"label": "Num7",
+"pressed": "NumPad7"
+},
+"100": {
+"label": "Num1",
+"pressed": "NumPad1"
+},
+"101": {
+"label": "Num4",
+"pressed": "NumPad4"
+},
+"102": {
+"label": "Right",
+"pressed": "Right"
+},
+"103": {
+"label": "Forward",
+"pressed": null
+},
+"104": {
+"label": "Backward",
+"pressed": null
+},
+"105": {
+"label": "PlayPause",
+"pressed": null
+},
+"106": {
+"label": "Predator",
+"pressed": null
+},
+"107": {
+"label": "Power",
+"pressed": null
+},
+"108": {
+"label": "Num0",
+"pressed": "NumPad0"
+},
+"109": {
+"label": "Num2",
+"pressed": "NumPad2"
+},
+"110": {
+"label": "Num5",
+"pressed": "NumPad5"
+},
+"111": {
+"label": "Num8",
+"pressed": "NumPad8"
+},
+"112": {
+"label": "NumLk",
+"pressed": "NumLock"
+},
+"114": {
+"label": "Num.",
+"pressed": "Delete"
+},
+"115": {
+"label": "Num3",
+"pressed": "Next"
+},
+"116": {
+"label": "Num6",
+"pressed": "Right"
+},
+"117": {
+"label": "Num9",
+"pressed": "PageUp"
+},
+"118": {
+"label": "Num/",
+"pressed": "Divide"
+},
+"120": {
+"label": "NumEnter",
+"pressed": "Return"
+},
+"122": {
+"label": "+",
+"pressed": "Add"
+},
+"123": {
+"label": "-",
+"pressed": "Subtract"
+},
+"124": {
+"label": "*",
+"pressed": "Multiply"
+}
+}
+}
