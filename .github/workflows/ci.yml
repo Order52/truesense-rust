@@ -125,6 +125,23 @@ jobs:
       - name: Build against every installed kernel (warnings on)
         run: bash tools/ci/build-modules.sh
 
+  # ---- the Qt window (truesense-qt): dynamic, needs Qt 6 and a C++ compiler, so it is built and tested here and not in the static jobs above. NOT blocking yet: it is not in
+  # ci-ok's needs until it has been green on GitHub's runners for a while (it is verified on a local Arch machine, not on these runners). Arch's container, because the release's
+  # Arch package and the prebuilt window are built against that Qt, and Ubuntu's LTS Qt 6 is older than the one the app is developed against.
+  qt:
+    name: Qt window (offscreen, not blocking yet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm base-devel git rust qt6-base qt6-declarative qt6-svg qt6-tools ttf-dejavu
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: rustfmt, clippy (-D warnings), the end-to-end tests and the QML component tests, all offscreen (make qt-ci)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: make qt-ci
+
   # ---- the installer's distribution detection and package names, on each family (the containers have no Rust and no Python: a bundle needs neither) ----
   installer:
     name: Installer check (${{ matrix.name }})
@@ -150,16 +167,17 @@ jobs:
           out=$(bash tools/install.sh --check 2>&1 || true); echo "$out"
           echo "$out" | grep -q "family: $FAMILY" || { echo "::error::expected family $FAMILY"; exit 1; }
           echo "$out" | grep -q "NOT supported" || { echo "::error::a container is not a PH16-71 and must say so"; exit 1; }
+          echo "$out" | grep -q "optional: the Qt window" || { echo "::error::the check must report the optional Qt window and its run-time packages"; exit 1; }
           if echo "$out" | grep -qiE "python|pyqt|socat|cargo|rustc"; then echo "::error::the installer must not ask for Python, PyQt, socat or a Rust toolchain"; exit 1; fi
 
-  # ---- the Arch package, built the way a user would build it (makedepends: rust gcc) ------------------------------------------------------
+  # ---- the Arch package, built the way a user would build it (makedepends: rust gcc and the Qt 6 packages) ------------------------------------------------------
   package:
     name: Arch package
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container: archlinux:latest
     steps:
-      - run: pacman -Syu --noconfirm base-devel git rust
+      - run: pacman -Syu --noconfirm base-devel git rust qt6-base qt6-declarative qt6-svg qt6-tools
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: makepkg as an unprivileged user
         run: |
@@ -168,7 +186,7 @@ jobs:
       - name: The package has what it must, and its program is static and runs
         run: |
           pkg=$(ls packaging/arch/*.pkg.tar.zst); pacman -Qlp "$pkg" > files.txt
-          for f in usr/bin/truesense usr/bin/truesense-fast usr/lib/systemd/system/truesense.service usr/lib/systemd/user/truesense-keys.service \
+          for f in usr/bin/truesense usr/bin/truesense-fast usr/bin/truesense-qt usr/share/licenses/truesense/THIRD_PARTY.md usr/share/doc/truesense/THIRD_PARTY.md usr/lib/systemd/system/truesense.service usr/lib/systemd/user/truesense-keys.service \
                    usr/share/applications/truesense.desktop usr/share/applications/truesense-tui.desktop usr/share/truesense/profiles/ usr/src/truesense-wmi- \
                    usr/lib/truesense/truesense-nvml usr/lib/truesense/health.sh usr/lib/udev/rules.d/70-truesense.rules; do
             grep -q "$f" files.txt || { echo "::error::package lacks $f"; exit 1; }
@@ -178,6 +196,11 @@ jobs:
           v=$(grep -oP '^pkgver=\K[0-9.]+' packaging/arch/PKGBUILD)
           [ "$(pkgroot/usr/bin/truesense --version)" = "truesense $v" ] || { echo "::error::the packaged program does not say truesense $v"; exit 1; }
           if readelf -lW pkgroot/usr/bin/truesense | grep -q INTERP; then echo "::error::the packaged program is dynamically linked"; exit 1; fi
+          # the Qt window is the one dynamic program: it must link Qt 6, say the same version, and the package must depend on the three Qt libraries
+          [ "$(QT_QPA_PLATFORM=offscreen pkgroot/usr/bin/truesense-qt --version)" = "truesense-qt $v" ] || { echo "::error::the packaged Qt window does not say truesense-qt $v"; exit 1; }
+          readelf -dW pkgroot/usr/bin/truesense-qt | grep -q libQt6Core || { echo "::error::the packaged Qt window does not link Qt 6"; exit 1; }
+          for dep in qt6-base qt6-declarative qt6-svg; do pacman -Qip "$pkg" | grep -E '^Depends On' | grep -qw "$dep" || { echo "::error::the package does not depend on $dep"; exit 1; }; done
+          grep -q 'Desktop Action Lighting' pkgroot/usr/share/applications/truesense.desktop || { echo "::error::the desktop entry lacks its page shortcuts"; exit 1; }
           dkms=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' kernel/truesense-wmi/dkms.conf)
           [ -f "pkgroot/usr/src/truesense-wmi-$dkms/dkms.conf" ] || { echo "::error::the DKMS sources are not in /usr/src/truesense-wmi-$dkms"; exit 1; }
 

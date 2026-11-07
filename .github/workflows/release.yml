@@ -2,7 +2,8 @@ name: Release
 
 # Push a tag (tools/release.sh prepare X.Y.Z --title "..." --push does everything) and this publishes the release:
 # the verified version, the full Rust test suite, one static program built twice and compared, the release bundle (the source tree plus bin/truesense, byte-for-byte
-# reproducible), an Arch package, an SBOM, SHA256SUMS, build provenance attestations for every file, and the notes from RELEASE_NOTES.md.
+# reproducible), an Arch package (which also builds the Qt window), the prebuilt Qt window as its own tarball, an SBOM, SHA256SUMS, build provenance attestations for every file,
+# and the notes from RELEASE_NOTES.md.
 # Run it by hand (Actions, Release, Run workflow): give a tag to re-publish it, or leave the tag empty (dry run on) to rehearse the whole pipeline from main: it builds and checks
 # everything and publishes nothing.
 on:
@@ -102,14 +103,28 @@ jobs:
     timeout-minutes: 30
     container: archlinux:latest
     steps:
-      - run: pacman -Syu --noconfirm base-devel git rust
+      - run: pacman -Syu --noconfirm base-devel git rust qt6-base qt6-declarative qt6-svg qt6-tools
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { ref: "${{ env.TAG }}" }
-      - name: makepkg (unprivileged, builds the program with cargo)
+      - name: makepkg (unprivileged, builds the static program and the Qt window with cargo)
         run: |
           useradd -m builder; chown -R builder: "$GITHUB_WORKSPACE"
           su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && makepkg -f --nodeps --noconfirm"
           mkdir dist && cp packaging/arch/*.pkg.tar.zst dist/
+      - name: The prebuilt Qt window, as its own tarball (the one dynamic program, built on Arch Linux against its current Qt 6)
+        env: { V: "${{ needs.verify.outputs.version }}" }
+        run: |
+          # It is the very program that is inside the Arch package, taken out of it: one build, two ways to get it. A dynamic program only runs where Qt 6 (and a glibc) at least as
+          # new as the ones it was built against are installed; tools/install.sh checks that it runs and leaves it out otherwise (`truesense gui` then opens the web window).
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"      # the tree is owned by the build user, git runs as root here
+          pkg=$(ls packaging/arch/*.pkg.tar.zst); mkdir pkgroot && bsdtar -xf "$pkg" -C pkgroot
+          top="truesense-qt-$V"; mkdir -p "qt/$top/bin"
+          install -m755 pkgroot/usr/bin/truesense-qt "qt/$top/bin/truesense-qt"
+          [ "$(QT_QPA_PLATFORM=offscreen "qt/$top/bin/truesense-qt" --version)" = "truesense-qt $V" ] || { echo "::error::the Qt window does not say truesense-qt $V"; exit 1; }
+          { echo "truesense-qt $V (a dynamic program: Qt 6 at run time)"; echo "commit $(git rev-parse HEAD)"; echo "Qt $(/usr/bin/qmake6 -query QT_VERSION), built on Arch Linux"; ldd "qt/$top/bin/truesense-qt" | awk '/Qt6/ {print "needs " $1}' | sort; } > "qt/$top/BUILT-WITH.txt"
+          cat "qt/$top/BUILT-WITH.txt"
+          # sorted names, the commit's mtime, root owner and gzip -n, like the bundle
+          tar --sort=name --mtime="@$(git log -1 --format=%ct HEAD)" --owner=0 --group=0 --numeric-owner --format=gnu -cf - -C qt "$top" | gzip -n -9 > "dist/truesense-qt-$V-linux-x86_64.tar.gz"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with: { name: dist-arch, path: dist, if-no-files-found: error }
 
@@ -127,7 +142,7 @@ jobs:
         with: { ref: "${{ env.TAG }}" }
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with: { pattern: "dist-*", path: dist, merge-multiple: true }
-      - name: SHA256SUMS (the bundle, the package, the SBOM and the build environment)
+      - name: SHA256SUMS (the bundle, the package, the Qt window, the SBOM and the build environment)
         run: |
           cd dist && sha256sum truesense-*.tar.gz truesense-*.pkg.tar.zst truesense-*.sbom.cdx.json truesense-*.build-env.txt > SHA256SUMS && cat SHA256SUMS
       - name: Build provenance (who built these files, from which commit, by which workflow)
