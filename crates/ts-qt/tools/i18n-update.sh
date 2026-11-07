@@ -26,7 +26,9 @@ files=(i18n/en.ts i18n/ar.ts)
 # English: translation = source.
 awk '
   /<source>/ { src = $0; sub(/^[ \t]*<source>/, "", src); sub(/<\/source>[ \t]*$/, "", src) }
-  /<translation type="unfinished"><\/translation>|<translation type="unfinished"\/>/ { print "        <translation>" src "</translation>"; next }
+  # lupdate also pre-fills an unfinished entry with the text of an earlier message that has the same
+  # English source ("Eco" in two places), so any unfinished English entry becomes source = translation.
+  /<translation type="unfinished">[^<]*<\/translation>|<translation type="unfinished"\/>/ { print "        <translation>" src "</translation>"; next }
   { print }
 ' i18n/en.ts > "$tmp/en.ts" && mv "$tmp/en.ts" i18n/en.ts
 echo "updated: $(grep -c '<message' i18n/en.ts) messages; untranslated in ar: $(grep -c 'type="unfinished"' i18n/ar.ts)"

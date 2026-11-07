@@ -219,9 +219,69 @@
         <source>Settings</source>
         <translation>الإعدادات</translation>
     </message>
+    <message id="tray_mode_eco">
+        <source>Eco</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_mode_quiet">
+        <source>Quiet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_mode_balanced">
+        <source>Balanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_mode_performance">
+        <source>Performance</source>
+        <translation type="unfinished">الأداء</translation>
+    </message>
+    <message id="tray_mode_turbo">
+        <source>Turbo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_tooltip">
+        <source>TrueSense: %1, CPU %2, GPU %3</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="tray_open">
         <source>Open TrueSense</source>
         <translation>فتح TrueSense</translation>
+    </message>
+    <message id="tray_title_power">
+        <source>Power mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_title_fan">
+        <source>Fans</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_fan_smart">
+        <source>Smart curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_fan_auto">
+        <source>Firmware auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_fan_max">
+        <source>Max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_fan_manual">
+        <source>Fixed speed (set on the Cooling page)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_title_favourites">
+        <source>Favourites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_no_favourites">
+        <source>None starred yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="tray_pages">
+        <source>Open page</source>
+        <translation type="unfinished"></translation>
     </message>
     <message id="tray_quit">
         <source>Quit</source>
@@ -721,6 +781,206 @@
     </message>
     <message id="keys_timing_help">
         <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_repaired">
+        <source>Done. Checking again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_copied">
+        <source>Copied.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_module">
+        <source>Driver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_daemon">
+        <source>System service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_keys">
+        <source>Key service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_background">
+        <source>Background helpers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_doctor">
+        <source>Health check</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_row_features">
+        <source>This laptop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_checking">
+        <source>Checking…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_unknown">
+        <source>Could not be checked.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_module_ok">
+        <source>The TrueSense driver is loaded.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_module_bad">
+        <source>The TrueSense driver is not loaded, so fans, power modes and keys cannot be controlled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_daemon_ok">
+        <source>The TrueSense system service is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_daemon_silent">
+        <source>The system service is running but does not answer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_daemon_bad">
+        <source>The TrueSense system service is not running, so the app cannot change anything.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_keys_ok">
+        <source>The key service is running: the PREDATOR key works.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_keys_bad">
+        <source>The key service is not running, so the PREDATOR key does nothing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_bg_ok">
+        <source>The background helpers are running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_bg_bad">
+        <source>Some background helpers are not running: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_doctor_ok">
+        <source>The health check found nothing wrong.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_doctor_warn">
+        <source>The health check has warnings (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_doctor_bad">
+        <source>The health check found problems (%1).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_features_ok">
+        <source>This laptop is supported: %1 of %2 features are available.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_features_warn">
+        <source>This model has not been verified: some features may not work.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_features_bad">
+        <source>This model is not supported by TrueSense.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_title">
+        <source>Welcome to TrueSense</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_skip">
+        <source>Skip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_skip_named">
+        <source>Skip the welcome tour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_welcome">
+        <source>TrueSense controls the fans, power modes, lighting and PREDATOR key of this laptop. This short tour checks that everything it needs is in place. It takes a minute, and you can skip it at any time.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_health_title">
+        <source>Is everything in place?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_fix_text">
+        <source>To fix: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_repair_text">
+        <source>Some of your own services are not running. This starts them; no password is needed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_repair">
+        <source>Fix it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_sudo_text">
+        <source>Fixing the rest needs administrator rights. Open a terminal and run:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_copy">
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_recheck">
+        <source>Check again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_health_later">
+        <source>None of this stops you: you can continue and fix it later on the Health page.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_look_title">
+        <source>Make it yours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_language">
+        <source>Language</source>
+        <translation type="unfinished">اللغة</translation>
+    </message>
+    <message id="onb_lang_system">
+        <source>System</source>
+        <translation type="unfinished">النظام</translation>
+    </message>
+    <message id="onb_theme">
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_theme_dark">
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_theme_light">
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_theme_system">
+        <source>System</source>
+        <translation type="unfinished">النظام</translation>
+    </message>
+    <message id="onb_look_later">
+        <source>You can change both later in Settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_done_title">
+        <source>You are all set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_done_text">
+        <source>Pick a power mode on Home, set up the PREDATOR key on the Keys page, and find this laptop&apos;s health check on the Health page. TrueSense keeps running in the tray when you close the window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_back">
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_finish">
+        <source>Finish</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="onb_next">
+        <source>Continue</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
