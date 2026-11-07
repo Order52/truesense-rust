@@ -1,6 +1,6 @@
 # Status of the Rust edition
 
-Version 0.5.0 (development, not released). This page says what has been verified and how, so that no claim outruns its evidence. Last updated after the first install on the PH16-71.
+Version 0.5.0 (released 2026-11-08 from Order52/truesense-rust). This page says what has been verified and how, so that no claim outruns its evidence. Last updated at the release, after the install of the final build on the PH16-71.
 
 ## What exists
 
@@ -38,15 +38,16 @@ Gates: `make ci` (rustfmt, clippy with warnings as errors, about 3,000 tests, ru
   - Installed with the installer: kernel module 0.5.0 built for both installed kernels and loaded, the daemon, the key and audio services and the units running, `truesense service check` all good.
   - The daemon restored the existing settings (smart fan, auto profile) and the boot lighting.
   - `truesense selftest --skip-fans`: 16 of 16 passed (every other firmware setting, audio, keyboard, daemon pause/restore, doctor).
-  - Resident memory: daemon about 2 MB, key service 1.5 MB, audio watcher 3.3 MB.
+  - Resident memory: daemon about 6 MB (2 MB private), key service 1.5 MB, audio watcher 3.3 MB.
+  - The Qt app on the real display (Hyprland, tiled, 2560x1600 at 165 Hz): opens on the Cooling page with one instance, about 1 % of a core, 16 wake-ups a second and 106 MB (PSS) idle with the window open.
 
 ## What has NOT been verified on real hardware
 
 - The fan phase of the self-test (it needs a cool machine), real fan stops with the watchdog, and the crash failsafe (`ExecStopPost`) after a daemon kill.
 - Real PREDATOR / Fn key presses with the Rust key service.
-- The Qt app on a real display (rendered offscreen only), the tray, and the terminal UI on a real terminal.
+- The Qt app's look on a real display beyond the one measurement above (the glitch detector found none on floating windows; tiling and zoom behaviour need the owner's eyes), the tray, and the terminal UI on a real terminal.
 - Themes on the real keyboard (frame rate, flicker), per-mode bindings, alerts, the GPU stream parking and the dGPU suspending: the live checks are listed in [PH16-71-NOTES.md](PH16-71-NOTES.md) and [RESILIENCE.md](RESILIENCE.md).
-- A real upgrade through the updater (no release with `SHA256SUMS` is published yet).
+- A real upgrade through the updater from a published release (the first release is this one).
 - The animation frames use libm `sin`/`cos`/`pow`; the golden frames match on glibc, the static build uses musl's libm, which could differ in the last bit for a rare cell.
 
 ## Licence

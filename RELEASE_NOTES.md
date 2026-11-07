@@ -4,7 +4,28 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
-- The native Qt 6 window, `truesense-qt`, is installable and releasable: `tools/install.sh` installs it next to the static program (from `TRUESENSE_QT_BIN`, a bundle's `bin/truesense-qt`, `make qt-release`, or built from the source tree as your user), refuses a stale build, installs the Qt 6 run-time libraries, keeps the previous one for rollback, and never fails the install when it cannot (`truesense gui` then opens the built-in web window). The Arch package builds and ships it; releases attach it as `truesense-qt-X.Y.Z-linux-x86_64.tar.gz`, which `get.sh` verifies and adds. The launcher entry gains Monitor, Cooling and Lighting shortcuts.
-- The Rust edition of TrueSense: one static program (daemon, command line, terminal UI, window, Fn-key and audio services) that replaces the Python (0.3.x) and Go (0.4.x) editions in place, with the same commands, files, control socket and kernel module.
-- Install with the one-line installer or `sudo tools/install.sh`. The installer takes `bin/truesense` of a release bundle, or builds the program with cargo as your user, and keeps the previous version as `truesense.prev` until the new service has started; an older edition's files are removed only after that.
-- Releases are built by CI from the tag: the bundle is reproducible (the program is built twice and compared), comes with `SHA256SUMS`, a signed build provenance attestation and a CycloneDX SBOM of the Rust crates, plus an Arch package built with cargo.
+## 0.5.0 (2026-11-08): TrueSense in Rust, with a native Qt app
+
+TrueSense is now written in Rust. It replaces the Python (0.3.x) and Go (0.4.x) editions in place, with the same commands, files, control socket and kernel module, and adds a native Qt 6 window.
+
+**One static program, much lighter.** `truesense` (daemon, command line, terminal UI, Fn-key and audio services) is one static file. Measured on the Acer Predator Helios 16 (PH16-71): the daemon uses about 0.4 % of a core and 6 MB, the key service and the audio watcher are close to zero (the Go edition: about 0.5 % and 14 MB for the daemon alone; the three services together 16 MB against 45 MB).
+
+**A native app.** `truesense-qt` is a Qt 6 / QML window with 11 pages: Home, Monitor (CPU, GPU, memory, network, disks, temperatures), Performance (Smart auto profile editor, game rules, power limits, CPU and GPU undervolt), Cooling (fan curve editor, live dials), Lighting, Keys, Battery and screen, Audio, Profiles and favourites, Health and Settings, plus a tray menu and a first-run wizard. It draws with the software renderer by default (about 100 MB, never wakes the discrete GPU) and is built to stay idle when nothing changes: on Hyprland the Cooling page went from about 2 to 3 % CPU and 220 wake-ups a second to under 1 % and 16 (no script canvas, no endless animation; `TRUESENSE_QT_RENDER=opengl|vulkan` chooses another renderer). English only for now.
+
+**Lighting.**
+- Six wave directions, including clockwise and counter-clockwise (`truesense keyboard effect wave --direction clockwise`, `truesense keyboard fx wave-clockwise`), and software sweeps for per-key looks.
+- A gallery of the 32 themes with live previews and colourways, a gallery of your looks, and eight styled keyboard templates (FPS, MOBA, typing, media, sunset, neon grid, rainbow rows, night).
+- Per-power-mode lighting and fan curves ("mode bindings"), applied by the daemon even with the window closed.
+
+**More.**
+- Favourites: star looks, themes, fan curves, Smart profiles and whole-setup profiles; PREDATOR-key actions `favourite:N` and `favourite-next`.
+- Temperature and battery alerts from the daemon (never urgent-level), `truesense alerts ...`.
+- Monitoring data, battery health and a capabilities report (controls this laptop lacks are greyed with a reason).
+- The daemon's GPU stream stops while the GPU sleeps; a real GPU reading or 0 is shown, never the CPU's.
+- The native window is installable and releasable: `tools/install.sh` installs it next to the static program and keeps the previous one for rollback; releases attach `truesense-qt-0.5.0-linux-x86_64.tar.gz`, which `get.sh` verifies and adds; the Arch package ships it. `truesense gui` falls back to the built-in web window when it is not installed.
+
+**Safer.** Crash, kill, corrupt-file, full-disk, clock-jump and suspend scenarios are tested; a leftover socket of a dead daemon no longer blocks the fan failsafe; a second daemon refuses to start; the installer replaces a loaded kernel module safely (stops the service first) and checks the loaded build; updates are verified against `SHA256SUMS`.
+
+**Builds and licence.** Releases are built by CI from the tag: the bundle is reproducible (the program is built twice and compared), comes with `SHA256SUMS`, a signed build provenance attestation and a CycloneDX SBOM, plus an Arch package built with cargo. The whole repository is GPL-3.0-only (the effects engine and themes are derived from predator-sense by cleyton1986, used with the author's permission; the kernel module keeps its dual MIT / GPL-2.0-only header).
+
+**Install.** `curl -fsSL https://raw.githubusercontent.com/Order52/truesense-rust/main/tools/get.sh | sudo bash`, or `sudo tools/install.sh` from a checkout. The installer removes an older edition's files only after the new service has started. The Go and Python editions' updaters do not know this repository: move over by hand once.

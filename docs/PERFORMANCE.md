@@ -76,6 +76,7 @@ The simulation tables above cannot show the cost of real firmware calls (kernel 
 | Audio watcher, CPU / wakeups per s | 0.35 % / 52 | **0.03 % / 1.2** | (about 14 MB) |
 | Key service, CPU / wakeups per s | 0.13 % / 26 | **0.00 % / 0.5** | (about 16 MB) |
 | The three together, resident memory | about 7 MB | about 16 MB | 44.6 MB |
+| Qt window open on Cooling (Hyprland, software renderer), CPU / wakeups per s / PSS | 2 to 3 % / about 220 / 130 MB | **0.9 % / 16 / 106 MB** | (no app) |
 
 What the regression was: the daemon read all 17 coretemp inputs on every tick (each is an MSR read by inter-processor interrupt that wakes that core) where Go read the package sensor only; the audio watcher and key service polled. All three are fixed, and the full self-test (fan phase included) passes on the hardware.
 
