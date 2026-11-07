@@ -7,3 +7,4 @@ pub mod fsx;
 pub mod sdnotify;
 pub mod state;
 pub mod userstate;
+pub mod wake;
