@@ -6,7 +6,8 @@
 //! command runner, the directories) and handing them over.
 //!
 //! The one adapter with behaviour of its own is [`SystemSensors`], which owns the thread that
-//! feeds the GPU sampler and starts it only when asked.
+//! feeds the GPU sampler: it starts only when asked, ends when it is released, and the sampler's
+//! own policy keeps it away from a sleeping card.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -24,7 +25,7 @@ use ts_domain::powermgr::{PowerManagers, RestoreReport, TakeoverReport, UnitStat
 use ts_domain::undervolt::{Offsets, Undervolt};
 use ts_platform::hw::{LinuxSensors, Sleeper as FnSleeper};
 use ts_system::osd::Osd;
-use ts_system::sensors::{GpuReading, LineSource, Sampler};
+use ts_system::sensors::{GpuFeed, GpuReading, GpuStreamEnv, LineSource, Sampler};
 use ts_system::touchpad::Touchpad;
 
 use super::deps::{
@@ -168,14 +169,17 @@ impl ProcessList for ProcFs {
 
 /// The machine's sensors: `/proc/stat` and the battery through [`Sampler`], the CPU package
 /// temperature and the charger through [`LinuxSensors`], and the GPU readings of a background
-/// `nvidia-smi` stream that only starts when the daemon asks for it.
+/// `nvidia-smi` stream that only runs while the daemon asks for it.
 pub struct SystemSensors {
     sampler: Arc<Sampler>,
     linux: LinuxSensors,
     source: Arc<dyn LineSource>,
     sleeper: FnSleeper,
     stop: StopToken,
-    started: AtomicBool,
+    /// A smart feature wants the readings now.
+    wanted: Arc<AtomicBool>,
+    /// The stream thread is alive.
+    running: Arc<AtomicBool>,
 }
 
 impl SystemSensors {
@@ -188,7 +192,15 @@ impl SystemSensors {
         sleeper: FnSleeper,
         stop: StopToken,
     ) -> Self {
-        Self { sampler, linux, source, sleeper, stop, started: AtomicBool::new(false) }
+        Self {
+            sampler,
+            linux,
+            source,
+            sleeper,
+            stop,
+            wanted: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(false)),
+        }
     }
 }
 
@@ -214,20 +226,49 @@ impl Sensors for SystemSensors {
     }
 
     fn ensure_gpu_stream(&self) {
-        if self.started.swap(true, Ordering::SeqCst) {
+        self.wanted.store(true, Ordering::SeqCst);
+        if self.running.swap(true, Ordering::SeqCst) {
             return;
         }
         let sampler = Arc::clone(&self.sampler);
         let source = Arc::clone(&self.source);
         let sleeper = Arc::clone(&self.sleeper);
         let stop = self.stop.clone();
-        let spawned = thread::Builder::new()
-            .name("gpu-sampler".to_owned())
-            .spawn(move || sampler.run_gpu_stream(source.as_ref(), &|| stop.is_requested(), &sleeper));
+        let wanted = Arc::clone(&self.wanted);
+        let running = Arc::clone(&self.running);
+        let spawned = thread::Builder::new().name("gpu-sampler".to_owned()).spawn(move || {
+            loop {
+                sampler.run_gpu_stream(
+                    source.as_ref(),
+                    &GpuStreamEnv {
+                        stop: &|| stop.is_requested(),
+                        wanted: &|| wanted.load(Ordering::SeqCst),
+                        sleeper: &sleeper,
+                    },
+                );
+                running.store(false, Ordering::SeqCst);
+                // Asked for again between the end of the stream and the line above: carry on
+                // (unless an `ensure` already started a new thread for it).
+                if stop.is_requested()
+                    || !wanted.load(Ordering::SeqCst)
+                    || running.swap(true, Ordering::SeqCst)
+                {
+                    break;
+                }
+            }
+        });
         if spawned.is_err() {
             // The next smart tick may try again.
-            self.started.store(false, Ordering::SeqCst);
+            self.running.store(false, Ordering::SeqCst);
         }
+    }
+
+    fn release_gpu_stream(&self) {
+        self.wanted.store(false, Ordering::SeqCst);
+    }
+
+    fn gpu_state(&self) -> GpuFeed {
+        self.sampler.gpu_feed()
     }
 }
 
@@ -251,15 +292,64 @@ mod tests {
         }
     }
 
+    /// A line source that keeps feeding lines until it is told to end, like `nvidia-smi -l 2`.
+    struct Endless(Mutex<mpsc::Sender<()>>);
+
+    impl LineSource for Endless {
+        fn stream(&self, _p: &str, _a: &[&str], on_line: &mut dyn FnMut(&str) -> bool) -> io::Result<()> {
+            let _ = self.0.lock().unwrap().send(());
+            while on_line("70, 40, 55.5") {
+                thread::sleep(Duration::from_millis(1));
+            }
+            Ok(())
+        }
+    }
+
+    /// A machine with one NVIDIA display card in the given runtime power state.
+    fn machine(status: &str) -> TempDir {
+        let dir = TempDir::new();
+        let card = dir.join("sys/bus/pci/devices/0000:01:00.0");
+        fs::create_dir_all(card.join("power")).unwrap();
+        fs::write(card.join("vendor"), "0x10de\n").unwrap();
+        fs::write(card.join("class"), "0x030200\n").unwrap();
+        fs::write(card.join("power/runtime_status"), format!("{status}\n")).unwrap();
+        dir
+    }
+
+    fn sensors_over(
+        dir: &TempDir,
+        source: Arc<dyn LineSource>,
+        sleeper: FnSleeper,
+        stop: StopToken,
+    ) -> SystemSensors {
+        let sampler = Arc::new(Sampler::new(&dir.0, Arc::new(|| 100.0)));
+        SystemSensors::new(
+            sampler,
+            LinuxSensors::new(&dir.0, Arc::new(ts_platform::hw::ProcessRunner)),
+            source,
+            sleeper,
+            stop,
+        )
+    }
+
+    fn wait_until(what: &str, mut done: impl FnMut() -> bool) {
+        for _ in 0..5000 {
+            if done() {
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("timed out waiting for {what}");
+    }
+
     #[test]
     fn the_gpu_stream_starts_once_and_only_when_asked() {
         let (tx, rx) = mpsc::channel();
         let stop = StopToken::new();
         let stopper = stop.clone();
-        let sampler = Arc::new(Sampler::new("/nonexistent-root", Arc::new(|| 100.0)));
-        let sensors = SystemSensors::new(
-            Arc::clone(&sampler),
-            LinuxSensors::new("/nonexistent-root", Arc::new(ts_platform::hw::ProcessRunner)),
+        let dir = machine("active");
+        let sensors = sensors_over(
+            &dir,
             Arc::new(Source(Mutex::new(tx))),
             // The wait between two stream starts ends the test's stream instead of sleeping.
             Arc::new(move |_: Duration| stopper.request()),
@@ -273,10 +363,50 @@ mod tests {
         // After the first start the thread ends (the sleeper requested the stop); a second
         // start would show up here as a second message.
         assert!(rx.recv_timeout(Duration::from_millis(50)).is_err(), "idempotent");
-        let g = sensors.gpu();
-        assert_eq!(g.temp, Some(70.0));
-        assert!(g.util > 0.0 && g.power > 0.0);
-        assert_eq!(g.seen, Some(100.0));
+        wait_until("the thread to end", || !sensors.running.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn a_sleeping_card_is_not_woken_to_read_it() {
+        let (tx, rx) = mpsc::channel();
+        let stop = StopToken::new();
+        let dir = machine("suspended");
+        let sensors = sensors_over(
+            &dir,
+            Arc::new(Source(Mutex::new(tx))),
+            Arc::new(|_: Duration| thread::sleep(Duration::from_millis(1))),
+            stop.clone(),
+        );
+        sensors.ensure_gpu_stream();
+        assert!(rx.recv_timeout(Duration::from_millis(100)).is_err(), "no nvidia-smi for a sleeping card");
+        assert_eq!(sensors.gpu_state(), GpuFeed::Suspended);
+        stop.request();
+        wait_until("the thread to end", || !sensors.running.load(Ordering::SeqCst));
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn releasing_the_request_ends_the_stream_and_asking_again_restarts_it() {
+        let (tx, rx) = mpsc::channel();
+        let stop = StopToken::new();
+        let dir = machine("active");
+        let sensors = sensors_over(
+            &dir,
+            Arc::new(Endless(Mutex::new(tx))),
+            Arc::new(|_: Duration| thread::sleep(Duration::from_millis(1))),
+            stop.clone(),
+        );
+        sensors.ensure_gpu_stream();
+        rx.recv_timeout(Duration::from_secs(5)).expect("started");
+        wait_until("a reading", || sensors.gpu().temp == Some(70.0));
+        sensors.release_gpu_stream();
+        wait_until("the thread to end", || !sensors.running.load(Ordering::SeqCst));
+        assert_eq!(sensors.gpu().temp, None, "a released stream leaves no stale reading behind");
+        assert!(rx.try_recv().is_err(), "and no second start");
+        sensors.ensure_gpu_stream();
+        rx.recv_timeout(Duration::from_secs(5)).expect("restarted on demand");
+        stop.request();
+        wait_until("the thread to end", || !sensors.running.load(Ordering::SeqCst));
     }
 
     use crate::daemon::testkit::TempDir;

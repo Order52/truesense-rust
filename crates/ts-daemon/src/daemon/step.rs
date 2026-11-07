@@ -24,14 +24,11 @@ use ts_decision::gamerules;
 use ts_decision::smartprofile::Mode;
 use ts_domain::power::RawLimits;
 use ts_platform::hw::{Coded, FanDuty, PowerMode, Reading};
-use ts_system::sensors::GpuReading;
+use ts_system::sensors::{Ema, GPU_FRESH_S, GpuFeed, GpuReading};
 
 use super::alerts::Observed;
-use super::daemon::{Daemon, Inner};
+use super::daemon::{Daemon, Inner, TEMP_ALPHA};
 
-/// The GPU temperature from `nvidia-smi` is only trusted this long after it arrived: a stuck
-/// stream must not keep a stale (low) temperature in the maximum.
-const GPU_FRESH_S: f64 = 6.0;
 /// A step that panics while the CPU is at or above this temperature (or unknown) puts the fans
 /// on full.
 const EMERGENCY_CPU_C: f64 = 80.0;
@@ -76,7 +73,13 @@ pub(super) struct Frame {
     pub(super) wall: f64,
     pub(super) mono: f64,
     pub(super) tcpu: f64,
+    /// The GPU temperature the decisions use: the real reading, or the CPU's when there is none.
     pub(super) tgpu: f64,
+    /// The GPU temperature as really read, `None` while neither the firmware nor `nvidia-smi`
+    /// gives one (the card asleep, no stream). This is what is shown.
+    pub(super) tgpu_seen: Option<f64>,
+    /// What a 0 GPU load or power means (a sleeping card, a live reading, a card nobody reads).
+    pub(super) gpu_state: GpuFeed,
     pub(super) chassis: Option<f64>,
     pub(super) load: f64,
     pub(super) gpu: GpuReading,
@@ -123,6 +126,15 @@ impl Daemon {
             // The wall clock ran and the monotonic one did not: the machine was suspended.
             let resumed = g.last_clock.is_some_and(|(w, m)| (wall - w) - (mono - m) > RESUME_GAP_S);
             g.last_clock = Some((wall, mono));
+            if resumed {
+                // The firmware may have come back with its own fan and mode state: what was
+                // written before the sleep is no longer known to hold, so the next decision
+                // writes again (one write, exactly as after a plug).
+                g.writer.forget();
+                g.engine.resync();
+                let tick = g.tick;
+                g.governor.resync(tick);
+            }
             resumed
         };
         if resumed {
@@ -140,6 +152,9 @@ impl Daemon {
         };
         if smart {
             self.sensors.ensure_gpu_stream();
+        } else {
+            // Nothing needs the GPU readings: let the card sleep.
+            self.sensors.release_gpu_stream();
         }
         if tick % CHARGE_CHECK_EVERY == 0 {
             self.charge_full_check(wall);
@@ -170,15 +185,18 @@ impl Daemon {
     /// A fan the user stopped goes back to the firmware, all of them, when the laptop gets warm
     /// or the device stops answering.
     fn fan_watchdog(&self) {
-        let returned = {
+        let (returned, warm) = {
             let mut g = self.lock();
             let temps = Temps { cpu: g.tcpu.value(), gpu: g.tgpu.value() };
             let hw_ok = g.hw_ok;
-            g.stop_watch.check(temps, hw_ok)
+            let warm = fanctl::must_return_fans(temps, true);
+            (g.stop_watch.check(temps, hw_ok), warm)
         };
         if !returned {
             return;
         }
+        // The reason is told as it is: a silent device is not a warm laptop.
+        let why = if warm { "the laptop got warm" } else { "the device stopped answering" };
         if let Err(e) = self.hw.fan_auto() {
             // The fans are still stopped: keep watching, so the next tick tries again as soon as
             // the device answers instead of leaving a stopped fan with no watchdog.
@@ -191,8 +209,8 @@ impl Daemon {
             return;
         }
         self.lock().writer.forget();
-        self.warn_every("fans-back", 1.0, "fans back on Auto: the laptop got warm".to_owned());
-        self.say("Fans back on Auto: it got warm", "fan");
+        self.warn_every("fans-back", 1.0, format!("fans back on Auto: {why}"));
+        self.say(&format!("Fans back on Auto: {why}"), "fan");
     }
 
     /// The body of a tick, with the lock held.
@@ -220,7 +238,16 @@ impl Daemon {
             return;
         }
         let tcpu = g.tcpu.update(raw_cpu);
+        // The fan curve and the classifier always get a GPU temperature (the CPU's when there is
+        // no reading), but what is shown is only ever a real one.
         let tgpu = g.tgpu.update(if raw_gpu > 0.0 { raw_gpu } else { raw_cpu });
+        let tgpu_seen = if raw_gpu > 0.0 {
+            Some(g.tgpu_seen.update(raw_gpu))
+        } else {
+            g.tgpu_seen = Ema::new(TEMP_ALPHA);
+            None
+        };
+        let gpu_state = self.sensors.gpu_state();
         if let Some(s) = sensors {
             g.rpm = (s.cpu_fan_rpm, s.gpu_fan_rpm);
             if s.sys_temp != 0 {
@@ -234,7 +261,7 @@ impl Daemon {
             let hw_ok = g.hw_ok;
             g.writer.verify(hw_ok); // the firmware or the driver may have reset the fans behind our back
         }
-        let ac = self.sensors.on_ac();
+        let ac = g.plug.filter(self.sensors.on_ac(), mono);
         if g.last_ac.is_some_and(|before| before != ac) {
             // Plugging or unplugging can reset the driver state.
             g.writer.forget();
@@ -248,7 +275,7 @@ impl Daemon {
                 g.cur_mode = Some(mode);
             }
         }
-        let frame = Frame { wall, mono, tcpu, tgpu, chassis, load, gpu, ac };
+        let frame = Frame { wall, mono, tcpu, tgpu, tgpu_seen, gpu_state, chassis, load, gpu, ac };
         let smart = self.state.get_bool("smart_fan", false) && !self.legacy("predator-fan-mode") && g.hw_ok;
         if smart {
             let duties = g.fan.step(&fanctl::Inputs {

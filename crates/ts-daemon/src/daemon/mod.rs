@@ -17,6 +17,8 @@
 //!   are applied when the mode changes;
 //! * `handlers.rs`: the control socket's command table, the same names, arguments and result
 //!   shapes as the Python daemon so the Python and Go clients keep working;
+//! * `plug.rs`: the charger signal with a three second hold-off, so a bouncing contact moves the
+//!   power mode and the fans once, not every time it flips;
 //! * `publish.rs`: the live `key=value` state for status bars and `health.sh`;
 //! * `alerts.rs`: desktop alerts (a hot CPU or GPU, a low battery, ...) evaluated on the tick and
 //!   shown to the desktop user by a helper thread, so no notifier can slow or break a tick.
@@ -38,6 +40,7 @@ mod boot;
 mod daemon;
 pub mod deps;
 mod handlers;
+mod plug;
 mod publish;
 mod step;
 
@@ -47,6 +50,8 @@ mod alerts_tests;
 mod bindings_tests;
 #[cfg(test)]
 mod handler_tests;
+#[cfg(test)]
+mod hardening_tests;
 #[cfg(test)]
 mod loop_tests;
 #[cfg(test)]

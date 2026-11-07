@@ -860,9 +860,12 @@ fn the_live_state_is_published_for_status_bars_and_health_checks() {
             "smart_profile",
             "mode_reason",
             "fan_off",
-            "hw_ok"
+            "hw_ok",
+            // appended after the Python daemon's keys
+            "gpu_state",
+            "tgpu_real"
         ],
-        "the order status bars were written against"
+        "the order status bars were written against, new keys at the end"
     );
     assert_eq!(rig.read(&rig.path("tmp-state")), text, "the world-readable copy is the same");
     assert!(!rig.path("predator-state").exists(), "the legacy file only with the compatibility switch");

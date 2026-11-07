@@ -29,7 +29,7 @@ use ts_ipc::wire::{Args, Request};
 use ts_platform::firmware::{Device, FirmwareError, Simulator, Snapshot};
 use ts_platform::hw::Hw;
 use ts_system::osd::{UserDirectory, UserEntry};
-use ts_system::sensors::GpuReading;
+use ts_system::sensors::{GpuFeed, GpuReading};
 
 use super::alerts::AlertSettings;
 use super::deps::{
@@ -181,10 +181,26 @@ pub(super) struct FaultDevice {
     /// The firmware answers yes to a manual fan command but its duty registers do not move to a
     /// stop (what the hardware layer calls a refused stop).
     pub(super) stuck_stop: AtomicBool,
+    /// Only the sensor reads fail (the firmware still takes commands): a device that has stopped
+    /// answering the daemon's reads.
+    pub(super) sensors_dead: AtomicBool,
+    /// Every command the firmware was sent, in order.
+    pub(super) sent: Mutex<Vec<String>>,
+}
+
+impl FaultDevice {
+    /// How many commands starting with `prefix` were sent.
+    pub(super) fn count(&self, prefix: &str) -> usize {
+        locked(&self.sent).iter().filter(|c| c.starts_with(prefix)).count()
+    }
 }
 
 impl Device for FaultDevice {
     fn run(&self, command: &str) -> Result<String, FirmwareError> {
+        locked(&self.sent).push(command.to_owned());
+        if self.sensors_dead.load(Ordering::SeqCst) && command.starts_with("sensors") {
+            return Err(FirmwareError::BadReply { detail: "sensors do not answer".to_owned() });
+        }
         if self.dead.load(Ordering::SeqCst) {
             return Err(FirmwareError::BadReply { detail: "no such device".to_owned() });
         }
@@ -207,12 +223,14 @@ struct SensorState {
     gpu: GpuReading,
     ac: bool,
     explode: bool,
+    gpu_feed: GpuFeed,
 }
 
 /// Load, battery, charger and GPU as a test sets them.
 pub(super) struct FakeSensors {
     state: Mutex<SensorState>,
     pub(super) gpu_streams: AtomicUsize,
+    pub(super) gpu_releases: AtomicUsize,
 }
 
 impl FakeSensors {
@@ -225,8 +243,10 @@ impl FakeSensors {
                 gpu: GpuReading { temp: None, util: 0.0, power: 0.0, seen: None },
                 ac: true,
                 explode: false,
+                gpu_feed: GpuFeed::Unsampled,
             }),
             gpu_streams: AtomicUsize::new(0),
+            gpu_releases: AtomicUsize::new(0),
         }
     }
 
@@ -248,6 +268,10 @@ impl FakeSensors {
 
     pub(super) fn set_gpu(&self, temp: Option<f64>, util: f64, power: f64, seen: Option<f64>) {
         locked(&self.state).gpu = GpuReading { temp, util, power, seen };
+    }
+
+    pub(super) fn set_gpu_feed(&self, feed: GpuFeed) {
+        locked(&self.state).gpu_feed = feed;
     }
 
     pub(super) fn explode(&self, on: bool) {
@@ -280,6 +304,14 @@ impl Sensors for FakeSensors {
 
     fn ensure_gpu_stream(&self) {
         self.gpu_streams.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn release_gpu_stream(&self) {
+        self.gpu_releases.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn gpu_state(&self) -> GpuFeed {
+        locked(&self.state).gpu_feed
     }
 }
 
@@ -617,6 +649,8 @@ impl Rig {
             sim: Arc::clone(&sim),
             dead: AtomicBool::new(false),
             stuck_stop: AtomicBool::new(false),
+            sensors_dead: AtomicBool::new(false),
+            sent: Mutex::new(Vec::new()),
         });
         let hw = Hw::new(device.clone()).with_sleeper(Arc::new(|_| {}));
         // The state of the Python test: only these four settings, so the curve and the Smart

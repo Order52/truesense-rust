@@ -32,7 +32,7 @@ use ts_foundation::sdnotify::Notifier;
 use ts_foundation::state::{self, Store};
 use ts_platform::hw::Hw;
 use ts_system::osd::UserDirectory;
-use ts_system::sensors::GpuReading;
+use ts_system::sensors::{GpuFeed, GpuReading};
 
 use super::alerts::AlertSettings;
 
@@ -219,9 +219,19 @@ pub trait Sensors: Send + Sync {
     fn gpu(&self) -> GpuReading;
     /// Whether the charger is plugged in.
     fn on_ac(&self) -> bool;
-    /// Starts the GPU sampler if it is not running yet. The sampler keeps the NVIDIA driver
-    /// awake, so the daemon only asks for it when a smart feature needs the GPU. Idempotent.
+    /// Asks for the GPU sampler: starts it if it is not running yet. Every question to the card
+    /// wakes it from runtime suspend, so the daemon asks only while a smart feature needs the GPU
+    /// (and the sampler itself leaves a sleeping card alone and lets an idle one go to sleep).
+    /// Idempotent.
     fn ensure_gpu_stream(&self);
+    /// Withdraws the request: nothing needs the GPU readings now, so the sampler ends and the
+    /// card is left to suspend. Idempotent; the default does nothing (a source without a stream).
+    fn release_gpu_stream(&self) {}
+    /// What a 0 GPU load or 0 W means right now: a card that sleeps, a live reading, or a card
+    /// nobody is reading. The default is the honest "unsampled" for a source that cannot tell.
+    fn gpu_state(&self) -> GpuFeed {
+        GpuFeed::Unsampled
+    }
 }
 
 /// The CPU's maximum clock (cpufreq `scaling_max_freq`), which the thermal governor lowers.

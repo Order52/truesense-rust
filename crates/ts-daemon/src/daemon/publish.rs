@@ -23,7 +23,9 @@ impl Daemon {
             .set("activity", g.activity.name())
             .set("fan", g.writer.written_label())
             .set("tcpu", rounded(f.tcpu))
-            .set("tgpu", rounded(f.tgpu))
+            // 0 is "no reading" (as in the Python daemon's `round(tgpu or 0)`): never the CPU
+            // temperature the fan curve falls back to.
+            .set("tgpu", f.tgpu_seen.map_or(0, rounded))
             .set("chassis", rounded(f.chassis.unwrap_or(0.0)))
             .set("cpu", rounded(f.load))
             .set("gpu", rounded(f.gpu.util))
@@ -39,7 +41,13 @@ impl Daemon {
             .set("smart_profile", self.state.get_str("smart_profile", "native"))
             .set("mode_reason", g.engine.reason())
             .set("fan_off", g.stop_watch.is_armed())
-            .set("hw_ok", g.hw_ok);
+            .set("hw_ok", g.hw_ok)
+            // Appended after the Python daemon's keys, so a reader that goes by position still
+            // finds those where they were. `gpu_state` says what the 0s of `gpu` and `gpuw`
+            // mean: `suspended` (true: the card sleeps), `live`, `unsampled` (unknown: awake
+            // but nobody reads it) or `absent`; `tgpu_real` whether `tgpu` is a GPU reading.
+            .set("gpu_state", f.gpu_state.name())
+            .set("tgpu_real", f.tgpu_seen.is_some());
         let mut paths: Vec<&Path> = vec![&self.live_paths.run_state, &self.live_paths.tmp_state];
         if self.cfg.compat.predator_widgets {
             paths.push(&self.live_paths.predator_state);

@@ -96,6 +96,10 @@ fn state_has_the_python_live_keys_with_python_types() {
     let strings =
         ["mode", "activity", "fan", "power_mode", "auto_mode", "fan_curve", "smart_profile", "mode_reason"];
     let bools = ["ac", "auto", "fan_off", "hw_ok"];
+    // TrueSense additions, appended after daemon.py's keys (the 0s of `gpu`/`gpuw` and whether
+    // `tgpu` is a GPU reading); the old clients ignore keys they do not know.
+    let strings: Vec<&str> = strings.into_iter().chain(["gpu_state"]).collect();
+    let bools: Vec<&str> = bools.into_iter().chain(["tgpu_real"]).collect();
     let mut expected: Vec<&str> = ints.iter().chain(&strings).chain(&bools).copied().collect();
     expected.sort_unstable();
     let mut got: Vec<&str> = live.keys().map(String::as_str).collect();
@@ -104,11 +108,11 @@ fn state_has_the_python_live_keys_with_python_types() {
     for k in ints {
         assert!(live[k].is_i64(), "live.{k} must be a whole number, got {}", live[k]);
     }
-    for k in strings {
-        assert!(live[k].is_string(), "live.{k} must be text, got {}", live[k]);
+    for k in &strings {
+        assert!(live[*k].is_string(), "live.{k} must be text, got {}", live[*k]);
     }
-    for k in bools {
-        assert!(live[k].is_boolean(), "live.{k} must be true or false, got {}", live[k]);
+    for k in &bools {
+        assert!(live[*k].is_boolean(), "live.{k} must be true or false, got {}", live[*k]);
     }
     // The values of the idle simulated laptop on AC.
     assert_eq!(live["ac"], json!(true));

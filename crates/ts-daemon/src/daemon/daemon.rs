@@ -42,9 +42,10 @@ use super::deps::{
     Notice, OperatingLight, PowerLimitsPort, PowerManagersPort, ProcessList, Sensors, Sleeper, StopToken,
     TouchpadPort,
 };
+use super::plug::PlugGuard;
 
 /// The smoothing of the CPU and GPU temperatures (a new reading counts for 40 %).
-const TEMP_ALPHA: f64 = 0.4;
+pub(super) const TEMP_ALPHA: f64 = 0.4;
 /// The smoothing of the board (chassis) temperature, which moves slowly.
 const CHASSIS_ALPHA: f64 = 0.2;
 /// A loop that finds itself this many seconds behind schedule was asleep (suspend): it resyncs
@@ -77,7 +78,13 @@ pub(super) struct Inner {
     /// Ticks run so far (the first is 1); the periodic jobs key off it.
     pub(super) tick: u64,
     pub(super) tcpu: Ema,
+    /// The GPU temperature the fans and the classifier decide from. It falls back to the CPU
+    /// temperature when the GPU gives none (the fan curve must see some number), so it is NOT
+    /// what is shown: see `tgpu_seen`.
     pub(super) tgpu: Ema,
+    /// The GPU temperature as really read (firmware or `nvidia-smi`); reset while there is none,
+    /// so a wake-up does not blend the CPU's temperature into the first real reading.
+    pub(super) tgpu_seen: Ema,
     pub(super) tchassis: Ema,
     /// Fan speeds in rpm, as the firmware last said.
     pub(super) rpm: (i64, i64),
@@ -87,6 +94,8 @@ pub(super) struct Inner {
     pub(super) hw_ok: bool,
     /// The charger on the last tick; `None` before the first.
     pub(super) last_ac: Option<bool>,
+    /// Settles the raw charger reading (see `plug.rs`).
+    pub(super) plug: PlugGuard,
     /// The power mode the firmware reported last; `None` until it was read.
     pub(super) cur_mode: Option<Reading<ts_platform::hw::PowerMode>>,
     pub(super) engine: Engine,
@@ -460,12 +469,14 @@ impl Inner {
             tick: 0,
             tcpu: Ema::new(TEMP_ALPHA),
             tgpu: Ema::new(TEMP_ALPHA),
+            tgpu_seen: Ema::new(TEMP_ALPHA),
             tchassis: Ema::new(CHASSIS_ALPHA),
             rpm: (0, 0),
             classifier: Classifier::new(cfg.fan.hot_cpu as f64, cfg.fan.hot_gpu as f64),
             activity: Activity::Idle,
             hw_ok: true,
             last_ac: None,
+            plug: PlugGuard::default(),
             cur_mode: None,
             engine,
             fan: Smart::new(fanctl::Params::from_config(&cfg.fan), curve.curve),
