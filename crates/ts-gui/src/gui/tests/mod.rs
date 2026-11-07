@@ -12,3 +12,4 @@ mod modebind;
 mod run;
 mod security;
 mod stream;
+mod themes;

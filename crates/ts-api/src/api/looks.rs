@@ -54,6 +54,11 @@ impl Api {
     /// Puts a look on the lights and answers what was done.
     pub fn apply_look(&self, name: &str) -> ApiResult<Vec<String>> {
         let look = self.s.looks.load(name)?;
+        // A theme that cannot run is reported before the lights are touched, not by the key service
+        // afterwards.
+        if let Some(spec) = &look.theme {
+            self.theme_store().resolve(spec)?;
+        }
         Ok(self.s.looks.apply(&look)?)
     }
 

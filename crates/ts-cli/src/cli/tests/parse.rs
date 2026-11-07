@@ -20,7 +20,7 @@ fn an_unknown_area_lists_every_area() {
     assert_eq!(ran.code, 2);
     assert_eq!(
         ran.err,
-        "usage: truesense [-h] [--json] [-V] area ...\ntruesense: error: argument area: invalid choice: 'foo' (choose from 'status', 'sensors', 'power', 'mode', 'fan', 'battery', 'display', 'boot', 'gpu', 'rear', 'update', 'look', 'startup', 'keyboard', 'audio', 'keys', 'profile', 'favourite', 'cpu', 'touchpad', 'alerts', 'service', 'config', 'doctor', 'selftest', 'completion', 'gui', 'probe', 'tui', 'daemon', 'version')\n"
+        "usage: truesense [-h] [--json] [-V] area ...\ntruesense: error: argument area: invalid choice: 'foo' (choose from 'status', 'sensors', 'power', 'mode', 'fan', 'battery', 'display', 'boot', 'gpu', 'rear', 'update', 'look', 'startup', 'keyboard', 'audio', 'keys', 'profile', 'favourite', 'theme', 'cpu', 'touchpad', 'alerts', 'service', 'config', 'doctor', 'selftest', 'completion', 'gui', 'probe', 'tui', 'daemon', 'version')\n"
     );
 }
 

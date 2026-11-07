@@ -1,0 +1,405 @@
+//! The one QObject the QML side talks to: the `Bus` singleton.
+//!
+//! It is a thin skin over [`ts_ui_model::app::AppModel`]. Rules it keeps: nothing blocks the GUI
+//! thread (commands run on worker threads and come back as `commandFinished` signals, queued onto
+//! the GUI thread); live values arrive about once a second **only while the window is active**
+//! (`setActive`); QML never sees Rust types, only JSON text and plain values.
+//!
+//! QML does not use it directly in pages: `Api`, `Live`, `Caps`, `Ui` and `Nav` (qml/*.qml) wrap it,
+//! so only `Main.qml` mentions `Bus` and the component tests run without Rust.
+
+// The bridge macro generates public items (the QObject, its signals) that cannot carry doc comments.
+#![allow(missing_docs)]
+
+use core::pin::Pin;
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, Instant};
+
+use cxx_qt::{CxxQtType, Threading};
+use cxx_qt_lib::QString;
+use serde_json::{Value, json};
+use ts_ui_model::app::AppModel;
+use ts_ui_model::bus::{CODE_BAD_ARGS, CmdError, Done, Reply, Request};
+use ts_ui_model::json::parse_args;
+use ts_ui_model::poller::Poller;
+use ts_ui_model::single::{Primary, Server};
+
+/// The tick of the live values.
+pub const LIVE_INTERVAL: Duration = Duration::from_secs(1);
+
+/// Switches that exist for the tests only (set through environment variables, never by a person).
+#[derive(Debug, Clone, Default)]
+pub struct TestConfig {
+    /// `TRUESENSE_QT_TEST=1`: the shell runs its test hook (report, optional screenshot, quit).
+    pub enabled: bool,
+    /// `TRUESENSE_QT_EXIT_AFTER_MS`: how long after the first frame the hook reports and quits.
+    pub exit_after_ms: i32,
+    /// `TRUESENSE_QT_SHOT`: where the hook saves a PNG of the window.
+    pub shot: Option<String>,
+}
+
+impl TestConfig {
+    /// Reads the environment.
+    pub fn from_env() -> Self {
+        let get = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
+        Self {
+            enabled: get("TRUESENSE_QT_TEST").is_some(),
+            exit_after_ms: get("TRUESENSE_QT_EXIT_AFTER_MS").and_then(|v| v.parse().ok()).unwrap_or(0),
+            shot: get("TRUESENSE_QT_SHOT"),
+        }
+    }
+}
+
+/// Everything the Bus needs that exists before Qt does; installed once by `lib::run`.
+pub struct Shared {
+    /// The Qt-free application state.
+    pub model: AppModel,
+    /// The page the window opens on (already resolved), or `home`.
+    pub start_page: String,
+    /// Start without showing the window (autostart).
+    pub start_hidden: bool,
+    /// Test switches.
+    pub test: TestConfig,
+    /// Process start, for the first-frame measurement.
+    pub started: Instant,
+    /// The single-instance socket, until the Bus takes it over to serve it.
+    pub primary: Mutex<Option<Primary>>,
+}
+
+static SHARED: OnceLock<Arc<Shared>> = OnceLock::new();
+
+/// Hands the shared state to the Bus before the QML engine creates it (set once per process).
+pub fn install(shared: Arc<Shared>) -> bool {
+    SHARED.set(shared).is_ok()
+}
+
+/// The shared state, for the rest of the crate.
+pub fn shared() -> Option<&'static Arc<Shared>> {
+    SHARED.get()
+}
+
+/// The cxx-qt bridge: the `Bus` QObject and the shim declarations.
+#[cxx_qt::bridge]
+pub mod qobject {
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+        include!("cxx-qt-lib/qqmlapplicationengine.h");
+        type QQmlApplicationEngine = cxx_qt_lib::QQmlApplicationEngine;
+    }
+
+    // The Qt calls cxx-qt-lib has no wrapper for (cpp/shim.cpp).
+    unsafe extern "C++" {
+        include!("shim.h");
+
+        #[namespace = "truesense"]
+        fn set_identity(app_id: &QString, display_name: &QString, icon_path: &QString);
+        #[namespace = "truesense"]
+        fn set_language(code: &QString, rtl: bool) -> bool;
+        #[namespace = "truesense"]
+        fn system_locale_name() -> QString;
+        #[namespace = "truesense"]
+        fn set_quit_on_last_window_closed(quit: bool);
+        #[namespace = "truesense"]
+        fn allow_resource_reads();
+        #[namespace = "truesense"]
+        fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);
+    }
+
+    extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qml_singleton]
+        #[qproperty(QString, live_json, cxx_name = "liveJson")]
+        #[qproperty(bool, live_ok, cxx_name = "liveOk")]
+        #[qproperty(QString, caps_json, cxx_name = "capsJson")]
+        #[qproperty(QString, ui_json, cxx_name = "uiJson")]
+        #[qproperty(QString, routes_json, cxx_name = "routesJson")]
+        #[qproperty(QString, start_page, cxx_name = "startPage")]
+        #[qproperty(bool, start_hidden, cxx_name = "startHidden")]
+        type Bus = super::BusRust;
+
+        /// Runs a command on a worker thread; the answer arrives as `commandFinished(id, ok, json)`.
+        #[qinvokable]
+        fn run(self: Pin<&mut Bus>, area: &QString, verb: &QString, args_json: &QString) -> i32;
+
+        /// A keyed write: a newer write for the same `key` replaces one that has not started.
+        #[qinvokable]
+        fn write(
+            self: Pin<&mut Bus>,
+            key: &QString,
+            area: &QString,
+            verb: &QString,
+            args_json: &QString,
+        ) -> i32;
+
+        /// Calls a view-model module (ts-ui-model/src/vm); answers `{"ok":true,"result":...}` or `{"ok":false,"error":"..."}`.
+        #[qinvokable]
+        fn vm(self: &Bus, module: &QString, verb: &QString, args_json: &QString) -> QString;
+
+        /// The window is visible (live values tick) or hidden/minimised (they stop).
+        #[qinvokable]
+        #[cxx_name = "setActive"]
+        fn set_active(self: &Bus, active: bool);
+
+        /// Changes a setting of ui.json; answers "" or the message to show.
+        #[qinvokable]
+        #[cxx_name = "setUi"]
+        fn set_ui(self: Pin<&mut Bus>, key: &QString, value_json: &QString) -> QString;
+
+        /// Remembers the window geometry (x and y only when `has_pos`).
+        #[qinvokable]
+        #[cxx_name = "saveWindow"]
+        fn save_window(self: &Bus, width: i32, height: i32, x: i32, y: i32, has_pos: bool);
+
+        /// Re-reads what this machine can do; the answer arrives in `capsJson`.
+        #[qinvokable]
+        #[cxx_name = "refreshCapabilities"]
+        fn refresh_capabilities(self: &Bus);
+
+        /// The id of the page `name` means (aliases allowed), or "".
+        #[qinvokable]
+        #[cxx_name = "resolvePage"]
+        fn resolve_page(self: &Bus, name: &QString) -> QString;
+
+        /// Test switches as JSON: `{"enabled", "exit_after_ms", "shot"}`.
+        #[qinvokable]
+        #[cxx_name = "testConfig"]
+        fn test_config(self: &Bus) -> QString;
+
+        /// Called on the first frame; answers whether the test hook runs (so the shell can skip it).
+        #[qinvokable]
+        #[cxx_name = "framePresented"]
+        fn frame_presented(self: &Bus) -> bool;
+
+        /// Prints the test report line: the QML state merged with Rust's measurements.
+        #[qinvokable]
+        fn report(self: &Bus, state_json: &QString);
+
+        /// A command finished (see `run`).
+        #[qsignal]
+        #[cxx_name = "commandFinished"]
+        fn command_finished(self: Pin<&mut Bus>, id: i32, ok: bool, json: QString);
+
+        /// Another start asked this window to come forward, showing `page` ("" = keep the page).
+        #[qsignal]
+        #[cxx_name = "showRequested"]
+        fn show_requested(self: Pin<&mut Bus>, page: QString);
+    }
+
+    impl cxx_qt::Threading for Bus {}
+    impl cxx_qt::Initialize for Bus {}
+}
+
+/// What the Bus owns: the threads that must stop with it.
+#[derive(Default)]
+pub struct BusRust {
+    live_json: QString,
+    live_ok: bool,
+    caps_json: QString,
+    ui_json: QString,
+    routes_json: QString,
+    start_page: QString,
+    start_hidden: bool,
+    poller: Option<Poller>,
+    server: Option<Server>,
+    first_frame_ms: Mutex<Option<u128>>,
+}
+
+/// The reply text for QML: `(ok, json)`.
+fn reply_parts(reply: &Reply) -> (bool, String) {
+    reply.to_json()
+}
+
+impl cxx_qt::Initialize for qobject::Bus {
+    fn initialize(mut self: Pin<&mut Self>) {
+        let Some(shared) = shared().cloned() else { return };
+        let qt = self.qt_thread();
+        self.as_mut().set_routes_json(QString::from(shared.model.routes.to_json().to_string().as_str()));
+        self.as_mut().set_start_page(QString::from(shared.start_page.as_str()));
+        self.as_mut().set_start_hidden(shared.start_hidden);
+        self.as_mut().set_ui_json(QString::from(ui_json(&shared).as_str()));
+
+        // The live ticker: idle until the window says it is visible.
+        let ticker = {
+            let (shared, qt) = (shared.clone(), qt.clone());
+            Poller::spawn(LIVE_INTERVAL, move || {
+                let snapshot = shared.model.poll_live();
+                let ok = snapshot.is_some();
+                let _ = qt.queue(move |mut bus| {
+                    if let Some(text) = snapshot {
+                        bus.as_mut().set_live_json(QString::from(text.as_str()));
+                    }
+                    if *bus.live_ok() != ok {
+                        bus.as_mut().set_live_ok(ok);
+                    }
+                });
+            })
+        };
+        match ticker {
+            Ok(p) => self.as_mut().rust_mut().poller = Some(p),
+            Err(e) => eprintln!("truesense-qt: cannot start the live ticker: {e}"),
+        }
+
+        // The single-instance socket: "show PAGE" requests from later starts.
+        let primary = shared.primary.lock().ok().and_then(|mut p| p.take());
+        if let Some(primary) = primary {
+            let (shared, qt) = (shared.clone(), qt.clone());
+            let served = primary.serve(Box::new(move |page| {
+                let id = page
+                    .and_then(|p| shared.model.routes.resolve_id(&p).map(str::to_owned))
+                    .unwrap_or_default();
+                let _ = qt.queue(move |bus| bus.show_requested(QString::from(id.as_str())));
+            }));
+            match served {
+                Ok(s) => self.as_mut().rust_mut().server = Some(s),
+                Err(e) => eprintln!("truesense-qt: cannot serve the single-instance socket: {e}"),
+            }
+        }
+    }
+}
+
+/// The settings JSON QML reads: ui.json plus the language actually in effect.
+fn ui_json(shared: &Shared) -> String {
+    let locale = crate::platform::system_locale_name();
+    let language = shared.model.language(&locale);
+    let mut value: Value = serde_json::from_str(&shared.model.ui_json()).unwrap_or_else(|_| json!({}));
+    value["language_effective"] = json!(language);
+    value["rtl"] = json!(ts_ui_model::settings::is_rtl(&language));
+    value.to_string()
+}
+
+impl qobject::Bus {
+    fn shared(&self) -> Option<&'static Arc<Shared>> {
+        shared()
+    }
+
+    fn deliver(&self) -> impl Fn(Reply) + Send + 'static {
+        let qt = self.qt_thread();
+        move |reply: Reply| {
+            let (ok, text) = reply_parts(&reply);
+            let id = reply.id as i32;
+            let _ = qt.queue(move |bus| bus.command_finished(id, ok, QString::from(text.as_str())));
+        }
+    }
+
+    /// Runs a command on a worker thread.
+    pub fn run(self: Pin<&mut Self>, area: &QString, verb: &QString, args_json: &QString) -> i32 {
+        let Some(shared) = self.shared() else { return -1 };
+        let done: Done = Box::new(self.deliver());
+        match Request::parse(&area.to_string(), &verb.to_string(), &args_json.to_string()) {
+            Ok(request) => shared.model.bus.run(request, done) as i32,
+            Err(e) => shared.model.bus.refuse(e, done) as i32,
+        }
+    }
+
+    /// A coalesced write.
+    pub fn write(
+        self: Pin<&mut Self>,
+        key: &QString,
+        area: &QString,
+        verb: &QString,
+        args_json: &QString,
+    ) -> i32 {
+        let Some(shared) = self.shared() else { return -1 };
+        let done: Done = Box::new(self.deliver());
+        match Request::parse(&area.to_string(), &verb.to_string(), &args_json.to_string()) {
+            Ok(request) => shared.model.bus.write(&key.to_string(), request, done) as i32,
+            Err(e) => shared.model.bus.refuse(e, done) as i32,
+        }
+    }
+
+    /// A pure view-model call.
+    pub fn vm(&self, module: &QString, verb: &QString, args_json: &QString) -> QString {
+        let answer = match parse_args(&args_json.to_string()) {
+            Ok(args) => match ts_ui_model::vm::dispatch(&module.to_string(), &verb.to_string(), &args) {
+                Ok(result) => json!({"ok": true, "result": result}),
+                Err(e) => json!({"ok": false, "error": e}),
+            },
+            Err(e) => json!({"ok": false, "error": CmdError::new(e, Some(CODE_BAD_ARGS)).message}),
+        };
+        QString::from(answer.to_string().as_str())
+    }
+
+    /// Starts or stops the live ticker.
+    pub fn set_active(&self, active: bool) {
+        if let Some(p) = &self.poller {
+            p.set_active(active);
+        }
+    }
+
+    /// Changes a setting; the language also switches the translator and the layout direction.
+    pub fn set_ui(mut self: Pin<&mut Self>, key: &QString, value_json: &QString) -> QString {
+        let Some(shared) = self.shared() else { return QString::from("not ready") };
+        let key = key.to_string();
+        let value: Value = serde_json::from_str(&value_json.to_string()).unwrap_or(Value::Null);
+        let result = shared.model.set_ui(&key, &value);
+        // A failed write still changed the setting for this run; QML gets the new state either way.
+        let text = ui_json(shared);
+        if key == "language" {
+            let v: Value = serde_json::from_str(&text).unwrap_or_default();
+            let code = v["language_effective"].as_str().unwrap_or("en").to_owned();
+            let rtl = v["rtl"].as_bool().unwrap_or(false);
+            crate::platform::set_language(&code, rtl);
+        }
+        self.as_mut().set_ui_json(QString::from(text.as_str()));
+        QString::from(result.err().unwrap_or_default().as_str())
+    }
+
+    /// Saves the window geometry.
+    pub fn save_window(&self, width: i32, height: i32, x: i32, y: i32, has_pos: bool) {
+        let Some(shared) = self.shared() else { return };
+        let size = (u32::try_from(width).unwrap_or(0), u32::try_from(height).unwrap_or(0));
+        if let Err(e) = shared.model.set_window(size, has_pos.then_some((x, y))) {
+            eprintln!("truesense-qt: {e}");
+        }
+    }
+
+    /// Refreshes the capability model on a worker thread.
+    pub fn refresh_capabilities(&self) {
+        let Some(shared) = self.shared().cloned() else { return };
+        let qt = self.qt_thread();
+        let spawned = std::thread::Builder::new().name("ts-caps".to_owned()).spawn(move || {
+            let text = shared.model.refresh_capabilities();
+            let _ = qt.queue(move |mut bus| bus.as_mut().set_caps_json(QString::from(text.as_str())));
+        });
+        if let Err(e) = spawned {
+            eprintln!("truesense-qt: cannot start a worker thread: {e}");
+        }
+    }
+
+    /// Resolves a page name.
+    pub fn resolve_page(&self, name: &QString) -> QString {
+        let id = self.shared().and_then(|s| s.model.routes.resolve_id(&name.to_string()).map(str::to_owned));
+        QString::from(id.unwrap_or_default().as_str())
+    }
+
+    /// The test switches as JSON.
+    pub fn test_config(&self) -> QString {
+        let t = self.shared().map(|s| s.test.clone()).unwrap_or_default();
+        QString::from(
+            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot})
+                .to_string()
+                .as_str(),
+        )
+    }
+
+    /// Records the time of the first frame.
+    pub fn frame_presented(&self) -> bool {
+        let Some(shared) = self.shared() else { return false };
+        if let Ok(mut slot) = self.first_frame_ms.lock() {
+            slot.get_or_insert_with(|| shared.started.elapsed().as_millis());
+        }
+        shared.test.enabled
+    }
+
+    /// Prints `REPORT {json}`: what the test hook saw in QML plus Rust's own measurements.
+    pub fn report(&self, state_json: &QString) {
+        let mut state: Value = serde_json::from_str(&state_json.to_string()).unwrap_or_else(|_| json!({}));
+        let first = self.first_frame_ms.lock().ok().and_then(|s| *s);
+        state["first_frame_ms"] = json!(first);
+        state["rss_kb"] = json!(crate::rss_kb());
+        state["live_frames"] = json!(self.shared().map_or(0, |s| s.model.live.accepted()));
+        println!("REPORT {state}");
+    }
+}

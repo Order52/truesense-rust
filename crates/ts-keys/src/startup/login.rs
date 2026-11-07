@@ -128,6 +128,8 @@ impl<'a> Login<'a> {
         let part = |keyboard: bool| Look {
             keyboard: if keyboard { look.keyboard.clone() } else { None },
             rear: if keyboard { None } else { look.rear.clone() },
+            // A theme belongs to the keyboard half.
+            theme: if keyboard { look.theme.clone() } else { None },
         };
         if for_keyboard {
             let part = part(true);

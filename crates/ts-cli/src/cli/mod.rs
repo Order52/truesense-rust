@@ -29,6 +29,7 @@ mod handlers;
 mod launcher;
 mod modebind;
 mod out;
+mod themes;
 mod tree;
 
 #[cfg(test)]

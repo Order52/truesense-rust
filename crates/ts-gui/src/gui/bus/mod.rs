@@ -22,6 +22,7 @@ mod modebind;
 mod monitor;
 mod power;
 mod system;
+mod themes;
 
 use std::fmt;
 use std::sync::Arc;
@@ -200,6 +201,7 @@ impl Commands for ApiCommands {
             .or_else(|| info::dispatch(&ctx, &key, &a))
             .or_else(|| alerts::dispatch(&ctx, &key, &a))
             .or_else(|| favourites::dispatch(&ctx, &key, &a))
+            .or_else(|| themes::dispatch(&ctx, &key, &a))
             .or_else(|| monitor::dispatch(&ctx, &key, &a));
         done.unwrap_or_else(|| Err(CommandError::unknown(area, verb)))
     }
