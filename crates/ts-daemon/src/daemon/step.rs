@@ -35,6 +35,12 @@ const EMERGENCY_CPU_C: f64 = 80.0;
 /// The wall clock ran this many seconds more than the monotonic one between two ticks: the
 /// machine was suspended, and the keyboard light must be put back.
 const RESUME_GAP_S: f64 = 5.0;
+/// The longest user pick (power mode held against the automatic one) that makes sense. A stored
+/// end time further away than this is a clock that jumped back (or a client asking for years):
+/// the hold is dropped instead of pinning the power mode for weeks.
+pub(super) const MAX_PLAUSIBLE_HOLD_S: f64 = 7.0 * 86_400.0;
+/// A settings write that failed (full or read-only disk) is tried again every this many ticks.
+const STATE_RETRY_EVERY: u64 = 30;
 /// The charge-to-full record is looked at every this many ticks.
 const CHARGE_CHECK_EVERY: u64 = chargefull::CHECK_EVERY_TICKS;
 /// The power managers are looked at when `tick % 150` is 5 (about every 5 minutes).
@@ -124,6 +130,11 @@ impl Daemon {
             // The wall clock ran and the monotonic one did not: the machine was suspended.
             let resumed = g.last_clock.is_some_and(|(w, m)| (wall - w) - (mono - m) > RESUME_GAP_S);
             g.last_clock = Some((wall, mono));
+            if g.engine.hold_left_s(wall) as f64 > MAX_PLAUSIBLE_HOLD_S {
+                g.engine.restore_hold(0.0);
+                self.save("profile_hold_until", hold_value(0.0));
+                self.warn("the held power-mode pick ended later than any pick can: the clock jumped back, so it is dropped");
+            }
             if resumed {
                 // The firmware may have come back with its own fan and mode state: what was
                 // written before the sleep is no longer known to hold, so the next decision
@@ -154,6 +165,9 @@ impl Daemon {
             // Nothing needs the GPU readings: let the card sleep.
             self.sensors.release_gpu_stream();
         }
+        if tick % STATE_RETRY_EVERY == 0 {
+            self.retry_state_write();
+        }
         if tick % CHARGE_CHECK_EVERY == 0 {
             self.charge_full_check(wall);
         }
@@ -162,6 +176,16 @@ impl Daemon {
         }
         self.flush_notices();
         self.alerts_deliver();
+    }
+
+    /// Writes the settings again when the last write failed. The settings the daemon runs on are
+    /// in memory, so this only decides when a reboot would still find them.
+    fn retry_state_write(&self) {
+        match self.state.flush() {
+            Ok(true) => self.info("the settings are written to disk again"),
+            Ok(false) => {}
+            Err(e) => self.warn_every("save", 60.0, format!("could not save the settings (will retry): {e}")),
+        }
     }
 
     /// Shows what the tick wanted to say, after the lock is released (the on-screen display runs
@@ -226,7 +250,10 @@ impl Daemon {
         let raw_cpu = pkg.unwrap_or(0.0).max(sensors.map_or(0.0, |s| s.cpu_temp as f64));
         let fresh_gpu = gpu
             .temp
-            .filter(|t| *t != 0.0 && gpu.seen.is_some_and(|seen| wall - seen <= GPU_FRESH_S))
+            // A reading stamped in the future (the clock jumped back since) is not fresh either.
+            .filter(|t| {
+                *t != 0.0 && gpu.seen.is_some_and(|seen| (-1.0..=GPU_FRESH_S).contains(&(wall - seen)))
+            })
             .unwrap_or(0.0);
         let raw_gpu = sensors.map_or(0.0, |s| s.gpu_temp as f64).max(fresh_gpu);
         if raw_cpu <= 0.0 {
@@ -467,7 +494,12 @@ impl Daemon {
         };
         let mut g = self.lock();
         let ac = g.last_ac == Some(true);
-        let verdict = chargefull::check(&mut record, ac, self.sensors.battery_pct(), wall);
+        let mut verdict = chargefull::check(&mut record, ac, self.sensors.battery_pct(), wall);
+        if verdict.done.is_none() && record.since > wall + 3600.0 {
+            // Started "in the future": the clock jumped back, so the 24 hours cannot be measured.
+            // Bringing the 80 % limit back is the safe answer.
+            verdict.done = Some(chargefull::Reason::DayPassed);
+        }
         if verdict.changed {
             self.save("charge_full", record.to_json());
         }

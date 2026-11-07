@@ -215,6 +215,29 @@ pub fn write_atomic_mkdir(path: &Path, data: &[u8], mode: u32) -> Result<(), FsE
     write_atomic(path, data, mode)
 }
 
+/// Removes the temporary files of [`write_atomic`] that a crash left beside `path`
+/// (`.<name>.<pid>.<nanos>.<n>.tmp`), returning how many it removed. A process killed between
+/// creating its temp file and renaming it leaves one behind each time; a daemon that crash-loops
+/// would otherwise fill the directory. Call it only when no other process writes `path`
+/// (the daemon, after it took its single-instance lock): it cannot tell a dead writer's file
+/// from a live one's.
+pub fn remove_stale_temps(path: &Path) -> usize {
+    let (Some(dir), Some(name)) = (path.parent().filter(|d| !d.as_os_str().is_empty()), path.file_name())
+    else {
+        return 0;
+    };
+    let prefix = format!(".{}.", name.to_string_lossy());
+    let Ok(entries) = fs::read_dir(dir) else { return 0 };
+    entries
+        .filter_map(Result::ok)
+        .filter(|e| {
+            let n = e.file_name().to_string_lossy().into_owned();
+            n.starts_with(&prefix) && n.ends_with(".tmp") && e.file_type().is_ok_and(|t| t.is_file())
+        })
+        .filter(|e| fs::remove_file(e.path()).is_ok())
+        .count()
+}
+
 fn write_atomic_impl(path: &Path, data: &[u8], mode: u32, sync: bool) -> Result<(), FsError> {
     let dir = match path.parent() {
         Some(d) if !d.as_os_str().is_empty() => d,

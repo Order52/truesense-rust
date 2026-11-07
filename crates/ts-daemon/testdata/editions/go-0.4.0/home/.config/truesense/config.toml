@@ -1,0 +1,28 @@
+
+[audio]
+jack = "headset"
+notify = true
+
+[keys]
+fn_esc = "none"
+tap = "exec:truesense gui"
+double = "none"
+triple = "none"
+long = "none"
+long_ms = 800
+multi_ms = 450
+profile = "native"
+
+[startup]
+rear = "off"
+keyboard = "last"
+
+[update]
+auto_check = false
+
+# written by a newer or older edition: unknown to this one
+[legacy]
+foo = "bar"
+
+[daemon]
+future_switch = true

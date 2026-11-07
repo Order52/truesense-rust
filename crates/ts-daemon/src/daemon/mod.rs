@@ -40,6 +40,7 @@ mod boot;
 mod daemon;
 pub mod deps;
 mod handlers;
+mod instance;
 mod plug;
 mod publish;
 mod step;
@@ -54,6 +55,8 @@ mod handler_tests;
 mod hardening_tests;
 #[cfg(test)]
 mod loop_tests;
+#[cfg(test)]
+mod resilience_tests;
 #[cfg(test)]
 mod steady_tests;
 #[cfg(test)]
@@ -83,6 +86,10 @@ pub enum DaemonError {
     Socket(ServerError),
     /// The control loop panicked outside the guarded tick (a bug); the text is the panic message.
     Panicked(String),
+    /// Another daemon already drives this machine (it holds the lock file or answers on the
+    /// socket). Nothing was touched: two daemons writing the fans against each other, and the
+    /// second deleting the first one's socket, is worse than one refusing to start.
+    AlreadyRunning(String),
 }
 
 impl fmt::Display for DaemonError {
@@ -90,6 +97,9 @@ impl fmt::Display for DaemonError {
         match self {
             Self::Socket(e) => write!(f, "control socket: {e}"),
             Self::Panicked(why) => write!(f, "the control loop failed: {why}"),
+            Self::AlreadyRunning(how) => {
+                write!(f, "another TrueSense daemon is already running ({how}); not starting a second one")
+            }
         }
     }
 }
@@ -98,7 +108,7 @@ impl std::error::Error for DaemonError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Socket(e) => Some(e),
-            Self::Panicked(_) => None,
+            Self::Panicked(_) | Self::AlreadyRunning(_) => None,
         }
     }
 }

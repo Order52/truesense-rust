@@ -1,6 +1,6 @@
 use serde_json::json;
 use ts_decision::curves::{Curve, Point};
-use ts_platform::firmware::SimFan;
+use ts_platform::firmware::{Device, SimFan};
 use ts_platform::hw::FanMode;
 
 use super::Fx;
@@ -131,6 +131,42 @@ fn a_daemon_error_is_not_a_reason_to_fall_back_to_the_firmware() {
     fx.rig.daemon.answer("fan", Reply::Error("device unavailable".into()));
     assert!(fx.api.fan_max().is_err());
     assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Auto));
+}
+
+/// The unit's `ExecStopPost=truesense fan auto` after a crash: the daemon is dead, its socket
+/// file is still there (a crash cannot remove it), and the fans may be stopped or at a manual duty.
+/// They must go back to the firmware at once; this was a bug (the request failed with "connection
+/// refused" and the failsafe silently did nothing).
+#[test]
+fn fan_auto_after_a_crash_reaches_the_firmware_although_the_socket_file_is_still_there() {
+    for dead in [Reply::Unreachable("connection refused".into()), Reply::Unreachable("timed out".into())] {
+        let fx = Fx::new();
+        fx.rig.sim.run("set_fan_manual 0 0").unwrap();
+        assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Manual));
+        fx.rig.daemon.answer("fan", dead);
+        let out = fx.api.fan_auto().expect("the failsafe must not depend on a live daemon");
+        assert_eq!(out.route, FanRoute::Hardware);
+        assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Auto), "fans handed back");
+    }
+    // The socket vanished between the check and the call.
+    let fx = Fx::new();
+    fx.rig.sim.run("set_fan_manual 0 0").unwrap();
+    fx.rig.daemon.set_available(false);
+    assert_eq!(fx.api.fan_auto().unwrap().route, FanRoute::Hardware);
+    assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Auto));
+}
+
+#[test]
+fn max_and_a_plain_duty_also_fall_back_but_smart_and_a_stop_need_a_live_service() {
+    let fx = Fx::new();
+    fx.rig.daemon.answer("fan", Reply::Unreachable("connection refused".into()));
+    assert_eq!(fx.api.fan_max().unwrap().route, FanRoute::Hardware);
+    assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Max));
+    assert_eq!(fx.api.fan_set(60, Some(50), false).unwrap().route, FanRoute::Hardware);
+    assert!(fx.api.fan_smart().is_err(), "the smart curve needs the service");
+    assert!(fx.api.fan_off(true).is_err(), "a stop needs the service and its watchdog");
+    assert!(matches!(fx.rig.sim.snapshot().fan, SimFan::Manual));
+    assert_eq!(fx.rig.sim.snapshot().duty, [60, 50], "and the failed stop wrote nothing");
 }
 
 #[test]

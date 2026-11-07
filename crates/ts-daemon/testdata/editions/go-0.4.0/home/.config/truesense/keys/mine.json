@@ -1,0 +1,10 @@
+{
+ "description": "mine",
+ "tap": "exec:truesense gui",
+ "double": "none",
+ "triple": "none",
+ "long": "none",
+ "fn_esc": "none",
+ "long_ms": 800,
+ "multi_ms": 450
+}

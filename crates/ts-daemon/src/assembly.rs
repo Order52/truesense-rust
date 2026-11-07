@@ -33,6 +33,12 @@ use crate::daemon::{
     StopToken, SystemClock,
 };
 
+/// The exit status of a daemon that found another one running (`EX_CONFIG`). The unit lists it
+/// in `RestartPreventExitStatus=`: restarting every second cannot make the other daemon go away,
+/// and each failed start would run the unit's `ExecStopPost` hand-back against a daemon that is
+/// driving the fans.
+pub const EXIT_ALREADY_RUNNING: i32 = 78;
+
 /// Where the root service's home is when `HOME` is not set (systemd units run it as root).
 const ROOT_HOME: &str = "/root";
 
@@ -83,23 +89,21 @@ fn env(key: &str) -> Option<String> {
     fsx::env_nonempty(key)
 }
 
-/// The configuration the service runs with: the merged files, or the built-in defaults for the
-/// whole configuration when anything in them is wrong (a typo must not stop the fan control).
-/// The problems are returned so they can be logged.
+/// The configuration the service runs with: the merged files, or the built-in defaults when
+/// anything in them is wrong (a typo must not stop the fan control), keeping only `user` so the
+/// desktop user is not locked out. The problems are returned so they can be logged and shown.
 pub fn load_config() -> (Config, Vec<String>) {
-    match Config::load_standard() {
-        Ok(config) => {
-            let problems = config.validate();
-            if problems.is_empty() { (config, problems) } else { (Config::default(), problems) }
-        }
-        Err(e) => (Config::default(), vec![e.to_string()]),
-    }
+    Config::load_or_defaults(
+        Some(Path::new(config::SYSTEM_PATH)),
+        config::user_path().as_deref(),
+        &fsx::env_nonempty,
+    )
 }
 
 /// Blocks SIGTERM and SIGINT in this thread (and so in every thread started later) and starts a
 /// thread that waits for them and asks `stop` to wind down. Must run before any other thread
 /// exists, otherwise a signal could be delivered to a thread that does not block it.
-fn install_signal_stop(stop: StopToken) -> io::Result<()> {
+pub(crate) fn install_signal_stop(stop: StopToken) -> io::Result<()> {
     // SAFETY: `set` is a zeroed `sigset_t` that `sigemptyset` initialises before any other use;
     // every call only reads or writes this local value and the calling thread's signal mask.
     let set = unsafe {
@@ -127,6 +131,29 @@ fn install_signal_stop(stop: StopToken) -> io::Result<()> {
     Ok(())
 }
 
+/// Test helper: makes `cmd` start with SIGTERM and SIGINT blocked in its first thread, as the
+/// real service has them after [`install_signal_stop`] ran before any other thread existed. A
+/// test binary child (libtest) has threads of its own that this call cannot reach later, so the
+/// mask is inherited from the parent through `fork` and `exec` instead.
+#[cfg(test)]
+pub(crate) fn block_termination_signals_in_child(cmd: &mut std::process::Command) {
+    use std::os::unix::process::CommandExt;
+    // SAFETY: the closure runs in the forked child before `exec` and only calls
+    // async-signal-safe functions (`sigemptyset`, `sigaddset`, `pthread_sigmask`) on a local set.
+    unsafe {
+        cmd.pre_exec(|| {
+            let mut set: libc::sigset_t = std::mem::zeroed();
+            libc::sigemptyset(&mut set);
+            libc::sigaddset(&mut set, libc::SIGTERM);
+            libc::sigaddset(&mut set, libc::SIGINT);
+            match libc::pthread_sigmask(libc::SIG_BLOCK, &set, std::ptr::null_mut()) {
+                0 => Ok(()),
+                rc => Err(io::Error::from_raw_os_error(rc)),
+            }
+        });
+    }
+}
+
 /// The keyboard: the real hidraw device, or the simulator under `TRUESENSE_SIM`.
 fn keyboard(state: Arc<userstate::Store>) -> Arc<Keyboard> {
     let opener: Arc<dyn HidOpener> = if env("TRUESENSE_SIM").is_some() {
@@ -139,7 +166,7 @@ fn keyboard(state: Arc<userstate::Store>) -> Arc<Keyboard> {
 
 /// Everything `truesense daemon` needs, built from the real machine (or the simulator under
 /// `TRUESENSE_SIM=1`).
-pub fn build_deps(config: Config, stop: StopToken, log: Arc<dyn Logger>) -> Deps {
+pub fn build_deps(config: Config, warnings: Vec<String>, stop: StopToken, log: Arc<dyn Logger>) -> Deps {
     let user_state = Arc::new(userstate::Store::at_default());
     let keyboard = keyboard(user_state.clone());
     let hw = Hw::new(DeviceKind::from_process_env().open())
@@ -179,6 +206,7 @@ pub fn build_deps(config: Config, stop: StopToken, log: Arc<dyn Logger>) -> Deps
         &env,
     );
     Deps {
+        warnings,
         users,
         osd: Arc::new(Osd::system(&config.osd.style, &config.user)),
         alert_settings: Arc::new(alert_settings),
@@ -221,16 +249,28 @@ pub fn run_daemon() -> Result<(), AssemblyError> {
     install_signal_stop(stop.clone()).map_err(AssemblyError::Signals)?;
     let log: Arc<dyn Logger> = Arc::new(StdoutLogger);
     let (config, problems) = load_config();
+    let mut warnings = Vec::new();
     for problem in &problems {
         log.log(Level::Warn, &format!("config problem: {problem}"));
+        warnings.push(format!("config problem: {problem}"));
     }
     if !problems.is_empty() {
-        log.log(Level::Warn, "falling back to the built-in defaults for the whole configuration");
+        let note = "the built-in defaults are in force for the whole configuration (fix the file, then restart the service)";
+        log.log(Level::Warn, note);
+        warnings.push(note.to_owned());
     }
     let live = LivePaths::system();
     if let Some(dir) = live.run_state.parent() {
         fsx::ensure_dir(dir, 0o755).map_err(|e| AssemblyError::RunDir(e.to_string()))?;
     }
-    let deps = build_deps(config, stop, log);
-    daemon::run(deps, ts_ipc::wire::socket_path()).map_err(AssemblyError::Daemon)
+    let deps = build_deps(config, warnings, stop, log);
+    match daemon::run(deps, ts_ipc::wire::socket_path()) {
+        Err(e @ DaemonError::AlreadyRunning(_)) => {
+            // This function is the service's entry point (it owns the signals), so it is the
+            // one place that may end the process with a status the unit knows.
+            eprintln!("truesense daemon: {e}");
+            std::process::exit(EXIT_ALREADY_RUNNING)
+        }
+        other => other.map_err(AssemblyError::Daemon),
+    }
 }

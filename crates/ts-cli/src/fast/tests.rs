@@ -123,6 +123,31 @@ fn a_button_can_never_stop_a_fan() {
 }
 
 #[test]
+fn a_dead_daemons_leftover_socket_does_not_block_handing_the_fans_back() {
+    for (line, want) in [
+        ("fan auto", Some("auto")),
+        ("fan max", Some("max")),
+        ("fan 55", Some("manual 55 55")),
+        ("fan smart", None),
+    ] {
+        let daemon = FakeDaemon::running();
+        daemon.answer("fan", Reply::Unreachable("daemon not answering: connection refused".to_owned()));
+        let hw = Recorder::default();
+        let ran = run(&daemon, &hw, &RefCell::new(Vec::new()), line);
+        match want {
+            Some(write) => {
+                assert_eq!((ran.code, ran.err.as_str()), (0, ""), "{line}");
+                assert_eq!(hw.writes.borrow().as_slice(), [write], "{line}");
+            }
+            None => {
+                assert_eq!(ran.code, 1, "{line}");
+                assert!(hw.writes.borrow().is_empty(), "{line}");
+            }
+        }
+    }
+}
+
+#[test]
 fn usage_mistakes_are_exit_code_two_and_touch_nothing() {
     for (line, usage) in [
         ("", "usage: truesense-fast fan|power|auto ..."),

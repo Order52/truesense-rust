@@ -16,6 +16,7 @@ use std::time::Duration;
 use serde::Serialize;
 use serde_json::Value;
 use ts_decision::curves::{self, Curve};
+use ts_ipc::client::ClientError;
 use ts_ipc::wire::Args;
 use ts_platform::hw::{FanDuty, FanState};
 
@@ -251,6 +252,16 @@ impl Api {
             Err(e) if e.is_unknown_command() => {
                 self.fan_legacy(request)?;
                 Ok(routed(FanRoute::LegacyDaemon))
+            }
+            // The socket file is there but nobody answers: the daemon crashed (SIGKILL, the
+            // watchdog, a panic) and left it behind. This is exactly when the unit's
+            // `ExecStopPost=truesense fan auto` runs, and the fans must go back to the firmware
+            // then, not wait for a restart. `Smart` and a stop need the service and fail below.
+            Err(ClientError::NotRunning | ClientError::Unreachable(_))
+                if !matches!(request, FanRequest::Smart | FanRequest::Off) =>
+            {
+                self.fan_direct(request)?;
+                Ok(routed(FanRoute::Hardware))
             }
             Err(e) => Err(e.into()),
         }

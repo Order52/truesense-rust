@@ -15,7 +15,7 @@
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use serde_json::{Map, Value};
 
@@ -64,27 +64,70 @@ pub fn defaults(cfg: &Config) -> Map<String, Value> {
     entries.into_iter().map(|(k, v)| (k.to_owned(), v)).collect()
 }
 
+/// How [`Store`] puts bytes on disk: replaced in tests by a writer that fails or crashes.
+pub type Writer = Arc<dyn Fn(&Path, &[u8]) -> Result<(), FsError> + Send + Sync>;
+
+/// The settings and whether the disk is behind them.
+#[derive(Debug)]
+struct Data {
+    map: Map<String, Value>,
+    /// The last write failed (read-only or full disk): memory is ahead of the file, and
+    /// [`Store::flush`] writes it when the disk works again.
+    dirty: bool,
+}
+
 /// The daemon's persistent settings: a JSON object kept in memory and rewritten atomically on
 /// every change. Safe to share between threads (the control loop and the socket handlers).
-#[derive(Debug)]
 pub struct Store {
     path: PathBuf,
-    data: Mutex<Map<String, Value>>,
+    data: Mutex<Data>,
+    writer: Writer,
+    /// Why the file on disk was not used at open (corrupt, unreadable); `None` when it was fine
+    /// or simply missing.
+    load_problem: Option<String>,
+}
+
+impl std::fmt::Debug for Store {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Store").field("path", &self.path).field("data", &self.data).finish_non_exhaustive()
+    }
+}
+
+/// The real writer: temp file, `fsync`, rename, so a crash leaves the old file or the new one.
+fn atomic_writer() -> Writer {
+    Arc::new(|path, bytes| fsx::write_atomic_mkdir(path, bytes, 0o644))
 }
 
 impl Store {
     /// Loads the file over `defaults`. A missing file, an unreadable one, invalid JSON, or JSON
-    /// that is not an object are all "no settings on disk": the defaults apply. Nothing is
-    /// written until the first [`Store::set`], which repairs a corrupt file.
+    /// that is not an object are all "no settings on disk": the defaults apply. A file that is
+    /// there but unusable is renamed to `<name>.corrupt` (best effort) and the reason is kept in
+    /// [`Store::load_problem`], so the next change does not destroy what an administrator might
+    /// want to repair by hand.
     pub fn open(path: impl Into<PathBuf>, defaults: Map<String, Value>) -> Store {
+        Self::open_with(path, defaults, atomic_writer())
+    }
+
+    /// [`Store::open`] with another way of writing (tests: a disk that fails or fills up).
+    pub fn open_with(path: impl Into<PathBuf>, defaults: Map<String, Value>, writer: Writer) -> Store {
         let path = path.into();
-        let mut data = defaults;
-        if let Ok(bytes) = fsx::read_limited(&path, fsx::MAX_SETTINGS_FILE) {
-            if let Ok(Value::Object(on_disk)) = serde_json::from_slice(&bytes) {
-                data.extend(on_disk);
+        let mut map = defaults;
+        let mut load_problem = None;
+        match fsx::read_limited(&path, fsx::MAX_SETTINGS_FILE) {
+            Ok(bytes) => match serde_json::from_slice(&bytes) {
+                Ok(Value::Object(on_disk)) => map.extend(on_disk),
+                Ok(_) => load_problem = Some("the settings file does not hold a JSON object".to_owned()),
+                Err(e) => load_problem = Some(format!("the settings file is not valid JSON ({e})")),
+            },
+            Err(e) if e.is_not_found() => {}
+            Err(e) => load_problem = Some(format!("the settings file cannot be read ({e})")),
+        }
+        if let Some(why) = &mut load_problem {
+            if quarantine(&path) {
+                why.push_str("; it was kept as the .corrupt file beside it");
             }
         }
-        Store { path, data: Mutex::new(data) }
+        Store { path, data: Mutex::new(Data { map, dirty: false }), writer, load_problem }
     }
 
     /// The file this store persists to.
@@ -92,21 +135,26 @@ impl Store {
         &self.path
     }
 
+    /// Why the settings on disk were ignored at open, when they were.
+    pub fn load_problem(&self) -> Option<&str> {
+        self.load_problem.as_deref()
+    }
+
     // A panic in another thread while holding the lock must not take the fan controller down
     // with it: the map is always in a valid state, so a poisoned lock is simply used.
-    fn lock(&self) -> MutexGuard<'_, Map<String, Value>> {
+    fn lock(&self) -> MutexGuard<'_, Data> {
         self.data.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
     /// The value of `key`, or `None` if never set. A stored JSON `null` is `Some(Value::Null)`:
     /// "set to nothing" (the daemon clears `uv_boot` that way) is different from "never set".
     pub fn get(&self, key: &str) -> Option<Value> {
-        self.lock().get(key).cloned()
+        self.lock().map.get(key).cloned()
     }
 
     /// A text value, or `default` when unset or not a string.
     pub fn get_str(&self, key: &str, default: &str) -> String {
-        match self.lock().get(key) {
+        match self.lock().map.get(key) {
             Some(Value::String(s)) => s.clone(),
             _ => default.to_owned(),
         }
@@ -114,39 +162,80 @@ impl Store {
 
     /// A boolean value, or `default` when unset or not a boolean.
     pub fn get_bool(&self, key: &str, default: bool) -> bool {
-        self.lock().get(key).and_then(Value::as_bool).unwrap_or(default)
+        self.lock().map.get(key).and_then(Value::as_bool).unwrap_or(default)
     }
 
     /// A numeric value, or `default` when unset or not a number.
     pub fn get_f64(&self, key: &str, default: f64) -> f64 {
-        self.lock().get(key).and_then(Value::as_f64).unwrap_or(default)
+        self.lock().map.get(key).and_then(Value::as_f64).unwrap_or(default)
     }
 
     /// An integer value, or `default` when unset or not an integer.
     pub fn get_i64(&self, key: &str, default: i64) -> i64 {
-        self.lock().get(key).and_then(Value::as_i64).unwrap_or(default)
+        self.lock().map.get(key).and_then(Value::as_i64).unwrap_or(default)
     }
 
     /// Changes one value and rewrites the file. The change always applies in memory; the `Err`
-    /// says only that it could not be persisted (read-only disk), which callers may log once and
-    /// otherwise ignore: the setting still holds for this boot.
+    /// says only that it could not be persisted (read-only or full disk), which callers may log
+    /// once and otherwise ignore: the setting still holds for this boot, and [`Store::flush`]
+    /// writes it as soon as the disk works again.
     pub fn set(&self, key: &str, value: Value) -> Result<(), FsError> {
         // The lock is held across the write so concurrent changes reach the disk in order and
         // the file never lags behind a value another thread already read.
         let mut data = self.lock();
-        data.insert(key.to_owned(), value);
-        let json = serde_json::to_vec(&*data).map_err(|e| FsError::Io {
+        data.map.insert(key.to_owned(), value);
+        self.persist(&mut data)
+    }
+
+    /// Removes the temp files a crashed write left beside the settings file (see
+    /// [`fsx::remove_stale_temps`]); the daemon calls it once at start, under its lock.
+    pub fn sweep_stale_temp(&self) -> usize {
+        fsx::remove_stale_temps(&self.path)
+    }
+
+    /// Whether the last write failed, so that what the daemon runs on is not what the file says.
+    pub fn is_dirty(&self) -> bool {
+        self.lock().dirty
+    }
+
+    /// Writes the settings again if the last write failed. `Ok(true)` when it did write,
+    /// `Ok(false)` when there was nothing to do. The daemon calls it from its loop, so a disk
+    /// that was full or read-only for a while ends up holding the settings made meanwhile
+    /// without waiting for the next change.
+    pub fn flush(&self) -> Result<bool, FsError> {
+        let mut data = self.lock();
+        if !data.dirty {
+            return Ok(false);
+        }
+        self.persist(&mut data).map(|()| true)
+    }
+
+    fn persist(&self, data: &mut Data) -> Result<(), FsError> {
+        let json = serde_json::to_vec(&data.map).map_err(|e| FsError::Io {
             op: "encode",
             path: self.path.clone(),
             source: std::io::Error::other(e.to_string()),
         })?;
-        fsx::write_atomic_mkdir(&self.path, &json, 0o644)
+        let result = (self.writer)(&self.path, &json);
+        data.dirty = result.is_err();
+        result
     }
 
     /// A copy of every setting, for the `state` reply.
     pub fn snapshot(&self) -> Map<String, Value> {
-        self.lock().clone()
+        self.lock().map.clone()
     }
+}
+
+/// Moves an unusable settings file aside; `true` when that worked. Only regular files are moved.
+fn quarantine(path: &Path) -> bool {
+    let is_file = std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_file());
+    if !is_file {
+        return false;
+    }
+    let mut name = path.as_os_str().to_owned();
+    name.push(".corrupt");
+    std::fs::rename(path, PathBuf::from(name)).is_ok()
 }
 
 /// One value in the live state. Its text form (`1`/`0` for a boolean) is what status bars read

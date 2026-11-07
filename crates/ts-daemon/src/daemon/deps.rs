@@ -358,6 +358,11 @@ pub struct Deps {
     /// The merged configuration (a configuration with problems has already been replaced by the
     /// built-in defaults by the caller, as the Python daemon did at start).
     pub config: Config,
+    /// Problems found while the configuration was loaded (the caller already replaced a
+    /// configuration with problems by the built-in defaults). They are logged at start and shown
+    /// in the live state as `warning`, so a typo in a config file is visible and not only a line
+    /// in a journal nobody reads.
+    pub warnings: Vec<String>,
     /// The persistent settings.
     pub state: Arc<Store>,
     /// The firmware.

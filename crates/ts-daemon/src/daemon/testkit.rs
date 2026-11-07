@@ -24,7 +24,7 @@ use ts_domain::powermgr::{CpuState, RestoreReport, TakeoverReport, UnitStatus};
 use ts_domain::undervolt::Offsets;
 use ts_foundation::config::{AlertsConfig, Config};
 use ts_foundation::sdnotify::Notifier;
-use ts_foundation::state::Store;
+use ts_foundation::state::{Store, Writer};
 use ts_ipc::wire::{Args, Request};
 use ts_platform::firmware::{Device, FirmwareError, Simulator, Snapshot};
 use ts_platform::hw::Hw;
@@ -94,6 +94,12 @@ impl FakeClock {
 
     /// The wall clock runs but the monotonic one stands still: a suspended machine.
     pub(super) fn suspend(&self, seconds: f64) {
+        locked(&self.times).0 += seconds;
+    }
+
+    /// Only the wall clock moves, by any amount (negative: set back by an administrator, NTP or a
+    /// dead RTC battery).
+    pub(super) fn step_wall(&self, seconds: f64) {
         locked(&self.times).0 += seconds;
     }
 
@@ -186,9 +192,20 @@ pub(super) struct FaultDevice {
     pub(super) sensors_dead: AtomicBool,
     /// Every command the firmware was sent, in order.
     pub(super) sent: Mutex<Vec<String>>,
+    /// Panics (once) when the firmware is sent its n-th command (counting from 1; 0 = never):
+    /// a crash injected into whatever step of the daemon sends that command.
+    pub(super) panic_at: AtomicUsize,
+    /// Runs before every command with its number: a suspend, a signal, anything that happens
+    /// "in the middle of a tick".
+    pub(super) hook: Mutex<Option<Hook>>,
 }
 
 impl FaultDevice {
+    /// Runs `f` before every firmware command, with the command's number (from 1).
+    pub(super) fn on_command(&self, f: impl Fn(usize) + Send + Sync + 'static) {
+        *locked(&self.hook) = Some(Arc::new(f));
+    }
+
     /// How many commands starting with `prefix` were sent.
     pub(super) fn count(&self, prefix: &str) -> usize {
         locked(&self.sent).iter().filter(|c| c.starts_with(prefix)).count()
@@ -197,7 +214,19 @@ impl FaultDevice {
 
 impl Device for FaultDevice {
     fn run(&self, command: &str) -> Result<String, FirmwareError> {
-        locked(&self.sent).push(command.to_owned());
+        let n = {
+            let mut sent = locked(&self.sent);
+            sent.push(command.to_owned());
+            sent.len()
+        };
+        let hook = locked(&self.hook).clone();
+        if let Some(hook) = hook {
+            hook(n);
+        }
+        if self.panic_at.load(Ordering::SeqCst) == n {
+            self.panic_at.store(0, Ordering::SeqCst);
+            panic!("injected crash at firmware command {n}: {command}");
+        }
         if self.sensors_dead.load(Ordering::SeqCst) && command.starts_with("sensors") {
             return Err(FirmwareError::BadReply { detail: "sensors do not answer".to_owned() });
         }
@@ -231,9 +260,20 @@ pub(super) struct FakeSensors {
     state: Mutex<SensorState>,
     pub(super) gpu_streams: AtomicUsize,
     pub(super) gpu_releases: AtomicUsize,
+    /// Calls of any reading so far, and the call (counting from 1; 0 = never) that panics once.
+    pub(super) calls: AtomicUsize,
+    pub(super) panic_at: AtomicUsize,
 }
 
 impl FakeSensors {
+    fn hit(&self) {
+        let n = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
+        if self.panic_at.load(Ordering::SeqCst) == n {
+            self.panic_at.store(0, Ordering::SeqCst);
+            panic!("injected crash at sensor call {n}");
+        }
+    }
+
     fn new() -> Self {
         Self {
             state: Mutex::new(SensorState {
@@ -247,6 +287,8 @@ impl FakeSensors {
             }),
             gpu_streams: AtomicUsize::new(0),
             gpu_releases: AtomicUsize::new(0),
+            calls: AtomicUsize::new(0),
+            panic_at: AtomicUsize::new(0),
         }
     }
 
@@ -281,24 +323,29 @@ impl FakeSensors {
 
 impl Sensors for FakeSensors {
     fn cpu_load(&self) -> f64 {
+        self.hit();
         let s = locked(&self.state).clone();
         assert!(!s.explode, "sensor exploded");
         s.load
     }
 
     fn package_temp(&self) -> Option<f64> {
+        self.hit();
         locked(&self.state).pkg
     }
 
     fn battery_pct(&self) -> f64 {
+        self.hit();
         locked(&self.state).battery
     }
 
     fn gpu(&self) -> GpuReading {
+        self.hit();
         locked(&self.state).gpu
     }
 
     fn on_ac(&self) -> bool {
+        self.hit();
         locked(&self.state).ac
     }
 
@@ -621,6 +668,12 @@ pub(super) struct Setup {
     /// The notifier (a socket path to listen on), disabled by default.
     pub(super) notifier: Notifier,
     pub(super) watchdog_every: Option<Duration>,
+    /// How the settings reach the disk (default: the real atomic writer in the temp directory).
+    pub(super) state_writer: Option<Writer>,
+    /// Problems the caller found while loading the configuration.
+    pub(super) warnings: Vec<String>,
+    /// Text written to the settings file before the daemon opens it (a corrupt one, say).
+    pub(super) state_file: Option<String>,
 }
 
 impl Default for Setup {
@@ -628,7 +681,15 @@ impl Default for Setup {
     fn default() -> Self {
         let mut config = Config::default();
         config.user = "tester".to_owned();
-        Self { config, settings: Vec::new(), notifier: Notifier::disabled(), watchdog_every: None }
+        Self {
+            config,
+            settings: Vec::new(),
+            notifier: Notifier::disabled(),
+            watchdog_every: None,
+            state_writer: None,
+            warnings: Vec::new(),
+            state_file: None,
+        }
     }
 }
 
@@ -651,6 +712,8 @@ impl Rig {
             stuck_stop: AtomicBool::new(false),
             sensors_dead: AtomicBool::new(false),
             sent: Mutex::new(Vec::new()),
+            panic_at: AtomicUsize::new(0),
+            hook: Mutex::new(None),
         });
         let hw = Hw::new(device.clone()).with_sleeper(Arc::new(|_| {}));
         // The state of the Python test: only these four settings, so the curve and the Smart
@@ -667,7 +730,13 @@ impl Rig {
         for (k, v) in &setup.settings {
             defaults.insert((*k).to_owned(), v.clone());
         }
-        let state = Arc::new(Store::open(dir.join("state.json"), defaults));
+        if let Some(text) = &setup.state_file {
+            fs::write(dir.join("state.json"), text).unwrap();
+        }
+        let state = Arc::new(match setup.state_writer.clone() {
+            Some(writer) => Store::open_with(dir.join("state.json"), defaults, writer),
+            None => Store::open(dir.join("state.json"), defaults),
+        });
         let clock = Arc::new(FakeClock::new(1_800_000_000.0));
         let sleeper = Arc::new(FakeSleeper {
             clock: Arc::clone(&clock),
@@ -695,6 +764,7 @@ impl Rig {
         let stop = StopToken::new();
         let deps = Deps {
             config: setup.config,
+            warnings: setup.warnings,
             state: Arc::clone(&state),
             hw,
             sensors: sensors.clone(),

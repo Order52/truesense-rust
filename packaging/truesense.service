@@ -16,6 +16,10 @@ ExecStopPost=-@PREFIX@/bin/truesense fan auto
 ExecStopPost=/bin/sh -c 'for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_max_freq; do cat "$(dirname $f)/cpuinfo_max_freq" > $f; done; true'
 Restart=always
 RestartSec=1
+# another daemon already runs (exit 78): do not retry every second, see docs/RESILIENCE.md
+RestartPreventExitStatus=78
+# a daemon that ignores SIGTERM is killed after 10 s, not 90: its ExecStopPost then hands the fans back
+TimeoutStopSec=10
 Nice=-5
 OOMScoreAdjust=-900
 # hardening (the daemon must write sysfs power/cpufreq files, so kernel tunables stay writable)

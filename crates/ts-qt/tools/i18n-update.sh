@@ -27,6 +27,8 @@ files=(i18n/en.ts i18n/ar.ts)
 awk '
   /<source>/ { src = $0; sub(/^[ \t]*<source>/, "", src); sub(/<\/source>[ \t]*$/, "", src) }
   /<translation type="unfinished"><\/translation>|<translation type="unfinished"\/>/ { print "        <translation>" src "</translation>"; next }
+  # lupdate pre-fills an id whose source text another id already has, still marked unfinished.
+  /<translation type="unfinished">.*<\/translation>/ { print "        <translation>" src "</translation>"; next }
   { print }
 ' i18n/en.ts > "$tmp/en.ts" && mv "$tmp/en.ts" i18n/en.ts
 echo "updated: $(grep -c '<message' i18n/en.ts) messages; untranslated in ar: $(grep -c 'type="unfinished"' i18n/ar.ts)"

@@ -148,6 +148,9 @@ pub struct Daemon {
     /// Itself, for the code that needs an `Arc` to hand to a thread.
     pub(super) me: Weak<Daemon>,
     pub(super) cfg: Config,
+    /// Problems found at start (invalid configuration, unusable settings file), for the log and
+    /// the live state.
+    pub(super) warnings: Vec<String>,
     pub(super) state: Arc<Store>,
     pub(super) hw: Hw,
     pub(super) sensors: Arc<dyn Sensors>,
@@ -187,6 +190,7 @@ impl Daemon {
     pub fn new(deps: Deps) -> Arc<Daemon> {
         let Deps {
             config,
+            mut warnings,
             state,
             hw,
             sensors,
@@ -214,6 +218,9 @@ impl Daemon {
             log,
             stop,
         } = deps;
+        if let Some(why) = state.load_problem() {
+            warnings.push(format!("the saved settings were not used: {why}"));
+        }
         let inner = Inner::build(
             &config,
             &state,
@@ -228,6 +235,7 @@ impl Daemon {
         Arc::new_cyclic(|me| Daemon {
             me: me.clone(),
             cfg: config,
+            warnings,
             state,
             hw,
             sensors,
@@ -368,7 +376,14 @@ impl Daemon {
     /// firmware and the clock cap is lifted first, then the socket is closed, then the
     /// hand-back is repeated for anything a request in flight did meanwhile.
     pub fn run(self: &Arc<Self>, socket: impl Into<PathBuf>) -> Result<(), DaemonError> {
-        let config = ServerConfig::new(socket.into(), self.allowed_uids());
+        let socket = socket.into();
+        // First of all, before the socket file or any device is touched: a second daemon must
+        // change nothing (and must not hand the first one's fans back to the firmware).
+        let (_instance, lock_problem) = super::instance::acquire(&socket)?;
+        if let Some(problem) = lock_problem {
+            self.warn(problem);
+        }
+        let config = ServerConfig::new(socket, self.allowed_uids());
         let mut server = Server::start(config, self.router()).map_err(DaemonError::Socket)?;
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             self.boot();
