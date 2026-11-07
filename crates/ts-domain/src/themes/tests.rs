@@ -389,8 +389,16 @@ impl KeyboardControl for NoKeyboard {
 }
 struct NoRear;
 impl RearControl for NoRear {
-    fn rear_set(&self, _: &RearSettings) -> Result<HwRear, HwError> {
-        Err(HwError::Invalid("no rear in this test".into()))
+    fn rear_set(&self, settings: &RearSettings) -> Result<HwRear, HwError> {
+        Ok(HwRear {
+            raw: None,
+            mode: ts_platform::hw::Reading::Known(settings.mode),
+            speed: 3,
+            brightness: 100,
+            direction: None,
+            color: settings.color,
+            zones: None,
+        })
     }
 }
 
@@ -468,9 +476,8 @@ fn a_rear_only_look_leaves_the_running_theme_alone() {
     let rear: crate::looks::Rear =
         serde_json::from_value(json!({"mode": "static", "color": "ff0000", "speed": 2, "brightness": 50}))
             .unwrap();
-    // The fake rear light refuses (it is not under test); the theme must not have been touched
-    // by the attempt either way.
-    let _ = looks.apply(&Look { rear: Some(rear), ..Look::default() });
+    let done = looks.apply(&Look { rear: Some(rear), ..Look::default() }).unwrap();
+    assert_eq!(done, ["rear: static"]);
     assert!(r.store.active().is_some());
 }
 

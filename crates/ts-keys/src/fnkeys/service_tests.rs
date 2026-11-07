@@ -1054,7 +1054,11 @@ fn the_service_over_the_simulated_machine_waits_for_the_keyboard_and_stops() {
     let (services, _rig) = Services::simulated(&dir).expect("services");
     let api = Api::new(services);
     let mut env = Env::from_api(&api);
-    assert_eq!(env.background.len(), 1, "the per-key animation loop comes with the service");
+    assert_eq!(
+        env.background.len(),
+        2,
+        "the per-key animation loop and the theme renderer come with the service"
+    );
     env.background.clear();
     env.timing.max_wait = ms(5);
     let lines = Arc::new(Mutex::new(Vec::<String>::new()));

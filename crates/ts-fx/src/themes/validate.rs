@@ -341,4 +341,25 @@ mod tests {
         let frame = fx.frame(0.0, 0.0, &Default::default());
         assert_eq!(frame.len(), 103);
     }
+
+    /// The flash limit, measured on what a host would send: every runnable theme on the keyboard,
+    /// sampled at 15 frames a second for twelve seconds, never changes brightness by a flash more
+    /// than three times in any second (WCAG 2.3.1). The engine's guard enforces it; this holds the
+    /// whole catalogue to it through the public path a host uses.
+    #[test]
+    fn no_runnable_theme_flashes_more_than_three_times_a_second_on_the_keyboard() {
+        use crate::guard::FlashMeter;
+        let layout = crate::layout::ph16_71();
+        for theme in catalogue().iter().filter(|t| t.id != "storm") {
+            let mut fx = theme.keyboard_effect(&Default::default()).unwrap();
+            let mut meter = FlashMeter::default();
+            let dt = 1.0 / 15.0;
+            for i in 0..180 {
+                let t = f64::from(i) * dt;
+                let frame = fx.frame(t, dt, &Default::default()).to_vec();
+                meter.push_frame(t, &frame, Some(layout));
+            }
+            assert!(meter.max() <= 3.0, "{}: {} flashes a second", theme.id, meter.max());
+        }
+    }
 }

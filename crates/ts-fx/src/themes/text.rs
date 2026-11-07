@@ -524,4 +524,15 @@ mod tests {
         assert_eq!(pick(Some(&de), "hearth.custom.0", "Embers"), "Embers");
         assert_eq!(pick(None, "hearth.name", "Hearth"), "Hearth");
     }
+
+    #[test]
+    fn a_language_is_found_by_its_code_and_the_code_comes_back() {
+        assert_eq!(Lang::from_code("en"), Some(Lang::En));
+        for (lang, code_text) in FILES.iter().map(|(c, _)| (Lang::from_code(c), *c)) {
+            let lang = lang.expect(code_text);
+            assert_eq!(code(lang), Some(code_text));
+        }
+        assert_eq!(Lang::from_code("fr"), None);
+        assert_eq!(Lang::from_code(""), None);
+    }
 }
