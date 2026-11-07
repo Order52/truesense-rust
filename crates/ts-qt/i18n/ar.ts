@@ -71,34 +71,6 @@
         <source>This page could not be loaded.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message id="home_live">
-        <source>Live</source>
-        <translation>مباشر</translation>
-    </message>
-    <message id="home_ac">
-        <source>AC</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="home_battery">
-        <source>Battery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="home_cpu_temp">
-        <source>CPU temperature</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="home_gpu_temp">
-        <source>GPU temperature</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="home_fans">
-        <source>Fans</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="home_cpu_load">
-        <source>CPU load</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message id="notfound_title">
         <source>Page not found</source>
         <translation type="unfinished"></translation>
@@ -125,7 +97,7 @@
     </message>
     <message id="settings_theme_system">
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">النظام</translation>
     </message>
     <message id="settings_language">
         <source>Language</source>
@@ -226,6 +198,574 @@
     <message id="tray_quit">
         <source>Quit</source>
         <translation>إنهاء</translation>
+    </message>
+    <message id="home_mode_eco">
+        <source>Eco</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_mode_quiet">
+        <source>Quiet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_mode_balanced">
+        <source>Balanced</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_mode_performance">
+        <source>Performance</source>
+        <translation type="unfinished">الأداء</translation>
+    </message>
+    <message id="home_mode_turbo">
+        <source>Turbo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_control_manual">
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_control_native">
+        <source>Native</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_control_smart">
+        <source>Smart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_hint_manual">
+        <source>You choose the mode. A mode you pick stays until you change it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_hint_native">
+        <source>Like PredatorSense on Windows: Balanced on power, Eco on battery, nothing else.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_hint_smart">
+        <source>Switches by heat, load and battery: Performance and Turbo when gaming or heavy work (backs off if it overheats), Eco on battery. A mode you pick yourself ends by itself when the situation changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fan_smart">
+        <source>Smart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fan_auto">
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fan_max">
+        <source>Max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fan_manual">
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fanhint_smart">
+        <source>Follows your fan curve: quiet when cool, faster as it heats. Edit it under Cooling.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fanhint_auto">
+        <source>The firmware&apos;s own control, exactly like Auto in PredatorSense on Windows (the fans stop when cool).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fanhint_max">
+        <source>Both fans at full speed until you pick another mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fanhint_manual">
+        <source>The sliders go from 20 to 100 %. Turn fans off asks first and only works while cool; the fans return to Auto by themselves if it gets warm. On this laptop the firmware may keep them at a minimum speed, and TrueSense tells you what they really do.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_optimus">
+        <source>Optimus</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_nvidia">
+        <source>Nvidia</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_auto">
+        <source>Auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_kind_look">
+        <source>Look</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_kind_curve">
+        <source>Fan curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_kind_smart">
+        <source>Smart profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_kind_profile">
+        <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_power">
+        <source>Power mode: %1 (held 30 min)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_control">
+        <source>Mode control: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_smart">
+        <source>Smart auto profile in use: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_curve">
+        <source>Fan curve in use: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_fan_smart">
+        <source>Fans: smart</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_fan_auto">
+        <source>Fans: firmware auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_fan_max">
+        <source>Fans: max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_fan_manual">
+        <source>Fans: manual %1 % / %2 %</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_title">
+        <source>Turn the fans off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_1">
+        <source>Stop both fans?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_2">
+        <source>With the fans off the laptop can overheat quickly under any load. This is only for quiet, light use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_3">
+        <source>It is only allowed while the CPU is under 60 °C and the GPU under 55 °C. If the CPU reaches 70 °C or the GPU 65 °C, TrueSense gives the fans back to the firmware automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_4">
+        <source>On this laptop the firmware may keep the fans at a minimum speed. TrueSense checks the fan speed afterwards and tells you what really happened.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_confirm">
+        <source>Turn fans off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_checking">
+        <source>Fans stopped. Checking what they really do…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_still">
+        <source>The firmware accepted the stop but the fans still turn (CPU %1, GPU %2): it keeps a minimum speed in manual mode, so the fans cannot really be stopped on this laptop. They stay under TrueSense&apos;s watch; Auto brings them back to the firmware.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_stopped">
+        <source>Fans stopped (confirmed by the fan speed). They come back on Auto automatically if the laptop gets warm.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_title">
+        <source>Change the GPU mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_text">
+        <source>Switch the GPU mode to %1? It takes effect after the next reboot. Pick your previous mode again before rebooting to cancel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_apply">
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_gpu">
+        <source>GPU mode: %1 (reboot to apply)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_banner_daemon">
+        <source>The TrueSense service is not running. Smart auto, power limits and undervolt are unavailable until it starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_banner_action">
+        <source>Open Health</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_cpu">
+        <source>CPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_load">
+        <source>Load %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_gpu">
+        <source>GPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_fans">
+        <source>Fans</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_fan_sub">
+        <source>CPU %1 · GPU %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_battery">
+        <source>Battery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_ac">
+        <source>Plugged in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_tile_batt">
+        <source>On battery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fav_title">
+        <source>Favourites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_power_title">
+        <source>Performance mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_power_right">
+        <source>CPU: %1 · %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_control_label">
+        <source>Mode control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_smart_profile">
+        <source>Smart profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_edit">
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_now">
+        <source>Now: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_hold">
+        <source>Your pick stays until something changes (plug, a game starting or stopping, heat) or %1 more. Then %2 auto takes over by itself.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_resume">
+        <source>Resume auto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_toast_resume">
+        <source>Auto is back in charge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fans_title">
+        <source>Fans</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_curve_label">
+        <source>Smart curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_stopped">
+        <source>The fans are stopped. Pick another mode or move a slider to start them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_linked">
+        <source>Control both fans together</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_fan_speed">
+        <source>Fan speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_cpu_fan">
+        <source>CPU fan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_fan">
+        <source>GPU fan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_label">
+        <source>Fans off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_sub">
+        <source>Asks first; only allowed while cool.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_off_button">
+        <source>Turn fans off…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_card">
+        <source>GPU mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_right">
+        <source>GPU: %1 · %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_none">
+        <source>This laptop has no GPU mode switch.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_reboot">
+        <source>A change needs a reboot to take effect.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="home_gpu_pending">
+        <source>Reboot to switch from %1 to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_toast_applied">
+        <source>Profile &apos;%1&apos; applied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_toast_next">
+        <source>Next profile applied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_delete_title">
+        <source>Delete profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_delete_text">
+        <source>Delete the profile &apos;%1&apos;? Favourites that point to it are kept and shown as missing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_delete_confirm">
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_toast_deleted">
+        <source>Deleted profile &apos;%1&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_name_invalid">
+        <source>Give the profile a name: letters, digits, . _ - (up to 40).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_default_description">
+        <source>saved from the window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_toast_saved">
+        <source>Saved profile &apos;%1&apos; (the current power, fans, rear light, battery, screen, boot sound and audio)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_kind_look">
+        <source>Look</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_kind_curve">
+        <source>Fan curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_kind_smart">
+        <source>Smart profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_kind_profile">
+        <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_power_mode">
+        <source>Power mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_power_auto">
+        <source>Mode control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_fan_mode">
+        <source>Fans</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_fan_duty">
+        <source>Fan speed (CPU / GPU, %)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_fan_curve">
+        <source>Fan curve</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_kb_effect">
+        <source>Keyboard effect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_kb_profile">
+        <source>Key set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_kb_backlight">
+        <source>Keyboard backlight</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_kb_timeout">
+        <source>Keyboard light off after 30 s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_rear_effect">
+        <source>Rear light effect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_rear_state">
+        <source>Rear light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_battery_limit">
+        <source>80 % battery limit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_battery_usb">
+        <source>USB charging while off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_overdrive">
+        <source>Screen overdrive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_boot_sound">
+        <source>Boot sound</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_audio_output">
+        <source>Audio output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_voice_headset">
+        <source>Headset noise reduction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_part_voice_array">
+        <source>Built-in noise reduction</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_on">
+        <source>on</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_off">
+        <source>off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_intro">
+        <source>A profile is a one-click bundle: it sets the power mode, fans, rear light, battery limit, screen overdrive, boot sound and audio in one go. It applies once (the power mode is then held like when you pick a tile). A profile changes only what it lists: anything it does not list stays as it is.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_title">
+        <source>Profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_last">
+        <source>Last applied: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_none">
+        <source>No profiles yet. Set things the way you like and save them below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_yours">
+        <source>yours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_shipped">
+        <source>shipped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_current">
+        <source>last applied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_hide">
+        <source>Hide details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_details">
+        <source>Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_delete">
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_apply">
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_nothing">
+        <source>This profile does not change anything.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_next">
+        <source>Apply next profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_save_title">
+        <source>Save the current setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_save_help">
+        <source>Set everything the way you like first, then save: TrueSense records the current power mode, fans, rear light, battery, screen, boot sound and audio. Keyboard colours are saved under Lighting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_name_placeholder">
+        <source>Name, e.g. my-gaming</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_desc_placeholder">
+        <source>Description (optional)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_save">
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_name_help">
+        <source>Names use letters, digits, . _ - (up to 40).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_title">
+        <source>Favourites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_empty">
+        <source>Nothing is starred yet. Use the star on a look, a fan curve, a Smart profile or a profile to keep it here for one-click use on Home and on the keys.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_missing">
+        <source>%1, no longer exists</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_up">
+        <source>Move up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_down">
+        <source>Move down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_apply">
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_fav_remove">
+        <source>Remove from favourites</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_differs">
+        <source>Smart auto profiles decide how the power mode follows load and heat. Fan curves are only the fan shape. Lighting looks are only lights. Key bindings are only the PREDATOR key. A profile here sets all of it once; it does not keep watching.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

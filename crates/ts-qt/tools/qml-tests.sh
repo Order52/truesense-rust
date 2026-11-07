@@ -22,7 +22,8 @@ mkdir -p "$DIR"
 # The exported qmldir names the static Rust plugin (the Bus), which qmltestrunner does not have:
 # keep the component list, drop the plugin lines.
 grep -vE '^(optional plugin|plugin|classname|typeinfo|prefer) ' "$EXPORT/qmldir" > "$DIR/qmldir"
-ln -s "$PWD/$EXPORT/qml" "$DIR/qml" 2>/dev/null || ln -s "$(cd "$EXPORT" && pwd)/qml" "$DIR/qml"
+# (an absolute CARGO_TARGET_DIR must work too: resolve the directory instead of prefixing $PWD)
+ln -s "$(cd "$EXPORT" && pwd)/qml" "$DIR/qml"
 # The icons are Qt resources in the app; the exported copy has only the .qml files.
 ln -sfn "$PWD/crates/ts-qt/qml/icons" "$EXPORT/qml/icons"
 export QT_QPA_PLATFORM=offscreen QML_XHR_ALLOW_FILE_READ=1 QT_FORCE_STDERR_LOGGING=1
