@@ -103,7 +103,7 @@ t_check_names_the_qt_runtime_packages_per_family_as_optional() {
   done
   # the verdict is the prerequisites' alone: with the whole module toolchain present (fake programs, fake headers) the exit code is 0 although no Qt window is there
   local bin; bin=$(tmpdir); for w in systemctl dkms make gcc; do fake_program "$bin" "$w" "exit 0"; done
-  run "PATH=$bin:$(path_with sh env cat head cut tr uname grep awk sed ls getent realpath dirname date id)" "TRUESENSE_OS_RELEASE=$(os_release arch)" TRUESENSE_KERNEL=6.1.0-test -- "$BASH_BIN" "$INSTALL" --check
+  run "PATH=$bin:$(path_with sh env cat head cut tr uname grep awk sed ls getent realpath dirname date id)" "TRUESENSE_OS_RELEASE=$(os_release arch)" TRUESENSE_KERNEL=6.1.0-test -- "$BASH_BIN" "$INSTALL" --check --prefix="$(tmpdir)"
   assert_contains "$R_OUT" "optional: the Qt window"; assert_contains "$R_OUT" "installed now: no"
 }
 
