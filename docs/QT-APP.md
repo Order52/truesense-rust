@@ -147,3 +147,28 @@ the desktop has one and `minimise_to_tray` is on, otherwise ends the program. On
 `truesense-qt [--page NAME]` sends `show NAME` over `$XDG_RUNTIME_DIR/truesense-qt.sock` (0600; the
 lock file `truesense-qt.lock` decides staleness) to the open window, which navigates and raises
 itself, and exits 0. Window class and Wayland app id: `truesense` (`TRUESENSE_APP_ID` for tests).
+
+## Rendering
+
+The app draws with Qt Quick's **software scene graph** by default: about 130 MB less than OpenGL on
+the NVIDIA laptop, and the pages are flat enough that the CPU renderer is as smooth. Pick another
+route when needed:
+
+| Route | How |
+|---|---|
+| `TRUESENSE_QT_RENDER=software\|opengl\|vulkan` | environment, wins over everything |
+| `"renderer": "opengl"` in `ui.json` | per user |
+| `QT_QUICK_BACKEND` | Qt's own variable, honoured if none of the above is set |
+
+An OpenGL choice is probed first (a context is created and thrown away) and falls back to software
+when the driver cannot give one.
+
+Two rules keep an idle window idle, and `crates/ts-qt/tests/render.rs` pins them:
+
+- **No `Canvas`.** Charts and gauges are `QtQuick.Shapes` and `Rectangle` items, so only an item
+  whose data changed is repainted; a JavaScript canvas repaints in full on every change.
+- **No idle animation.** A `Behavior` may animate a user action, never a live value that the
+  store refreshes every second (that was ~50 to 140 frames per second at 165 Hz).
+
+`tools/qtprofile/` measures a page (`profile`), compares two routes (`compare`), looks for flicker
+(`glitch`) and counts wakeups (`bench`).
