@@ -1,1 +1,0 @@
-//! powermgr: not ported yet.
