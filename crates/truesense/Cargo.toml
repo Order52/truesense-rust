@@ -26,3 +26,5 @@ ts-keys = { path = "../ts-keys" }
 ts-system = { path = "../ts-system" }
 ts-domain = { path = "../ts-domain" }
 ts-decision = { path = "../ts-decision" }
+libc.workspace = true
+serde_json.workspace = true
