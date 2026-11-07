@@ -28,7 +28,7 @@ use crate::format;
 use crate::json::{at, f64_at, list_at, str_at};
 
 /// How many favourites the menu lists (the Favourites page has all of them).
-pub const MENU_FAVOURITES: usize = 5;
+pub(crate) const MENU_FAVOURITES: usize = 5;
 
 /// The fan modes the tray can switch to. `manual` needs a duty, so it is only ever shown as the
 /// current state, never offered (a menu click cannot say how fast).

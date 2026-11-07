@@ -19,11 +19,12 @@ use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 use ts_platform::hw::CommandRunner;
 
 /// The smallest PL1 or PL2 ever written, in watts.
@@ -32,13 +33,13 @@ pub const MIN_W: u32 = 25;
 pub const MAX_W: u32 = 120;
 
 /// PL1 (sustained) range that is "safe": inside it the cooling keeps up (stock is 80 W).
-pub const SAFE_PL1_W: (u32, u32) = (35, 80);
+pub(crate) const SAFE_PL1_W: (u32, u32) = (35, 80);
 /// PL2 (burst) range that is "safe".
-pub const SAFE_PL2_W: (u32, u32) = (35, 100);
+pub(crate) const SAFE_PL2_W: (u32, u32) = (35, 100);
 /// Past this PL1 the cooling cannot keep up and the CPU throttles hard or overheats.
-pub const DANGER_PL1_W: u32 = 100;
+pub(crate) const DANGER_PL1_W: u32 = 100;
 /// Past this PL2 the cooling cannot keep up.
-pub const DANGER_PL2_W: u32 = 115;
+pub(crate) const DANGER_PL2_W: u32 = 115;
 
 /// The powercap zone of the CPU package. `constraint_0` is PL1 (long term), `constraint_1` is
 /// PL2 (short term).
@@ -421,7 +422,7 @@ impl PowerLimits {
     /// this laptop), so a sleeping card is not asked. Its limits do not change while it sleeps,
     /// so the last answer from an awake card is shown instead (`None` before there was one).
     fn nvidia_limits_without_waking(&self) -> Option<NvidiaLimits> {
-        let mut last = self.last_nvidia.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut last = locked(&self.last_nvidia);
         if self.gpu_asleep() {
             return last.clone();
         }

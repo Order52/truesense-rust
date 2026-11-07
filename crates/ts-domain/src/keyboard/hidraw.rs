@@ -4,6 +4,7 @@
 //! usage page `0xFF02` (`06 02 FF`); the keyboard's other interfaces share vendor and product
 //! id. This is the only place of the crate that needs `unsafe`: the two ioctls that send and
 //! read a feature report (`HIDIOCSFEATURE`, `HIDIOCGFEATURE`) have no safe wrapper in `std`.
+#![allow(unsafe_code)]
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};

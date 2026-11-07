@@ -16,7 +16,7 @@ const PARAMS: &[ParamDef] = &[
     num("glow", 0.0, 40.0, 12.0),
 ];
 
-pub static LAVA: EffectDef = EffectDef::software("lava", "Lava Lamp", PARAMS, create);
+pub(crate) static LAVA: EffectDef = EffectDef::software("lava", "Lava Lamp", PARAMS, create);
 
 /// Blobs in the lamp; `blobs` decides how many of them move.
 const B: usize = 6;

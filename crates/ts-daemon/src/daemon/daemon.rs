@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError, Weak};
+use std::sync::{Arc, Mutex, MutexGuard, Weak};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -29,6 +29,7 @@ use ts_domain::power::RawLimits;
 use ts_foundation::config::Config;
 use ts_foundation::sdnotify::Notifier;
 use ts_foundation::state::{LiveState, Store};
+use ts_foundation::sync::locked;
 use ts_ipc::server::{Server, ServerConfig};
 use ts_platform::hw::{Coded, FanDuty, FanMode, Hw, HwError, Reading};
 use ts_system::osd::UserDirectory;
@@ -269,7 +270,7 @@ impl Daemon {
     /// Takes the state lock, also when a panic left it poisoned: the data is valid (every change
     /// is a field assignment) and the fan fallback and the shutdown must still run.
     pub(super) fn lock(&self) -> MutexGuard<'_, Inner> {
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.inner)
     }
 
     // ---- the settings the decisions depend on ----------------------------------------------------
@@ -351,7 +352,7 @@ impl Daemon {
     /// and must not fill the journal.
     pub(super) fn warn_every(&self, key: &'static str, seconds: f64, message: String) {
         let now = self.clock.mono();
-        let mut last = self.throttle.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut last = locked(&self.throttle);
         if last.get(key).is_some_and(|t| now - t < seconds) {
             return;
         }
@@ -442,8 +443,7 @@ impl Daemon {
 
     /// Waits for the threads the daemon started (they stop quickly: the stop token is set).
     pub fn join_background(&self) {
-        let handles: Vec<JoinHandle<()>> =
-            std::mem::take(&mut *self.background.lock().unwrap_or_else(PoisonError::into_inner));
+        let handles: Vec<JoinHandle<()>> = std::mem::take(&mut *locked(&self.background));
         for handle in handles {
             let _ = handle.join();
         }

@@ -21,10 +21,10 @@ use serde::{Deserialize, Serialize};
 use ts_platform::firmware::DEVICE_PATH;
 
 /// The units that run as root; `sudo truesense service repair` manages them.
-pub const SYSTEM_UNITS: [&str; 2] = ["truesense.service", "truesense-health.timer"];
+pub(crate) const SYSTEM_UNITS: [&str; 2] = ["truesense.service", "truesense-health.timer"];
 
 /// The units that run in the user's session; `truesense service repair` manages them without sudo.
-pub const USER_UNITS: [&str; 4] = [
+pub(crate) const USER_UNITS: [&str; 4] = [
     "truesense-keys.service",
     "truesense-audio.service",
     "truesense-startup.service",
@@ -32,11 +32,11 @@ pub const USER_UNITS: [&str; 4] = [
 ];
 
 /// The daemon's control socket.
-pub const SOCKET_PATH: &str = "/run/truesense/truesense.sock";
+pub(crate) const SOCKET_PATH: &str = "/run/truesense/truesense.sock";
 
 /// The exit code that stands for "could not run it at all" (not installed, timed out), with the
 /// reason in standard error: the shell's own convention.
-pub const NOT_RUNNABLE: i32 = 127;
+pub(crate) const NOT_RUNNABLE: i32 = 127;
 
 /// How long a repair lets one program run: `systemctl restart` and `dkms autoinstall` can take
 /// a while.
@@ -54,9 +54,9 @@ const OUTPUT_LIMIT: u64 = 4 << 20;
 pub struct Output {
     /// Standard output.
     pub stdout: String,
-    /// Standard error; for [`NOT_RUNNABLE`] the reason it did not run.
+    /// Standard error; for `NOT_RUNNABLE` the reason it did not run.
     pub stderr: String,
-    /// The exit status, [`NOT_RUNNABLE`] when the program did not run, -1 when a signal ended it.
+    /// The exit status, `NOT_RUNNABLE` when the program did not run, -1 when a signal ended it.
     pub code: i32,
 }
 
@@ -78,7 +78,7 @@ impl Output {
 }
 
 /// Runs one external program to completion. It never fails: a program that cannot start is an
-/// [`Output`] with code [`NOT_RUNNABLE`], because every caller treats both the same way. The
+/// [`Output`] with code `NOT_RUNNABLE`, because every caller treats both the same way. The
 /// doctor and the service repair share it; tests replace it with a fake.
 pub trait Runner: Send + Sync {
     /// Runs `program` with `args` and returns what it left behind.

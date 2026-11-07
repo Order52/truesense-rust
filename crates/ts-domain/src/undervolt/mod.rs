@@ -32,11 +32,12 @@ use std::fs::{File, OpenOptions};
 use std::io;
 use std::os::unix::fs::FileExt;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::Value;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 
 pub use crate::power::{Level, Rating};
 pub use store::ProfileError;
@@ -44,20 +45,20 @@ pub(crate) use store::{Kind, NamedStore};
 
 /// The voltage-offset mailbox (verified layout, 13th-gen HX): a write of this register is a
 /// request, the read that follows returns the answer.
-pub const MAILBOX_MSR: u32 = 0x150;
+pub(crate) const MAILBOX_MSR: u32 = 0x150;
 /// CPU 0's MSR device; it needs root and the `msr` kernel module.
-pub const DEFAULT_MSR_PATH: &str = "/dev/cpu/0/msr";
+pub(crate) const DEFAULT_MSR_PATH: &str = "/dev/cpu/0/msr";
 
 /// The deepest offset ever written: 0 to -120 mV.
-pub const MAX_MV: i32 = 120;
+pub(crate) const MAX_MV: i32 = 120;
 /// Up to here the core offset is usually fine on 13th-gen HX.
-pub const SAFE_CORE_MV: u32 = 60;
+pub(crate) const SAFE_CORE_MV: u32 = 60;
 /// Up to here the cache offset is usually fine.
-pub const SAFE_CACHE_MV: u32 = 50;
+pub(crate) const SAFE_CACHE_MV: u32 = 50;
 /// Beyond the safe value and up to here the core offset may be unstable: test under load.
-pub const CAUTION_CORE_MV: u32 = 90;
+pub(crate) const CAUTION_CORE_MV: u32 = 90;
 /// Beyond the safe value and up to here the cache offset may be unstable.
-pub const CAUTION_CACHE_MV: u32 = 70;
+pub(crate) const CAUTION_CACHE_MV: u32 = 70;
 
 /// The mailbox works in steps of 1/1.024 mV, so a read-back may differ from the request by this.
 const VERIFY_TOLERANCE_MV: i32 = 2;
@@ -92,7 +93,7 @@ pub trait Msr: Send + Sync {
 /// The real MSR device. It opens the device for every access (nothing stays open between calls)
 /// and the kernel's `msr` driver takes the register number as the file offset and moves 8 bytes.
 ///
-/// It refuses to write any register but [`MAILBOX_MSR`]: this type exists for the voltage mailbox
+/// It refuses to write any register but `MAILBOX_MSR`: this type exists for the voltage mailbox
 /// only, and a stray write to another MSR (power limits, performance bias) is not something any
 /// caller of this crate may ever ask for.
 #[derive(Debug, Clone)]
@@ -106,7 +107,7 @@ impl DevMsr {
         Self { path: path.into() }
     }
 
-    /// CPU 0's device, [`DEFAULT_MSR_PATH`].
+    /// CPU 0's device, `DEFAULT_MSR_PATH`.
     pub fn cpu0() -> Self {
         Self::new(DEFAULT_MSR_PATH)
     }
@@ -272,7 +273,7 @@ impl Undervolt {
     fn lock(&self) -> std::sync::MutexGuard<'_, ()> {
         // The guard protects no data, only the order of register accesses: a panic elsewhere
         // must not make the undervolt unusable (and unable to reset).
-        self.gate.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.gate)
     }
 
     fn request(&self, plane: Plane, write: bool, offset_mv: i32) -> io::Result<()> {
@@ -324,7 +325,7 @@ impl Undervolt {
             && self.get_locked(plane).is_ok_and(|v| v.abs() <= VERIFY_TOLERANCE_MV)
     }
 
-    /// Writes one plane's offset (0 to -[`MAX_MV`] mV) and verifies it by reading it back; returns
+    /// Writes one plane's offset (0 to -`MAX_MV` mV) and verifies it by reading it back; returns
     /// the offset the CPU reports. Without `confirm` it refuses, and an offset outside the hard zone
     /// is refused before anything is written. An offset that does not read back is rolled back.
     pub fn set(&self, plane: Plane, offset_mv: i32, confirm: bool) -> Result<i32, UndervoltError> {
@@ -425,7 +426,7 @@ pub fn is_builtin(name: &str) -> bool {
 }
 
 impl Profile {
-    /// Checks that both offsets are 0 to -[`MAX_MV`] mV.
+    /// Checks that both offsets are 0 to -`MAX_MV` mV.
     pub fn check(&self) -> Result<(), ProfileError> {
         for (key, mv) in [("core", self.core), ("cache", self.cache)] {
             if !(-MAX_MV..=0).contains(&mv) {

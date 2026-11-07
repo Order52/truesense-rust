@@ -11,16 +11,16 @@
 use super::jsmath::{clamp01, exp, fract, max, min, mix, pow, to_int32};
 
 /// The palette effects.js falls back to when it is given no colours.
-pub const DEFAULT_PALETTE: [&str; 2] = ["#00E5FF", "#0090FF"];
+pub(crate) const DEFAULT_PALETTE: [&str; 2] = ["#00E5FF", "#0090FF"];
 /// At most this many colours are used; the rest are ignored.
-pub const MAX_COLOURS: usize = 6;
+pub(crate) const MAX_COLOURS: usize = 6;
 /// Entries in each lookup table (3 floats each).
-pub const LUT_LEN: usize = 256;
+pub(crate) const LUT_LEN: usize = 256;
 
 /// `hexToRgb`: "#RRGGBB" (or "#RGB") to 0..1 channels. Anything `parseInt(s, 16)` would
 /// not read gives black, as in JS; the parse follows `parseInt` (sign, "0x", leading
 /// digits only) for whatever a theme or the user might hand it.
-pub fn hex_to_rgb(hex: &str) -> [f64; 3] {
+pub(crate) fn hex_to_rgb(hex: &str) -> [f64; 3] {
     let trimmed = hex.trim();
     let s: String = match trimmed.find('#') {
         Some(at) => format!("{}{}", &trimmed[..at], &trimmed[at + 1..]),
@@ -108,7 +108,7 @@ pub fn hsv(h: f64, s: f64, v: f64) -> [f64; 3] {
 
 /// `hsvInto(h, s, v, buf, o)`: writes the RGB of [`hsv`] into `buf` at `o` (f32, as the
 /// Float32Array it writes in effects.js).
-pub fn hsv_into(buf: &mut [f32], o: usize, h: f64, s: f64, v: f64) {
+pub(crate) fn hsv_into(buf: &mut [f32], o: usize, h: f64, s: f64, v: f64) {
     let c = hsv(h, s, v);
     buf[o] = c[0] as f32;
     buf[o + 1] = c[1] as f32;
@@ -117,7 +117,7 @@ pub fn hsv_into(buf: &mut [f32], o: usize, h: f64, s: f64, v: f64) {
 
 /// `vividMixInto`: blends two colours without the grey dip of a plain RGB mix (hue from the
 /// RGB mix, saturation and value interpolated, saturation weighted by value).
-pub fn vivid_mix(a: [f64; 3], b: [f64; 3], f: f64) -> [f64; 3] {
+pub(crate) fn vivid_mix(a: [f64; 3], b: [f64; 3], f: f64) -> [f64; 3] {
     let r = mix(a[0], b[0], f);
     let g = mix(a[1], b[1], f);
     let bl = mix(a[2], b[2], f);
@@ -223,7 +223,7 @@ impl Palette {
 
 /// `makeRamp`: a 256-entry LUT through stops `[position, r, g, b]` (ascending positions,
 /// at least two stops, colours 0..1).
-pub fn make_ramp(stops: &[[f64; 4]]) -> Vec<f32> {
+pub(crate) fn make_ramp(stops: &[[f64; 4]]) -> Vec<f32> {
     let mut lut = vec![0.0; LUT_LEN * 3];
     if stops.len() < 2 {
         return lut;
@@ -243,7 +243,7 @@ pub fn make_ramp(stops: &[[f64; 4]]) -> Vec<f32> {
 }
 
 /// `rampFromPalette`: the palette spread over [from, 1], preceded by `dark` stops.
-pub fn ramp_from_palette(pal: &Palette, dark: &[[f64; 4]], from: f64) -> Vec<f32> {
+pub(crate) fn ramp_from_palette(pal: &Palette, dark: &[[f64; 4]], from: f64) -> Vec<f32> {
     let mut stops = dark.to_vec();
     let nf = pal.n as f64;
     for i in 0..pal.n {
@@ -258,7 +258,7 @@ pub fn ramp_from_palette(pal: &Palette, dark: &[[f64; 4]], from: f64) -> Vec<f32
 }
 
 /// `lutIndex`: the clamped table's entry for u in 0..1 (an index into the floats).
-pub fn lut_index(u: f64) -> usize {
+pub(crate) fn lut_index(u: f64) -> usize {
     let k = if u <= 0.0 {
         0
     } else if u >= 1.0 {
@@ -270,13 +270,13 @@ pub fn lut_index(u: f64) -> usize {
 }
 
 /// `cycIndex`: the cyclic table's entry for any u (wraps every 1.0).
-pub fn cyc_index(u: f64) -> usize {
+pub(crate) fn cyc_index(u: f64) -> usize {
     ((to_int32((u - u.floor()) * 256.0) & 255) * 3) as usize
 }
 
 /// `relLum`: relative luminance of 0..1 channels; `gamma` 1 treats the LED light as linear
 /// in the value sent.
-pub fn rel_lum(r: f64, g: f64, b: f64, gamma: f64) -> f64 {
+pub(crate) fn rel_lum(r: f64, g: f64, b: f64, gamma: f64) -> f64 {
     let (mut r, mut g, mut b) = (clamp01(r), clamp01(g), clamp01(b));
     if gamma != 1.0 {
         r = pow(r, gamma);
@@ -287,21 +287,21 @@ pub fn rel_lum(r: f64, g: f64, b: f64, gamma: f64) -> f64 {
 }
 
 /// `putL`: writes LUT entry `i` (a float index from [`lut_index`]/[`cyc_index`]) times k.
-pub fn put_l(buf: &mut [f32], o: usize, lut: &[f32], i: usize, k: f64) {
+pub(crate) fn put_l(buf: &mut [f32], o: usize, lut: &[f32], i: usize, k: f64) {
     for j in 0..3 {
         buf[o + j] = (lut[i + j] as f64 * k) as f32;
     }
 }
 
 /// `addL`: adds LUT entry `i` times k.
-pub fn add_l(buf: &mut [f32], o: usize, lut: &[f32], i: usize, k: f64) {
+pub(crate) fn add_l(buf: &mut [f32], o: usize, lut: &[f32], i: usize, k: f64) {
     for j in 0..3 {
         buf[o + j] = (buf[o + j] as f64 + lut[i + j] as f64 * k) as f32;
     }
 }
 
 /// `putP`: writes palette colour `i` (wrapped to the palette) times k.
-pub fn put_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
+pub(crate) fn put_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
     let i = i % pal.n;
     buf[o] = (pal.r[i] as f64 * k) as f32;
     buf[o + 1] = (pal.g[i] as f64 * k) as f32;
@@ -309,7 +309,7 @@ pub fn put_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
 }
 
 /// `addP`: adds palette colour `i` (wrapped to the palette) times k.
-pub fn add_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
+pub(crate) fn add_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
     let i = i % pal.n;
     buf[o] = (buf[o] as f64 + pal.r[i] as f64 * k) as f32;
     buf[o + 1] = (buf[o + 1] as f64 + pal.g[i] as f64 * k) as f32;
@@ -317,12 +317,12 @@ pub fn add_p(buf: &mut [f32], o: usize, pal: &Palette, i: usize, k: f64) {
 }
 
 /// Additive light saturates softly, so overlaps glow instead of clipping to white.
-pub const SOFT_K: f64 = 1.7;
+pub(crate) const SOFT_K: f64 = 1.7;
 /// `1 / (1 - exp(-SOFT_K))`, the value effects.js computes (a test checks it).
-pub const SOFT_N: f64 = 1.223_516_262_584_827_3;
+pub(crate) const SOFT_N: f64 = 1.223_516_262_584_827_3;
 
 /// `softClip`: the soft saturation of one light's three channels.
-pub fn soft_clip(buf: &mut [f32], o: usize) {
+pub(crate) fn soft_clip(buf: &mut [f32], o: usize) {
     for j in 0..3 {
         let v = buf[o + j] as f64;
         buf[o + j] = if v > 0.0 { ((1.0 - exp(-SOFT_K * v)) * SOFT_N) as f32 } else { 0.0 };

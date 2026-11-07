@@ -26,28 +26,28 @@ pub fn at<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
 }
 
 /// A finite number at `path` (integers and floats alike; `NaN` cannot occur in JSON).
-pub fn f64_at(value: &Value, path: &str) -> Option<f64> {
+pub(crate) fn f64_at(value: &Value, path: &str) -> Option<f64> {
     at(value, path)?.as_f64().filter(|n| n.is_finite())
 }
 
 /// An integer at `path`; a float with no fractional part counts.
-pub fn i64_at(value: &Value, path: &str) -> Option<i64> {
+pub(crate) fn i64_at(value: &Value, path: &str) -> Option<i64> {
     let v = at(value, path)?;
     v.as_i64().or_else(|| v.as_f64().filter(|f| f.fract() == 0.0 && f.abs() < 9.0e15).map(|f| f as i64))
 }
 
 /// A string at `path`.
-pub fn str_at<'a>(value: &'a Value, path: &str) -> Option<&'a str> {
+pub(crate) fn str_at<'a>(value: &'a Value, path: &str) -> Option<&'a str> {
     at(value, path)?.as_str()
 }
 
 /// A boolean at `path`.
-pub fn bool_at(value: &Value, path: &str) -> Option<bool> {
+pub(crate) fn bool_at(value: &Value, path: &str) -> Option<bool> {
     at(value, path)?.as_bool()
 }
 
 /// An array at `path`.
-pub fn list_at<'a>(value: &'a Value, path: &str) -> Option<&'a [Value]> {
+pub(crate) fn list_at<'a>(value: &'a Value, path: &str) -> Option<&'a [Value]> {
     at(value, path)?.as_array().map(Vec::as_slice)
 }
 
@@ -68,7 +68,7 @@ pub fn parse_args(text: &str) -> Result<Value, String> {
 }
 
 /// The `{"message", "code"}` object the QML side decodes for a failed command.
-pub fn error_object(message: &str, code: Option<&str>) -> Value {
+pub(crate) fn error_object(message: &str, code: Option<&str>) -> Value {
     match code {
         Some(code) => json!({ "message": message, "code": code }),
         None => json!({ "message": message }),

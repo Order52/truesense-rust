@@ -52,7 +52,7 @@ pub use version::{Version, valid_repo};
 pub const DEFAULT_REPO: &str = "Order52/truesense-rust";
 
 /// The most bytes a release archive may have; the real one is a few megabytes.
-pub const MAX_DOWNLOAD: u64 = 40 * 1024 * 1024;
+pub(crate) const MAX_DOWNLOAD: u64 = 40 * 1024 * 1024;
 
 /// The seconds since the Unix epoch, as a float (the Python edition's `time.time()`).
 pub type Clock = Arc<dyn Fn() -> f64 + Send + Sync>;

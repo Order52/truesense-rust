@@ -128,7 +128,7 @@ pub fn acquire(dir: &Path) -> Result<Acquired, SingleError> {
 }
 
 /// What the serving thread does when a client asks to show a page (`None`: just raise the window).
-pub type OnShow = Box<dyn Fn(Option<String>) + Send + 'static>;
+pub(crate) type OnShow = Box<dyn Fn(Option<String>) + Send + 'static>;
 
 /// The running accept loop.
 pub struct Server {

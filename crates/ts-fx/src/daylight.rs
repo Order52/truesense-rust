@@ -18,7 +18,7 @@ const PARAMS: &[ParamDef] = &[
     choice("hourkey", &["Off", "On"], 1.0),
 ];
 
-pub static DAYLIGHT: EffectDef =
+pub(crate) static DAYLIGHT: EffectDef =
     EffectDef::software("daylight", "Daylight", PARAMS, create).with_needs(&[Need::Clock]);
 
 const I_NIGHT: usize = 0;

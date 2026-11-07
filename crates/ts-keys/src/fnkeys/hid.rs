@@ -5,6 +5,7 @@
 //! place of this crate that needs `unsafe`: std cannot wait on a file with a timeout, and the
 //! service must wake for its gesture timers, the config poll and the systemd watchdog even when no
 //! key is pressed. The single call is `poll(2)` on a descriptor this file owns.
+#![allow(unsafe_code)]
 
 use std::fmt;
 use std::fs::File;

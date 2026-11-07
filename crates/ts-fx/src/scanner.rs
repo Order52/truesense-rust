@@ -18,7 +18,7 @@ const PARAMS: &[ParamDef] = &[
     num("glow", 0.0, 30.0, 4.0),
 ];
 
-pub static SCANNER: EffectDef = EffectDef::software("scanner", "Scanner", PARAMS, create);
+pub(crate) static SCANNER: EffectDef = EffectDef::software("scanner", "Scanner", PARAMS, create);
 
 /// The key-unit heights each `rows` option lights.
 const BANDS: [[f64; 2]; 3] = [[1.36, 3.36], [0.36, 4.36], [-9.0, 9.0]];

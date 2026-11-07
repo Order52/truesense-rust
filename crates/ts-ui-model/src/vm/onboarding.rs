@@ -25,10 +25,10 @@ use serde_json::{Value, json};
 use crate::json::{at, i64_at, list_at, str_at};
 
 /// The steps in order. `done` is the last page, not the end: leaving it closes the wizard.
-pub const STEPS: [&str; 4] = ["welcome", "health", "look", "done"];
+pub(crate) const STEPS: [&str; 4] = ["welcome", "health", "look", "done"];
 
 /// The command that repairs the user's own services; the window can run it by itself.
-pub const USER_REPAIR: &str = "truesense service repair";
+pub(crate) const USER_REPAIR: &str = "truesense service repair";
 
 /// The key service's unit, the one the PREDATOR key and the lighting effects need.
 const KEYS_UNIT: &str = "truesense-keys.service";

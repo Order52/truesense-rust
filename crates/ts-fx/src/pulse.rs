@@ -14,7 +14,7 @@ const PARAMS: &[ParamDef] = &[
     num("grid", 0.0, 20.0, 4.0),
 ];
 
-pub static PULSE: EffectDef = EffectDef::software("pulse", "Pulse", PARAMS, create);
+pub(crate) static PULSE: EffectDef = EffectDef::software("pulse", "Pulse", PARAMS, create);
 
 /// The trace's baseline row and how far a beat lifts it, in key units.
 const BASE: f64 = 2.86;

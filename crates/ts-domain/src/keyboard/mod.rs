@@ -31,10 +31,11 @@ mod state;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use ts_foundation::sync::locked;
 use ts_foundation::userstate::{self, Store};
 use ts_platform::firmware::FirmwareError;
 use ts_platform::hw::{HwError, KbTimeoutFlag, Sleeper};
@@ -46,9 +47,9 @@ pub use sim::SimHid;
 pub use state::{State, mode};
 
 /// The length of every feature report: seven data bytes and a checksum.
-pub const PACKET_LEN: usize = 8;
+pub(crate) const PACKET_LEN: usize = 8;
 /// The length of one per-key output report: 16 cells of 4 bytes.
-pub const OUTPUT_LEN: usize = 64;
+pub(crate) const OUTPUT_LEN: usize = 64;
 
 /// The keyboard's brightness range is 0 to this.
 pub const MAX_BRIGHT: i64 = 50;
@@ -73,15 +74,15 @@ pub const DEFAULT_EFFECT_BRIGHT: i64 = 30;
 /// The brightness used instead of 0 when a picture is uploaded: never upload into darkness.
 pub const DEFAULT_BRIGHTNESS: i64 = 25;
 /// The colour of the operating mode (the stock cyan).
-pub const OPERATING_COLOR: &str = "00aec7";
+pub(crate) const OPERATING_COLOR: &str = "00aec7";
 /// The brightness of the operating mode (0x32: full).
-pub const OPERATING_BRIGHTNESS: i64 = 0x32;
+pub(crate) const OPERATING_BRIGHTNESS: i64 = 0x32;
 /// The brightness of the factory look.
-pub const FACTORY_BRIGHTNESS: i64 = 12;
+pub(crate) const FACTORY_BRIGHTNESS: i64 = 12;
 
 /// How far apart the per-key output reports are written. Windows spaces them about 15 ms apart;
 /// unpaced writes lose the last report (the last row of keys keeps its old colour).
-pub const FRAME_SPACING: Duration = Duration::from_millis(16);
+pub(crate) const FRAME_SPACING: Duration = Duration::from_millis(16);
 /// The pause after the last report, so the controller can finish before the packet that commits
 /// the upload.
 pub const FRAME_SETTLE: Duration = Duration::from_millis(50);
@@ -210,12 +211,12 @@ pub fn effect_names() -> Vec<&'static str> {
 }
 
 /// The hardware code of an effect.
-pub fn effect_code(name: &str) -> Option<u8> {
+pub(crate) fn effect_code(name: &str) -> Option<u8> {
     EFFECTS.iter().find(|(n, _)| *n == name).map(|(_, c)| *c)
 }
 
 /// Whether the effect takes a colour (`wave` and `neon` do not; `off` has none to take).
-pub fn has_color(name: &str) -> bool {
+pub(crate) fn has_color(name: &str) -> bool {
     !NO_COLOR.contains(&name)
 }
 
@@ -295,7 +296,7 @@ impl Keyboard {
         &self,
         mut body: impl FnMut(&mut dyn HidDevice) -> Result<T, KeyboardError>,
     ) -> Result<T, KeyboardError> {
-        let mut guard = self.device.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut guard = locked(&self.device);
         let mut attempt = 0;
         loop {
             if guard.is_none() {
@@ -320,7 +321,7 @@ impl Keyboard {
 
     /// Releases the device. It is opened again if the keyboard is used again.
     pub fn close(&self) {
-        *self.device.lock().unwrap_or_else(PoisonError::into_inner) = None;
+        *locked(&self.device) = None;
     }
 
     /// Opens the device in the background (about 50 ms): call it early in a process that will

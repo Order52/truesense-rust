@@ -18,7 +18,7 @@ const PARAMS: &[ParamDef] = &[
     num("stoke", 0.0, 100.0, 0.0),
 ];
 
-pub static HEARTH: EffectDef =
+pub(crate) static HEARTH: EffectDef =
     EffectDef::software("hearth", "Hearth", PARAMS, create).with_optional(&[Need::Keys]);
 
 /// The heat grid: columns across the keyboard, rows from the source row (0) up.

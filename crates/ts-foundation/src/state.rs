@@ -15,15 +15,16 @@
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde_json::{Map, Value};
 
 use crate::config::Config;
 use crate::fsx::{self, FsError};
+use crate::sync::locked;
 
 /// Where the daemon keeps its settings when nothing overrides it.
-pub const STATE_PATH: &str = "/var/lib/truesense/state.json";
+pub(crate) const STATE_PATH: &str = "/var/lib/truesense/state.json";
 
 /// The runtime directory of the service; the live state file is `state` inside it.
 pub const RUN_DIR: &str = "/run/truesense";
@@ -34,7 +35,7 @@ pub const TMP_LIVE_PATH: &str = "/tmp/truesense-state";
 /// The legacy file the old Predator widgets read, written only when `[compat] predator_widgets` is on.
 pub const PREDATOR_COMPAT_PATH: &str = "/tmp/predator-state";
 
-/// The settings file path: `$TRUESENSE_STATE` or [`STATE_PATH`].
+/// The settings file path: `$TRUESENSE_STATE` or `STATE_PATH`.
 pub fn default_path_from(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_STATE").map_or_else(|| PathBuf::from(STATE_PATH), PathBuf::from)
 }
@@ -143,7 +144,7 @@ impl Store {
     // A panic in another thread while holding the lock must not take the fan controller down
     // with it: the map is always in a valid state, so a poisoned lock is simply used.
     fn lock(&self) -> MutexGuard<'_, Data> {
-        self.data.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.data)
     }
 
     /// The value of `key`, or `None` if never set. A stored JSON `null` is `Some(Value::Null)`:
@@ -188,7 +189,7 @@ impl Store {
     }
 
     /// Removes the temp files a crashed write left beside the settings file (see
-    /// [`fsx::remove_stale_temps`]); the daemon calls it once at start, under its lock.
+    /// `fsx::remove_stale_temps`); the daemon calls it once at start, under its lock.
     pub fn sweep_stale_temp(&self) -> usize {
         fsx::remove_stale_temps(&self.path)
     }

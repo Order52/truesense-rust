@@ -16,7 +16,7 @@ const PARAMS: &[ParamDef] = &[
     num("heat", 20.0, 100.0, 70.0),
 ];
 
-pub static THERMAL: EffectDef =
+pub(crate) static THERMAL: EffectDef =
     EffectDef::software("thermal", "Thermal", PARAMS, create).with_needs(&[Need::Keys]);
 
 /// The diffusion's fixed step, in seconds.

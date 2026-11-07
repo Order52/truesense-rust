@@ -5,9 +5,10 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex, PoisonError, mpsc};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
+use ts_foundation::sync::locked;
 
 /// How long `nvidia-smi` may take: a wedged NVIDIA driver must not wedge the daemon's tick.
 const GPU_QUERY_TIMEOUT: Duration = Duration::from_secs(3);
@@ -177,7 +178,7 @@ impl LinuxSensors {
     /// package value can lag the hottest core by a few degrees for a second or two; the firmware's
     /// own CPU temperature, which the daemon also takes the maximum with, covers that.)
     pub fn cpu_temp(&self) -> Option<f64> {
-        let mut cache = self.cpu.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut cache = locked(&self.cpu);
         if !cache.scanned || cache.reads >= RESCAN_EVERY {
             self.scan(&mut cache);
         }

@@ -21,20 +21,20 @@ use ts_foundation::fsx::{self, FsError};
 /// The values the `language` setting accepts; `system` follows the desktop. `pseudo` is for tests
 /// and is not offered to people. A file naming a language that is not here (a catalogue that was
 /// dropped, such as Arabic) loses that one entry and falls back to the default, `system`.
-pub const LANGUAGES: &[&str] = &["system", "en", "pseudo"];
+pub(crate) const LANGUAGES: &[&str] = &["system", "en", "pseudo"];
 /// The desktop languages that have a catalogue of their own in `i18n/`; any other desktop language
 /// gets English. English is always loaded underneath, so it is not listed. Add a code here when a
 /// `<code>.ts` file is added.
-pub const CATALOGUES: &[&str] = &[];
+pub(crate) const CATALOGUES: &[&str] = &[];
 /// The colour themes.
 pub const THEMES: &[&str] = &["dark", "light", "system"];
 
 /// Smallest window the layout is designed for; saved sizes below it are raised to it.
-pub const MIN_WINDOW: (u32, u32) = (360, 480);
+pub(crate) const MIN_WINDOW: (u32, u32) = (360, 480);
 /// Largest saved window dimension: a corrupt file must not ask for a 10-million-pixel window.
-pub const MAX_WINDOW: u32 = 16_384;
+pub(crate) const MAX_WINDOW: u32 = 16_384;
 /// Where the window opens the first time.
-pub const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
+pub(crate) const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
 
 /// The settings with their defaults (what a missing file means).
 #[derive(Debug, Clone, PartialEq)]
@@ -49,7 +49,7 @@ pub struct UiSettings {
     pub y: Option<i32>,
     /// `dark` (default), `light` or `system`.
     pub theme: String,
-    /// One of [`LANGUAGES`]; `system` by default.
+    /// One of `system`, `en` or `pseudo` (see `LANGUAGES`); `system` by default.
     pub language: String,
     /// Closing the window keeps the app in the tray (where a tray exists).
     pub minimise_to_tray: bool,
@@ -205,7 +205,7 @@ fn set_choice(slot: &mut String, v: &Value, allowed: &[&str]) -> bool {
 /// The language to load for the setting `choice` when the desktop's locale is `system_locale`
 /// (`de_DE`, `en_US`, ...): `system` follows the desktop, and a desktop language that is not in
 /// [`CATALOGUES`] gets English.
-pub fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
+pub(crate) fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
     resolve_in(CATALOGUES, choice, system_locale)
 }
 

@@ -22,7 +22,7 @@
 use std::io::{self, Read, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -33,6 +33,7 @@ use super::assets::Assets;
 use super::bus::{CommandError, Commands};
 use super::hub::{Hub, Message, Subscription};
 use super::token::{Entropy, new_token, same_secret};
+use ts_foundation::sync::locked;
 
 /// The biggest request body: the largest legitimate one is 128 key colours (a few KB).
 pub(crate) const MAX_BODY: usize = 1 << 20;
@@ -68,10 +69,6 @@ pub type Logger = Arc<dyn Fn(&str) + Send + Sync>;
 
 /// The time source of the server (launch-code expiry, idle time); a test advances it by hand.
 pub type Clock = Arc<dyn Fn() -> Instant + Send + Sync>;
-
-fn locked<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
-}
 
 /// What the server needs besides its commands.
 #[derive(Clone)]

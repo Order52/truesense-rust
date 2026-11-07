@@ -129,7 +129,7 @@ impl Governor {
 }
 
 /// Where the kernel keeps the per-CPU frequency policies.
-pub const CPU_DIR: &str = "/sys/devices/system/cpu";
+pub(crate) const CPU_DIR: &str = "/sys/devices/system/cpu";
 
 /// Sets the maximum clock of every CPU through cpufreq.
 #[derive(Debug, Clone)]

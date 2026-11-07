@@ -5,21 +5,21 @@
 //! The key table is effects.js's `LAYOUT_TABLE`: names and payload slots from rgbkb's
 //! `acer_ph16_71/keys.py` (all 103 lit slots), widths and x positions approximated from the
 //! Helios 16 chassis. Rows run top (F keys) to bottom (Ctrl), where keys.py counts them
-//! bottom up. Units are key widths; the keyboard is [`KB_W`] by [`KB_H`] key units and the
-//! bar sits [`BAR_PY`] - [`KB_H`] = 2.5 units in front of the bottom row.
+//! bottom up. Units are key widths; the keyboard is `KB_W` by `KB_H` key units and the
+//! bar sits `BAR_PY` - `KB_H` = 2.5 units in front of the bottom row.
 
 use std::sync::OnceLock;
 
 /// Keyboard width in key units.
-pub const KB_W: f64 = 19.25;
+pub(crate) const KB_W: f64 = 19.25;
 /// The bottom row's centre, in key units from the F row's.
-pub const KB_H: f64 = 4.86;
+pub(crate) const KB_H: f64 = 4.86;
 /// Where the light bar's zones sit: in front of the keyboard, below the touchpad.
-pub const BAR_PY: f64 = KB_H + 2.5;
+pub(crate) const BAR_PY: f64 = KB_H + 2.5;
 /// The model the key table describes.
-pub const MODEL: &str = "PH16-71";
+pub(crate) const MODEL: &str = "PH16-71";
 /// Key rows, the F row (0) to the bottom row (`ROW_PY.length` in effects.js).
-pub const KEY_ROWS: usize = TABLE.len();
+pub(crate) const KEY_ROWS: usize = TABLE.len();
 
 /// Which light a layout drives.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -239,7 +239,7 @@ pub fn ph16_71() -> &'static Layout {
 }
 
 /// The highest Linux keycode (`KEY_MAX` in `linux/input-event-codes.h`).
-pub const KEY_MAX: u16 = 0x2ff;
+pub(crate) const KEY_MAX: u16 = 0x2ff;
 
 /// The Linux keycode (`linux/input-event-codes.h`) the kernel reports for each key of
 /// [`TABLE`], by the key's name: how a key press read from the keyboard
@@ -285,7 +285,7 @@ pub fn keycode(name: &str) -> Option<u16> {
 }
 
 /// The LED slot of the PH16-71 key whose Linux keycode is `code`, or `None` for a code no
-/// lit key reports. Built once from the layout's key names and [`KEYCODES`].
+/// lit key reports. Built once from the layout's key names and the table of Linux keycodes next to it.
 pub fn slot_of_keycode(code: u16) -> Option<u8> {
     static SLOTS: OnceLock<Vec<Option<u8>>> = OnceLock::new();
     SLOTS
@@ -304,7 +304,7 @@ pub fn slot_of_keycode(code: u16) -> Option<u8> {
 }
 
 /// `zoneLayout(n, role)`: n zones across the keyboard's width. Without a role, 3 zones are
-/// the bar, 1 is the logo and anything else the keyboard. Bar zones sit at [`BAR_PY`],
+/// the bar, 1 is the logo and anything else the keyboard. Bar zones sit at `BAR_PY`,
 /// others across the keyboard's middle. (effects.js gives zones no corner; `x0`, `y0` are
 /// filled from the centre and size here.)
 pub fn zone_layout(n: usize, role: Option<Role>) -> Layout {

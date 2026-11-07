@@ -68,7 +68,7 @@ const PARAMS: &[ParamDef] = &[
     ),
 ];
 
-pub static TIDE: EffectDef = EffectDef::software("tide", "Tide", PARAMS, create).cheap();
+pub(crate) static TIDE: EffectDef = EffectDef::software("tide", "Tide", PARAMS, create).cheap();
 
 struct Tide {
     depth: f64,

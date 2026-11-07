@@ -39,4 +39,4 @@ Speakers and headphones share one analogue stream, so they appear as two exclusi
 
 ## Measured behaviour
 
-Fan duty to RPM, sensor ranges and similar measurements are in [hardware-data](hardware-data) and the evidence table [STATUS.md](STATUS.md).
+Fan duty to RPM, sensor ranges and similar measurements are in [PH16-71-NOTES.md](PH16-71-NOTES.md) and the evidence table [STATUS.md](STATUS.md).

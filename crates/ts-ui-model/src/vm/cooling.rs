@@ -6,14 +6,14 @@
 //!
 //! # The curve rules
 //!
-//! The rules are those of `ts_decision::curves` (the daemon refuses anything else), reproduced here
-//! because this crate does not depend on that layer: 2..=12 points per side; temperature 20..=110 C;
-//! a duty of 0 (the firmware runs the fan, so it stops when cool) or 20..=100; the duty never falls
-//! as the temperature rises; no two points share a temperature; and the side is at 100 % by 95 C
-//! (CPU) or 85 C (GPU), because the chip throttles above that. The messages are the daemon's own
-//! sentences. Every edit verb ([`drag`], [`nudge`], [`insert`], [`remove`]) returns points that pass
-//! these rules whenever the points it was given did, so the editor can never produce a curve the
-//! daemon would refuse.
+//! The rules are those of `ts_decision::curves` (the daemon refuses anything else), and the
+//! limits are read from it: 2..=12 points per side; temperature 20..=110 C; a duty of 0 (the
+//! firmware runs the fan, so it stops when cool) or 20..=100; the duty never falls as the
+//! temperature rises; no two points share a temperature; and the side is at 100 % by 95 C (CPU) or
+//! 85 C (GPU), because the chip throttles above that. The messages are the daemon's own sentences.
+//! Every edit verb (`drag`, `nudge`, `insert`, `remove`) returns points that pass these
+//! rules whenever the points it was given did, so the editor can never produce a curve the daemon
+//! would refuse.
 //!
 //! # Dragging
 //!
@@ -29,26 +29,29 @@
 
 use serde_json::{Map, Value, json};
 
+use ts_decision::curves;
+use ts_foundation::names;
+
 use crate::json::{at, bool_at, f64_at, i64_at, list_at, str_at};
 
 /// The fewest points a side may have.
-pub const MIN_POINTS: usize = 2;
+pub const MIN_POINTS: usize = curves::MIN_POINTS;
 /// The most points a side may have.
-pub const MAX_POINTS: usize = 12;
+pub const MAX_POINTS: usize = curves::MAX_POINTS;
 /// The lowest temperature of a point (and the left edge of the plot).
-pub const TEMP_MIN: f64 = 20.0;
+pub(crate) const TEMP_MIN: f64 = curves::MIN_TEMP_C;
 /// The highest temperature of a point (and the right edge of the plot).
-pub const TEMP_MAX: f64 = 110.0;
+pub(crate) const TEMP_MAX: f64 = curves::MAX_TEMP_C;
 /// The lowest duty that holds a fan; below it the only valid value is 0.
-pub const DUTY_MIN: f64 = 20.0;
+pub(crate) const DUTY_MIN: f64 = curves::MIN_DUTY_PCT;
 /// The highest duty.
-pub const DUTY_MAX: f64 = 100.0;
+pub(crate) const DUTY_MAX: f64 = curves::MAX_DUTY_PCT;
 /// Percent per grid step of a dragged duty.
 const DUTY_STEP: f64 = 5.0;
 /// The CPU side must be at 100 % by this temperature.
-pub const CPU_FULL_BY: f64 = 95.0;
+pub(crate) const CPU_FULL_BY: f64 = curves::CPU_FULL_BY_C;
 /// The GPU side must be at 100 % by this temperature.
-pub const GPU_FULL_BY: f64 = 85.0;
+pub(crate) const GPU_FULL_BY: f64 = curves::GPU_FULL_BY_C;
 /// Two points must be at least this many degrees apart when one is inserted (a point closer than
 /// that cannot be grabbed again with a pointer).
 const MIN_GAP: f64 = 2.0;
@@ -56,18 +59,26 @@ const MIN_GAP: f64 = 2.0;
 const RPM_SCALE: f64 = 6500.0;
 /// The reach of a click on a point, in pixels.
 const HIT_RADIUS: f64 = 14.0;
-/// The power modes in the order the page lists them.
-const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
 /// The built-in curves, `native` first (the library lists them before the user's own).
-const BUILTIN: [&str; 5] = ["native", "truesense", "quiet", "performance", "max-cooling"];
+const BUILTIN: [&str; 5] = curves::BUILTIN_NAMES;
 
-/// The follower parameters: key, lowest, highest, slider step, default, unit.
-const PARAMS: [(&str, f64, f64, f64, f64, &str); 5] = [
-    ("hysteresis", 0.0, 15.0, 1.0, 4.0, "C"),
-    ("down_rate", 0.2, 20.0, 0.1, 1.5, "%/s"),
-    ("predict", 0.0, 15.0, 1.0, 5.0, "C"),
-    ("couple", 0.0, 50.0, 1.0, 15.0, "%"),
-    ("battery_shift", 0.0, 15.0, 1.0, 3.0, "C"),
+/// One follower parameter: key, lowest, highest, slider step, default, unit.
+type Param = (&'static str, f64, f64, f64, f64, &'static str);
+
+/// The follower parameter number `index` of the daemon's table, with what only the page knows: the
+/// slider step and the unit it is shown in. Key and range come from `curves::PARAM_RANGES`.
+const fn param(index: usize, step: f64, default: f64, unit: &'static str) -> Param {
+    let (key, lo, hi) = curves::PARAM_RANGES[index];
+    (key, lo, hi, step, default, unit)
+}
+
+/// The follower parameters in the daemon's order (a test pins the order).
+const PARAMS: [Param; 5] = [
+    param(0, 1.0, curves::DEFAULT_HYSTERESIS, "C"),
+    param(1, 0.1, curves::DEFAULT_DOWN_RATE, "%/s"),
+    param(2, 1.0, curves::DEFAULT_PREDICT, "C"),
+    param(3, 1.0, curves::DEFAULT_COUPLE, "%"),
+    param(4, 1.0, curves::DEFAULT_BATTERY_SHIFT, "C"),
 ];
 
 /// The verbs of this module (see the module documentation).
@@ -93,7 +104,7 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
         "manual" => manual(args),
         "library" => Ok(library(args)),
         "copy_name" => Ok(copy_name(args)),
-        "valid_name" => Ok(json!(valid_name(str_at(args, "name").unwrap_or("")))),
+        "valid_name" => Ok(json!(names::is_valid(str_at(args, "name").unwrap_or("")))),
         "bindings" => Ok(bindings(args)),
         "bind_request" => bind_request(args),
         _ => Err(format!("unknown cooling verb: {verb}")),
@@ -717,12 +728,6 @@ fn manual(args: &Value) -> Result<Value, String> {
 
 // ---- library and bindings --------------------------------------------------------------------------
 
-/// A curve name as the daemon accepts it: letters, digits, `.`, `_`, `-`, 1 to 40 characters.
-fn valid_name(name: &str) -> bool {
-    (1..=40).contains(&name.chars().count())
-        && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
-}
-
 fn strings_at(args: &Value, key: &str) -> Vec<String> {
     list_at(args, key)
         .map(|l| l.iter().filter_map(|v| v.as_str().map(str::to_owned)).collect())
@@ -777,7 +782,7 @@ fn copy_name(args: &Value) -> Value {
 fn bindings(args: &Value) -> Value {
     let curves = strings_at(args, "curves");
     let now = str_at(args, "power_mode").or_else(|| str_at(args, "bindings.mode")).unwrap_or("");
-    let rows: Vec<Value> = POWER_MODES
+    let rows: Vec<Value> = crate::limits::POWER_MODES
         .iter()
         .map(|mode| {
             let bound = str_at(args, &format!("bindings.bindings.{mode}.fan_curve.name")).unwrap_or("");
@@ -797,8 +802,8 @@ fn bindings(args: &Value) -> Value {
 /// curve, `unbind` of the curve part for the empty choice).
 fn bind_request(args: &Value) -> Result<Value, String> {
     let mode = str_at(args, "mode").unwrap_or("");
-    if !POWER_MODES.contains(&mode) {
-        return Err(format!("mode: one of {}", POWER_MODES.join(", ")));
+    if !crate::limits::POWER_MODES.contains(&mode) {
+        return Err(format!("mode: one of {}", crate::limits::POWER_MODES.join(", ")));
     }
     match str_at(args, "curve").unwrap_or("") {
         "" => Ok(json!({"verb": "unbind", "args": {"mode": mode, "what": "curve"}})),
@@ -812,25 +817,11 @@ fn bind_request(args: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
 
-    /// The built-in curves of `ts_decision::curves` (copied: that layer is not a dependency).
+    /// A built-in curve of `ts_decision::curves`, as this module's points.
     fn builtin(name: &str) -> (Vec<Pt>, Vec<Pt>) {
-        let p = |v: &[(f64, f64)]| v.iter().map(|&(t, d)| Pt { t, d }).collect::<Vec<_>>();
-        match name {
-            "native" => (p(&[(52., 0.), (89., 100.)]), p(&[(48., 0.), (78., 100.)])),
-            "truesense" => (
-                p(&[(52., 0.), (56., 30.), (62., 38.), (68., 48.), (74., 58.), (80., 70.), (85., 85.), (89., 100.)]),
-                p(&[(48., 0.), (54., 30.), (60., 38.), (65., 48.), (70., 60.), (74., 78.), (78., 100.)]),
-            ),
-            "quiet" => (
-                p(&[(58., 0.), (66., 30.), (72., 40.), (78., 55.), (84., 75.), (89., 100.)]),
-                p(&[(52., 0.), (60., 30.), (66., 40.), (72., 58.), (77., 80.), (80., 100.)]),
-            ),
-            "performance" => (
-                p(&[(45., 30.), (55., 40.), (62., 55.), (70., 70.), (78., 85.), (84., 100.)]),
-                p(&[(42., 30.), (52., 40.), (60., 55.), (66., 70.), (72., 85.), (76., 100.)]),
-            ),
-            _ => (p(&[(40., 40.), (60., 100.)]), p(&[(40., 40.), (58., 100.)])),
-        }
+        let curve = curves::Curve::builtin(name).unwrap();
+        let pts = |side| curve.points(side).iter().map(|p| Pt { t: p.temp, d: p.duty }).collect::<Vec<_>>();
+        (pts(curves::Side::Cpu), pts(curves::Side::Gpu))
     }
 
     fn curve_json(name: &str) -> Value {
@@ -871,6 +862,16 @@ mod tests {
 
     fn reply_points(v: &Value) -> Vec<Pt> {
         parse_points(at(v, "points"), "points").unwrap()
+    }
+
+    #[test]
+    fn the_follower_parameters_keep_the_daemons_order_and_ranges() {
+        let keys: Vec<&str> = PARAMS.iter().map(|p| p.0).collect();
+        assert_eq!(keys, ["hysteresis", "down_rate", "predict", "couple", "battery_shift"]);
+        assert_eq!((PARAMS[0].1, PARAMS[0].2, PARAMS[0].4), (0.0, 15.0, 4.0));
+        assert_eq!((PARAMS[1].1, PARAMS[1].2, PARAMS[1].4), (0.2, 20.0, 1.5));
+        assert_eq!((TEMP_MIN, TEMP_MAX, DUTY_MIN, DUTY_MAX, CPU_FULL_BY, GPU_FULL_BY), (20.0, 110.0, 20.0, 100.0, 95.0, 85.0));
+        assert_eq!((MIN_POINTS, MAX_POINTS), (2, 12));
     }
 
     // -- the validator --

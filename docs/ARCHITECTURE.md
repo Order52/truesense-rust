@@ -12,23 +12,38 @@ The crate layout and its rules are in [RUST-MIGRATION.md](RUST-MIGRATION.md); th
  ts-platform::firmware  ── Device trait: the kernel device, or the Simulator (TRUESENSE_SIM=1)
  ts-platform::hw        ── typed features: write, read back, return the verified value
         ▲
+ ts-domain  ── what the hardware can do: keyboard, looks, themes, per-key effects, audio, power limits,
+               undervolt, profiles, key bindings, favourites, actions     (lighting engine: ts-fx)
+ ts-system  ── the machine around it: models, doctor, selftest, services, update, osd, touchpad,
+               sensors, battery, monitor sources (usage, disks, network, nvidia)
+ ts-decision ── pure decisions: fan curves, smart fan, auto profile, smart profiles, game rules,
+               thermal governor, alerts, mode bindings, crash guard
+        ▲
  ts-daemon (root, truesense.service) ── loop every 1–2 s, decisions from ts-decision
         └ control socket /run/truesense/truesense.sock  (JSON lines, SO_PEERCRED uid check)
                 ▲
  ts-ipc::client ── one request, typed errors
         ▲
- ts-api::api::Api ── what every client shares: daemon first, safe hardware fallback
+ ts-api::api::Api ── what every client shares: daemon first, safe hardware fallback; capabilities,
+                     monitor, favourites, themes, mode bindings, alerts
         ▲
- ts-cli · ts-tui · ts-gui (loopback web server + embedded front end) · ts-keys (hidraw key service)
+ ts-cli · ts-tui · ts-gui (the command bus the apps use, and the fallback web window) · ts-keys (hidraw key service)
+        ▲
+ ts-ui-model ── everything of the app that is not Qt: bus, live store, view-model per page, limits
+        ▲
+ ts-qt ── the QML skin, the program truesense-qt (the only crate that needs Qt 6)
 ```
+
+`truesense` (the binary crate) dispatches to the clients by subcommand and by `argv[0]`. `docs/CODE-AUDIT.md` has the crate-by-crate inventory and the dependency check; `docs/QT-APP.md` the app.
 
 Rules that keep it safe:
 
-- Dependencies point down the crate list; Cargo refuses a cycle.
+- Dependencies point down the crate list; Cargo refuses a cycle. Every crate except `ts-qt` is Qt-free, and the default workspace members exclude `ts-qt` so `make ci` needs no Qt.
 - Decisions (`ts-decision`) are pure: readings in, a duty or a mode out, with an injected clock.
 - Every effect (files, processes, sockets, time) sits behind a trait and is replaced by a fake in tests.
+- A limit is written down once, in the layer that enforces it; the layers above read it (for example the Performance and Cooling pages read the ranges and the `risk` bands of `ts-decision` and `ts-domain`).
 - A fan duty is 0 or 20–100; stopping a fan needs the daemon, an explicit confirmation, a cool machine and the temperature watchdog; the fans return to firmware Auto on every exit path.
-- `unsafe` is limited to the places the kernel needs (ioctl, hidraw poll, `SO_PEERCRED`, signals, `flock`, `access`), each with a `SAFETY` comment and a test.
+- `unsafe` is denied by a workspace lint and allowed only in the nine modules that need it (ioctl, hidraw poll, `SO_PEERCRED`, signals, `flock`, `access`, inotify, the cxx-qt bridge), each with a `SAFETY` comment and a test.
 
 ## Alerts
 
@@ -62,4 +77,4 @@ The daemon (root) cannot read the looks and curves in a user's home directory, a
 
 ## Building
 
-`make ci` runs rustfmt, clippy (warnings are errors) and every test. The release build is `cargo build --release -p truesense --target x86_64-unknown-linux-musl`: one static-pie file of about 6 MB.
+`make ci` runs rustfmt, clippy (warnings are errors), every test and rustdoc (warnings are errors); `make qt-ci` does the same for the Qt app (needs Qt 6). The release build is `cargo build --release -p truesense --target x86_64-unknown-linux-musl`: one static-pie file of about 6 MB.

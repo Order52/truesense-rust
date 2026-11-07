@@ -16,7 +16,7 @@ const PARAMS: &[ParamDef] = &[
     num("span", 20.0, 100.0, 60.0),
 ];
 
-pub static SILK: EffectDef = EffectDef::software("silk", "Silk", PARAMS, create);
+pub(crate) static SILK: EffectDef = EffectDef::software("silk", "Silk", PARAMS, create);
 
 struct Silk {
     speed: f64,

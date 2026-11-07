@@ -82,7 +82,8 @@ fn power_status_and_set_hold_the_pick_for_30_minutes() {
     assert_eq!(m.ok("power", "set", &json!({"mode": "turbo"})), json!("turbo"));
     let sent = daemon_args(&m, "power");
     assert_eq!((sent["mode"].clone(), sent["hold_minutes"].clone()), (json!("turbo"), json!(30.0)));
-    assert!(m.refused("power", "set", &json!({"mode": "warp"})).contains("warp") || true);
+    let why = m.refused("power", "set", &json!({"mode": "warp"}));
+    assert!(why.contains("eco"), "the refusal lists the modes: {why}");
     m.refused("power", "set", &json!({}));
 }
 

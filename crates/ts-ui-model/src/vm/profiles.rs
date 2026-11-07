@@ -17,9 +17,9 @@ use serde_json::{Value, json};
 use crate::json::{at, bool_at, i64_at, list_at, str_at};
 
 /// The most favourites the store accepts (`favourite toggle` refuses the next one).
-pub const MAX_FAVOURITES: usize = 24;
+pub const MAX_FAVOURITES: usize = ts_domain::favourites::MAX_FAVOURITES;
 /// The longest profile name the command line accepts.
-pub const MAX_NAME_LEN: usize = 40;
+pub(crate) const MAX_NAME_LEN: usize = ts_foundation::names::NAME_MAX;
 
 /// Calls one verb of the Profiles view-model.
 ///

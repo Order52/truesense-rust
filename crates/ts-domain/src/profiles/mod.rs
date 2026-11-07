@@ -16,8 +16,7 @@ pub use bundle::{
     parse as parse_bundle,
 };
 pub use store::{
-    Kind, NAME_MAX, NATIVE, NameRule, ProfileError, ProfileStore, Source, Validator, default_user_dir,
-    sanitise_name,
+    Kind, NATIVE, NameRule, ProfileError, ProfileStore, Source, Validator, default_user_dir, sanitise_name,
 };
 
 #[cfg(test)]

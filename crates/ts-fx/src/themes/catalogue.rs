@@ -12,7 +12,7 @@ use crate::engine::{ParamValue, Params};
 use crate::layout::Role;
 
 /// The catalogue file, exactly effects.js's THEMES block.
-pub const CATALOGUE_JSON: &str = include_str!("catalogue.json");
+pub(crate) const CATALOGUE_JSON: &str = include_str!("catalogue.json");
 
 /// A built-in theme: one look per light, its colourways, Custom slot labels and settings.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
@@ -418,7 +418,7 @@ impl TryFrom<RawSetting> for SettingDef {
 ///
 /// [`Flash::Unmeasured`]: crate::engine::Flash::Unmeasured
 #[cfg(test)]
-pub const PENDING_FLASH_MEASUREMENT: &[&str] = &["storm"];
+pub(super) const PENDING_FLASH_MEASUREMENT: &[&str] = &["storm"];
 
 #[cfg(test)]
 impl Theme {

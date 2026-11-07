@@ -41,7 +41,7 @@ const NVIDIA_VENDOR: &str = "0x10de";
 
 /// The fields asked of `nvidia-smi --query-gpu`, in the order [`parse_query`] expects. All of
 /// them exist on every driver since 2019; a field the card does not support prints `[N/A]`.
-pub const QUERY_FIELDS: [&str; 24] = [
+pub(crate) const QUERY_FIELDS: [&str; 24] = [
     "name",
     "driver_version",
     "temperature.gpu",
@@ -220,7 +220,7 @@ fn text(field: &str) -> Option<String> {
 
 /// Parses the first line of `nvidia-smi --query-gpu=... --format=csv,noheader,nounits`. Later
 /// lines (a second GPU) are ignored: the page shows one. The line must have exactly the fields
-/// of [`QUERY_FIELDS`]; anything else (an error message, a changed driver) is a [`QueryError`].
+/// of `QUERY_FIELDS`; anything else (an error message, a changed driver) is a [`QueryError`].
 pub fn parse_query(output: &str) -> Result<GpuMetrics, QueryError> {
     let line = output.lines().map(str::trim).find(|l| !l.is_empty()).ok_or(QueryError::Empty)?;
     let fields: Vec<&str> = line.split(',').map(str::trim).collect();

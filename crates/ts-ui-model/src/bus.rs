@@ -25,21 +25,20 @@ use ts_gui::gui::{CommandError, Commands};
 
 use crate::coalesce::Coalescer;
 use crate::json;
+use ts_foundation::sync::locked;
 
 /// Error code of a write that a newer write for the same control replaced before it started.
 /// Callers treat it as "nothing to report": the newer write will answer.
-pub const CODE_SUPERSEDED: &str = "superseded";
+pub(crate) const CODE_SUPERSEDED: &str = "superseded";
 /// Error code of a command the bus does not have (the page asked for something that is not in
 /// `COMMANDS.md`).
-pub const CODE_UNKNOWN: &str = "unknown-command";
+pub(crate) const CODE_UNKNOWN: &str = "unknown-command";
 /// Error code of a command that did not finish in the time the bus allows.
-pub const CODE_TIMEOUT: &str = "timeout";
+pub(crate) const CODE_TIMEOUT: &str = "timeout";
 /// Error code of arguments that are not a JSON object.
 pub const CODE_BAD_ARGS: &str = "bad-args";
 /// Error code of a command that panicked (a bug below the bus; the app stays alive and says so).
-pub const CODE_INTERNAL: &str = "internal";
-/// Error code the daemon-less commands use: the root service is not running.
-pub const CODE_NEEDS_DAEMON: &str = "needs-daemon";
+pub(crate) const CODE_INTERNAL: &str = "internal";
 
 /// One command: area and verb are the command line's names (`power set`), `args` a JSON object.
 #[derive(Debug, Clone, PartialEq)]
@@ -190,7 +189,7 @@ impl Bus {
     }
 
     /// Queues `request` as the write for control `key`. A write for the same key that has not
-    /// started is replaced (its `done` gets [`CODE_SUPERSEDED`] at once); writes run one at a
+    /// started is replaced (its `done` gets `CODE_SUPERSEDED` at once); writes run one at a
     /// time in the order of the person's latest change per key. Returns the call's id.
     pub fn write(&self, key: &str, request: Request, done: Done) -> u64 {
         let id = self.next_id();
@@ -243,7 +242,7 @@ struct Once<T>(Arc<std::sync::Mutex<Option<T>>>);
 
 impl<T> Once<T> {
     fn take(&self) -> Option<T> {
-        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+        locked(&self.0).take()
     }
 }
 

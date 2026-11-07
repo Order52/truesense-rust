@@ -33,6 +33,7 @@ use std::time::{Duration, Instant};
 use serde_json::Value;
 
 use crate::wire::{self, Args, DeadlineReader, MAX_LINE, Request, Response};
+use ts_foundation::sync::locked;
 
 /// Runs the commands. Implemented for any `Fn(&Request, u32) -> Result<Value, String>`, and by
 /// [`Router`], which dispatches on the command name.
@@ -135,7 +136,8 @@ fn panic_text(payload: &(dyn std::any::Any + Send)) -> &str {
 ///
 /// std has `UnixStream::peer_cred` but it is still unstable, so this is the one place in the
 /// crate that needs `unsafe`.
-pub fn peer_uid(stream: &UnixStream) -> io::Result<u32> {
+#[allow(unsafe_code)]
+pub(crate) fn peer_uid(stream: &UnixStream) -> io::Result<u32> {
     let mut cred = libc::ucred { pid: 0, uid: 0, gid: 0 };
     let want = std::mem::size_of::<libc::ucred>();
     let mut len =
@@ -253,7 +255,7 @@ struct Shared {
 impl Shared {
     fn lock_active(&self) -> MutexGuard<'_, usize> {
         // The counter is a plain integer: a poisoned lock holds a valid value.
-        self.active.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.active)
     }
 }
 

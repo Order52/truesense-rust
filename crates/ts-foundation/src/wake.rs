@@ -12,6 +12,7 @@
 //! sleep if it is not for them, which is cheap because rings are rare (a stop, a device event).
 #![forbid(unsafe_code)]
 
+use crate::sync::locked;
 use std::sync::{Condvar, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
@@ -21,7 +22,7 @@ static BELL: Condvar = Condvar::new();
 
 /// Wakes every thread waiting on the bell. Set whatever flag the waiters look at first.
 pub fn ring() {
-    let mut rings = RINGS.lock().unwrap_or_else(PoisonError::into_inner);
+    let mut rings = locked(&RINGS);
     *rings = rings.wrapping_add(1);
     drop(rings);
     BELL.notify_all();
@@ -36,13 +37,13 @@ pub fn wait_until(timeout: Duration, ready: impl Fn() -> bool) -> bool {
 /// A sleep of up to `timeout` that any ring cuts short. For loops that re-read their own state
 /// after every pause, where an early return only means looking sooner.
 pub fn sleep(timeout: Duration) {
-    let before = *RINGS.lock().unwrap_or_else(PoisonError::into_inner);
+    let before = *locked(&RINGS);
     wait_inner(timeout, |rings| rings != before);
 }
 
 fn wait_inner(timeout: Duration, ready: impl Fn(u64) -> bool) -> bool {
     let deadline = Instant::now().checked_add(timeout);
-    let mut rings = RINGS.lock().unwrap_or_else(PoisonError::into_inner);
+    let mut rings = locked(&RINGS);
     loop {
         if ready(*rings) {
             return true;

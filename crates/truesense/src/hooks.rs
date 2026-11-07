@@ -54,7 +54,7 @@ impl StartupControl for Login {
 }
 
 /// The hooks of the window's command bus.
-pub fn window_hooks(api: &Arc<Api>) -> Hooks {
+pub(crate) fn window_hooks(api: &Arc<Api>) -> Hooks {
     Hooks {
         self_test: Some(Arc::new(WindowSelfTest(api.clone()))),
         service_logs: Some(Arc::new(Journal)),

@@ -28,14 +28,14 @@ use ts_platform::hw::CommandRunner;
 use crate::usage::files::{below, dir_names, indexed, read_i64, read_line, read_text, read_u64};
 
 /// How long `df` may run before it is given up on (a stuck network mount).
-pub const DF_TIMEOUT: Duration = Duration::from_secs(3);
+pub(crate) const DF_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// The most mounts looked at.
 const MAX_MOUNTS: usize = 512;
 
 /// One line of `/proc/self/mounts`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Mount {
+pub(crate) struct Mount {
     /// The device or source (`/dev/nvme0n1p2`, `server:/share`).
     pub device: String,
     /// Where it is mounted.
@@ -68,7 +68,7 @@ fn unescape(field: &str) -> String {
 
 /// Parses `/proc/self/mounts`: `device mountpoint fstype options dump pass`, fields separated by
 /// single spaces with spaces inside a field escaped. Short lines are skipped.
-pub fn parse_mounts(text: &str) -> Vec<Mount> {
+pub(crate) fn parse_mounts(text: &str) -> Vec<Mount> {
     text.lines()
         .filter_map(|line| {
             let mut fields = line.split_whitespace();
@@ -83,7 +83,7 @@ pub fn parse_mounts(text: &str) -> Vec<Mount> {
 }
 
 /// Whether a mount is not storage a person cares about: virtual, in memory, or the system's own.
-pub fn is_skipped(fstype: &str, mount: &str) -> bool {
+pub(crate) fn is_skipped(fstype: &str, mount: &str) -> bool {
     matches!(
         fstype,
         "tmpfs"
@@ -154,7 +154,7 @@ impl DfStats {
 /// Parses `df -B1 --output=size,used,avail,target`: a header and rows of three numbers and a
 /// mount point, which may contain spaces. Rows with `-` (a filesystem that reports no size)
 /// are skipped.
-pub fn parse_df(text: &str) -> HashMap<String, FsSize> {
+pub(crate) fn parse_df(text: &str) -> HashMap<String, FsSize> {
     let mut out = HashMap::new();
     for line in text.lines().skip(1) {
         let mut parts = line.trim_start().splitn(4, char::is_whitespace);

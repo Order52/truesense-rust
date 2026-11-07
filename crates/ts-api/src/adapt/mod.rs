@@ -8,7 +8,7 @@
 //! let api = Api::new(Services::system()?);
 //! ```
 //!
-//! * [`machine`]: everything read from the world (environment, `/sys`, programs, clocks) as one
+//! * `machine`: everything read from the world (environment, `/sys`, programs, clocks) as one
 //!   value, so the assembly itself is testable over a temporary tree;
 //! * `system`: [`Services::system`] and [`Services::assemble`], every field of `Services` built
 //!   from a [`Machine`], with the cycle between the action runner and the whole-setup profiles

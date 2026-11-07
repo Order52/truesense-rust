@@ -5,7 +5,7 @@
 //! daemon together is only a matter of building the concrete values (the sysfs tree, the
 //! command runner, the directories) and handing them over.
 //!
-//! The one adapter with behaviour of its own is [`SystemSensors`], which owns the thread that
+//! The one adapter with behaviour of its own is `SystemSensors`, which owns the thread that
 //! feeds the GPU sampler: it starts only when asked, ends when it is released, and the sampler's
 //! own policy keeps it away from a sleeping card.
 
@@ -145,18 +145,18 @@ impl Notice for Osd {
 
 /// The running programs, read from a `/proc` tree.
 #[derive(Debug, Clone)]
-pub struct ProcFs {
+pub(crate) struct ProcFs {
     root: PathBuf,
 }
 
 impl ProcFs {
     /// The processes listed below `root` (`/proc` in production, a fake tree in tests).
-    pub fn new(root: impl Into<PathBuf>) -> Self {
+    pub(crate) fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }
 
     /// The real `/proc`.
-    pub fn system() -> Self {
+    pub(crate) fn system() -> Self {
         Self::new(gamerules::PROC_DIR)
     }
 }
@@ -170,7 +170,7 @@ impl ProcessList for ProcFs {
 /// The machine's sensors: `/proc/stat` and the battery through [`Sampler`], the CPU package
 /// temperature and the charger through [`LinuxSensors`], and the GPU readings of a background
 /// `nvidia-smi` stream that only runs while the daemon asks for it.
-pub struct SystemSensors {
+pub(crate) struct SystemSensors {
     sampler: Arc<Sampler>,
     linux: LinuxSensors,
     source: Arc<dyn LineSource>,
@@ -185,7 +185,7 @@ pub struct SystemSensors {
 impl SystemSensors {
     /// Sensors over `sampler` and `linux`; the GPU stream reads lines from `source`, waits
     /// between restarts with `sleeper`, and ends when `stop` is requested.
-    pub fn new(
+    pub(crate) fn new(
         sampler: Arc<Sampler>,
         linux: LinuxSensors,
         source: Arc<dyn LineSource>,

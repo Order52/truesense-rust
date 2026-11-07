@@ -7,10 +7,11 @@
 #![forbid(unsafe_code)]
 
 use std::io;
-use std::sync::{Arc, Mutex, OnceLock, PoisonError};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use super::{HidDevice, HidOpener, KeyboardError, OUTPUT_LEN, PACKET_LEN};
 use crate::keymap::{self, Color};
+use ts_foundation::sync::locked;
 
 #[derive(Debug)]
 pub(super) struct Inner {
@@ -57,7 +58,7 @@ impl SimHid {
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Inner> {
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.inner)
     }
 
     /// Every feature report sent so far.
