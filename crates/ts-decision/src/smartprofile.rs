@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 use ts_foundation::fsx::{self, FsError};
+use ts_foundation::names::is_valid as valid_name;
 
 /// A firmware power mode, declared from the slowest and quietest to the fastest and loudest:
 /// the derived order is the rank the automatic engine compares ("a game rule can only raise
@@ -558,14 +559,6 @@ pub struct Resolved {
     /// Why the chosen profile was not usable and [`fallback`] was taken instead; the daemon
     /// logs it ("smart profile invalid, using the built-in: ...").
     pub problem: Option<ProfileError>,
-}
-
-/// Longest profile name.
-const NAME_MAX: usize = 40;
-
-fn valid_name(name: &str) -> bool {
-    (1..=NAME_MAX).contains(&name.len())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
 }
 
 /// Python truthiness of a stored JSON value: the daemon treats `null`, `{}`, `0`, `""`, `false`

@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use ts_foundation::fsx::{self, FsError};
+use ts_foundation::names::is_valid as valid_name;
 use ts_foundation::userstate::{self, Store};
 use ts_platform::hw::{Coded, Hw, HwError, Rear as HwRear, RearMode, RearSettings, Rgb};
 
@@ -286,12 +287,6 @@ pub struct LookStore {
     keyboard: Arc<dyn KeyboardControl>,
     rear: Arc<dyn RearControl>,
     now: Arc<dyn Fn() -> f64 + Send + Sync>,
-}
-
-/// Look names use letters, digits, `.`, `_` and `-`, at most 40 of them.
-fn valid_name(name: &str) -> bool {
-    (1..=40).contains(&name.chars().count())
-        && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
 }
 
 fn file_error(op: &'static str) -> impl FnOnce(FsError) -> LooksError {

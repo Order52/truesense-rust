@@ -33,11 +33,10 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use ts_foundation::names::{NAME_MAX, is_valid as valid_name};
+
 use crate::curves::{self, Curve, CurveError};
 use crate::smartprofile::Mode;
-
-/// The longest name a binding may carry: the limit of look and curve names.
-pub const MAX_NAME: usize = 40;
 
 /// The most bytes of JSON one look copy may hold. A per-key look is about 2 KB; the bound keeps a
 /// hostile or broken client from filling the state file and the 64 KiB control-socket line.
@@ -109,7 +108,7 @@ impl fmt::Display for BindingError {
             Self::UnknownMode(m) => {
                 write!(f, "unknown power mode '{m}' (use eco, quiet, balanced, performance or turbo)")
             }
-            Self::BadName(t) => write!(f, "the {t} name uses letters, digits, . _ - (max {MAX_NAME})"),
+            Self::BadName(t) => write!(f, "the {t} name uses letters, digits, . _ - (max {NAME_MAX})"),
             Self::Nothing => f.write_str("a binding needs a look and/or a fan curve"),
             Self::Malformed(why) => write!(f, "mode bindings are malformed: {why}"),
             Self::Look(why) => write!(f, "the look is not usable: {why}"),
@@ -129,11 +128,6 @@ impl std::error::Error for BindingError {
             _ => None,
         }
     }
-}
-
-fn valid_name(name: &str) -> bool {
-    (1..=MAX_NAME).contains(&name.len())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
 }
 
 /// One bound part: a self-contained copy of a look or curve and the name it came from.

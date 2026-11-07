@@ -9,21 +9,18 @@
 
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
 use serde_json::Value;
 
 use super::bus::Commands;
+use ts_foundation::sync::locked;
 
 /// How many "show" requests a page may have waiting; a stalled page misses further ones rather
 /// than holding up the others.
 const MAX_PENDING_SHOWS: usize = 4;
-
-fn locked<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
-}
 
 /// What a page hears next.
 #[derive(Debug, Clone, PartialEq, Eq)]

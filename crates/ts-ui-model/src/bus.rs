@@ -25,6 +25,7 @@ use ts_gui::gui::{CommandError, Commands};
 
 use crate::coalesce::Coalescer;
 use crate::json;
+use ts_foundation::sync::locked;
 
 /// Error code of a write that a newer write for the same control replaced before it started.
 /// Callers treat it as "nothing to report": the newer write will answer.
@@ -241,7 +242,7 @@ struct Once<T>(Arc<std::sync::Mutex<Option<T>>>);
 
 impl<T> Once<T> {
     fn take(&self) -> Option<T> {
-        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+        locked(&self.0).take()
     }
 }
 

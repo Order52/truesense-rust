@@ -26,6 +26,7 @@ use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 use ts_foundation::buildinfo;
 use ts_foundation::config::{Config, ConfigError};
+use ts_foundation::sync::locked;
 use ts_platform::hw::{Capabilities, FanState, Hw, HwError};
 
 pub use checks::checks;
@@ -429,7 +430,7 @@ pub fn run(env: &Env, checks: &[Check]) -> Report {
                     let i = next.fetch_add(1, Ordering::SeqCst);
                     let Some(check) = checks.get(i) else { break };
                     let result = run_one(env, check);
-                    slots.lock().unwrap_or_else(PoisonError::into_inner)[i] = Some(result);
+                    locked(&slots)[i] = Some(result);
                 }
             });
         }

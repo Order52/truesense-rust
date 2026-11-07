@@ -32,11 +32,12 @@ use std::fs::{File, OpenOptions};
 use std::io;
 use std::os::unix::fs::FileExt;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::Value;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 
 pub use crate::power::{Level, Rating};
 pub use store::ProfileError;
@@ -272,7 +273,7 @@ impl Undervolt {
     fn lock(&self) -> std::sync::MutexGuard<'_, ()> {
         // The guard protects no data, only the order of register accesses: a panic elsewhere
         // must not make the undervolt unusable (and unable to reset).
-        self.gate.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.gate)
     }
 
     fn request(&self, plane: Plane, write: bool, offset_mv: i32) -> io::Result<()> {

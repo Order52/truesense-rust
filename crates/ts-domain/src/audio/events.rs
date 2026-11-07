@@ -17,10 +17,11 @@
 use std::io::{self, BufRead};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
+use ts_foundation::sync::locked;
 use ts_foundation::wake;
 
 /// How long the watcher sleeps between two checks while events arrive. The check runs sooner
@@ -90,7 +91,7 @@ impl EventSource for PactlSubscribe {
         Ok(Stream {
             lines: Box::new(ReapOnEnd { inner: io::BufReader::new(stdout), child: reaper }),
             close: Box::new(move || {
-                if let Some(c) = killer.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
+                if let Some(c) = locked(&killer).as_mut() {
                     let _ = c.kill();
                 }
             }),
@@ -122,7 +123,7 @@ impl BufRead for ReapOnEnd {
 
 impl Drop for ReapOnEnd {
     fn drop(&mut self) {
-        if let Some(mut c) = self.child.lock().unwrap_or_else(PoisonError::into_inner).take() {
+        if let Some(mut c) = locked(&self.child).take() {
             let _ = c.kill();
             let _ = c.wait();
         }
@@ -174,10 +175,10 @@ impl Subscription {
 fn read_loop(source: &dyn EventSource, shared: &Shared) {
     while !shared.closing.load(Ordering::SeqCst) {
         if let Ok(stream) = source.open() {
-            *shared.close.lock().unwrap_or_else(PoisonError::into_inner) = Some(stream.close);
+            *locked(&shared.close) = Some(stream.close);
             // `close` may have been asked for while the helper was starting.
             if shared.closing.load(Ordering::SeqCst) {
-                if let Some(close) = shared.close.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+                if let Some(close) = locked(&shared.close).as_ref() {
                     close();
                 }
             }
@@ -233,7 +234,7 @@ impl Events for Subscription {
 impl Drop for Subscription {
     fn drop(&mut self) {
         self.shared.closing.store(true, Ordering::SeqCst);
-        if let Some(close) = self.shared.close.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+        if let Some(close) = locked(&self.shared.close).as_ref() {
             close();
         }
         wake::ring();

@@ -33,6 +33,7 @@ use std::time::{Duration, Instant};
 use serde_json::Value;
 
 use crate::wire::{self, Args, DeadlineReader, MAX_LINE, Request, Response};
+use ts_foundation::sync::locked;
 
 /// Runs the commands. Implemented for any `Fn(&Request, u32) -> Result<Value, String>`, and by
 /// [`Router`], which dispatches on the command name.
@@ -254,7 +255,7 @@ struct Shared {
 impl Shared {
     fn lock_active(&self) -> MutexGuard<'_, usize> {
         // The counter is a plain integer: a poisoned lock holds a valid value.
-        self.active.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.active)
     }
 }
 

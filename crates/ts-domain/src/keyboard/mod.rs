@@ -31,10 +31,11 @@ mod state;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use ts_foundation::sync::locked;
 use ts_foundation::userstate::{self, Store};
 use ts_platform::firmware::FirmwareError;
 use ts_platform::hw::{HwError, KbTimeoutFlag, Sleeper};
@@ -295,7 +296,7 @@ impl Keyboard {
         &self,
         mut body: impl FnMut(&mut dyn HidDevice) -> Result<T, KeyboardError>,
     ) -> Result<T, KeyboardError> {
-        let mut guard = self.device.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut guard = locked(&self.device);
         let mut attempt = 0;
         loop {
             if guard.is_none() {
@@ -320,7 +321,7 @@ impl Keyboard {
 
     /// Releases the device. It is opened again if the keyboard is used again.
     pub fn close(&self) {
-        *self.device.lock().unwrap_or_else(PoisonError::into_inner) = None;
+        *locked(&self.device) = None;
     }
 
     /// Opens the device in the background (about 50 ms): call it early in a process that will

@@ -17,9 +17,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use ts_foundation::fsx::{self, FsError, MAX_SETTINGS_FILE};
-
-/// The longest name the [`NameRule::Standard`] rule allows.
-pub const NAME_MAX: usize = 40;
+use ts_foundation::names::{self, NAME_MAX};
 
 /// The profile every kind has: the vendor behaviour.
 pub const NATIVE: &str = "native";
@@ -48,11 +46,7 @@ impl NameRule {
     /// Whether `name` is allowed.
     pub fn accepts(self, name: &str) -> bool {
         match self {
-            NameRule::Standard => {
-                !name.is_empty()
-                    && name.len() <= NAME_MAX
-                    && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
-            }
+            NameRule::Standard => names::is_valid(name),
             NameRule::Strict => {
                 !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
             }

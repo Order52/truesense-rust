@@ -1,9 +1,10 @@
 //! The firmware simulator: `TRUESENSE_SIM=1`.
 
 use std::collections::BTreeMap;
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Mutex, MutexGuard};
 
 use super::{Device, FirmwareError, length_reply};
+use ts_foundation::sync::locked;
 
 /// The fan control state the simulated firmware is in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -95,7 +96,7 @@ impl Simulator {
     fn lock(&self) -> MutexGuard<'_, Snapshot> {
         // The state is plain data and every command updates it in one step, so it is consistent
         // even if a panicking test thread poisoned the lock.
-        self.state.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.state)
     }
 
     /// Puts the simulated firmware back to its power-on state.

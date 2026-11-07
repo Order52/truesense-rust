@@ -19,11 +19,12 @@ use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 use ts_platform::hw::CommandRunner;
 
 /// The smallest PL1 or PL2 ever written, in watts.
@@ -421,7 +422,7 @@ impl PowerLimits {
     /// this laptop), so a sleeping card is not asked. Its limits do not change while it sleeps,
     /// so the last answer from an awake card is shown instead (`None` before there was one).
     fn nvidia_limits_without_waking(&self) -> Option<NvidiaLimits> {
-        let mut last = self.last_nvidia.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut last = locked(&self.last_nvidia);
         if self.gpu_asleep() {
             return last.clone();
         }

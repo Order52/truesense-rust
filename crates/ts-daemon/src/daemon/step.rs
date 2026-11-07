@@ -28,6 +28,7 @@ use ts_system::sensors::{Ema, GPU_FRESH_S, GpuFeed, GpuReading};
 
 use super::alerts::Observed;
 use super::daemon::{Daemon, Inner, TEMP_ALPHA};
+use ts_foundation::sync::locked;
 
 /// A step that panics while the CPU is at or above this temperature (or unknown) puts the fans
 /// on full.
@@ -547,9 +548,7 @@ impl Daemon {
         let spawned =
             thread::Builder::new().name("boot-look".to_owned()).spawn(move || me.boot_look_worker(why));
         match spawned {
-            Ok(handle) => {
-                self.background.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(handle)
-            }
+            Ok(handle) => locked(&self.background).push(handle),
             Err(e) => self.warn(format!("boot look ({why}) could not start: {e}")),
         }
     }

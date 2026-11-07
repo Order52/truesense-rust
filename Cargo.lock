@@ -1164,6 +1164,7 @@ dependencies = [
  "libc",
  "serde",
  "serde_json",
+ "ts-foundation",
 ]
 
 [[package]]
@@ -1224,6 +1225,7 @@ dependencies = [
  "serde_json",
  "ts-api",
  "ts-domain",
+ "ts-foundation",
  "ts-system",
 ]
 

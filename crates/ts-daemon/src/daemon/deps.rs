@@ -30,6 +30,7 @@ use ts_foundation::config::Config;
 use ts_foundation::fsx;
 use ts_foundation::sdnotify::Notifier;
 use ts_foundation::state::{self, Store};
+use ts_foundation::sync::locked;
 use ts_platform::hw::Hw;
 use ts_system::osd::UserDirectory;
 use ts_system::sensors::{GpuFeed, GpuReading};
@@ -129,13 +130,13 @@ impl StopToken {
     /// Asks everything that watches this token to wind down. Safe to call twice.
     pub fn request(&self) {
         let (flag, wake) = &*self.inner;
-        *flag.lock().unwrap_or_else(PoisonError::into_inner) = true;
+        *locked(flag) = true;
         wake.notify_all();
     }
 
     /// Whether a stop was requested.
     pub fn is_requested(&self) -> bool {
-        *self.inner.0.lock().unwrap_or_else(PoisonError::into_inner)
+        *locked(&self.inner.0)
     }
 
     /// Waits up to `limit` and returns whether a stop was requested by then (at once when it
@@ -143,7 +144,7 @@ impl StopToken {
     pub fn wait_timeout(&self, limit: Duration) -> bool {
         let (flag, wake) = &*self.inner;
         let deadline = Instant::now() + limit;
-        let mut stopped = flag.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut stopped = locked(flag);
         while !*stopped {
             let left = deadline.saturating_duration_since(Instant::now());
             if left.is_zero() {

@@ -43,7 +43,7 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
@@ -61,6 +61,7 @@ use ts_system::usage::{
 pub use ts_system::sysinfo::SystemInfo;
 
 use super::Api;
+use ts_foundation::sync::locked;
 
 /// The most processes a ranking can have.
 pub const MAX_TOP: usize = 25;
@@ -168,10 +169,6 @@ impl Monitor {
         self.runner = runner;
         self
     }
-}
-
-fn locked<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// A temperature on a gauge, with the lowest and highest value seen since the page started.

@@ -27,12 +27,13 @@ use std::fs;
 use std::io::{self, BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ts_platform::hw::Sleeper;
 
 use crate::nvidia::{self, GpuPower};
+use ts_foundation::sync::locked;
 
 /// Weight of a new CPU load sample (the daemon smooths the jittery `/proc/stat` deltas without
 /// a delay long enough to hide a real rise).
@@ -296,7 +297,7 @@ impl Sampler {
     ///
     /// Busy is the share of the time since the last call not spent idle or waiting for I/O.
     pub fn cpu_load(&self) -> f64 {
-        let mut state = self.cpu.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut state = locked(&self.cpu);
         let current = fs::read(self.path("/proc/stat"))
             .ok()
             .and_then(|b| parse_cpu_counters(&String::from_utf8_lossy(&b)));
@@ -353,7 +354,7 @@ impl Sampler {
 
     /// The latest GPU reading (the empty reading until the stream produced one).
     pub fn gpu(&self) -> GpuReading {
-        let g = self.gpu.lock().unwrap_or_else(PoisonError::into_inner);
+        let g = locked(&self.gpu);
         GpuReading {
             temp: g.temp,
             util: g.util.value().unwrap_or(0.0),
@@ -371,7 +372,7 @@ impl Sampler {
     }
 
     fn feed_sample(&self, (temp, util, power): (f64, f64, f64)) {
-        let mut g = self.gpu.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut g = locked(&self.gpu);
         g.temp = Some(temp);
         g.util.update(util);
         g.power.update(power);
@@ -381,7 +382,7 @@ impl Sampler {
     /// Forgets the GPU readings: the stream ended or the card went to sleep, so the numbers are
     /// not current any more and a later session must start its averages afresh.
     pub fn reset_gpu(&self) {
-        *self.gpu.lock().unwrap_or_else(PoisonError::into_inner) = GpuState::empty();
+        *locked(&self.gpu) = GpuState::empty();
     }
 
     /// The runtime power state of the NVIDIA card, read without waking it.
@@ -397,7 +398,7 @@ impl Sampler {
             GpuPower::Suspended => GpuFeed::Suspended,
             GpuPower::Active | GpuPower::Unknown => {
                 let now = (self.clock)();
-                let seen = self.gpu.lock().unwrap_or_else(PoisonError::into_inner).seen;
+                let seen = locked(&self.gpu).seen;
                 if seen.is_some_and(|seen| now - seen <= GPU_FRESH_S) {
                     GpuFeed::Live
                 } else {

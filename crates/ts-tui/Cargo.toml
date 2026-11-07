@@ -10,6 +10,7 @@ publish = false
 workspace = true
 
 [dependencies]
+ts-foundation = { path = "../ts-foundation" }
 ts-domain = { path = "../ts-domain" }
 ts-system = { path = "../ts-system" }
 ts-api = { path = "../ts-api" }

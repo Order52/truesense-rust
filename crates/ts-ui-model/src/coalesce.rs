@@ -9,6 +9,7 @@
 
 use std::collections::VecDeque;
 use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
+use ts_foundation::sync::locked;
 
 /// Unstarted writes in the order the person made their latest change to each key.
 ///
@@ -82,7 +83,7 @@ impl<T> Coalescer<T> {
     /// A poisoned lock only means another thread panicked while holding it; the queue itself is
     /// always consistent (every operation is a single `VecDeque` call), so carry on.
     fn lock(&self) -> MutexGuard<'_, State<T>> {
-        self.state.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.state)
     }
 
     /// Queues a write; returns what it replaced. After [`Self::close`] the item is handed back as

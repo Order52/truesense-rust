@@ -21,6 +21,9 @@ use std::path::{Path, PathBuf};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 use ts_foundation::fsx::{self, FsError, MAX_SETTINGS_FILE};
+// A curve name becomes a file name: the shared rule keeps everything that could climb out of the
+// directory out.
+use ts_foundation::names::is_valid as valid_name;
 
 /// The fewest points a side may have.
 pub const MIN_POINTS: usize = 2;
@@ -751,13 +754,6 @@ fn truthy(v: &Value) -> bool {
         Value::Array(a) => !a.is_empty(),
         Value::Object(o) => !o.is_empty(),
     }
-}
-
-/// Curve names use letters, digits, `.`, `_` and `-`, 1 to 40 of them: the name becomes a file
-/// name, so nothing that could climb out of the directory is allowed.
-fn valid_name(name: &str) -> bool {
-    (1..=40).contains(&name.len())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
 }
 
 /// Turns temperatures into fan duties: rises at once, falls slowly and only after the

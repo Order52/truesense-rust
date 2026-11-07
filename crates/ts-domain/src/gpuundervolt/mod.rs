@@ -25,11 +25,12 @@ pub mod helper;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::Value;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 
 pub use crate::power::{Level, Rating};
 pub use crate::undervolt::ProfileError;
@@ -164,7 +165,7 @@ impl GpuUndervolt {
     fn lock(&self) -> std::sync::MutexGuard<'_, ()> {
         // The guard protects no data, only the order of calls: a panic elsewhere must not leave
         // the GPU without a way to be reset.
-        self.gate.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.gate)
     }
 
     fn read_locked(&self) -> Result<State, GpuError> {

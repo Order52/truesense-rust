@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
 use ts_gui::gui::{ApiCommands, Commands};
@@ -15,6 +15,7 @@ use crate::hooks::window_hooks;
 use crate::live::{HISTORY_LEN, LiveStore};
 use crate::routes::Routes;
 use crate::settings::{self, UiStore};
+use ts_foundation::sync::locked;
 
 /// Everything the UI shell shares.
 pub struct AppModel {
@@ -27,10 +28,6 @@ pub struct AppModel {
     pub routes: Routes,
     ui: Mutex<UiStore>,
     caps: Mutex<Capabilities>,
-}
-
-fn locked<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 impl AppModel {

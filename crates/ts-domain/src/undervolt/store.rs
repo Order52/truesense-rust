@@ -12,9 +12,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use serde_json::Value;
 use ts_foundation::fsx::{self, FsError};
-
-/// The longest profile name.
-const MAX_NAME: usize = 40;
+use ts_foundation::names::{NAME_MAX, is_valid as valid_name};
 
 /// A failed profile operation. The wording is the Python edition's, which users see.
 #[derive(Debug)]
@@ -60,7 +58,7 @@ impl fmt::Display for ProfileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Invalid(message) => f.write_str(message),
-            Self::BadName => write!(f, "profile names use letters, digits, . _ - (max {MAX_NAME})"),
+            Self::BadName => write!(f, "profile names use letters, digits, . _ - (max {NAME_MAX})"),
             Self::NotFound { what, name, hint: Some(hint) } => {
                 write!(f, "no {what} profile '{name}' ({hint})")
             }
@@ -115,13 +113,6 @@ pub(crate) trait Kind {
 pub(crate) struct NamedStore<K: Kind> {
     dir: PathBuf,
     kind: PhantomData<fn() -> K>,
-}
-
-/// A profile name: 1 to 40 of letters, digits, `.`, `_`, `-`. No separator can be in it, so the
-/// file is always directly inside the store's directory.
-fn valid_name(name: &str) -> bool {
-    (1..=MAX_NAME).contains(&name.len())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
 }
 
 impl<K: Kind> NamedStore<K> {
