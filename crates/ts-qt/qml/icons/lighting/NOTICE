@@ -1,0 +1,6 @@
+Adapted from predator-sense by cleyton1986 (GPL-3.0), used with the author's permission.
+
+The 17 SVG files in this directory are the lighting-*-symbolic.svg icons of predator-sense
+(predator-sense-gui/resources), renamed without the "lighting-" prefix and "-symbolic" suffix,
+with their fixed stroke colour (#222222) replaced by currentColor so that the app can tint them
+(see qml/components/Icon.qml). The drawing is unchanged.
