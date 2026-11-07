@@ -229,6 +229,15 @@ impl Fast<'_> {
         match self.daemon.call("fan", args) {
             Ok(_) => Ok(()),
             Err(e) if e.is_unknown_command() => self.fan_legacy(request, duties),
+            // A crashed daemon leaves its socket file behind: the file exists but nobody answers.
+            // Handing the fans back (auto, max, a plain duty) must still work then: that is what
+            // the service unit's ExecStopPost relies on. The smart curve needs the service.
+            Err(e)
+                if (e.is_not_running() || matches!(e, ClientError::Unreachable(_)))
+                    && !matches!(request, FanRequest::Smart) =>
+            {
+                self.fan_direct(request, duties)
+            }
             Err(e) => Err(e.into()),
         }
     }
