@@ -1051,8 +1051,6 @@ dependencies = [
  "ts-api",
  "ts-cli",
  "ts-daemon",
- "ts-decision",
- "ts-domain",
  "ts-foundation",
  "ts-gui",
  "ts-ipc",
@@ -1166,7 +1164,6 @@ dependencies = [
  "libc",
  "serde",
  "serde_json",
- "ts-foundation",
 ]
 
 [[package]]
@@ -1174,22 +1171,18 @@ name = "ts-keys"
 version = "0.5.0"
 dependencies = [
  "libc",
- "serde",
  "serde_json",
  "ts-api",
  "ts-domain",
  "ts-foundation",
  "ts-fx",
- "ts-ipc",
  "ts-platform",
- "ts-system",
 ]
 
 [[package]]
 name = "ts-platform"
 version = "0.5.0"
 dependencies = [
- "libc",
  "serde",
  "serde_json",
  "ts-foundation",
@@ -1205,10 +1198,7 @@ dependencies = [
  "cxx-qt-lib",
  "qt-build-utils",
  "serde_json",
- "ts-api",
  "ts-foundation",
- "ts-gui",
- "ts-keys",
  "ts-ui-model",
 ]
 
@@ -1221,7 +1211,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "ts-domain",
  "ts-foundation",
  "ts-platform",
 ]
@@ -1232,12 +1221,9 @@ version = "0.5.0"
 dependencies = [
  "crossterm",
  "ratatui",
- "serde",
  "serde_json",
  "ts-api",
  "ts-domain",
- "ts-foundation",
- "ts-ipc",
  "ts-system",
 ]
 

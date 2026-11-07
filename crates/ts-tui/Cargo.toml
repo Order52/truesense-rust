@@ -10,12 +10,9 @@ publish = false
 workspace = true
 
 [dependencies]
-ts-foundation = { path = "../ts-foundation" }
-ts-ipc = { path = "../ts-ipc" }
 ts-domain = { path = "../ts-domain" }
 ts-system = { path = "../ts-system" }
 ts-api = { path = "../ts-api" }
-serde.workspace = true
 serde_json.workspace = true
 ratatui.workspace = true
 crossterm.workspace = true
