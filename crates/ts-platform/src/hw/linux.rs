@@ -5,7 +5,7 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -72,21 +72,23 @@ impl CommandRunner for ProcessRunner {
         let mut stdout = child.stdout.take().ok_or_else(|| io::Error::other("no stdout pipe"))?;
         let stderr = child.stderr.take().ok_or_else(|| io::Error::other("no stderr pipe"))?;
         // Read on threads so a program that prints more than a pipe holds cannot block its own exit.
+        // The standard-output reader also tells this thread when the program closed its output
+        // (normally: when it exited), so waiting for a helper is one blocking wait and not a poll
+        // every few milliseconds (a `pactl` call used to cost about ten wake-ups of the caller).
+        let (done, finished) = mpsc::channel::<io::Result<Vec<u8>>>();
         let out_reader = thread::spawn(move || {
             let mut out = Vec::new();
-            stdout.read_to_end(&mut out).map(|_| out)
+            let result = stdout.read_to_end(&mut out).map(|_| out);
+            let _ = done.send(result);
         });
         let err_reader = thread::spawn(move || {
             let mut out = Vec::new();
             stderr.take(MAX_STDERR).read_to_end(&mut out).map(|_| out)
         });
         let deadline = Instant::now() + timeout;
-        let mut backoff = ts_foundation::backoff::Backoff::new();
-        let status = loop {
-            if let Some(status) = child.try_wait()? {
-                break status;
-            }
-            if Instant::now() >= deadline {
+        let stdout = match finished.recv_timeout(timeout) {
+            Ok(result) => result,
+            Err(_) => {
                 let _ = child.kill();
                 let _ = child.wait();
                 let _ = out_reader.join();
@@ -96,9 +98,27 @@ impl CommandRunner for ProcessRunner {
                     format!("{program} did not finish in time"),
                 ));
             }
+        };
+        let _ = out_reader.join();
+        // The output is closed; the program is normally gone already. One that closed its output and
+        // keeps running still meets the deadline.
+        let mut backoff = ts_foundation::backoff::Backoff::new();
+        let status = loop {
+            if let Some(status) = child.try_wait()? {
+                break status;
+            }
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = err_reader.join();
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    format!("{program} did not finish in time"),
+                ));
+            }
             backoff.wait();
         };
-        let stdout = out_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;
+        let stdout = stdout?;
         let stderr = err_reader.join().map_err(|_| io::Error::other("reader thread panicked"))??;
         Ok(CommandOutput { code: status.code(), stdout, stderr })
     }
