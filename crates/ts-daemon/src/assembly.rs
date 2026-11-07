@@ -4,6 +4,7 @@
 //! this module is the one place that knows which real type stands behind each trait, reads the
 //! environment (`TRUESENSE_SIM`, `TRUESENSE_RUN`, ...) and installs the signal handling. Tests
 //! never go through here: they build [`Deps`] from fakes.
+#![allow(unsafe_code)]
 
 use std::io;
 use std::path::{Path, PathBuf};

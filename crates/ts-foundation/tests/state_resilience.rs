@@ -250,9 +250,9 @@ fn a_disk_that_fails_for_a_while_catches_up_by_itself() {
 /// S3b: a real read-only directory (skipped for root, which ignores directory modes).
 #[test]
 fn a_read_only_directory_is_an_error_and_not_a_panic() {
+    use std::os::unix::fs::MetadataExt;
     use std::os::unix::fs::PermissionsExt;
-    // SAFETY: geteuid has no preconditions.
-    if unsafe { libc::geteuid() } == 0 {
+    if fs::metadata("/proc/self").is_ok_and(|m| m.uid() == 0) {
         return;
     }
     let d = Dir::new("ro");

@@ -135,6 +135,7 @@ fn panic_text(payload: &(dyn std::any::Any + Send)) -> &str {
 ///
 /// std has `UnixStream::peer_cred` but it is still unstable, so this is the one place in the
 /// crate that needs `unsafe`.
+#[allow(unsafe_code)]
 pub fn peer_uid(stream: &UnixStream) -> io::Result<u32> {
     let mut cred = libc::ucred { pid: 0, uid: 0, gid: 0 };
     let want = std::mem::size_of::<libc::ucred>();

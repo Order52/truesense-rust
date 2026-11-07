@@ -10,6 +10,13 @@
 
 // The bridge macro generates public items (the QObject, its signals) that cannot carry doc comments.
 #![allow(missing_docs)]
+// SAFETY (for the whole module): the only `unsafe` here is what the `cxx_qt::bridge` macro
+// requires and generates: `unsafe extern "C++"` declarations of Qt types and of the shims in
+// cpp/shim.cpp, and the `unsafe fn` signatures of the QObject's invokables (they take a
+// `Pin<&mut Bus>`). No pointer is dereferenced by hand; the shims take and return values, and
+// the QObject is only touched from the GUI thread or through queued signals. The end-to-end test
+// (tests/app.rs) runs every one of them under the offscreen platform.
+#![allow(unsafe_code)]
 
 use core::pin::Pin;
 use std::sync::{Arc, Mutex, OnceLock};
