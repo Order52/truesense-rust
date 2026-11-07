@@ -215,11 +215,14 @@ ColumnLayout {
         }
 
         // The series, one Shape each (a Shape cannot be repeated in itself).
+        // The model is the NUMBER of series, so a redraw updates the Shapes in place instead of
+        // creating them again every time the data moves.
         Repeater {
-            model: root._shown
+            model: root._shown.length
             delegate: Shape {
                 id: line
-                required property var modelData
+                required property int index
+                readonly property var modelData: root._shown[index] || ({ values: [], color: "transparent" })
                 x: plot.labelWidth
                 width: plot.plotW
                 height: plot.height
@@ -272,12 +275,13 @@ ColumnLayout {
                     PathMultiline { paths: line.lines }
                 }
                 Repeater {
-                    model: line.dots
+                    model: line.dots.length
                     delegate: Rectangle {
-                        required property var modelData
+                        required property int index
+                        readonly property var at: line.dots[index] || Qt.point(0, 0)
                         readonly property real d: 2 * (root.lineWidth + 0.8)
-                        x: modelData.x - d / 2
-                        y: modelData.y - d / 2
+                        x: at.x - d / 2
+                        y: at.y - d / 2
                         width: d
                         height: d
                         radius: d / 2
