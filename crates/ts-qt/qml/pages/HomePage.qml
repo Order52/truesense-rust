@@ -134,6 +134,8 @@ PageFrame {
         case "smart_profile": return qsTrId("home_kind_smart")
         //% "Profile"
         case "profile": return qsTrId("home_kind_profile")
+        //% "Theme"
+        case "theme": return qsTrId("home_kind_theme")
         }
         return ""
     }

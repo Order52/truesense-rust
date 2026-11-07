@@ -1216,7 +1216,7 @@ An action is `name` or `name:argument`. Each returns a short message (shown on s
   power-next | power-prev | power:<mode> | power-cycle:<mode,mode,...>     eco quiet balanced performance turbo (a manual choice holds for [profile] hold_minutes)
   fan:smart | fan:auto | fan:max | fan:<percent> | fan-max-toggle | smart-fan-toggle
   profile:<name> | profile-next                                              saved profiles (see `truesense profile`)
-  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles and profiles (see `truesense favourite`); N counts from 1
+  favourite:<N> | favourite-next                                             your starred looks, fan curves, Smart profiles, profiles and themes (see `truesense favourite`); N counts from 1
   output-toggle | output-cycle | output:speakers | output:headphones
   mic-toggle | mic:mute | mic:unmute | voice-next
   touchpad-toggle | touchpad:on | touchpad:off
@@ -1770,8 +1770,8 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
-        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
@@ -1974,8 +1974,8 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
-        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;

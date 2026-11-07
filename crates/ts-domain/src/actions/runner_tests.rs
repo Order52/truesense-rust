@@ -470,6 +470,16 @@ fn favourite_n_applies_each_kind_through_the_matching_call_and_says_what_it_did(
 }
 
 #[test]
+fn a_starred_theme_is_started_through_the_favourites_handle() {
+    let (w, r) = with_favourites(&[(Kind::Look, "calm"), (Kind::Theme, "hearth")]);
+    assert_eq!(run(&r, "favourite:2"), "Favourite 2/2: Theme hearth");
+    assert_eq!(run(&r, "favourite-next"), "Favourite 1/2: Look calm");
+    assert_eq!(run(&r, "favourite-next"), "Favourite 2/2: Theme hearth");
+    let calls: Vec<String> = w.calls().into_iter().filter(|c| !c.ends_with('?')).collect();
+    assert_eq!(calls, ["theme:hearth", "look:calm", "theme:hearth"]);
+}
+
+#[test]
 fn favourite_n_past_the_list_or_with_no_list_is_a_normal_error() {
     let (w, r) = with_favourites(&four());
     assert_eq!(fails(&r, "favourite:5"), "no favourite 5: you have 4");

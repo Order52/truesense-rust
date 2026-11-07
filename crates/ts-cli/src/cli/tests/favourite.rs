@@ -61,7 +61,7 @@ fn add_refuses_what_does_not_exist_and_a_wrong_kind_is_a_usage_error() {
     let ran = fx.run("favourite add undervolt cpu");
     assert_eq!(ran.code, 2);
     assert!(
-        ran.err.contains("argument kind: invalid choice: 'undervolt' (choose from 'look', 'fan_curve', 'smart_profile', 'profile')"),
+        ran.err.contains("argument kind: invalid choice: 'undervolt' (choose from 'look', 'fan_curve', 'smart_profile', 'profile', 'theme')"),
         "{}",
         ran.err
     );
@@ -146,7 +146,7 @@ fn apply_says_what_is_wrong_with_the_words() {
         ("favourite apply look", "error: apply look needs a NAME\n"),
         (
             "favourite apply sound x",
-            "error: 'sound': the kind is one of look, fan_curve, smart_profile, profile\n",
+            "error: 'sound': the kind is one of look, fan_curve, smart_profile, profile, theme\n",
         ),
         (
             "favourite apply 99999999999999999999999",
@@ -215,4 +215,18 @@ fn the_command_table_lists_every_verb() {
     for verb in ["list", "add", "remove", "move", "apply", "next"] {
         assert!(table.contains(&format!("truesense favourite {verb}")), "{verb}");
     }
+}
+
+#[test]
+fn a_theme_is_starred_listed_and_applied_from_the_command_line() {
+    let fx = Fx::new();
+    let ran = fx.run("favourite add theme hearth");
+    assert_eq!((ran.code, ran.out.as_str()), (0, "starred theme hearth\n"), "{}", ran.err);
+    assert!(fx.run("favourite list").out.contains("theme"), "{}", fx.run("favourite list").out);
+    assert_eq!(fx.run("favourite add theme ghost").err, "error: no theme 'ghost' (truesense theme list)\n");
+    let ran = fx.run("favourite apply theme hearth");
+    assert_eq!((ran.code, ran.out.as_str()), (0, "Theme: hearth\n"), "{}", ran.err);
+    assert!(fx.run("theme list").out.ends_with("theme hearth is running\n"));
+    assert_eq!(fx.run("favourite remove theme hearth").code, 0);
+    assert!(fx.run("favourite list").out.contains("no favourites"));
 }

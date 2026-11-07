@@ -405,6 +405,9 @@ impl FavouritesFacade for World {
     fn use_smart_profile(&self, name: &str) -> HostResult<()> {
         self.rec(format!("smart:{name}"))
     }
+    fn apply_theme(&self, name: &str) -> HostResult<()> {
+        self.rec(format!("theme:{name}"))
+    }
 }
 
 impl Spawner for World {

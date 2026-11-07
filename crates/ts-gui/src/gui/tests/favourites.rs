@@ -73,7 +73,7 @@ fn starring_a_missing_item_or_a_wrong_kind_is_refused_with_a_message() {
     );
     assert_eq!(
         m.refused("favourite", "toggle", &json!({"kind": "undervolt", "name": "x"})),
-        "'undervolt': the kind is one of look, fan_curve, smart_profile, profile"
+        "'undervolt': the kind is one of look, fan_curve, smart_profile, profile, theme"
     );
     assert_eq!(m.refused("favourite", "toggle", &json!({"kind": "look"})), "name is needed");
     assert_eq!(m.refused("favourite", "toggle", &json!({"name": "native"})), "kind is needed");
@@ -143,4 +143,17 @@ fn the_list_is_capped_at_twenty_four() {
         }
     }
     assert_eq!(m.ok("favourite", "list", &json!({})).as_array().expect("list").len(), 24);
+}
+
+#[test]
+fn a_theme_is_starred_and_applied_through_the_bus() {
+    let m = Machine::start();
+    assert_eq!(m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})), json!({"starred": true}));
+    assert_eq!(names(&m.ok("favourite", "list", &json!({}))), ["1:theme:hearth:true"]);
+    assert_eq!(m.ok("favourite", "apply", &json!({"position": 1})), json!("Favourite 1/1: Theme hearth"));
+    let listed = m.ok("theme", "list", &json!({}));
+    assert_eq!(listed["status"]["active"]["spec"]["name"], "hearth", "{listed}");
+    assert!(m.refused("favourite", "toggle", &json!({"kind": "theme", "name": "ghost"})).contains("no theme 'ghost'"));
+    assert_eq!(m.ok("favourite", "apply", &json!({"kind": "theme", "name": "sunset"})), json!("Theme: sunset"));
+    assert_eq!(m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})), json!({"starred": false}));
 }

@@ -275,6 +275,7 @@ impl Runner {
             Kind::Profile => {
                 self.env.profiles.apply(name).map_err(host("profile"))?;
             }
+            Kind::Theme => facade.apply_theme(name).map_err(host("theme"))?,
         }
         Ok(format!("Favourite {position}/{total}: {} {name}", fav.kind.label()))
     }

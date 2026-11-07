@@ -136,7 +136,7 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 | `profile` | `save` | `{"name", "description"?}` | the file path; saves the current state | `profiles.save(name, profiles.capture())` |
 | `profile` | `delete` | `{"name"}` | message | `profiles.delete` |
 | `profile` | `current` | **new**: none | `{"name": "gaming"\|null}`, the profile applied last | `userstate.get("profile")` |
-| `favourite` | `list` | **new**: none | `[{"position", "kind": "look"\|"fan_curve"\|"smart_profile"\|"profile", "name", "exists"}]` in the user's order, positions from 1; `exists: false` = the item was deleted since (shown greyed; apply fails with the library's message) | favourites file beside the user config (`~/.config/truesense/favourites.json`) |
+| `favourite` | `list` | **new**: none | `[{"position", "kind": "look"\|"fan_curve"\|"smart_profile"\|"profile"\|"theme", "name", "exists"}]` in the user's order, positions from 1; `exists: false` = the item was deleted since (shown greyed; apply fails with the library's message) | favourites file beside the user config (`~/.config/truesense/favourites.json`) |
 | `favourite` | `toggle` | **new**: `{"kind", "name"}` (`kind` also accepts `curve`, `smart`) | `{"starred": bool}`; starring needs the item to exist, un-starring never does; refused when 24 are starred | `favourites.toggle` |
 | `favourite` | `remove` | **new**: `{"kind", "name"}` | `{"removed": bool}` | `favourites.remove` |
 | `favourite` | `move` | **new**: `{"from", "to"}` (positions from 1; the others shift) | the new list, as `list` | `favourites.move_to` |

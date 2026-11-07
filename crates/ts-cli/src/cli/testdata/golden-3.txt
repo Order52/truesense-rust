@@ -306,10 +306,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
-    favourite    starred looks, fan curves, Smart profiles and profiles (the
-                 Home page and the PREDATOR key use them): list | add KIND
-                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
-                 NAME | next
+    favourite    starred looks, fan curves, Smart profiles, profiles and
+                 themes (the Home page and the PREDATOR key use them): list |
+                 add KIND NAME | remove KIND NAME | move FROM TO | apply N |
+                 apply KIND NAME | next
     theme        lighting themes drawn on the keyboard by the key service:
                  list | show NAME | apply NAME | stop
     cpu          CPU power limits and the guarded undervolt
@@ -373,10 +373,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
-    favourite    starred looks, fan curves, Smart profiles and profiles (the
-                 Home page and the PREDATOR key use them): list | add KIND
-                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
-                 NAME | next
+    favourite    starred looks, fan curves, Smart profiles, profiles and
+                 themes (the Home page and the PREDATOR key use them): list |
+                 add KIND NAME | remove KIND NAME | move FROM TO | apply N |
+                 apply KIND NAME | next
     theme        lighting themes drawn on the keyboard by the key service:
                  list | show NAME | apply NAME | stop
     cpu          CPU power limits and the guarded undervolt
@@ -957,8 +957,8 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
-        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile theme --help" -- "$cur") ); return;;
         move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
