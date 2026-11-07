@@ -185,7 +185,9 @@ fn fan_curve_get_has_python_s_three_keys_and_the_api_reads_them() {
     let rig = Rig::new();
     let raw = rig.client.call("fan_curve", Args::new().with("action", "get")).unwrap();
     let object = raw.as_object().unwrap();
-    assert_eq!(object.keys().cloned().collect::<Vec<_>>(), ["curve", "name", "names"]);
+    let mut keys = object.keys().cloned().collect::<Vec<_>>();
+    keys.sort();
+    assert_eq!(keys, ["curve", "name", "names"]);
     assert_eq!(object["name"], json!("native"));
     let names: Vec<&str> = object["names"].as_array().unwrap().iter().map(|n| n.as_str().unwrap()).collect();
     assert_eq!(names, rig.api.fan_curves().unwrap().names);
@@ -337,7 +339,9 @@ fn smart_profile_get_has_python_s_three_keys_and_the_api_reads_them() {
     let rig = Rig::new();
     let raw = rig.client.call("smart_profile", Args::new().with("action", "get")).unwrap();
     let object = raw.as_object().unwrap();
-    assert_eq!(object.keys().cloned().collect::<Vec<_>>(), ["name", "names", "profile"]);
+    let mut keys = object.keys().cloned().collect::<Vec<_>>();
+    keys.sort();
+    assert_eq!(keys, ["name", "names", "profile"]);
     assert_eq!(object["name"], json!("native"));
     assert!(object["profile"].get("ac_idle").is_some(), "{}", object["profile"]);
     let in_use = rig.api.smart_profile_in_use().unwrap();

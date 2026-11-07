@@ -118,10 +118,9 @@ fn power_managers_status_lists_what_runs_or_is_enabled() {
     assert_eq!(units, [("power-profiles-daemon", true, true), ("tlp", true, true)]);
     // Python: `{"on": ..., "found": [{"unit", "active", "enabled"}], "recorded": ...}`.
     let raw = rig.client.call("power_managers", Args::new().with("action", "status")).unwrap();
-    assert_eq!(
-        raw["found"][0].as_object().unwrap().keys().cloned().collect::<Vec<_>>(),
-        ["active", "enabled", "unit"]
-    );
+    let mut found_keys = raw["found"][0].as_object().unwrap().keys().cloned().collect::<Vec<_>>();
+    found_keys.sort();
+    assert_eq!(found_keys, ["active", "enabled", "unit"]);
     assert_eq!(
         rig.api.power_managers().unwrap().to_string().lines().next(),
         Some("TrueSense manages power: off")
