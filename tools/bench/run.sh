@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Run the benchmark (tools/bench/bench.py) in a private world and print the table of docs/PERFORMANCE.md.
 #
 #   tools/bench/run.sh [--seconds N] [--runs N] [--bin PATH] [--qt PATH] [--only daemon,keys,...] [--json FILE]

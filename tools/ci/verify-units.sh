@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Check every systemd unit the way systemd itself reads it: placeholders filled in, fake programs in place, then `systemd-analyze verify`.
 # Also prints the hardening score. Used by CI; safe to run anywhere (changes nothing, needs no root).
 set -Eeuo pipefail

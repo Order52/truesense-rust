@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Syntax-check (bash -n) and shellcheck (warnings and up) every shell script we ship. CI and `tools/release.sh prepare` run this.
 #   tools/ci/check-shell.sh                shellcheck is optional locally (skipped with a note), required when CI=true or REQUIRE_SHELLCHECK=1
 set -Eeuo pipefail

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Remove TrueSense (services, files, kernel module). Your config in /etc/truesense and ~/.config/truesense is kept unless you pass --purge.
 #   sudo tools/uninstall.sh [--purge] [--prefix=DIR] [--user=NAME]      (PREFIX=DIR in the environment does the same as --prefix)
 # The fans are handed back to the firmware and the service is stopped BEFORE anything is deleted; if the service cannot be stopped nothing is removed.

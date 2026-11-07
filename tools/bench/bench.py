@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 """TrueSense benchmark: the numbers of docs/PERFORMANCE.md, measured the same way every time.
 
 Everything runs in the firmware simulator (TRUESENSE_SIM=1) with a temporary HOME, short paths,

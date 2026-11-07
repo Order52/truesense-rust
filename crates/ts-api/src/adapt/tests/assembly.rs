@@ -74,7 +74,7 @@ fn the_user_state_the_configuration_and_the_system_file_follow_the_environment()
 #[test]
 fn the_repository_comes_from_the_system_file_and_never_from_the_users() {
     let rig = Rig::new();
-    assert_eq!(rig.api.update_repo(), "Order52/truesense");
+    assert_eq!(rig.api.update_repo(), "Order52/truesense-rust");
     put(&rig.root.join("etc/truesense/config.toml"), "[update]\nrepo = \"someone/fork\"\n");
     put(&rig.home.join(".config/truesense/config.toml"), "[update]\nrepo = \"evil/fork\"\n");
     let api = Api::new(Services::assemble(&rig.machine).unwrap());
@@ -82,7 +82,7 @@ fn the_repository_comes_from_the_system_file_and_never_from_the_users() {
     // A broken system file falls back to the built-in repository.
     put(&rig.root.join("etc/truesense/config.toml"), "[update\nrepo = ");
     let api = Api::new(Services::assemble(&rig.machine).unwrap());
-    assert_eq!(api.update_repo(), "Order52/truesense");
+    assert_eq!(api.update_repo(), "Order52/truesense-rust");
 }
 
 #[test]

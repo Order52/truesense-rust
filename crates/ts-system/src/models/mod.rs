@@ -29,7 +29,8 @@ pub use ts_platform::hw::READ_ONLY;
 pub const DMI_ROOT: &str = "/sys/class/dmi/id";
 
 /// Where a user of an unverified model sends the probe report.
-pub const REPORT_URL: &str = "https://github.com/Order52/truesense/issues/new?template=new_model_report.yml";
+pub const REPORT_URL: &str =
+    "https://github.com/Order52/truesense-rust/issues/new?template=new_model_report.yml";
 
 /// The Acer gaming WMI interface TrueSense talks to; its presence is the first sign that a model
 /// has it.

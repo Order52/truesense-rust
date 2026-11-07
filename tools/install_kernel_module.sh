@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Build and install the truesense_wmi kernel module with DKMS for EVERY installed kernel (so it also works after you boot another kernel), then load it.
 set -Eeuo pipefail
 # >>> sandbox (the same text in install.sh, uninstall.sh, install_kernel_module.sh and migrate-legacy.sh: tools/shelltest keeps the four copies equal)

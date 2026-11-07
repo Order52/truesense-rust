@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn repository_names_are_checked_because_they_end_up_in_urls() {
-        for ok in ["Order52/truesense", "o/r", "a-b/c_d.e", "owner/name.git", "1/2"] {
+        for ok in ["Order52/truesense-rust", "o/r", "a-b/c_d.e", "owner/name.git", "1/2"] {
             assert!(valid_repo(ok), "{ok}");
         }
         for bad in [

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Runs the tests of the shipped shell scripts (the installer, get.sh, release.sh, the packaging): every tools/shelltest/test_*.sh, each in its own bash.
 #   tools/shelltest/run.sh               all of them
 #   tools/shelltest/run.sh installer     only test_installer.sh   (a second argument selects tests by name: run.sh get checksum)

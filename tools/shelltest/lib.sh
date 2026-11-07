@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # shellcheck disable=SC2034  # ROOT, BASH_BIN, GH_URL ... are for the test files that source this one
 # A small test framework for the shipped shell scripts (the Go edition's tools/shelltest, without Go). A test file sources this, defines functions named t_<what-it-checks>
 # and ends with `run_tests`. Every test runs in its own subshell with its own temporary directory ($TMP), which is removed afterwards together with any fake server it started.

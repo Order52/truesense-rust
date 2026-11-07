@@ -49,7 +49,7 @@ pub use sums::{Checksums, parse_sums};
 pub use version::{Version, valid_repo};
 
 /// The repository releases come from unless the system config says otherwise.
-pub const DEFAULT_REPO: &str = "Order52/truesense";
+pub const DEFAULT_REPO: &str = "Order52/truesense-rust";
 
 /// The most bytes a release archive may have; the real one is a few megabytes.
 pub const MAX_DOWNLOAD: u64 = 40 * 1024 * 1024;

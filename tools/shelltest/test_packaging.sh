@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Tests of what is shipped around the program: the PKGBUILDs, the systemd units and desktop entries, the files the installer refers to, and tools/ci/check-bundle.sh (which guards
 # every release: it must refuse a bundle that is incomplete, dynamic, stale or not reproducible).
 # shellcheck source=tools/shelltest/lib.sh

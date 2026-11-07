@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Tests of tools/release.sh (the version table, the notes, `prepare`). They run on fake trees (and fake git repositories) in a temporary directory, with a fake cargo and a fake make
 # on PATH: nothing is built, pushed or tagged anywhere that matters. The one test that reads the real repository only reads it.
 # shellcheck source=tools/shelltest/lib.sh

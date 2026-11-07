@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Publish/update the AUR package "truesense" for a released tag (the PKGBUILD builds the Rust program from the tag archive). Run by the maintainer or by the release workflow (needs the AUR SSH key).
 #   tools/aur-publish.sh 0.5.0
 set -Eeuo pipefail
 VER=${1:?usage: aur-publish.sh X.Y.Z}; ROOT=$(realpath "$(dirname "$0")/.."); W=$(mktemp -d)
-REPO=${TRUESENSE_REPO:-Order52/truesense}
+REPO=${TRUESENSE_REPO:-Order52/truesense-rust}
 [[ "$VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "!! not a version: $VER" >&2; exit 1; }
 curl -fsSL -o "$W/src.tgz" "https://github.com/$REPO/archive/refs/tags/v$VER.tar.gz"; SHA=$(sha256sum "$W/src.tgz" | cut -d' ' -f1)
 # the package builds the program from this archive with `cargo build --locked`: it must be the source of this version (a workspace Cargo.toml whose first standalone version is $VER,

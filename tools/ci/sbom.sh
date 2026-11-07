@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # A CycloneDX 1.5 SBOM (JSON) of the program that ships: the Rust crates compiled into bin/truesense, with versions, licences, source hashes and package URLs.
 #   tools/ci/sbom.sh X.Y.Z OUT.json
 # Why a script and not the cargo-cyclonedx tool: it needs nothing installed beyond cargo and jq, so it cannot drift, cannot be a supply-chain step of its own and works offline.
@@ -36,7 +36,7 @@ cargo metadata --locked --format-version 1 --filter-platform "$TARGET" | jq --ar
     metadata: {
       timestamp: $stamp,
       tools: [{vendor: "TrueSense", name: "tools/ci/sbom.sh"}],
-      component: {type: "application", "bom-ref": "workspace:truesense@\($ver)", name: "truesense", version: $ver, licenses: [{license: {id: "MIT"}}]}
+      component: {type: "application", "bom-ref": "workspace:truesense@\($ver)", name: "truesense", version: $ver, licenses: [{license: {id: "GPL-3.0-only"}}]}
     },
     components: ([.packages[] | select($in[.name + " " + .version]) | select(.name != "truesense") | component] | sort_by(.name, .version))
   }' > "$OUT.tmp"

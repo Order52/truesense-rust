@@ -4,7 +4,7 @@ import { call, tryCall } from "../api.js";
 import { h, card, row, hint, button, select, switchRow, run, toast, confirmDialog, errText } from "../ui.js";
 
 const STOCK = [["last", "Last used"], ["default", "Stock look"], ["none", "Leave as the firmware has it"], ["off", "Dark"]];
-const REPO = "https://github.com/Order52/truesense";
+const REPO = "https://github.com/Order52/truesense-rust";
 
 export default function render() {
   const page = h("div", { class: "page" });

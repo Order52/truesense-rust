@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # shellcheck disable=SC2034  # SB, SRC, SB_PATH ... are for the test files that source this one
 # The sandbox for the install, upgrade, rollback and uninstall tests. The real scripts (install.sh, uninstall.sh, install_kernel_module.sh, migrate-legacy.sh) are run with
 # TRUESENSE_ROOT pointing at a fake system tree in a temporary directory ($SB): every system path they use lives under it, the programs that would change a real system

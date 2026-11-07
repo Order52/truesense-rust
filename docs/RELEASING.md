@@ -45,7 +45,7 @@ Re-publish an existing tag, or rehearse without publishing: Actions, Release, Ru
 ## Verifying a download
 ```
 sha256sum -c --ignore-missing SHA256SUMS                      # the file you downloaded is the one that was published
-gh attestation verify truesense-X.Y.Z.tar.gz --repo Order52/truesense   # and CI built it from this repository (any file, SHA256SUMS included)
+gh attestation verify truesense-X.Y.Z.tar.gz --repo Order52/truesense-rust   # and CI built it from this repository (any file, SHA256SUMS included)
 ```
 The one-line installer does the first check always and the second when you set `TRUESENSE_VERIFY_ATTESTATION=1` (it needs the GitHub CLI). The SBOM is a standard CycloneDX file: feed it to any vulnerability scanner (`grype sbom:truesense-X.Y.Z.sbom.cdx.json`).
 

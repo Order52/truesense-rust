@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 """Regenerates the golden files of the keyboard, keymap, designs and perkeyfx modules from the Python reference.
 
 Run ONLY like this (the simulator variables keep it away from the real machine; the keyboard is a fake device):

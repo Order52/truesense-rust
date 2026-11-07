@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Non-interactive F8 mic-mute LED test for ONE codec GPIO (0, 1 or 2). Watch the F8 key light; the label tells you which state is on.
 #   sudo tools/micmute_led_test.sh 0 1   (one or more of 0 1 2)
 # Sequence: 3 s dark, 8 s "GPIO data bit = 1", 3 s dark, 8 s "GPIO data bit = 0" (output direction), then the pin is restored to its previous state.

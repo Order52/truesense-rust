@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # The restart and shutdown policy of the units (docs/RESILIENCE.md, "Restart policy"): what must hold for the laptop to be safe whatever the daemon does.
 # shellcheck source=tools/shelltest/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"

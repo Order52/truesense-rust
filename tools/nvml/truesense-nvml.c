@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-only
 /*
  * truesense-nvml: the one place TrueSense talks to NVIDIA's management library.
  *

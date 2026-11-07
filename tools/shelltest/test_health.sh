@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Tests of packaging/health.sh (the timer's check): a stalled daemon is restarted, a healthy one and one that has just woken from suspend are not, a missing module is
 # rebuilt at most once per ten minutes. Every program it calls is a fake that logs its arguments; nothing real is touched.
 # shellcheck source=tools/shelltest/lib.sh

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Verify the release bundle (tools/ci/build-bundle.sh): it must hold what an installer and the program's updater need, and a program that runs, is static and says the right version.
 # With a second directory (another run of build-bundle.sh, even on another machine) the two must also be byte-identical: reproducible.
 #   tools/ci/check-bundle.sh X.Y.Z DIR_A [DIR_B]

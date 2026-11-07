@@ -328,7 +328,7 @@ fn notes_are_cut_to_1500_characters_not_bytes() {
 fn only_the_system_config_names_the_repository() {
     let tmp = TempDir::new();
     let missing = tmp.0.join("none.toml");
-    assert_eq!(system_repo(&missing).unwrap(), "Order52/truesense", "the built-in default");
+    assert_eq!(system_repo(&missing).unwrap(), "Order52/truesense-rust", "the built-in default");
     let system = tmp.0.join("system.toml");
     fs::write(&system, "[update]\nrepo = \"fork/truesense\"\n").unwrap();
     assert_eq!(system_repo(&system).unwrap(), "fork/truesense");
@@ -345,7 +345,7 @@ fn only_the_system_config_names_the_repository() {
         Updater::new("evil", world.net.clone(), world.host.clone()),
         Err(UpdateError::InvalidRepo(_))
     ));
-    assert_eq!(DEFAULT_REPO, "Order52/truesense");
+    assert_eq!(DEFAULT_REPO, "Order52/truesense-rust");
 }
 
 #[test]

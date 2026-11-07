@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Release tooling: the one place that knows where the version number lives. Plain bash, sed and awk (the Go edition's cmd/release, without a toolchain).
 #   tools/release.sh check [--tag vX.Y.Z]     every file agrees on one version (and it matches the tag, when given); CI runs this on every push and on release
 #   tools/release.sh version                  the current version (the workspace Cargo.toml)
@@ -116,8 +116,8 @@ cmd_notes() {
   head="TrueSense $v for the Acer Predator Helios 16 (PH16-71)"; t=$(title_of "$v")
   if [ -n "$t" ]; then head="$head: $t."; else head="$head."; fi
   printf '%s\n\n%s\n\n' "$head" "$body"
-  printf '**Install / update:** `curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash`, or from the window: Settings, Update (on a desktop without a polkit agent a terminal window opens for the password), or `truesense update apply` in a terminal.\n\n'
-  printf 'Every release asset is listed in SHA256SUMS and carries a build provenance attestation (`gh attestation verify <file> --repo Order52/truesense`); the SBOM (`.sbom.cdx.json`) lists the Rust crates compiled into the program. What is verified on hardware and what is not is stated in the notes above and in docs/SAFETY.md.\n'
+  printf '**Install / update:** `curl -fsSL https://raw.githubusercontent.com/Order52/truesense-rust/main/tools/get.sh | sudo bash`, or from the window: Settings, Update (on a desktop without a polkit agent a terminal window opens for the password), or `truesense update apply` in a terminal.\n\n'
+  printf 'Every release asset is listed in SHA256SUMS and carries a build provenance attestation (`gh attestation verify <file> --repo Order52/truesense-rust`); the SBOM (`.sbom.cdx.json`) lists the Rust crates compiled into the program. What is verified on hardware and what is not is stated in the notes above and in docs/SAFETY.md.\n'
 }
 
 # rewrites the version only where the table says it lives
@@ -166,7 +166,7 @@ $(sed 's/^/  /' <<<"$out")"
   step git -C "$ROOT" tag -a "$tag" -m "TrueSense $ver"
   if [ "$push" = 0 ]; then echo "committed and tagged $tag. Publish with:  git push origin HEAD $tag"; return 0; fi
   step git -C "$ROOT" push origin HEAD "$tag"
-  echo "pushed: CI publishes https://github.com/Order52/truesense/releases/tag/$tag"
+  echo "pushed: CI publishes https://github.com/Order52/truesense-rust/releases/tag/$tag"
 }
 
 step() { echo "  \$ $*"; "$@"; }

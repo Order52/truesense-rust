@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # TrueSense: remove every older helper that could claim the Acer WMI interfaces, so exactly one driver ever owns them.
 # Removes: the old linuwu_sense / acer_rear_wmi kernel modules (loaded + DKMS + boot auto-load), the rpredatorsense and predator* services/daemons.
 # Everything removed is first copied into /var/backups/truesense/legacy-<date>.tar.gz; if that copy cannot be written and read back, NOTHING is removed and this exits 1.

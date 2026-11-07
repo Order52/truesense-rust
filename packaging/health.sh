@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # TrueSense health check (run by truesense-health.timer): restart the daemon if it died or stalled, and rebuild the DKMS module once per 10 min
 # if a kernel update left it missing.
 # The paths can be overridden (TRUESENSE_DEVICE, TRUESENSE_RUN, TRUESENSE_HEALTH_STAMP, TRUESENSE_HEALTH_SETTLE) for the tests; the unit sets none of them.

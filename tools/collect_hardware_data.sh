@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # truesense: collect the hardware data that needs root (read-only; writes nothing to the machine except files in OUT).
 #   sudo tools/collect_hardware_data.sh [outdir]      (default: collected-hardware-data/, git-ignored; contains firmware tables - do not publish)
 # Needs (Arch): sudo pacman -S --needed acpica alsa-tools msr-tools

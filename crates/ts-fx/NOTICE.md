@@ -11,9 +11,8 @@ permission. Every source file that came from that project carries the header
 ## Licence
 
 Because the code is derived from GPL-3.0 work, this crate is declared `GPL-3.0-only` in its
-`Cargo.toml`, not the MIT licence of the rest of the workspace. A program that links it (the
-`truesense` binary) is a combined work. This notice records that fact; it does not decide how the
-rest of the repository is licensed.
+`Cargo.toml`. A program that links it (the `truesense` binary) is a combined work, and the whole
+repository is `GPL-3.0-only` for that reason (see the top-level `LICENSE`).
 
 ## Contributors named by the project's README
 

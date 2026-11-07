@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # TrueSense installer (Rust edition): one script for Arch/CachyOS/Manjaro, Debian/Ubuntu/Mint, Fedora and openSUSE (systemd required).
 #   sudo tools/install.sh              install or upgrade in place (safe to re-run); missing prerequisites are installed for you
 #   tools/install.sh --check           read-only report of what is missing (no root needed)

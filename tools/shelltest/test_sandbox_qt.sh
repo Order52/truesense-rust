@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # The optional Qt window (truesense-qt) through the real install.sh and uninstall.sh in the sandbox (see sandbox.sh): where the installer finds it (named, bundled, built), that a stale
 # or unrunnable one is refused (an error only when the user named it), that its Qt 6 run-time libraries are installed or reported, that it is swapped in and rolled back like the
 # program, that every way of not having it leaves a complete working install with the web-window fallback, and that the launcher entry and the About-box texts follow.

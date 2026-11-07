@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Build the release program the one way every pipeline builds it: one static program, the same bytes from the same commit on any machine and in any directory.
 #   tools/ci/build-binary.sh [SRC_DIR [OUT_FILE]]      SRC_DIR defaults to this repository; OUT_FILE (if given) receives a copy of the program
 # What makes it reproducible:

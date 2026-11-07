@@ -527,7 +527,7 @@ impl Default for AudioConfig {
 
 impl Default for UpdateConfig {
     fn default() -> Self {
-        UpdateConfig { auto_check: false, check_hours: 24, repo: "Order52/truesense".into() }
+        UpdateConfig { auto_check: false, check_hours: 24, repo: "Order52/truesense-rust".into() }
     }
 }
 
@@ -880,7 +880,9 @@ mod tests {
             (c.startup.keyboard.as_str(), c.startup.rear.as_str(), c.startup.profile.as_str()),
             ("last", "last", "")
         );
-        assert!(!c.update.auto_check && c.update.check_hours == 24 && c.update.repo == "Order52/truesense");
+        assert!(
+            !c.update.auto_check && c.update.check_hours == 24 && c.update.repo == "Order52/truesense-rust"
+        );
         assert_eq!(c.osd.style, "native");
         assert!(!c.compat.predator_widgets && c.keyboard.operating_colors.is_empty());
         assert!(c.audio.notify && c.audio.dts_all && c.audio.jack == "auto");
@@ -896,6 +898,9 @@ mod tests {
         // The Python edition has no `[alerts]` section (it is new in 0.5): everything else is its.
         let mut ours = serde_json::to_value(Config::default()).expect("encode");
         let alerts = ours.as_object_mut().expect("object").remove("alerts").expect("alerts section");
+        // The one deliberate difference: releases of this edition come from its own repository.
+        let mut golden = golden;
+        golden["update"]["repo"] = serde_json::Value::from("Order52/truesense-rust");
         assert_eq!(ours, golden);
         assert_eq!(
             alerts,

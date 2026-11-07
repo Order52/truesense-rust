@@ -566,9 +566,9 @@ mod tests {
     #[test]
     fn update_states() {
         let avail = update_summary(&json!({"current": "0.4.0", "latest": "0.5.0", "available": true, "error": null,
-            "info": {"tag": "v0.5.0", "url": "https://github.com/Order52/truesense/releases/tag/v0.5.0"}}));
+            "info": {"tag": "v0.5.0", "url": "https://github.com/Order52/truesense-rust/releases/tag/v0.5.0"}}));
         assert_eq!(avail["state"], "available");
-        assert_eq!(avail["url"], "https://github.com/Order52/truesense/releases/tag/v0.5.0");
+        assert_eq!(avail["url"], "https://github.com/Order52/truesense-rust/releases/tag/v0.5.0");
         let cur = update_summary(&json!({"current": "0.5.0", "latest": "0.5.0", "available": false}));
         assert_eq!(cur["state"], "current");
         assert_eq!(cur["latest"], "0.5.0");

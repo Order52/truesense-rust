@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Build the release bundle deterministically: truesense-X.Y.Z.tar.gz = `git archive` of the checked-out commit plus the prebuilt static program bin/truesense.
 # The same commit always gives the same bytes (sorted names, fixed mtime, root owner, gzip -n), so anyone can rebuild the bundle and compare checksums.
 #   tools/ci/build-bundle.sh X.Y.Z OUTDIR      writes OUTDIR/truesense-X.Y.Z.tar.gz and OUTDIR/truesense (the program on its own, for the SBOM and the smoke test)

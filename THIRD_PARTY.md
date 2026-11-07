@@ -9,7 +9,7 @@
 | Licence of the source | GPL-3.0 (its `LICENSE`) |
 | Permission | The author's approval to reuse his work, obtained by the repository owner; the written record is not in this repository yet |
 | Where it is | `crates/ts-fx/` (declared `license = "GPL-3.0-only"`; see `crates/ts-fx/NOTICE.md`) |
-| Licence decision | Not taken here. The workspace stays `MIT` for every other crate; a binary that links `ts-fx` is a combined work |
+| Licence decision | Taken (2026-11-07): the whole repository is `GPL-3.0-only` (see `LICENSE`), because the `truesense` and `truesense-qt` binaries link `ts-fx` and are therefore a combined work. The kernel module keeps its own dual MIT / GPL-2.0-only header |
 
 ### What was taken
 

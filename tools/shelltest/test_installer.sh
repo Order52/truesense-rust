@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Tests of tools/install.sh: distribution detection, package names, prerequisites, the three model tiers, the choice of the program to install (and the stale-version refusal),
 # the rollback, and the order of the safety-critical steps. The script is only ever sourced with TRUESENSE_LIB_ONLY=1 or run with --check: nothing is installed.
 # shellcheck source=tools/shelltest/lib.sh

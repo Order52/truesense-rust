@@ -2,7 +2,7 @@
 
 Hardware control for the Acer Predator Helios 16 (PH16-71): fans, power modes, battery, GPU mode, lighting, undervolt, Fn keys and audio helpers.
 
-**Status: in development (0.5.0).** Every layer of the Python edition is ported and wired into one static program, with 1904 tests. It has not run on the real laptop yet and is not released or installable yet: see [docs/STATUS.md](docs/STATUS.md) for exactly what is verified. The plan is in [docs/RUST-MIGRATION.md](docs/RUST-MIGRATION.md), the map in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+**Status: 0.5.0, in verification.** Every layer of the Python edition is ported, plus the features learned from the reference study (per-mode bindings, favourites, themes, alerts, monitoring, a Qt window). It is installed and running on the author's PH16-71 (self-test including the fan phase passes, the services are lighter than the Go edition's) and is not released yet: see [docs/STATUS.md](docs/STATUS.md) for exactly what is verified. The plan is in [docs/RUST-MIGRATION.md](docs/RUST-MIGRATION.md), the map in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 The three editions of the project, each in its own repository:
 
@@ -15,3 +15,7 @@ The three editions of the project, each in its own repository:
 Two programs come out of this repository. **`truesense`** is the static one (daemon, command line, terminal UI, a built-in web window, Fn-key and audio services): no libraries to install. **`truesense-qt`** is the native Qt 6 window (`crates/ts-qt`, see [docs/QT-APP.md](docs/QT-APP.md)): optional, dynamic, it needs Qt 6 (`qt6-base`, `qt6-declarative`, `qt6-svg`) at run time. `truesense gui` opens the Qt window when it is installed and the built-in web window when it is not, so nothing depends on Qt; how it is installed, built and released is in [docs/INSTALL.md](docs/INSTALL.md) and [docs/RELEASING.md](docs/RELEASING.md).
 
 The kernel module (`kernel/truesense-wmi`, C, DKMS) and the control-socket protocol are shared by all three and do not change.
+
+## Licence
+
+GPL-3.0-only (see [LICENSE](LICENSE)). The effects engine and themes (`crates/ts-fx`) are derived from [predator-sense](https://github.com/cleyton1986/predator-sense) by cleyton1986 (GPL-3.0), used with the author's permission: see [THIRD_PARTY.md](THIRD_PARTY.md). The kernel module keeps its dual MIT / GPL-2.0-only header so that the Linux kernel accepts it.

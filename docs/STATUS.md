@@ -51,7 +51,7 @@ Gates: `make ci` (rustfmt, clippy with warnings as errors, about 3,000 tests, th
 
 ## Licence
 
-`ts-fx` is derived from predator-sense by cleyton1986 (GPL-3.0), used with the author's permission; the binary links it, so the combination is a combined work. The licence of the whole repository (MIT or GPL-3.0) is still to be decided; see [THIRD_PARTY.md](../THIRD_PARTY.md).
+The whole repository is GPL-3.0-only (decided 2026-11-07). `ts-fx` is derived from predator-sense by cleyton1986 (GPL-3.0), used with the author's permission, and the binaries link it, so the combination is one GPL-3.0 work; see [THIRD_PARTY.md](../THIRD_PARTY.md). The kernel module keeps its dual MIT / GPL-2.0-only header so that the Linux kernel accepts it.
 
 ## Known differences from the Python edition
 

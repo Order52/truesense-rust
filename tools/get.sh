@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # One-line installer (Rust edition). Downloads the newest TrueSense release bundle from GitHub (the source tree plus the prebuilt static program bin/truesense), checks it against the
 # release's SHA256SUMS, and runs the bundle's tools/install.sh.
-#   curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/Order52/truesense-rust/main/tools/get.sh | sudo bash
 #   ... | sudo bash -s -- --no-gui          (extra options go to install.sh)
 # Environment: TRUESENSE_VERSION=0.5.0 (pin a version), TRUESENSE_SHA256=<hash> (also require this exact hash),
 #              TRUESENSE_VERIFY_ATTESTATION=1 (also check the build provenance with the GitHub CLI: gh attestation verify),
@@ -13,7 +13,7 @@
 # Every release is published by CI with a SHA256SUMS file and the download MUST match it: a release without the list is refused, never fetched unchecked. Only bundles of this edition
 # are accepted (the version is read from the workspace Cargo.toml inside the download), so an older Python or Go release is refused.
 set -Eeuo pipefail
-REPO=${TRUESENSE_REPO:-Order52/truesense}
+REPO=${TRUESENSE_REPO:-Order52/truesense-rust}
 WEB=${TRUESENSE_WEB:-https://github.com}; API=${TRUESENSE_API:-https://api.github.com}          # overridable for the tests (a local fake GitHub)
 die() { echo "!! $*" >&2; exit 1; }
 if [ -z "${TRUESENSE_GET_ONLY:-}" ]; then [ "$(id -u)" -eq 0 ] || die "run as root:  curl -fsSL https://raw.githubusercontent.com/$REPO/main/tools/get.sh | sudo bash"; fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Build the kernel module against EVERY kernel header set installed on this machine (warnings on), and report each one.
 #   tools/ci/build-modules.sh               all of /lib/modules/*/build
 #   tools/ci/build-modules.sh 6.12.1-arch1  only that version

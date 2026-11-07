@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # The real install.sh (with its real helper scripts) run in a sandbox: a fake system tree in a temporary directory, recorders instead of systemctl, dkms and modprobe, and tripwires
 # for every program that could touch a real machine (see sandbox.sh). Fresh install, upgrade from the Go edition and from the Python edition, reinstall, the rollback paths, the
 # refusals, --no-services, concurrency, and the guards that make the sandbox itself safe.

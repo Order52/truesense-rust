@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # Tests of tools/get.sh against a fake GitHub (tools/shelltest/fakegithub.rs): checksum verification, the refusals (mismatch, unlisted file, missing list, wrong version, not a
 # TrueSense release), version pinning and discovery, the attestation check. get.sh always runs with TRUESENSE_GET_ONLY=1: it verifies and unpacks, it never installs.
 # shellcheck source=tools/shelltest/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 GET=$ROOT/tools/get.sh
-REL=Order52/truesense/releases/download
+REL=Order52/truesense-rust/releases/download
 
 # make_bundle VERSION OUTFILE [LAYOUT...]: truesense-VERSION.tar.gz the way the release pipeline lays it out (one top directory).
 # LAYOUT: inside=X.Y.Z (the Cargo.toml says another version), noinstall (no tools/install.sh), noversion (no Cargo.toml), python (a 0.3.x tree: the version is in
@@ -79,7 +79,7 @@ t_a_release_without_a_list_is_refused_not_skipped() {
   local v doc
   for v in 0.3.15 0.4.0 0.5.0 0.5.1 1.0.0 0.10.0; do
     doc=$(tmpdir); publish "$doc" "$v" none
-    mkdir -p "$doc/Order52/truesense/archive/refs/tags"; cp "$doc/$REL/v$v/truesense-$v.tar.gz" "$doc/Order52/truesense/archive/refs/tags/v$v.tar.gz"      # the old fallback source is there: it must not be used
+    mkdir -p "$doc/Order52/truesense-rust/archive/refs/tags"; cp "$doc/$REL/v$v/truesense-$v.tar.gz" "$doc/Order52/truesense-rust/archive/refs/tags/v$v.tar.gz"      # the old fallback source is there: it must not be used
     run_get "$doc" "$v"
     [ "$R_CODE" = 1 ] || fail "$v: exit $R_CODE, want 1"
     assert_contains "$R_ERR" "no SHA256SUMS" "$v"
@@ -123,14 +123,14 @@ t_a_pinned_hash_must_also_match() {
 t_the_newest_version_is_found_from_the_tags_when_none_is_pinned() {
   local doc; doc=$(tmpdir); publish "$doc" 0.10.0 right
   # GitHub pretty-prints the tag list: one name per line; junk and older tags must not win, and 0.10.0 beats 0.9.0 (version order, not text order)
-  mkdir -p "$doc/repos/Order52/truesense"
-  printf '[\n  {\n    "name": "v0.5.0"\n  },\n  {\n    "name": "v0.9.0"\n  },\n  {\n    "name": "v0.3.15"\n  },\n  {\n    "name": "junk"\n  },\n  {\n    "name": "v0.10.0"\n  }\n]\n' > "$doc/repos/Order52/truesense/tags"
+  mkdir -p "$doc/repos/Order52/truesense-rust"
+  printf '[\n  {\n    "name": "v0.5.0"\n  },\n  {\n    "name": "v0.9.0"\n  },\n  {\n    "name": "v0.3.15"\n  },\n  {\n    "name": "junk"\n  },\n  {\n    "name": "v0.10.0"\n  }\n]\n' > "$doc/repos/Order52/truesense-rust/tags"
   run_get "$doc" ""
   assert_code 0; assert_contains "$R_OUT" "TrueSense 0.10.0"
 }
 
 t_an_unreachable_tag_list_says_how_to_pin_a_version() {
-  local doc; doc=$(tmpdir); mkdir -p "$doc/repos/Order52/truesense"; echo '[]' > "$doc/repos/Order52/truesense/tags"
+  local doc; doc=$(tmpdir); mkdir -p "$doc/repos/Order52/truesense-rust"; echo '[]' > "$doc/repos/Order52/truesense-rust/tags"
   run_get "$doc" ""
   assert_code 1; assert_contains "$R_ERR" "could not find the latest version"; assert_contains "$R_ERR" "TRUESENSE_VERSION"
 }
@@ -164,7 +164,7 @@ t_attestation_verification_uses_the_github_cli() {
   run_get "$doc" 0.5.0 TRUESENSE_VERIFY_ATTESTATION=1 "PATH=$good:$PATH"
   assert_code 0; assert_contains "$R_OUT" "build provenance verified"
   args=$(cat "$log")
-  local w; for w in "attestation verify" ts.tar.gz "--repo Order52/truesense"; do assert_contains "$args" "$w" "gh arguments"; done
+  local w; for w in "attestation verify" ts.tar.gz "--repo Order52/truesense-rust"; do assert_contains "$args" "$w" "gh arguments"; done
 
   bad=$(tmpdir); fake_program "$bad" gh "exit 1"
   run_get "$doc" 0.5.0 TRUESENSE_VERIFY_ATTESTATION=1 "PATH=$bad:$PATH"

@@ -1,5 +1,7 @@
 # TrueSense Qt app: design, reference study and reuse map
 
+> **Update (2026-11-07):** the licence question in section 6 was decided: the whole repository is GPL-3.0-only (see `LICENSE` and `THIRD_PARTY.md`). References to "TrueSense is MIT" below describe the situation when this document was written.
+
 Status: proposal, not yet reviewed by the user. No code was changed to write it.
 Written against: truesense-rust 0.5.0 (`/home/sloppy/Documents/truesense-rust`) and the GTK4 app
 `predator-sense` by cleyton1986 (clone under the session scratchpad, `ref/psense`, v0.4.0-preview in its Cargo files).

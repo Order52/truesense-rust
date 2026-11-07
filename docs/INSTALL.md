@@ -4,8 +4,8 @@ Requires: an Acer Predator Helios 16 **PH16-71**, systemd, Linux with the kernel
 
 ## One line
 ```
-curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash
-curl -fsSL https://raw.githubusercontent.com/Order52/truesense/main/tools/get.sh | sudo bash -s -- --no-gui   # extra options
+curl -fsSL https://raw.githubusercontent.com/Order52/truesense-rust/main/tools/get.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Order52/truesense-rust/main/tools/get.sh | sudo bash -s -- --no-gui   # extra options
 ```
 `get.sh` finds the newest release, downloads it, **checks it against the release's `SHA256SUMS`** (a mismatch, or a missing list, stops the install), checks that the download really is the version it was asked for, and runs `tools/install.sh`. If the release carries the prebuilt Qt window (`truesense-qt-X.Y.Z-linux-x86_64.tar.gz`), `get.sh` downloads it too, checks it against the same `SHA256SUMS` (and attestation), and puts it into the bundle for the installer; `TRUESENSE_NO_QT=1` skips it. Pin a version with `TRUESENSE_VERSION=0.5.0`, also require an exact hash with `TRUESENSE_SHA256=<hash>`, and with the GitHub CLI installed add `TRUESENSE_VERIFY_ATTESTATION=1` to check the signed build provenance too. Read the script first if you like: it is short.
 
@@ -70,7 +70,7 @@ Secure Boot: DKMS modules must be signed; the installer warns if the DKMS key is
 ## Updating
 Updating is the same one click, and it is safe to repeat:
 - **From the window**: Settings, Update (it checks once a day if you allow it; one request, no identifiers). **From a terminal**: `truesense update check`, then `sudo truesense update apply`. Or run the one-line install again.
-- The updater downloads the release's published file and **verifies its SHA256 against `SHA256SUMS`** before anything runs as root, and refuses a download whose top-level `Cargo.toml` does not declare the version it was asked for. Releases are built by CI (`.github/workflows/release.yml`) from the tag, byte-for-byte reproducibly, with a signed provenance attestation: `gh attestation verify truesense-X.Y.Z.tar.gz --repo Order52/truesense`.
+- The updater downloads the release's published file and **verifies its SHA256 against `SHA256SUMS`** before anything runs as root, and refuses a download whose top-level `Cargo.toml` does not declare the version it was asked for. Releases are built by CI (`.github/workflows/release.yml`) from the tag, byte-for-byte reproducibly, with a signed provenance attestation: `gh attestation verify truesense-X.Y.Z.tar.gz --repo Order52/truesense-rust`.
 - The installer test-builds the kernel module **before** it changes anything, swaps the program files atomically, restarts the service, and **rolls back to the previous version** if the service does not come up. The fans are handed back to the firmware whenever the service stops.
 - After a kernel update, DKMS rebuilds the module by itself; if it ever does not, the health timer rebuilds it within minutes (`truesense service repair` does it now).
 

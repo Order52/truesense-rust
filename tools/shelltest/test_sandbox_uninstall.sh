@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-only
 # The real uninstall.sh, install_kernel_module.sh and migrate-legacy.sh run in the sandbox (see sandbox.sh): the fans go back to the firmware before anything is deleted, the
 # uninstall removes every file the install made and nothing else (and is repeatable), the kernel-module script replaces every registered DKMS version and refuses when the
 # running kernel cannot be built for, the legacy cleanup backs everything up before it removes anything.
