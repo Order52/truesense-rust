@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 use serde::Serialize;
+use ts_decision::bindings::Target;
 use ts_domain::looks::{BUILTIN_NAMES, Look};
 use ts_ipc::wire::Args;
 
@@ -27,12 +28,22 @@ impl Api {
 
     /// Saves what is on the lights now (keyboard look and rear light) under `name`.
     pub fn save_look(&self, name: &str) -> ApiResult<Look> {
-        Ok(self.s.looks.save(name, None)?)
+        let saved = self.s.looks.save(name, None)?;
+        self.refresh_look_bindings(name);
+        Ok(saved)
     }
 
     /// Saves a look as the window holds it.
     pub fn save_look_value(&self, name: &str, look: &Look) -> ApiResult<Look> {
-        Ok(self.s.looks.save(name, Some(look))?)
+        let saved = self.s.looks.save(name, Some(look))?;
+        self.refresh_look_bindings(name);
+        Ok(saved)
+    }
+
+    /// A saved look that a mode binding names must reach the service again, or its copy is stale.
+    /// The save already succeeded, so a failure here is not the caller's.
+    fn refresh_look_bindings(&self, name: &str) {
+        let _ = self.refresh_binding_copies(Target::Look, name);
     }
 
     /// Reads a saved or built-in look.

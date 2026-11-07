@@ -4,6 +4,7 @@
 
 mod audio;
 mod battery;
+mod bindings;
 mod cpu_gpu;
 mod errors;
 mod fan;

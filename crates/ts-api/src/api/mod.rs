@@ -34,6 +34,7 @@
 
 mod audio;
 mod battery;
+mod bindings;
 mod cpu;
 mod daemon;
 mod error;
@@ -86,6 +87,7 @@ use ts_system::touchpad::Touchpad;
 
 pub use audio::{DtsInfo, JackReport, MicReport, VoiceStatus, dts_is_on};
 pub use battery::{BatteryStatus, ChargeFull, ChargeFullAction};
+pub use bindings::{BindingResult, BindingsApplied, ModeBindings};
 pub use cpu::{
     AppliedLimits, AppliedUndervolt, AutoLimits, CpuUndervolt, GpuPowerLimits, LimitsInfo, LockBit,
     PowerLimitsState, UndervoltOffsets, UndervoltPlane, UndervoltRequest, UserLimits,
