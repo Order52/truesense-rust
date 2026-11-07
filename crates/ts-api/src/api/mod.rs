@@ -126,6 +126,10 @@ pub use status::{Live, LiveLoad, LivePower, Status, Summary, Supply, describe_se
 pub use system::{DoctorAdapters, Step, real_doctor_env};
 pub use themes::{ColourwayPick, ThemeDetail, ThemeList, ThemeSpec, ThemeStatus};
 pub use traits::{NoNotifier, Notifier, ProfileBundles, RearMemoryInUserState, ServiceChecks, UpdateService};
+/// Where each key is, in key units, for clients that draw or sweep the keyboard.
+pub use ts_domain::keymap::geometry::{
+    HEIGHT as KEYBOARD_HEIGHT, KeyRect, WIDTH as KEYBOARD_WIDTH, key_rects,
+};
 pub use update::{UpdatePlan, describe_apply, describe_update};
 pub use window::{DesignShown, ResetStep};
 

@@ -141,6 +141,10 @@ QtObject {
         case "starlight": return qsTrId("light_anim_starlight")
         //% "Mood lamp"
         case "mood": return qsTrId("light_anim_mood")
+        //% "Clockwise sweep"
+        case "wave-clockwise": return qsTrId("light_anim_wave_cw")
+        //% "Counter-clockwise sweep"
+        case "wave-counter-clockwise": return qsTrId("light_anim_wave_ccw")
         default: return String(id)
         }
     }

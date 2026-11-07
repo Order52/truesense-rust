@@ -671,6 +671,11 @@ fn keyboard_animation_designs_and_lighting_profiles() {
     assert_eq!(fx["mode"], json!("pulse"), "{fx}");
     m.ok("keyboard", "fx", &json!({"mode": "off"}));
     m.refused("keyboard", "fx", &json!({"mode": "explode"}));
+    for mode in ["wave-clockwise", "wave-counter-clockwise"] {
+        let sweep = m.ok("keyboard", "fx", &json!({"mode": mode, "speed": 6}));
+        assert_eq!((sweep["mode"].clone(), sweep["speed"].clone()), (json!(mode), json!(6)), "{sweep}");
+    }
+    m.ok("keyboard", "fx", &json!({"mode": "off"}));
 
     let designs = m.ok("keyboard", "design", &json!({}));
     assert_eq!(designs["gaming"]["source"], json!("built-in"));

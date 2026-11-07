@@ -316,7 +316,7 @@ fn keyboard() -> Command {
                     "wave only: left-to-right | right-to-left | bottom-to-top | top-to-bottom | clockwise | counter-clockwise, or 0..5 in that order (default: left-to-right)",
                 )),
             verb("fx")
-                .help("per-key animation on chosen keys (drawn by the key service, about 5 frames a second): off | pulse | wave | cycle | twinkle | rainbow | scanner | comet | ripple | rain | matrix | fire | plasma | aurora | lightning | confetti | starlight | mood | breathing")
+                .help("per-key animation on chosen keys (drawn by the key service, about 5 frames a second): off | pulse | wave | cycle | twinkle | rainbow | scanner | comet | ripple | rain | matrix | fire | plasma | aurora | lightning | confetti | starlight | mood | breathing | wave-clockwise | wave-counter-clockwise")
                 .arg(Arg::pos("mode").choices_owned(fx_modes))
                 .arg(Arg::opt("--speed").int().default_int(5).help("1..10"))
                 .arg(Arg::opt("--keys").help("comma list of keys or groups, e.g. wasd,arrows,f5 (default: all keys)")),

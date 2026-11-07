@@ -189,7 +189,7 @@ rc 2
 --- out
 --- err
 usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
-                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 truesense keyboard fx: error: the following arguments are required: mode
 === end
 $ keyboard fx pulse --speed
@@ -197,7 +197,7 @@ rc 2
 --- out
 --- err
 usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
-                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 truesense keyboard fx: error: argument --speed: expected one argument
 === end
 $ keyboard fx wave --speed 11
@@ -912,7 +912,7 @@ _truesense() {
         restore) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         list-keys) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         effect) COMPREPLY=( $(compgen -W "--help --color --speed --brightness --direction" -- "$cur") ); return;;
-        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood --help --speed --keys" -- "$cur") ); return;;
+        fx) COMPREPLY=( $(compgen -W "off pulse wave cycle twinkle rainbow breathing scanner comet ripple rain matrix fire plasma aurora lightning confetti starlight mood wave-clockwise wave-counter-clockwise --help --speed --keys" -- "$cur") ); return;;
         speed) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         color) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         paint) COMPREPLY=( $(compgen -W "--help --brightness" -- "$cur") ); return;;

@@ -9,6 +9,8 @@
 //! Everything here is pure: no file, clock or device is touched.
 #![forbid(unsafe_code)]
 
+pub mod geometry;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::OnceLock;

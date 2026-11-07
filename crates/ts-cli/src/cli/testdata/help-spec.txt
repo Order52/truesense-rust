@@ -742,7 +742,8 @@ positional arguments:
                         service, about 5 frames a second): off | pulse | wave
                         | cycle | twinkle | rainbow | scanner | comet | ripple
                         | rain | matrix | fire | plasma | aurora | lightning |
-                        confetti | starlight | mood | breathing
+                        confetti | starlight | mood | breathing | wave-
+                        clockwise | wave-counter-clockwise
     speed               animation speed of the running effect, 1 (slowest) ..
                         12 (fastest)
     color               change the colour of the current effect (stays in the
@@ -828,10 +829,10 @@ options:
 --------------------------------------------------
 VERB keyboard fx
 usage: truesense keyboard fx [-h] [--speed SPEED] [--keys KEYS]
-                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+                             {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 
 positional arguments:
-  {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood}
+  {off,pulse,wave,cycle,twinkle,rainbow,breathing,scanner,comet,ripple,rain,matrix,fire,plasma,aurora,lightning,confetti,starlight,mood,wave-clockwise,wave-counter-clockwise}
 
 options:
   -h, --help            show this help message and exit

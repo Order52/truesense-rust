@@ -232,3 +232,12 @@ bar's control keeps its two unlabelled-by-hardware names; live check L13 settles
   are the two reference-confirmed ones, bytes 5 and 6). Then `truesense rear set wave --direction 0` and `--direction 1`: note which way
   the bar's wave travels for each, and whether `rear set neon --direction 0|1` looks the same both ways.
 
+## 7. Software sweeps (clockwise and counter-clockwise in any colour)
+
+The hardware Wave turns both ways but is a fixed rainbow. `keyboard fx wave-clockwise` and `keyboard fx wave-counter-clockwise` (the Per-key
+tab's animation list) are per-key animations drawn by the key service (`ts-domain` `perkeyfx::sweep`): the angle of every key around the middle of
+the keyboard comes from the real key rectangles (`keymap::geometry`) joined to the verified key map, a key with a colour of its own keeps it
+while a soft band turns across the picture, and a dark key takes the rainbow. At most half a revolution a second (speed 10), so one key
+changes at most once every two seconds. They are not theme-catalogue entries: the catalogue is held byte for byte to the reference engine's
+golden frames, which a new built-in effect would break.
+

@@ -3103,6 +3103,14 @@
         <source>Mood lamp</source>
         <translation>Mood lamp</translation>
     </message>
+    <message id="light_anim_wave_cw">
+        <source>Clockwise sweep</source>
+        <translation>Clockwise sweep</translation>
+    </message>
+    <message id="light_anim_wave_ccw">
+        <source>Counter-clockwise sweep</source>
+        <translation>Counter-clockwise sweep</translation>
+    </message>
     <message id="light_mode_eco">
         <source>Eco</source>
         <translation>Eco</translation>

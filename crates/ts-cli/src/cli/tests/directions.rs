@@ -70,3 +70,23 @@ fn the_help_names_the_six() {
         assert!(flat.contains(name), "{name}");
     }
 }
+
+#[test]
+fn the_rotating_sweeps_are_per_key_animations_on_the_command_line() {
+    let fx = Fx::offline();
+    for mode in ["wave-clockwise", "wave-counter-clockwise"] {
+        let ran = fx.run(&format!("keyboard fx {mode} --speed 7 --keys wasd,arrows"));
+        assert_eq!(ran.code, 0, "{mode}: {}", ran.err);
+        assert_eq!(
+            ran.out,
+            format!(
+                "per-key animation: {mode} on wasd,arrows (needs the key service: systemctl --user status truesense-keys)\n"
+            )
+        );
+    }
+    let all = fx.run("keyboard fx wave-clockwise");
+    assert!(all.out.contains("on all keys"), "{}", all.out);
+    assert_eq!(fx.run("keyboard fx wave-sideways").code, 2, "an unknown mode is a usage error");
+    assert_eq!(fx.run("keyboard fx wave-clockwise --speed 11").code, 1);
+    assert_eq!(fx.run("keyboard fx off").code, 0);
+}
