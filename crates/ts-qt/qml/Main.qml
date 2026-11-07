@@ -237,6 +237,14 @@ ApplicationWindow {
         }
     }
 
+    // ---- first run (once; remembered in ui.json) -----------------------------------------------
+    // Never in a test run: a fresh test home would put the wizard over every screenshot.
+    Loader {
+        anchors.fill: parent
+        active: !Ui.onboarded && !JSON.parse(Bus.testConfig()).enabled
+        source: "components/OnboardingWizard.qml"
+    }
+
     ToastHost { anchors.fill: parent }
     }
 

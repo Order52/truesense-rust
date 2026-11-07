@@ -38,13 +38,31 @@ fn current_exe() -> PathBuf {
     std::env::current_exe().unwrap_or_else(|_| PathBuf::from("truesense"))
 }
 
+/// The program name of the native (Qt) window.
+const NATIVE_APP: &str = "truesense-qt";
+
+/// Where the native window is installed when it is not beside this program.
+const NATIVE_APP_INSTALLED: [&str; 2] = ["/usr/local/bin/truesense-qt", "/usr/bin/truesense-qt"];
+
+/// The first existing candidate for the native window: next to this program first (a build tree or
+/// an unpacked release), then the usual install places. `is_file` is injected so the search is
+/// tested without touching the real file system.
+fn find_native_app(
+    beside: Option<&std::path::Path>,
+    installed: &[&str],
+    is_file: impl Fn(&std::path::Path) -> bool,
+) -> Option<PathBuf> {
+    beside
+        .map(|dir| dir.join(NATIVE_APP))
+        .into_iter()
+        .chain(installed.iter().map(PathBuf::from))
+        .find(|p| is_file(p))
+}
+
 /// The native window's program, found next to this one or in the usual install places.
 fn native_app() -> Option<PathBuf> {
-    let beside = current_exe().parent().map(|dir| dir.join("truesense-app"));
-    beside
-        .into_iter()
-        .chain(["/usr/local/bin/truesense-app", "/usr/bin/truesense-app"].map(PathBuf::from))
-        .find(|p| p.is_file())
+    let exe = current_exe();
+    find_native_app(exe.parent(), &NATIVE_APP_INSTALLED, |p| p.is_file())
 }
 
 /// Replaces this process with the native window (a second launch then just forwards the page to
@@ -170,4 +188,49 @@ impl Launcher for SystemLauncher {
 #[allow(dead_code)]
 pub fn stop_requested(flag: &AtomicBool) -> bool {
     flag.load(Ordering::SeqCst)
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+
+    #[test]
+    fn the_window_program_is_truesense_qt_not_the_old_name() {
+        assert_eq!(NATIVE_APP, "truesense-qt");
+        assert!(NATIVE_APP_INSTALLED.iter().all(|p| p.ends_with("/truesense-qt")));
+    }
+
+    #[test]
+    fn the_program_beside_this_one_wins_over_an_installed_one() {
+        let found = find_native_app(Some(Path::new("/opt/ts")), &NATIVE_APP_INSTALLED, |_| true);
+        assert_eq!(found, Some(PathBuf::from("/opt/ts/truesense-qt")));
+    }
+
+    #[test]
+    fn installed_places_are_tried_in_order() {
+        let only = |want: &'static str| move |p: &Path| p == Path::new(want);
+        assert_eq!(
+            find_native_app(Some(Path::new("/opt/ts")), &NATIVE_APP_INSTALLED, only("/usr/bin/truesense-qt")),
+            Some(PathBuf::from("/usr/bin/truesense-qt"))
+        );
+        assert_eq!(
+            find_native_app(None, &NATIVE_APP_INSTALLED, |p| p.starts_with("/usr")),
+            Some(PathBuf::from("/usr/local/bin/truesense-qt"))
+        );
+    }
+
+    #[test]
+    fn the_old_program_name_is_never_looked_for_and_nothing_found_means_the_web_window() {
+        let seen = std::cell::RefCell::new(Vec::new());
+        let found = find_native_app(Some(Path::new("/opt/ts")), &NATIVE_APP_INSTALLED, |p| {
+            seen.borrow_mut().push(p.to_path_buf());
+            false
+        });
+        assert_eq!(found, None);
+        assert_eq!(seen.borrow().len(), 3);
+        assert!(seen.borrow().iter().all(|p| !p.to_string_lossy().contains("truesense-app")));
+    }
 }

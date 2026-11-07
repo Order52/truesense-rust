@@ -52,6 +52,8 @@ pub struct UiSettings {
     pub font_scale: f64,
     /// Turns off gauge easing and other non-essential animation.
     pub reduced_motion: bool,
+    /// The first-run wizard was finished or skipped; it is shown once.
+    pub onboarded: bool,
     extra: Map<String, Value>,
 }
 
@@ -67,6 +69,7 @@ impl Default for UiSettings {
             minimise_to_tray: true,
             font_scale: 1.0,
             reduced_motion: false,
+            onboarded: false,
             extra: Map::new(),
         }
     }
@@ -92,6 +95,7 @@ impl UiSettings {
                 "language" => set_choice(&mut out.language, value, LANGUAGES),
                 "minimise_to_tray" => value.as_bool().map(|b| out.minimise_to_tray = b).is_some(),
                 "reduced_motion" => value.as_bool().map(|b| out.reduced_motion = b).is_some(),
+                "onboarded" => value.as_bool().map(|b| out.onboarded = b).is_some(),
                 "font_scale" => value
                     .as_f64()
                     .filter(|f| f.is_finite())
@@ -126,6 +130,7 @@ impl UiSettings {
         put("minimise_to_tray", json!(self.minimise_to_tray));
         put("font_scale", json!(self.font_scale));
         put("reduced_motion", json!(self.reduced_motion));
+        put("onboarded", json!(self.onboarded));
         map
     }
 
@@ -145,6 +150,7 @@ impl UiSettings {
             "language" => set_choice(&mut self.language, value, LANGUAGES),
             "minimise_to_tray" => value.as_bool().map(|b| self.minimise_to_tray = b).is_some(),
             "reduced_motion" => value.as_bool().map(|b| self.reduced_motion = b).is_some(),
+            "onboarded" => value.as_bool().map(|b| self.onboarded = b).is_some(),
             "font_scale" => {
                 value.as_f64().filter(|f| f.is_finite()).map(|f| self.font_scale = clamp_scale(f)).is_some()
             }
@@ -481,6 +487,8 @@ mod tests {
         assert!(s.set("language", &json!("xx")).is_err());
         assert!(s.set("minimise_to_tray", &json!("yes")).is_err());
         assert!(s.set("minimise_to_tray", &json!(false)).is_ok());
+        assert!(s.set("onboarded", &json!(true)).is_ok() && s.onboarded);
+        assert!(s.set("onboarded", &json!("yes")).is_err());
         assert!(s.set("font_scale", &json!(0.1)).is_ok());
         assert_eq!(s.font_scale, 0.8);
         assert!(s.set("width", &json!(100)).is_err(), "geometry is set with set_window only");

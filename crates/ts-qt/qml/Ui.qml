@@ -19,6 +19,9 @@ QtObject {
     property real fontScale: 1.0
     property bool reducedMotion: false
     property bool minimiseToTray: true
+    /// The first-run wizard was finished or skipped (true until the shell has read ui.json, so that
+    /// nothing shows the wizard by accident).
+    property bool onboarded: true
     /// Set by the shell: a system tray exists on this desktop.
     property bool trayAvailable: false
     /// Why the settings file could not be used, or "".
@@ -39,6 +42,7 @@ QtObject {
         if (o.font_scale !== undefined) fontScale = o.font_scale
         if (o.reduced_motion !== undefined) reducedMotion = o.reduced_motion
         if (o.minimise_to_tray !== undefined) minimiseToTray = o.minimise_to_tray
+        if (o.onboarded !== undefined) onboarded = o.onboarded
         problem = o.problem ? o.problem : ""
     }
 }
