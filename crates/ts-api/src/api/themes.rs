@@ -12,7 +12,10 @@
 
 use serde::Serialize;
 use serde_json::Value;
-use ts_domain::themes::{Active, Skipped, ThemeEntry, ThemeSpec, ThemeStore, ThemesError};
+use ts_domain::themes::{Active, Skipped, ThemeEntry, ThemeStore, ThemesError};
+
+/// The theme part of a look, and the colourway choice in it, for clients that build one.
+pub use ts_domain::themes::{ColourwayPick, ThemeSpec};
 
 use super::{Api, ApiError, ApiResult};
 

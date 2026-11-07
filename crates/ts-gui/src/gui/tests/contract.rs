@@ -101,7 +101,7 @@ const SERVER_ONLY: [&str; 7] = [
 
 /// Commands of the native apps: the web page is being retired and never calls them, but they are
 /// implemented and still checked by `every_documented_command_exists_in_the_implementation`.
-const NATIVE_APP_ONLY: [&str; 8] = [
+const NATIVE_APP_ONLY: [&str; 14] = [
     "alerts/get",
     "alerts/set",
     "battery/info",
@@ -110,6 +110,12 @@ const NATIVE_APP_ONLY: [&str; 8] = [
     "mode/bind",
     "mode/unbind",
     "mode/apply",
+    "theme/list",
+    "theme/show",
+    "theme/apply",
+    "theme/stop",
+    "theme/save",
+    "theme/delete",
 ];
 
 /// Documented commands that only the native (Qt) app calls, so the web front end never does. They

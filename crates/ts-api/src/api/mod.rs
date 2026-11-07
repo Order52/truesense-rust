@@ -124,7 +124,7 @@ pub use rear::{RearPowerAction, RearRequest, RearStatus};
 pub use smart::{SMART_SETTING_KEYS, SmartProfileInUse, describe_smart_profile};
 pub use status::{Live, LiveLoad, LivePower, Status, Summary, Supply, describe_sensors};
 pub use system::{DoctorAdapters, Step, real_doctor_env};
-pub use themes::{ThemeDetail, ThemeList, ThemeStatus};
+pub use themes::{ColourwayPick, ThemeDetail, ThemeList, ThemeSpec, ThemeStatus};
 pub use traits::{NoNotifier, Notifier, ProfileBundles, RearMemoryInUserState, ServiceChecks, UpdateService};
 pub use update::{UpdatePlan, describe_apply, describe_update};
 pub use window::{DesignShown, ResetStep};
