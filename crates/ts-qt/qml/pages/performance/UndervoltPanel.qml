@@ -53,8 +53,8 @@ ColumnLayout {
 
     function describe(v) {
         if (isCpu) {
-            //% "core %1 mV, cache %2 mV"
-            return qsTrId("perf_uv_describe_cpu").arg(v.core).arg(v.cache)
+            //% "core %1, cache %2"
+            return qsTrId("perf_uv_describe_cpu").arg(Fmt.signed(v.core, "mV")).arg(Fmt.signed(v.cache, "mV"))
         }
         //% "offset %1, cap %2"
         return qsTrId("perf_uv_describe_gpu").arg(Fmt.signed(v.offset, "MHz")).arg(v.cap
@@ -287,8 +287,7 @@ ColumnLayout {
         icon: root.isCpu ? "chip" : "gpu"
         rightText: !root.view.readable ? ""
             : root.isCpu
-            //% "core %1 mV, cache %2 mV"
-            ? qsTrId("perf_uv_describe_cpu").arg(root.view.core_mv).arg(root.view.cache_mv)
+            ? qsTrId("perf_uv_describe_cpu").arg(Fmt.signed(root.view.core_mv, "mV")).arg(Fmt.signed(root.view.cache_mv, "mV"))
             //% "offset %1"
             : qsTrId("perf_uv_now_gpu").arg(Fmt.signed(root.view.offset_mhz, "MHz"))
 
