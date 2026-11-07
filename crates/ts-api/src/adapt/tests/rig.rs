@@ -21,8 +21,8 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Map, Value};
 use ts_daemon::daemon::{
-    Clock, ClockCap, CpuUndervoltPort, Daemon, DaemonError, Deps, GpuUndervoltPort, Level, LivePaths, Logger,
-    Notice, PortError, PortResult, ProcessList, Sensors, Sleeper, StopToken,
+    Clock, ClockCap, ConfigFileAlerts, CpuUndervoltPort, Daemon, DaemonError, Deps, GpuUndervoltPort, Level,
+    LivePaths, Logger, Notice, PortError, PortResult, ProcessList, Sensors, Sleeper, StopToken,
 };
 use ts_decision::crashguard::Guard;
 use ts_decision::gamerules::Process;
@@ -475,6 +475,7 @@ impl Rig {
                 root.join("sys/class/input"),
             )),
             osd: Arc::new(NoOsd),
+            alert_settings: Arc::new(ConfigFileAlerts::new(None, None)),
             processes: procs.clone(),
             users: Arc::new(TestUsers { uid: my_uid(&dir.0), home: home.clone() }),
             curves: curves::Store::new(dir.0.join("daemon-curves")),

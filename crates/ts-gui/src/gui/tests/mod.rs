@@ -2,6 +2,7 @@
 //! firmware simulator. Nothing here starts a browser or touches the real machine.
 #![allow(clippy::expect_used)]
 
+mod alerts;
 mod bus;
 mod contract;
 mod harness;
