@@ -89,6 +89,43 @@ t_check_runs_without_root_and_reports_only_things_a_package_can_fix() {
   local w; for w in python pyqt socat; do assert_not_contains_ci "$R_OUT$R_ERR" "$w" "--check"; done
 }
 
+# the Qt window is optional: --check lists its run-time packages per family, says what building it needs, and never changes the verdict or asks for what CI forbids
+t_check_names_the_qt_runtime_packages_per_family_as_optional() {
+  local row d want
+  for row in "arch|qt6-base qt6-declarative qt6-svg" "ubuntu|libqt6svg6 qml6-module-qtquick qml6-module-qtquick-controls" "debian|qml6-module-qt-labs-platform" \
+             "fedora|qt6-qtbase-gui qt6-qtdeclarative qt6-qtsvg" "suse|libQt6Svg6 qt6-declarative-imports"; do
+    d=${row%%|*}; want=${row#*|}
+    run "TRUESENSE_OS_RELEASE=$(os_release "$d")" -- "$BASH_BIN" "$INSTALL" --check
+    assert_contains "$R_OUT" "optional: the Qt window (truesense-qt)" "$d"; assert_contains "$R_OUT" "$want" "$d: the Qt run-time packages"
+    assert_contains "$R_OUT" "'truesense gui' opens the built-in web window" "$d: what happens without the window"
+    # what CI's installer jobs forbid in the report (the check runs in containers without Rust or Python)
+    local w; for w in python pyqt socat cargo rustc; do assert_not_contains_ci "$R_OUT$R_ERR" "$w" "$d: --check"; done
+  done
+  # the verdict is the prerequisites' alone: with the whole module toolchain present (fake programs, fake headers) the exit code is 0 although no Qt window is there
+  local bin; bin=$(tmpdir); for w in systemctl dkms make gcc; do fake_program "$bin" "$w" "exit 0"; done
+  run "PATH=$bin:$(path_with sh env cat head cut tr uname grep awk sed ls getent realpath dirname date id)" "TRUESENSE_OS_RELEASE=$(os_release arch)" TRUESENSE_KERNEL=6.1.0-test -- "$BASH_BIN" "$INSTALL" --check
+  assert_contains "$R_OUT" "optional: the Qt window"; assert_contains "$R_OUT" "installed now: no"
+}
+
+t_the_qt_runtime_packages_have_a_name_in_every_family_and_the_development_packages_are_listed() {
+  local d
+  for d in arch ubuntu fedora suse weird; do
+    install_lib "TRUESENSE_OS_RELEASE=$(os_release "$d")" -- 'detect_os; echo "run=$(qt_runtime_pkgs)"; echo "dev=$(qt_dev_pkgs)"'
+    assert_code 0; assert_not_contains "$R_OUT" "run=$" "$d"; assert_not_contains "$R_OUT" "dev=$" "$d"
+  done
+  install_lib "TRUESENSE_OS_RELEASE=$(os_release arch)" -- 'detect_os; qt_runtime_pkgs'
+  assert_eq "$R_OUT" "qt6-base qt6-declarative qt6-svg" "the three Qt 6 packages of the brief"
+  # the Qt packages are NOT module prerequisites: they never enter MISSING (a missing Qt must not turn into a package-manager call for everybody)
+  install_lib "PATH=$(tmpdir)" "TRUESENSE_OS_RELEASE=$(os_release arch)" TRUESENSE_KERNEL=6.1.0-test -- 'detect_os; check_prereqs; echo "MISSING=${MISSING[*]}"'
+  assert_not_contains "$R_OUT" "qt6" "the module prerequisites"
+}
+
+t_help_documents_the_qt_window() {
+  run -- "$BASH_BIN" "$INSTALL" --help
+  assert_code 0
+  local w; for w in --no-qt TRUESENSE_QT_BIN truesense-qt bin/truesense-qt target/release/truesense-qt "web window"; do assert_contains "$R_OUT" "$w" "--help"; done
+}
+
 t_unknown_option_and_help() {
   run -- "$BASH_BIN" "$INSTALL" --nope
   assert_code 2; assert_contains "$R_ERR" "unknown option: --nope"

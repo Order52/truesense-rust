@@ -30,6 +30,8 @@ PageFrame {
     readonly property var licencePaths: [
         "file:///usr/share/doc/truesense/THIRD_PARTY.md",
         "file:///usr/share/licenses/truesense/THIRD_PARTY.md",
+        "file:///usr/local/share/doc/truesense/THIRD_PARTY.md",
+        "file:///usr/local/share/licenses/truesense/THIRD_PARTY.md",
         "qrc:/assets/THIRD_PARTY.md"
     ]
     readonly property var life: ({ alive: true })

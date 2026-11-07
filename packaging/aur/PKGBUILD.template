@@ -13,15 +13,17 @@ pkgdesc='Hardware control for the Acer Predator Helios 16 PH16-71: fans, power, 
 arch=('x86_64')
 url='https://github.com/Order52/truesense'
 license=('MIT')
-depends=('dkms' 'systemd')
-makedepends=('rust' 'gcc')
+depends=('dkms' 'systemd' 'qt6-base' 'qt6-declarative' 'qt6-svg')      # the three Qt 6 libraries truesense-qt links; the static program itself needs none of them
+makedepends=('rust' 'gcc' 'qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-tools')      # qt6-tools: lrelease, for the window's translations
 optdepends=('linux-headers: build the kernel module (any installed kernel needs its own headers)'
             'noise-suppression-for-voice: Purified Voice (RNNoise) microphone noise reduction'
             'nvidia-utils: GPU temperature and power'
-            'alsa-tools: codec diagnostics')
+            'alsa-tools: codec diagnostics'
+            'qt6-wayland: run the window natively on Wayland')
 backup=('etc/truesense/config.toml')
 install=truesense.install
-options=('!debug')
+# !lto: makepkg's default -flto flags would make the C++ part of the Qt window GCC LTO objects, which the Rust linker (lld) cannot read (found by building this package: undefined cxx-qt symbols)
+options=('!debug' '!lto')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('@SHA@')
 _dir="$pkgname-$pkgver"      # the unpacked archive; each function sets _src from it (srcdir exists only while they run)
@@ -45,6 +47,13 @@ build() {
     if readelf -lW "$CARGO_TARGET_DIR/$_target/release/truesense" | grep -q INTERP; then
         echo "the program is dynamically linked: the package must ship a static program" >&2; return 1
     fi
+    # The Qt window is the one dynamic program of the package (Qt is a shared library, so it must NOT get crt-static) and is built for the host, without --target, with the same
+    # path remapping. Arch's Qt is the one it runs against, which is why the package depends on it. build() refuses a result that does not link Qt.
+    export RUSTFLAGS="--remap-path-prefix=$_src=/build/truesense --remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/build/cargo" QMAKE=/usr/bin/qmake6
+    cargo build --release --locked --offline -p ts-qt
+    if ! readelf -dW "$CARGO_TARGET_DIR/release/truesense-qt" | grep -q 'libQt6Core'; then
+        echo "truesense-qt does not link Qt 6: the package would ship something else" >&2; return 1
+    fi
     gcc -O2 -Wall -o "$srcdir/truesense-nvml" tools/nvml/truesense-nvml.c -ldl      # the GPU undervolt helper (the daemon is static and cannot load NVIDIA's library itself)
 }
 
@@ -53,6 +62,7 @@ package() {
     _dkms=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' "$_src/kernel/truesense-wmi/dkms.conf")      # DKMS wants /usr/src/<name>-<this version>
     install -Dm755 "$srcdir/target/$_target/release/truesense" "$pkgdir/usr/bin/truesense"
     ln -s truesense "$pkgdir/usr/bin/truesense-fast"                      # the name selects the instant status-bar client
+    install -Dm755 "$srcdir/target/release/truesense-qt" "$pkgdir/usr/bin/truesense-qt"      # the Qt window (`truesense gui` hands over to it)
     install -Dm755 "$srcdir/truesense-nvml" "$pkgdir/usr/lib/truesense/truesense-nvml"
     install -Dm755 "$_src/packaging/health.sh" "$pkgdir/usr/lib/truesense/health.sh"
     for f in truesense.service truesense-health.service truesense-health.timer; do
@@ -80,6 +90,10 @@ CFG
         install -d "$pkgdir/$(dirname $d)"; "$pkgdir/usr/bin/truesense" completion $sh > "$pkgdir/$d"
     done
     install -Dm644 "$_src/LICENSE" "$pkgdir/usr/share/licenses/truesense/LICENSE"
+    for d in licenses doc; do      # the texts the window's About box reads (it tries share/doc/truesense first, then share/licenses/truesense)
+        install -Dm644 "$_src/THIRD_PARTY.md" "$pkgdir/usr/share/$d/truesense/THIRD_PARTY.md"
+        install -Dm644 "$_src/crates/ts-fx/NOTICE.md" "$pkgdir/usr/share/$d/truesense/NOTICE-ts-fx.md"
+    done
     install -Dm644 "$_src/README.md" "$pkgdir/usr/share/doc/truesense/README.md"
     install -Dm644 "$_src/docs/SAFETY.md" "$pkgdir/usr/share/doc/truesense/SAFETY.md"
 }

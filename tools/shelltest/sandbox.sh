@@ -21,7 +21,8 @@ SB_TOOLS="gzip bash awk basename cat chmod cmp cp cut date dirname env find floc
 sb_source_tree() {
   SRC=$(tmpdir)
   mkdir -p "$SRC/kernel/truesense-wmi" "$SRC/tools"
-  cp -a "$ROOT/packaging" "$SRC/packaging"; cp -a "$ROOT/LICENSE" "$ROOT/Cargo.toml" "$SRC/"
+  cp -a "$ROOT/packaging" "$SRC/packaging"; cp -a "$ROOT/LICENSE" "$ROOT/THIRD_PARTY.md" "$ROOT/Cargo.toml" "$SRC/"
+  mkdir -p "$SRC/crates/ts-fx" "$SRC/crates/ts-qt"; cp -a "$ROOT/crates/ts-fx/NOTICE.md" "$SRC/crates/ts-fx/"          # ts-qt: the marker that this is a source tree with the Qt window
   cp -a "$ROOT"/kernel/truesense-wmi/{dkms.conf,Makefile,truesense_wmi.c} "$SRC/kernel/truesense-wmi/"
   cp -a "$ROOT"/tools/*.sh "$ROOT/tools/nvml" "$SRC/tools/"
   NEWVER=$(awk '{ if (match($0, /(^|[^A-Za-z0-9_-])version[ \t]*=[ \t]*"[^"]+"/)) { s = substr($0, RSTART, RLENGTH); sub(/^[^"]*"/, "", s); sub(/"$/, "", s); print s; exit } }' "$SRC/Cargo.toml")
@@ -39,6 +40,17 @@ fake_bin() {
     *) body="#!/bin/sh\n# fake truesense $ver ${kind:+TRUESENSE_SANDBOX_${kind^^}}\ncase \"\$1\" in --version) echo \"truesense $ver\";; completion) echo \"# completion for \$2 ($ver)\";; doctor) echo \"doctor ok\";; *) echo \"fake \$*\";; esac\n";;
   esac
   printf '%b' "$body" > "$f"; chmod 755 "$f"
+}
+
+# fake_qt_bin PATH VERSION [noversion]: a stand-in for truesense-qt (it answers --version like the real one: "truesense-qt X.Y.Z")
+fake_qt_bin() {
+  local f=$1 ver=$2 kind=${3:-}
+  mkdir -p "$(dirname "$f")"
+  case $kind in
+    noversion) printf '#!/bin/sh\n# fake truesense-qt %s that cannot run\nexit 127\n' "$ver" > "$f";;
+    *) printf '#!/bin/sh\n# fake truesense-qt %s\ncase "$1" in --version) echo "truesense-qt %s";; *) echo "fake qt $*";; esac\n' "$ver" "$ver" > "$f";;
+  esac
+  chmod 755 "$f"
 }
 
 # sb_new: a fresh fake system (a distribution's usual directories, a PH16-71, the running kernel's headers), a source tree (SRC), the PATH for the scripts and a new program NEWBIN

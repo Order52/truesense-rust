@@ -151,6 +151,8 @@ rm -f "$R"/etc/systemd/system/truesense*.service "$R/etc/systemd/system/truesens
 # a link left in a .wants directory (a disable that failed above) would point at a unit that no longer exists
 for f in "$R"/etc/systemd/system/*.wants/truesense* "$R"/etc/systemd/user/*.wants/truesense*; do if [ -L "$f" ] && [ ! -e "$f" ]; then rm -f "$f"; fi; done
 rm -f "$R$PREFIX/bin/truesense" "$R$PREFIX/bin/truesense-fast" "$R$PREFIX/bin/.truesense-fast.new" "$R$PREFIX/bin/truesense.prev" "$R$PREFIX/bin/truesense.prev.new" "$R$PREFIX/bin/truesense.new"
+rm -f "$R$PREFIX/bin/truesense-qt" "$R$PREFIX/bin/truesense-qt.prev" "$R$PREFIX/bin/truesense-qt.prev.new" "$R$PREFIX/bin/truesense-qt.new"      # the optional Qt window
+rm -r -f "$R$PREFIX/share/doc/truesense"
 rm -r -f "$R$PREFIX/lib/truesense" "$R$PREFIX/lib/truesense.prev" "$R$PREFIX/lib/truesense.new" "$R$PREFIX/share/truesense"
 rm -f "$R/usr/share/bash-completion/completions/truesense" "$R/usr/share/zsh/site-functions/_truesense" "$R/usr/share/fish/vendor_completions.d/truesense.fish"
 sys modprobe -r truesense_wmi 2>/dev/null
