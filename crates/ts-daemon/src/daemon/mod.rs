@@ -15,7 +15,9 @@
 //! * `boot.rs`: restoring the saved settings at start and handing the machine back on exit;
 //! * `handlers.rs`: the control socket's command table, the same names, arguments and result
 //!   shapes as the Python daemon so the Python and Go clients keep working;
-//! * `publish.rs`: the live `key=value` state for status bars and `health.sh`.
+//! * `publish.rs`: the live `key=value` state for status bars and `health.sh`;
+//! * `alerts.rs`: desktop alerts (a hot CPU or GPU, a low battery, ...) evaluated on the tick and
+//!   shown to the desktop user by a helper thread, so no notifier can slow or break a tick.
 //!
 //! Safety, in the words of the Python daemon: the fans go back to firmware Auto and the CPU
 //! clock cap is lifted on ANY exit (a stop, an error, a panic, SIGTERM or SIGINT); if a step
@@ -27,6 +29,7 @@
 #![forbid(unsafe_code)]
 
 pub mod adapt;
+mod alerts;
 mod boot;
 #[allow(clippy::module_inception)]
 mod daemon;
@@ -35,6 +38,8 @@ mod handlers;
 mod publish;
 mod step;
 
+#[cfg(test)]
+mod alerts_tests;
 #[cfg(test)]
 mod handler_tests;
 #[cfg(test)]
@@ -51,6 +56,7 @@ use std::path::PathBuf;
 
 use ts_ipc::server::ServerError;
 
+pub use self::alerts::{AlertSettings, ConfigFileAlerts};
 pub use self::daemon::Daemon;
 pub use self::deps::{
     BootLookPort, Clock, ClockCap, CpuUndervoltPort, Deps, GpuUndervoltPort, Level, LivePaths, Logger,

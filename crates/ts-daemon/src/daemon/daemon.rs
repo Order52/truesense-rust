@@ -35,6 +35,7 @@ use ts_system::osd::UserDirectory;
 use ts_system::sensors::Ema;
 
 use super::DaemonError;
+use super::alerts::{AlertSettings, AlertsRuntime};
 use super::deps::{
     BootLookPort, Clock, ClockCap, CpuUndervoltPort, Deps, GpuUndervoltPort, Level, LivePaths, Logger,
     Notice, OperatingLight, PowerLimitsPort, PowerManagersPort, ProcessList, Sensors, Sleeper, StopToken,
@@ -110,6 +111,8 @@ pub(super) struct Inner {
     pub(super) interval: Duration,
     /// On-screen messages decided during a tick, shown once the lock is released.
     pub(super) notices: Vec<(String, &'static str)>,
+    /// The alert rules and what they have decided to say (see `alerts.rs`).
+    pub(super) alerts: AlertsRuntime,
 }
 
 impl Inner {
@@ -184,6 +187,7 @@ impl Daemon {
             keyboard,
             touchpad,
             osd,
+            alert_settings,
             processes,
             users,
             curves,
@@ -206,6 +210,7 @@ impl Daemon {
             &smart_profiles,
             uv_guard,
             gpu_uv_guard,
+            alert_settings,
             log.as_ref(),
         );
         Arc::new_cyclic(|me| Daemon {
@@ -428,6 +433,7 @@ impl Inner {
         profiles: &ts_decision::smartprofile::Store,
         uv_guard: Guard,
         gpu_uv_guard: Guard,
+        alert_settings: Arc<dyn AlertSettings>,
         log: &dyn Logger,
     ) -> Inner {
         let curve = curves
@@ -473,6 +479,7 @@ impl Inner {
             live: LiveState::new(),
             interval: FIRST_INTERVAL,
             notices: Vec::new(),
+            alerts: AlertsRuntime::new(alert_settings, &cfg.alerts),
         }
     }
 }

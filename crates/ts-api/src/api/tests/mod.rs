@@ -2,6 +2,7 @@
 //! daemon, the daemon-down fallbacks, and the refusal rules.
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
+mod alerts;
 mod audio;
 mod battery;
 mod cpu_gpu;

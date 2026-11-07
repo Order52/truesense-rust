@@ -26,6 +26,7 @@ use ts_domain::power::RawLimits;
 use ts_platform::hw::{Coded, FanDuty, PowerMode, Reading};
 use ts_system::sensors::GpuReading;
 
+use super::alerts::Observed;
 use super::daemon::{Daemon, Inner};
 
 /// The GPU temperature from `nvidia-smi` is only trusted this long after it arrived: a stuck
@@ -147,6 +148,7 @@ impl Daemon {
             self.pm_guard();
         }
         self.flush_notices();
+        self.alerts_deliver();
     }
 
     /// Shows what the tick wanted to say, after the lock is released (the on-screen display runs
@@ -214,6 +216,7 @@ impl Daemon {
         if raw_cpu <= 0.0 {
             // No sensors at all: the firmware decides.
             self.write_fans(g, Duties::AUTO);
+            self.alerts_observe(g, mono, Observed::LOST);
             return;
         }
         let tcpu = g.tcpu.update(raw_cpu);
@@ -270,6 +273,7 @@ impl Daemon {
             self.auto_profile(g, &frame);
             self.operating_lighting(g);
         }
+        self.alerts_observe(g, mono, Observed { cpu_c: Some(tcpu), gpu_c: (raw_gpu > 0.0).then_some(tgpu) });
         self.publish(g, smart, &frame);
     }
 

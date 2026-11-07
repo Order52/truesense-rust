@@ -306,6 +306,7 @@ positional arguments:
                  yours)
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
+    alerts       desktop alerts: hot CPU/GPU, low battery, throttling
     service      the daemon
     config       configuration
     doctor       check the whole stack and say how to fix problems
@@ -364,6 +365,7 @@ positional arguments:
                  yours)
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
+    alerts       desktop alerts: hot CPU/GPU, low battery, throttling
     service      the daemon
     config       configuration
     doctor       check the whole stack and say how to fix problems
@@ -806,7 +808,7 @@ rc 0
 --- out
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad alerts service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -938,6 +940,10 @@ _truesense() {
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     touchpad) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "on off toggle status --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    alerts) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "show set --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "--help --enabled --cpu-limit --gpu-limit --repeat-minutes --debounce-samples --battery-low --throttling --sensor-lost" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     service) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "status restart logs check repair --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         status) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;

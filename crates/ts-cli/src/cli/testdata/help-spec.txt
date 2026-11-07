@@ -26,6 +26,7 @@ positional arguments:
                  yours)
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
+    alerts       desktop alerts: hot CPU/GPU, low battery, throttling
     service      the daemon
     config       configuration
     doctor       check the whole stack and say how to fix problems
@@ -1290,6 +1291,54 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+
+======================================================================
+AREA alerts
+usage: truesense alerts [-h] {show,set} ...
+
+positional arguments:
+  {show,set}
+    show      the alert settings in force
+    set       change settings (only what you give); the service applies them
+              within about ten seconds
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB alerts show
+usage: truesense alerts show [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB alerts set
+usage: truesense alerts set [-h] [--enabled {on,off}] [--cpu-limit CPU_LIMIT]
+                            [--gpu-limit GPU_LIMIT]
+                            [--repeat-minutes REPEAT_MINUTES]
+                            [--debounce-samples DEBOUNCE_SAMPLES]
+                            [--battery-low BATTERY_LOW]
+                            [--throttling {on,off}] [--sensor-lost {on,off}]
+
+options:
+  -h, --help            show this help message and exit
+  --enabled {on,off}    alerts on or off
+  --cpu-limit CPU_LIMIT
+                        alert at this CPU temperature, 70..100 C
+  --gpu-limit GPU_LIMIT
+                        alert at this GPU temperature, 70..100 C
+  --repeat-minutes REPEAT_MINUTES
+                        least minutes between two messages of one alert,
+                        1..240
+  --debounce-samples DEBOUNCE_SAMPLES
+                        samples in a row before an alert, 1..30
+  --battery-low BATTERY_LOW
+                        battery alert level in percent, 5..50, 0 = off
+  --throttling {on,off}
+                        tell when the CPU clock is held down
+  --sensor-lost {on,off}
+                        tell when the CPU temperature cannot be read
 
 ======================================================================
 AREA service

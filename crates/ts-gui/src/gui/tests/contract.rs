@@ -90,8 +90,9 @@ fn the_table_and_the_scanner_see_the_whole_contract() {
 /// Documented commands the server answers itself or that the page never sends.
 const SERVER_ONLY: [&str; 2] = ["gui/ping", "gui/quit"];
 
-/// Documented commands for the native Qt app only: the web page of this crate never calls them.
-const NATIVE_APP_ONLY: [&str; 2] = ["battery/info", "capabilities/get"];
+/// Commands of the native app: the web page is being retired and never calls them, but they are
+/// implemented and still checked by `every_documented_command_exists_in_the_implementation`.
+const NATIVE_APP_ONLY: [&str; 4] = ["alerts/get", "alerts/set", "battery/info", "capabilities/get"];
 
 #[test]
 fn every_command_the_page_calls_is_documented_and_every_documented_one_is_called() {

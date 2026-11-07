@@ -34,6 +34,8 @@ use ts_platform::hw::Hw;
 use ts_system::osd::UserDirectory;
 use ts_system::sensors::GpuReading;
 
+use super::alerts::AlertSettings;
+
 /// What a port reports when its operation failed. The text is what the user sees in the error
 /// reply of the control socket, so it is the failing crate's own message, unchanged.
 ///
@@ -370,6 +372,8 @@ pub struct Deps {
     pub touchpad: Arc<dyn TouchpadPort>,
     /// The on-screen display.
     pub osd: Arc<dyn Notice>,
+    /// Where the `[alerts]` settings are re-read from while the daemon runs.
+    pub alert_settings: Arc<dyn AlertSettings>,
     /// The process list.
     pub processes: Arc<dyn ProcessList>,
     /// Finds the desktop user (its uid may use the socket, its home holds the legacy flag files).

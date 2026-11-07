@@ -32,6 +32,7 @@
 //! `ts_system::osd::Osd`), the `ts_domain::designs::ImageDecoder`, and the closure `fn_key_node`.
 #![forbid(unsafe_code)]
 
+mod alerts;
 mod audio;
 mod battery;
 mod battery_info;
@@ -86,6 +87,7 @@ use ts_system::models::ProbeOptions;
 use ts_system::sensors::{Clock, Sampler};
 use ts_system::touchpad::Touchpad;
 
+pub use alerts::{AlertsEdit, describe_alerts};
 pub use audio::{DtsInfo, JackReport, MicReport, VoiceStatus, dts_is_on};
 pub use battery::{BatteryStatus, ChargeFull, ChargeFullAction};
 pub use capabilities::{Capabilities, Capability, Feature, ModelSummary};

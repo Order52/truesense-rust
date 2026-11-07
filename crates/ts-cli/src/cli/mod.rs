@@ -21,6 +21,7 @@
 //! buffers.
 #![forbid(unsafe_code)]
 
+mod alerts;
 mod argparse;
 mod completion;
 mod handlers;
