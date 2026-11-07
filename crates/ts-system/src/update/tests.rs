@@ -1091,7 +1091,11 @@ fn a_release_of_another_edition_is_refused_by_the_layout_check_not_installed() {
     fs::create_dir_all(world.tmp.0.join("work")).unwrap();
     // The Go edition's source release: no Cargo.toml, a go.mod.
     let go = tarball(
-        &[("tools/install.sh", b"#!/bin/sh\n".to_vec()), ("go.mod", b"module x\n".to_vec()), ("kernel/truesense-wmi/truesense_wmi.c", b"//".to_vec())],
+        &[
+            ("tools/install.sh", b"#!/bin/sh\n".to_vec()),
+            ("go.mod", b"module x\n".to_vec()),
+            ("kernel/truesense-wmi/truesense_wmi.c", b"//".to_vec()),
+        ],
         "truesense-9.9.9",
     );
     world.serve_release("9.9.9", &go, Some(sums_for("9.9.9", &go)));
@@ -1115,7 +1119,8 @@ fn the_update_cache_the_go_edition_left_is_understood_and_gives_no_update() {
     assert!(!status.available, "0.4.0 is older than the running 0.5.0");
     assert!(world.net.asked().is_empty());
     // Offline with a stale cache: the last answer survives and the error says why.
-    let stale = world.updater().with_current("0.5.0").with_clock(Arc::new(|| 1_794_050_946.0 + 10.0 * 86_400.0));
+    let stale =
+        world.updater().with_current("0.5.0").with_clock(Arc::new(|| 1_794_050_946.0 + 10.0 * 86_400.0));
     let status = stale.check(false, None);
     assert_eq!(status.latest.as_deref(), Some("0.4.0"));
     assert!(status.error.is_some());
@@ -1175,7 +1180,11 @@ fn the_real_installer_of_a_hand_built_bundle_is_run_from_the_verified_tree() {
         .with_cache_path(None)
         .with_temp_dir(&work);
     let result = updater.apply(&ApplyOptions::default()).unwrap();
-    assert_eq!((result.returncode, result.via), (3, "installer"), "the installer's own exit code is reported");
+    assert_eq!(
+        (result.returncode, result.via),
+        (3, "installer"),
+        "the installer's own exit code is reported"
+    );
     let ran_in = fs::read_to_string(&marker).unwrap();
     assert!(ran_in.ends_with("truesense-9.9.9"), "{ran_in}");
     assert!(!Path::new(&ran_in).exists(), "and the tree is deleted afterwards");

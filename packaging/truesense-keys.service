@@ -1,6 +1,8 @@
 [Unit]
 Description=TrueSense Fn keys and PREDATOR key
 After=graphical-session.target
+# never give up restarting: a crash loop at this pace costs nothing, a service that stays failed leaves the keys or the filters dead until the next login
+StartLimitIntervalSec=0
 
 [Service]
 ExecStart=@PREFIX@/bin/truesense keys run

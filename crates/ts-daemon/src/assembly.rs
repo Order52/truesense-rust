@@ -33,6 +33,12 @@ use crate::daemon::{
     StopToken, SystemClock,
 };
 
+/// The exit status of a daemon that found another one running (`EX_CONFIG`). The unit lists it
+/// in `RestartPreventExitStatus=`: restarting every second cannot make the other daemon go away,
+/// and each failed start would run the unit's `ExecStopPost` hand-back against a daemon that is
+/// driving the fans.
+pub const EXIT_ALREADY_RUNNING: i32 = 78;
+
 /// Where the root service's home is when `HOME` is not set (systemd units run it as root).
 const ROOT_HOME: &str = "/root";
 
@@ -258,5 +264,13 @@ pub fn run_daemon() -> Result<(), AssemblyError> {
         fsx::ensure_dir(dir, 0o755).map_err(|e| AssemblyError::RunDir(e.to_string()))?;
     }
     let deps = build_deps(config, warnings, stop, log);
-    daemon::run(deps, ts_ipc::wire::socket_path()).map_err(AssemblyError::Daemon)
+    match daemon::run(deps, ts_ipc::wire::socket_path()) {
+        Err(e @ DaemonError::AlreadyRunning(_)) => {
+            // This function is the service's entry point (it owns the signals), so it is the
+            // one place that may end the process with a status the unit knows.
+            eprintln!("truesense daemon: {e}");
+            std::process::exit(EXIT_ALREADY_RUNNING)
+        }
+        other => other.map_err(AssemblyError::Daemon),
+    }
 }
