@@ -1,0 +1,19 @@
+description = "Away from the charger: eco, firmware fans, rear light off, 80 % battery limit, backlight timeout on"
+
+[power]
+mode = "eco"
+
+[fan]
+mode = "auto"
+
+[rear]
+on = false
+
+[battery]
+limit = true
+
+[keyboard]
+timeout = true
+
+[display]
+overdrive = false

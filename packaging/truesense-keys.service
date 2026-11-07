@@ -1,0 +1,11 @@
+[Unit]
+Description=TrueSense Fn keys and PREDATOR key
+After=graphical-session.target
+
+[Service]
+ExecStart=@PREFIX@/bin/truesense keys run
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

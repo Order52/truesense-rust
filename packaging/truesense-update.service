@@ -1,0 +1,6 @@
+[Unit]
+Description=TrueSense: look for a newer release (only if automatic checks are on)
+
+[Service]
+Type=oneshot
+ExecStart=@PREFIX@/bin/truesense update auto-run

@@ -1,0 +1,15 @@
+# Keeps the GitHub Actions the pipelines use and the Rust crate dependencies up to date (security fixes arrive as pull requests that CI checks).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    commit-message: { prefix: "ci" }
+    groups:
+      actions: { patterns: ["*"] }
+  - package-ecosystem: cargo
+    directory: /
+    schedule: { interval: weekly }
+    commit-message: { prefix: "deps" }
+    groups:
+      crates: { patterns: ["*"] }

@@ -1,0 +1,22 @@
+name: Another Predator model or BIOS (read-only probe)
+description: Help bring TrueSense to your laptop. A read-only probe tells us what your firmware answers.
+labels: [hardware-report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TrueSense only writes to laptops it has been verified on (today: Predator PH16-71). For a similar model the safe path is:
+        1. Run `truesense probe` (read-only: it only READS values, it never writes a setting). If the kernel module is not loaded for your model, run `sudo tools/install.sh --check` first and follow what it says.
+        2. Paste the report below. Nothing in it identifies you: model, BIOS version, kernel, and which firmware read-outs answered.
+        3. We compare it with the verified model. When it matches, the model moves from "unverified" to "supported" in a release.
+        **Do not** use `--force` for daily use before that: an unverified model can misbehave.
+  - type: textarea
+    id: probe
+    attributes: { label: Output of `truesense probe --json`, render: json }
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes: { label: Model name as printed on the lid }
+  - type: textarea
+    id: notes
+    attributes: { label: Anything else, description: "Which Acer software did you use on Windows? Do the fan, power and keyboard keys work today?" }

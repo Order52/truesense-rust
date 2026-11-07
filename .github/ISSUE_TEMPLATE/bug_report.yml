@@ -1,0 +1,24 @@
+name: Bug report
+description: Something does not work on a supported laptop (Acer Predator Helios 16, PH16-71)
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: "What did you do, what did you expect, what happened instead?" }
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `truesense doctor`
+      description: Run it in a terminal and paste everything. It is read-only and contains no serial numbers.
+      render: text
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: TrueSense version, description: "`truesense --version`" }
+  - type: input
+    id: distro
+    attributes: { label: Distribution and kernel, description: "For example CachyOS, 7.3.0-4-cachyos" }
+  - type: textarea
+    id: logs
+    attributes: { label: Service log (optional), description: "`truesense service logs`. Please do not attach raw ACPI dumps: they contain the OEM Windows product key.", render: text }

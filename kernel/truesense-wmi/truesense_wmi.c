@@ -51,7 +51,7 @@
 #include <linux/kstrtox.h>
 #endif
 
-#define TS_VERSION	"0.4.0"
+#define TS_VERSION	"0.5.0"
 
 #define GUID_GAME	"7A4DDFE7-5B5D-40B4-8595-4408E0CC7F56"
 #define GUID_APGE	"61EF69EA-865C-4BC3-A502-A0DEBA0CB531"

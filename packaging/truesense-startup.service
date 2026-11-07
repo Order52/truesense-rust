@@ -1,0 +1,15 @@
+[Unit]
+Description=TrueSense: restore lighting and profile at login
+After=graphical-session.target truesense-keys.service
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@PREFIX@/bin/truesense startup apply
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

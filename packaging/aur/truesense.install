@@ -1,0 +1,6 @@
+post_install() {
+    echo ":: TrueSense: enable the services, then check everything with  truesense doctor"
+    echo "   sudo systemctl enable --now truesense.service truesense-health.timer"
+    echo "   systemctl --user enable --now truesense-keys truesense-audio"
+    echo "   Set  user = \"<your login>\"  in /etc/truesense/config.toml so the daemon accepts your commands."
+}

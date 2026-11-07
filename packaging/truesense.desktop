@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=TrueSense
+GenericName=Predator control
+Comment=Power, fans, lighting, battery and audio for the Acer Predator Helios 16
+Exec=@PREFIX@/bin/truesense gui
+Icon=truesense
+Terminal=false
+StartupWMClass=truesense
+Categories=Settings;HardwareSettings;System;
+Keywords=predator;acer;fan;rgb;keyboard;power;

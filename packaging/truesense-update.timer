@@ -1,0 +1,11 @@
+[Unit]
+Description=TrueSense: daily update check
+
+[Timer]
+OnStartupSec=10min
+OnUnitActiveSec=1d
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,14 +1,197 @@
 name: CI
+
 on:
-  push: { branches: [main] }
+  push:
+    branches: [main]
   pull_request:
-permissions: { contents: read }
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the older run; nothing here can write to the repository.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+# Every third-party action is pinned to a full commit SHA (the comment names the release); Dependabot keeps them current. The Rust toolchain needs no action: rustup is on the
+# runners, and installing the toolchain with it keeps one less piece of third-party code in the pipeline. rust-toolchain.toml names the channel (stable) and the components.
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
 jobs:
+  # ---- fast static checks: the cheapest way to catch a mistake ------------------------------------------------------------------------------
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rust toolchain (the installer tests build a small fake GitHub with rustc)
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target x86_64-unknown-linux-musl --no-self-update && rustup default stable
+      - name: Cargo.lock is committed and the dependencies resolve from it
+        run: |
+          git ls-files --error-unmatch Cargo.toml Cargo.lock > /dev/null || { echo "::error::Cargo.toml and Cargo.lock must be tracked by git"; exit 1; }
+          cargo metadata --locked --format-version 1 > /dev/null
+      - name: Shell scripts (bash -n, shellcheck warnings and up)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck desktop-file-utils
+          tools/ci/check-shell.sh
+      - name: Workflows (actionlint)
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+      - name: Every file agrees on one version (and the updater can read it)
+        run: tools/release.sh check
+      - name: systemd units verify (placeholders filled, hardening ratchet)
+        run: tools/ci/verify-units.sh
+      - name: Desktop entries
+        run: desktop-file-validate packaging/truesense.desktop packaging/truesense-tui.desktop
+      - name: The installer, get.sh, release.sh and the packaging (tools/shelltest)
+        run: tools/shelltest/run.sh
+
+  # ---- the Rust code: formatting, clippy with warnings as errors, every test --------------------------------------------------------------
   rust:
     name: Format, clippy, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target x86_64-unknown-linux-musl --no-self-update && rustup default stable
+      - run: rustup show
+      - name: rustfmt, clippy (-D warnings) and the whole test suite (hermetic, no hardware, no root)
+        run: make ci
+
+  # ---- the static program: really static, says the right version; and the reproducible release bundle around it -----------------------------
+  build:
+    name: Build (static program, reproducible bundle)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: rustup show
-      - run: make ci
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl --no-self-update && rustup default stable
+      - name: The bundle builds (the program is built twice in two directories and compared), is complete, static, and says the version
+        run: |
+          v=$(tools/release.sh version)
+          tools/ci/build-bundle.sh "$v" build/a
+          tools/ci/check-bundle.sh "$v" build/a
+          rustc -vV
+      - name: The SBOM is generated and is CycloneDX
+        run: |
+          v=$(tools/release.sh version)
+          tools/ci/sbom.sh "$v" "build/truesense-$v.sbom.cdx.json"
+
+  # ---- known vulnerabilities in the dependencies: reported, not blocking yet (a new advisory must not stop an unrelated pull request) -------
+  audit:
+    name: Dependency advisories (not blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    env:
+      CARGO_AUDIT_VERSION: "0.21.2"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
+      - name: cargo audit (RustSec advisories against Cargo.lock)
+        run: |
+          cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"
+          cargo audit
+
+  # ---- the kernel module against the headers of real distributions ------------------------------------------------------------------------
+  module:
+    name: Kernel module (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Arch (linux + linux-lts), image: "archlinux:latest", setup: "pacman -Syu --noconfirm base-devel linux linux-headers linux-lts linux-lts-headers kmod" }
+          - { name: Ubuntu 24.04, image: "ubuntu:24.04", setup: "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential kmod linux-headers-generic" }
+          - { name: Ubuntu 22.04, image: "ubuntu:22.04", setup: "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential kmod linux-headers-generic" }
+          - { name: Debian stable, image: "debian:stable", setup: "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential kmod linux-headers-amd64" }
+          - { name: Fedora, image: "fedora:latest", setup: "dnf install -y make gcc kmod kernel-devel" }
+    steps:
+      - name: Tools for checkout
+        run: |
+          if command -v apt-get >/dev/null; then apt-get update -qq && apt-get install -y -qq git; elif command -v dnf >/dev/null; then dnf install -y git; else pacman -Sy --noconfirm git; fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the distribution's compiler and kernel headers
+        run: ${{ matrix.setup }}
+      - name: Build against every installed kernel (warnings on)
+        run: bash tools/ci/build-modules.sh
+
+  # ---- the installer's distribution detection and package names, on each family (the containers have no Rust and no Python: a bundle needs neither) ----
+  installer:
+    name: Installer check (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Arch, image: "archlinux:latest", family: arch, prep: "pacman -Sy --noconfirm git" }
+          - { name: Ubuntu, image: "ubuntu:24.04", family: debian, prep: "apt-get update -qq && apt-get install -y -qq git" }
+          - { name: Debian, image: "debian:stable", family: debian, prep: "apt-get update -qq && apt-get install -y -qq git" }
+          - { name: Fedora, image: "fedora:latest", family: fedora, prep: "dnf install -y git" }
+          - { name: openSUSE, image: "opensuse/tumbleweed:latest", family: suse, prep: "zypper --non-interactive install git tar gzip" }
+    steps:
+      - run: ${{ matrix.prep }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: tools/install.sh --check recognises the distribution and names the right packages
+        env:
+          FAMILY: ${{ matrix.family }}
+        run: |
+          out=$(bash tools/install.sh --check 2>&1 || true); echo "$out"
+          echo "$out" | grep -q "family: $FAMILY" || { echo "::error::expected family $FAMILY"; exit 1; }
+          echo "$out" | grep -q "NOT supported" || { echo "::error::a container is not a PH16-71 and must say so"; exit 1; }
+          if echo "$out" | grep -qiE "python|pyqt|socat|cargo|rustc"; then echo "::error::the installer must not ask for Python, PyQt, socat or a Rust toolchain"; exit 1; fi
+
+  # ---- the Arch package, built the way a user would build it (makedepends: rust gcc) ------------------------------------------------------
+  package:
+    name: Arch package
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm base-devel git rust
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: makepkg as an unprivileged user
+        run: |
+          useradd -m builder; chown -R builder: "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && makepkg -f --nodeps --noconfirm"
+      - name: The package has what it must, and its program is static and runs
+        run: |
+          pkg=$(ls packaging/arch/*.pkg.tar.zst); pacman -Qlp "$pkg" > files.txt
+          for f in usr/bin/truesense usr/bin/truesense-fast usr/lib/systemd/system/truesense.service usr/lib/systemd/user/truesense-keys.service \
+                   usr/share/applications/truesense.desktop usr/share/applications/truesense-tui.desktop usr/share/truesense/profiles/ usr/src/truesense-wmi- \
+                   usr/lib/truesense/truesense-nvml usr/lib/truesense/health.sh usr/lib/udev/rules.d/70-truesense.rules; do
+            grep -q "$f" files.txt || { echo "::error::package lacks $f"; exit 1; }
+          done
+          pacman -Qip "$pkg"
+          mkdir pkgroot && bsdtar -xf "$pkg" -C pkgroot
+          v=$(grep -oP '^pkgver=\K[0-9.]+' packaging/arch/PKGBUILD)
+          [ "$(pkgroot/usr/bin/truesense --version)" = "truesense $v" ] || { echo "::error::the packaged program does not say truesense $v"; exit 1; }
+          if readelf -lW pkgroot/usr/bin/truesense | grep -q INTERP; then echo "::error::the packaged program is dynamically linked"; exit 1; fi
+          dkms=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' kernel/truesense-wmi/dkms.conf)
+          [ -f "pkgroot/usr/src/truesense-wmi-$dkms/dkms.conf" ] || { echo "::error::the DKMS sources are not in /usr/src/truesense-wmi-$dkms"; exit 1; }
+
+  # ---- one required check for branch protection ------------------------------------------------------------------------------------------
+  ci-ok:
+    name: CI passed
+    if: always()
+    needs: [static, rust, build, module, installer, package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Everything above succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          bad=$(echo "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success") | .key')
+          if [ -n "$bad" ]; then echo "failed: $bad"; exit 1; fi
+          echo "all green"

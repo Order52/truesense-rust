@@ -1,0 +1,49 @@
+name: Kernel watch
+
+# The kernel changes its internal API every few months. Build the module against the newest kernels of several distributions every week and open (or update) ONE issue
+# the moment one stops building, so it is fixed before a user's system update breaks their fans.
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Arch linux, image: "archlinux:latest", setup: "pacman -Syu --noconfirm base-devel git linux linux-headers kmod" }
+          - { name: Arch linux-lts, image: "archlinux:latest", setup: "pacman -Syu --noconfirm base-devel git linux-lts linux-lts-headers kmod" }
+          - { name: Arch linux-zen, image: "archlinux:latest", setup: "pacman -Syu --noconfirm base-devel git linux-zen linux-zen-headers kmod" }
+          - { name: Fedora (newest kernel), image: "fedora:rawhide", setup: "dnf install -y git make gcc kmod kernel-devel" }
+          - { name: Ubuntu 24.04, image: "ubuntu:24.04", setup: "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git build-essential kmod linux-headers-generic" }
+    steps:
+      - name: Bootstrap
+        run: ${{ matrix.setup }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build against the installed kernel headers (warnings on)
+        run: bash tools/ci/build-modules.sh
+
+  report:
+    name: Open an issue when a kernel breaks the module
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: One issue, updated each week it stays broken
+        env: { GH_TOKEN: "${{ github.token }}", RUN: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
+        run: |
+          title="Kernel watch: the module no longer builds on a current kernel"
+          body="The weekly kernel watch failed: $RUN. Fix the module before users update their kernels. (This issue is updated by CI; close it when the watch is green again.)"
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then gh issue comment "$n" --repo "$GITHUB_REPOSITORY" --body "Still failing: $RUN"
+          else gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body" --label bug; fi

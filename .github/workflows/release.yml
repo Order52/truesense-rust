@@ -1,0 +1,189 @@
+name: Release
+
+# Push a tag (tools/release.sh prepare X.Y.Z --title "..." --push does everything) and this publishes the release:
+# the verified version, the full Rust test suite, one static program built twice and compared, the release bundle (the source tree plus bin/truesense, byte-for-byte
+# reproducible), an Arch package, an SBOM, SHA256SUMS, build provenance attestations for every file, and the notes from RELEASE_NOTES.md.
+# Run it by hand (Actions, Release, Run workflow): give a tag to re-publish it, or leave the tag empty (dry run on) to rehearse the whole pipeline from main: it builds and checks
+# everything and publishes nothing.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+    inputs:
+      tag: { description: "Existing tag to (re)publish, e.g. v0.5.0 (empty: rehearse from main)", required: false, default: "" }
+      dry_run: { description: "Build and check everything, publish nothing", type: boolean, default: true }
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  CARGO_TERM_COLOR: always
+
+# Every third-party action is pinned to a full commit SHA (the comment names the release); Dependabot keeps them current. The Rust toolchain is installed with rustup, which the
+# runners carry: no action. The release is built with the stable channel of the day; its exact version is recorded in the release (truesense-X.Y.Z.build-env.txt) because
+# rebuilding the bundle byte for byte needs the same compiler.
+jobs:
+  verify:
+    name: Verify the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ env.TAG }}", fetch-depth: 0 }
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target x86_64-unknown-linux-musl --no-self-update && rustup default stable
+      - name: The tag, every versioned file and the release notes agree
+        id: v
+        env: { DRY: "${{ github.event.inputs.dry_run }}" }
+        run: |
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then tools/release.sh check --tag "$TAG"
+          elif [ "$DRY" = true ]; then echo "rehearsal from $TAG: not a version tag, so no tag check"; tools/release.sh check
+          else echo "::error::$TAG is not a version tag: only a dry run may build from a branch"; exit 1; fi
+          v=$(tools/release.sh version); echo "version=$v" >> "$GITHUB_OUTPUT"
+          tools/release.sh notes "$v" > /dev/null
+      - name: The tagged commit is on main (nobody releases a side branch by accident)
+        if: startsWith(env.TAG, 'v')
+        run: git merge-base --is-ancestor "$TAG" origin/main || { echo "::error::$TAG is not on main"; exit 1; }
+      - name: Cargo.toml and Cargo.lock are committed (the bundle and the packages are built from them with --locked)
+        run: git ls-files --error-unmatch Cargo.toml Cargo.lock > /dev/null
+      - name: rustfmt, clippy, tests
+        run: make ci
+      - name: The installer, get.sh, release.sh and the packaging
+        run: tools/shelltest/run.sh
+      - name: The kernel module builds against this runner's kernel
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq "linux-headers-$(uname -r)"
+          bash tools/ci/build-modules.sh "$(uname -r)"
+
+  build:
+    name: Build the release files
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ env.TAG }}" }
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl --no-self-update && rustup default stable
+      - name: The bundle, built twice (the two programs must be identical, the one inside must run)
+        env: { V: "${{ needs.verify.outputs.version }}" }
+        run: |
+          # the static x86_64-unknown-linux-musl program (--remap-path-prefix, --locked, commit and date from git) is built from two fresh copies of the archived tree in two
+          # different directories and compared; the bundle is git archive of this tree plus bin/truesense with sorted names, the commit's mtime, root owner and gzip -n:
+          # see tools/ci/build-bundle.sh
+          tools/ci/build-bundle.sh "$V" build/a
+          tools/ci/check-bundle.sh "$V" build/a
+          # the release files go in their own directory
+          mkdir -p release
+          cp "build/a/truesense-$V.tar.gz" release/
+          tools/release.sh notes "$V" > release/RELEASE-NOTES.md
+          { echo "TrueSense $V"; echo "commit $(git rev-parse HEAD)"; echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)"; rustc -vV; cargo -V; gcc --version | head -n1; uname -sr; } > "release/truesense-$V.build-env.txt"
+          cat "release/truesense-$V.build-env.txt"
+      - name: SBOM (CycloneDX) of the program that ships
+        env: { V: "${{ needs.verify.outputs.version }}" }
+        run: |
+          # generated from cargo tree, cargo metadata and Cargo.lock by a script in this repository (tools/ci/sbom.sh): no tool is installed for it
+          tools/ci/sbom.sh "$V" "release/truesense-$V.sbom.cdx.json"
+          jq -e '.bomFormat == "CycloneDX" and (.components | length) > 0' "release/truesense-$V.sbom.cdx.json" > /dev/null || { echo "::error::the SBOM is empty or not CycloneDX"; exit 1; }
+      - name: Upload for the next jobs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with: { name: dist-bundle, path: release, if-no-files-found: error }
+
+  package-arch:
+    name: Build the Arch package
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm base-devel git rust
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ env.TAG }}" }
+      - name: makepkg (unprivileged, builds the program with cargo)
+        run: |
+          useradd -m builder; chown -R builder: "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && makepkg -f --nodeps --noconfirm"
+          mkdir dist && cp packaging/arch/*.pkg.tar.zst dist/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with: { name: dist-arch, path: dist, if-no-files-found: error }
+
+  publish:
+    name: Publish
+    needs: [verify, build, package-arch]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write          # create the release and upload the files
+      id-token: write          # build provenance is signed with the workflow's own identity (Sigstore), no keys to manage
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ env.TAG }}" }
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with: { pattern: "dist-*", path: dist, merge-multiple: true }
+      - name: SHA256SUMS (the bundle, the package, the SBOM and the build environment)
+        run: |
+          cd dist && sha256sum truesense-*.tar.gz truesense-*.pkg.tar.zst truesense-*.sbom.cdx.json truesense-*.build-env.txt > SHA256SUMS && cat SHA256SUMS
+      - name: Build provenance (who built these files, from which commit, by which workflow)
+        if: github.event.inputs.dry_run != 'true'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-path: |
+            dist/truesense-*
+            dist/SHA256SUMS
+      - name: Create or update the GitHub release
+        if: github.event.inputs.dry_run != 'true'
+        env: { GH_TOKEN: "${{ github.token }}", V: "${{ needs.verify.outputs.version }}" }
+        run: |
+          title="TrueSense $V: $(grep -m1 "^## $V (" RELEASE_NOTES.md | sed -E 's/^## [^ ]+ \([^)]*\):? ?//')"
+          files=(dist/truesense-*.tar.gz dist/truesense-*.pkg.tar.zst dist/truesense-*.sbom.cdx.json dist/truesense-*.build-env.txt dist/SHA256SUMS)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$title" --notes-file dist/RELEASE-NOTES.md --latest
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" --title "$title" --notes-file dist/RELEASE-NOTES.md --latest --verify-tag
+          fi
+      - name: Dry run summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          { echo "### Dry run of $TAG: nothing was published"; echo '```'; cat dist/SHA256SUMS; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: The published release downloads and verifies the way users get it (checksums and provenance)
+        if: github.event.inputs.dry_run != 'true'
+        env: { GH_TOKEN: "${{ github.token }}", V: "${{ needs.verify.outputs.version }}" }
+        run: |
+          # the release and its attestations can take a moment to be readable: try a few times before calling it a failure
+          for attempt in 1 2 3 4 5; do
+            sleep 10
+            if TRUESENSE_GET_ONLY=1 TRUESENSE_VERIFY_ATTESTATION=1 TRUESENSE_VERSION="$V" bash tools/get.sh; then exit 0; fi
+            echo "attempt $attempt failed"
+          done
+          echo "::error::tools/get.sh could not verify the published release"; exit 1
+
+  aur:
+    name: Publish to the AUR (when configured)
+    needs: [publish]
+    if: github.event.inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Skipped unless the AUR_SSH_PRIVATE_KEY secret is set
+        id: gate
+        env: { KEY: "${{ secrets.AUR_SSH_PRIVATE_KEY }}" }
+        run: |
+          if [ -n "$KEY" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; else echo "AUR_SSH_PRIVATE_KEY is not set, skipping (publish by hand with tools/aur-publish.sh)"; fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.go == '1'
+        with: { ref: "${{ env.TAG }}" }
+      - name: Push the new PKGBUILD
+        if: steps.gate.outputs.go == '1'
+        env: { AUR_SSH_PRIVATE_KEY: "${{ secrets.AUR_SSH_PRIVATE_KEY }}" }
+        run: |
+          install -m 600 -D /dev/stdin ~/.ssh/aur <<< "$AUR_SSH_PRIVATE_KEY"
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" bash tools/aur-publish.sh "${TAG#v}"

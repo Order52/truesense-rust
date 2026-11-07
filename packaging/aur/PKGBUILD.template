@@ -1,0 +1,85 @@
+# Maintainer: (AUR maintainer: fill in)
+# Acer Predator Helios 16 (PH16-71): fans, power modes, battery, GPU mode, lighting, Fn keys, audio helpers.
+# Published by tools/aur-publish.sh from the tagged release archive (source=, sha256sums=). Same build as packaging/arch/PKGBUILD:
+#
+# Why the host target and not musl: the release bundle's program is built for x86_64-unknown-linux-musl (tools/ci/build-binary.sh), but Arch's `rust` package ships the standard
+# library of the host target only (the musl one is the separate `rust-musl` package, or rustup). So this package builds for x86_64-unknown-linux-gnu with `-C target-feature=+crt-static`:
+# one self-contained static-pie program, like the bundle's, with no glibc version to match at run time. That is safe here because the program never resolves names or loads
+# libraries at run time (no getpwnam/getaddrinfo/dlopen: those are what static glibc cannot do). build() refuses a result that is not static.
+pkgname=truesense
+pkgver=0.5.0
+pkgrel=1
+pkgdesc='Hardware control for the Acer Predator Helios 16 PH16-71: fans, power, battery, lighting, undervolt, kernel module, daemon, CLI and window'
+arch=('x86_64')
+url='https://github.com/Order52/truesense'
+license=('MIT')
+depends=('dkms' 'systemd')
+makedepends=('rust' 'gcc')
+optdepends=('linux-headers: build the kernel module (any installed kernel needs its own headers)'
+            'noise-suppression-for-voice: Purified Voice (RNNoise) microphone noise reduction'
+            'nvidia-utils: GPU temperature and power'
+            'alsa-tools: codec diagnostics')
+backup=('etc/truesense/config.toml')
+install=truesense.install
+options=('!debug')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('@SHA@')
+_dir="$pkgname-$pkgver"      # the unpacked archive; each function sets _src from it (srcdir exists only while they run)
+_target=x86_64-unknown-linux-gnu
+
+prepare() {
+    _src="$srcdir/$_dir"
+    cd "$_src"
+    export RUSTUP_TOOLCHAIN=stable      # a rustup installation must not pick up another toolchain; pacman's rust ignores it
+    cargo fetch --locked --target "$_target"      # the only network step: build() then runs offline
+}
+
+build() {
+    _src="$srcdir/$_dir"
+    cd "$_src"
+    export RUSTUP_TOOLCHAIN=stable CARGO_TARGET_DIR="$srcdir/target"
+    export TRUESENSE_BUILD_DATE; TRUESENSE_BUILD_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y-%m-%d)
+    # --target makes the flags apply to the program and not to build scripts and procedural macros, which cannot be linked statically
+    export RUSTFLAGS="-C target-feature=+crt-static --remap-path-prefix=$_src=/build/truesense --remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/build/cargo"
+    cargo build --release --locked --offline -p truesense --target "$_target"      # one static program: daemon, command line, terminal UI, window and services
+    if readelf -lW "$CARGO_TARGET_DIR/$_target/release/truesense" | grep -q INTERP; then
+        echo "the program is dynamically linked: the package must ship a static program" >&2; return 1
+    fi
+    gcc -O2 -Wall -o "$srcdir/truesense-nvml" tools/nvml/truesense-nvml.c -ldl      # the GPU undervolt helper (the daemon is static and cannot load NVIDIA's library itself)
+}
+
+package() {
+    _src="$srcdir/$_dir"
+    _dkms=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' "$_src/kernel/truesense-wmi/dkms.conf")      # DKMS wants /usr/src/<name>-<this version>
+    install -Dm755 "$srcdir/target/$_target/release/truesense" "$pkgdir/usr/bin/truesense"
+    ln -s truesense "$pkgdir/usr/bin/truesense-fast"                      # the name selects the instant status-bar client
+    install -Dm755 "$srcdir/truesense-nvml" "$pkgdir/usr/lib/truesense/truesense-nvml"
+    install -Dm755 "$_src/packaging/health.sh" "$pkgdir/usr/lib/truesense/health.sh"
+    for f in truesense.service truesense-health.service truesense-health.timer; do
+        sed -e 's|@PREFIX@|/usr|g' -e 's|@MODPROBE@|/usr/bin/modprobe|g' "$_src/packaging/$f" | install -Dm644 /dev/stdin "$pkgdir/usr/lib/systemd/system/$f"
+    done
+    for f in truesense-keys.service truesense-audio.service truesense-startup.service truesense-update.service truesense-update.timer; do
+        sed 's|@PREFIX@|/usr|g' "$_src/packaging/$f" | install -Dm644 /dev/stdin "$pkgdir/usr/lib/systemd/user/$f"
+    done
+    sed 's|@PREFIX@|/usr|g' "$_src/packaging/truesense.desktop" | install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/truesense.desktop"
+    sed 's|@PREFIX@|/usr|g' "$_src/packaging/truesense-tui.desktop" | install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/truesense-tui.desktop"
+    install -Dm644 "$_src/packaging/icons/truesense.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/truesense.svg"; install -Dm644 "$_src/packaging/icons/truesense-256.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/truesense.png"
+    install -Dm644 "$_src/packaging/70-truesense.rules" "$pkgdir/usr/lib/udev/rules.d/70-truesense.rules"
+    install -Dm644 "$_src/packaging/truesense.modprobe.conf" "$pkgdir/usr/lib/modprobe.d/truesense.conf"
+    install -Dm644 "$_src/packaging/truesense.modules-load.conf" "$pkgdir/usr/lib/modules-load.d/truesense.conf"
+    install -d "$pkgdir/usr/share/truesense/profiles"
+    install -m644 "$_src"/packaging/profiles/*.toml "$pkgdir/usr/share/truesense/profiles/"
+    install -d "$pkgdir/usr/src/truesense-wmi-$_dkms"
+    install -m644 "$_src"/kernel/truesense-wmi/{truesense_wmi.c,Makefile,dkms.conf} "$pkgdir/usr/src/truesense-wmi-$_dkms/"
+    install -Dm644 /dev/stdin "$pkgdir/etc/truesense/config.toml" <<'CFG'
+# TrueSense system configuration. Built-in defaults apply to everything not set here.
+# user = "your-login-name"   # who may talk to the daemon besides root
+CFG
+    for sh in bash zsh fish; do   # shell completions, generated from the CLI itself
+        case $sh in bash) d=usr/share/bash-completion/completions/truesense;; zsh) d=usr/share/zsh/site-functions/_truesense;; fish) d=usr/share/fish/vendor_completions.d/truesense.fish;; esac
+        install -d "$pkgdir/$(dirname $d)"; "$pkgdir/usr/bin/truesense" completion $sh > "$pkgdir/$d"
+    done
+    install -Dm644 "$_src/LICENSE" "$pkgdir/usr/share/licenses/truesense/LICENSE"
+    install -Dm644 "$_src/README.md" "$pkgdir/usr/share/doc/truesense/README.md"
+    install -Dm644 "$_src/docs/SAFETY.md" "$pkgdir/usr/share/doc/truesense/SAFETY.md"
+}

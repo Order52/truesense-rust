@@ -1,0 +1,4 @@
+# makepkg's working folders and its output
+/src/
+/pkg/
+*.pkg.tar.*

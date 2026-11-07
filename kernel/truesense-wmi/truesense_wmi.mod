@@ -1,1 +1,0 @@
-./truesense_wmi.o

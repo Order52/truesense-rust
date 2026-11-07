@@ -1,0 +1,6 @@
+[Unit]
+Description=TrueSense health check
+
+[Service]
+Type=oneshot
+ExecStart=@PREFIX@/lib/truesense/health.sh

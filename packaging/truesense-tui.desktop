@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=TrueSense (terminal)
+GenericName=Predator control in a terminal
+Comment=Power, fans, lighting, battery and audio for the Acer Predator Helios 16, in a terminal
+Exec=@PREFIX@/bin/truesense tui
+Icon=truesense
+Terminal=true
+Categories=Settings;HardwareSettings;System;ConsoleOnly;
+Keywords=predator;acer;fan;rgb;keyboard;power;terminal;tui;
