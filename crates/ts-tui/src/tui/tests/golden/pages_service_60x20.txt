@@ -1,0 +1,147 @@
+===== Dashboard (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1 Dashboard   2   3   4   5   6   7
+▸ Power mode             ‹ Performance ›
+  Automatic power mode    Native   Smart   Off
+  Fans                    Smart   Auto   Max
+
+ ╭─ Temperatures ─────────────────────────────────────────╮
+ │ CPU  ████████████████░░░░░░░░░░░░░  55 °C     ▃▃▃▃▃▃   │
+ │ GPU  ██████████████░░░░░░░░░░░░░░░  50 °C     ▂▂▂▂▂▂   │
+ │ SYS  ████████████████░░░░░░░░░░░░░░░░░░░░░░░░░  40 °C  │
+ │ Now   quiet desktop                                    │
+ ╰────────────────────────────────────────────────────────╯
+ ╭─ Fans ─────────────────────────────────────────────────╮
+ │ CPU  ██████████░░░░░░░░░░░░░░░░░ 2400 rpm     ▃▃▃▃▃▃   │
+ │ GPU  █████████░░░░░░░░░░░░░░░░░░ 2100 rpm     ▃▃▃▃▃▃   │
+ │ duty CPU 30 %  GPU 30 %  ·  auto                       │
+ ╰────────────────────────────────────────────────────────╯
+
+ Eco / Quiet / Balanced / Performance / Turbo. Your pick i…
+ ↑↓ select   ←→ choose   Enter apply now   Tab page
+===== Fans (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2 Fans   3   4   5   6   7
+ Fan control  ────────────────────────────────────────────
+▸ Mode            ‹ Auto ›
+  CPU fan         ━━━━━●──────────────────────  30 %
+  GPU fan         ━━━━━●──────────────────────  30 %
+  CPU fan speed   2400 rpm
+  GPU fan speed   2100 rpm
+
+ Fan curve  ──────────────────────────────────────────────
+  Curve           ‹ native ›
+
+
+
+
+
+
+
+ Smart: TrueSense's curve. Auto: firmware. Max: 100 %. Man…
+ ↑↓ select   ←→ choose   Enter apply now   Tab page
+===== Power (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2   3 Power   4   5   6   7
+ Mode  ───────────────────────────────────────────────────
+▸ Power mode               ‹ Performance ›
+  Automatic power mode      Native   Smart   Off
+  Smart profile            ‹ steady ›
+  Hold                     none: automatic power mode is in
+  Release the hold         [ Release ]
+
+ Battery and charging  ───────────────────────────────────
+  Battery limit (80 %)     [ OFF ]
+  Charge to 100 % once     [ Start / stop ]
+  Battery calibration      [ OFF ]
+  USB charging when off     Off   10 %   20 %   30 %
+
+ Graphics and display  ───────────────────────────────────
+  GPU mode                  Hybrid   NVIDIA only   Auto
+  Panel overdrive          [ ON  ]                        ▼
+ Eco / Quiet / Balanced / Performance / Turbo. Your pick i…
+ ↑↓ select   ←→ choose   Enter apply now   Tab page
+===== Lighting (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2   3   4 Lighting   5   6   7
+ Keyboard  ───────────────────────────────────────────────
+▸ Effect           ‹ Static ›
+  Colour           ‹ Teal ›
+  Custom colour    [ Type hex… ]
+  Brightness       ━━━━━━━━━━━━━●─────────────  50 %
+  Speed            ━━━━━━━━━●─────────────────  5
+  Direction        ‹ Left to right ›
+  Saved lighting   (not available)
+
+ Light bar (back of the laptop)  ─────────────────────────
+  Effect           ‹ Static ›
+  Colour           ‹ Teal ›
+  Custom colour    [ Type hex… ]
+  Brightness       ●──────────────────────────  0 %
+  Speed            ━━━━━━━━━━━━━●─────────────  3
+
+ The effects built into the keyboard. Per-key colours and …
+ ↑↓ select   ←→ choose   Enter apply now   Tab page
+===== Audio (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2   3   4   5 Audio   6   7
+ Sound  ──────────────────────────────────────────────────
+  Sound card                     no sound card
+▸ No sound at all?               [ Fix sound ]
+  Play sound on                   Speakers   Headphones
+  Noise filter on the speakers   [ OFF ]
+
+ Acer DTS sound  ─────────────────────────────────────────
+  DTS                            [  …  ]
+  DTS sound mode                 ‹ … ›
+  A headset still sounds flat?   [ Use DTS everywhere ]
+  Outputs                        …
+
+ Microphone  ─────────────────────────────────────────────
+  Mute every microphone          [ OFF ]
+  Microphone volume              ─────────────  …
+  Headset mic noise reduction    ‹ Off ›                  ▼
+ Restarts WirePlumber so it probes the sound card again. N…
+ ↑↓ select   Enter run   Tab page   ? help   q quit
+===== Profiles (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2   3   4   5   6 Profiles   7
+ Profiles: a whole setup in one go (power, fans, lighting, a
+▸ battery        [ Apply ]
+  gaming         [ Apply ]
+
+ Looks: the lighting at boot, as saved in the window  ────
+  native         [ Apply ]
+
+
+
+
+
+
+
+
+
+
+ (nothing)
+ ↑↓ select   Enter run   Tab page   ? help   q quit
+===== System (service, 60x20) =====
+ TrueSense test                            ↯80 %  ● service
+  1   2   3   4   5   6   7 System
+ TrueSense  ──────────────────────────────────────────────
+  Version           test
+  Kernel module     sim
+  Service           running
+  Window            truesense gui
+▸ Open the window   [ Open ]
+
+ Health check  ───────────────────────────────────────────
+  Run the check     [ Run doctor ]
+                    not run yet: press Enter on the button
+
+
+
+
+
+
+ The TrueSense window (the same as running truesense gui).
+ ↑↓ select   Enter run   Tab page   ? help   q quit

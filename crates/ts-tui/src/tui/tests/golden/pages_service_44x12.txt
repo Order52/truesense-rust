@@ -1,0 +1,91 @@
+===== Dashboard (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1 Dashboard   2   3   4   5   6   7
+▸ Power mode             ‹ Performance ›
+  Automatic power mode   ‹ Smart ›
+  Fans                   ‹ Auto ›
+
+
+
+
+
+ Eco / Quiet / Balanced / Performance / Tu…
+ ↑↓ select   ←→ choose   Enter apply now
+===== Fans (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2 Fans   3   4   5   6   7
+ Fan control  ────────────────────────────
+▸ Mode            ‹ Auto ›
+  CPU fan         ━━●─────────  30 %
+  GPU fan         ━━●─────────  30 %
+  CPU fan speed   2400 rpm
+  GPU fan speed   2100 rpm
+
+ Fan curve  ──────────────────────────────▼
+ Smart: TrueSense's curve. Auto: firmware.…
+ ↑↓ select   ←→ choose   Enter apply now
+===== Power (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2   3 Power   4   5   6   7
+ Mode  ───────────────────────────────────
+▸ Power mode             ‹ Performance ›
+  Automatic power mode   ‹ Smart ›
+  Smart profile          ‹ steady ›
+  Hold                   none: automatic po
+  Release the hold       [ Release ]
+
+ Battery and charging  ───────────────────▼
+ Eco / Quiet / Balanced / Performance / Tu…
+ ↑↓ select   ←→ choose   Enter apply now
+===== Lighting (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2   3   4 Lighting   5   6   7
+ Keyboard  ───────────────────────────────
+▸ Effect           ‹ Static ›
+  Colour           ‹ Teal ›
+  Custom colour    [ Type hex… ]
+  Brightness       ━━━━━●─────  50 %
+  Speed            ━━━━●──────  5
+  Direction        ‹ Left to right ›
+  Saved lighting   (not available)        ▼
+ The effects built into the keyboard. Per-…
+ ↑↓ select   ←→ choose   Enter apply now
+===== Audio (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2   3   4   5 Audio   6   7
+ Sound  ──────────────────────────────────
+  Sound card             no sound card
+▸ No sound at all?       [ Fix sound ]
+  Play sound on          ‹ … ›
+  Noise filter on the s  [ OFF ]
+
+ Acer DTS sound  ─────────────────────────
+  DTS                    [  …  ]          ▼
+ Restarts WirePlumber so it probes the sou…
+ ↑↓ select   Enter run   Tab page   ? help
+===== Profiles (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2   3   4   5   6 Profiles   7
+ Profiles: a whole setup in one go (power, f
+▸ battery        [ Apply ]
+  gaming         [ Apply ]
+
+ Looks: the lighting at boot, as saved in th
+  native         [ Apply ]
+
+
+ (nothing)
+ ↑↓ select   Enter run   Tab page   ? help
+===== System (service, 44x12) =====
+ TrueSense test            ↯80 %  ● service
+  1   2   3   4   5   6   7 System
+ TrueSense  ──────────────────────────────
+  Version           test
+  Kernel module     sim
+  Service           running
+  Window            truesense gui
+▸ Open the window   [ Open ]
+
+ Health check  ───────────────────────────▼
+ The TrueSense window (the same as running…
+ ↑↓ select   Enter run   Tab page   ? help

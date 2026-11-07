@@ -1,0 +1,236 @@
+===== a change waiting (Fans, CPU fan slider) =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+ Fan control  ────────────────────────────────────────────────────────────────────────────────────
+  Mode             Smart curve   Auto   Max   Manual   Off
+▸ CPU fan         ━━━━━━━━━━━━●───────────────────────  45 %                                     ↵
+  GPU fan         ━━━━━━●─────────────────────────────  30 %
+  CPU fan speed   2400 rpm
+  GPU fan speed   2100 rpm
+
+ Fan curve  ──────────────────────────────────────────────────────────────────────────────────────
+  Curve            native   truesense   quiet   performance   max-cooling
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Left/Right in steps of 5; the lowest position is OFF and asks first. Moving a slider switches to …
+ ↑↓ select   ←→ adjust   Enter apply now   Esc undo   Tab page   ? help   q quit
+===== the question before a fan stops =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+ Fan control  ────────────────────────────────────────────────────────────────────────────────────
+  Mode             Smart curve   Auto   Max   Manual   Off
+▸ CPU fan         ●───────────────────────────────────  OFF                                      ↵
+  GPU fan         ━━━━━━●─────────────────────────────  30 %
+  CPU fan speed   2400 rpm
+  GPU fan speed   2100 rpm
+
+ Fan curve  ──────────────────────────────────────────────────────────────────────────────────────
+  Curve            native   truesense   quiet   performance   max-cooling
+                 ╭─ Confirm ──────────────────────────────────────────────────────╮
+                 │  Stop the CPU fan? The service brings it back when the laptop  │
+                 │  gets warm.                                                    │
+                 │                                                                │
+                 │                                                                │
+                 │  [ Yes ]  [ No ]   y / n  ·  Enter picks the marked one        │
+                 ╰────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+ Left/Right in steps of 5; the lowest position is OFF and asks first. Moving a slider switches to …
+ ↑↓ select   ←→ adjust   Enter apply now   Esc undo   Tab page   ? help   q quit
+===== the help =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+▸ Power mode              Eco   Quiet   Balanced   Performance   Turbo
+  Automatic power mode    Native   Smart   Off
+  Fans     ╭─ Keys ─────────────────────────────────────────────────────────────────────╮
+           │                                                                            │
+ ╭─ Tempera│ ↑ ↓  j k  move between settings                                            │────────╮
+ │ CPU  ███│ ← →  h l  change the value (sent by itself after a short pause)            │▃▃▃▃▃   │
+ │ GPU  ███│ Enter     send the change now / run a button                               │▃▃▃▃▃   │
+ │ SYS  ███│ Space     switch a toggle, or send the change                              │        │
+ │ Now   qu│ Esc       take back a change that was not sent yet                         │────────╯
+ ╰─────────│ Tab  1-7  next page, or a page by number                                   │
+ ╭─ Load ──│ q         quit                                                             │────────╮
+ │ CPU  ██░│ m         next power mode                                                  │        │
+ │ GPU  █░░│ r         read everything again                                            │        │
+ │ GPU powe│ Ctrl-L    redraw the screen                                                │  80 %  │
+ ╰─────────│                                                                            │────────╯
+ ╭─ What yo│ Mouse: click tabs, rows and options; drag a slider; the wheel moves the    │─────────╮
+ │ Nothing │ selection.                                                                 │         │
+ ╰─────────│                                                                            │─────────╯
+           │ Stopping a fan, or a setting that needs a restart, always asks first. The  │
+           │ answer is No unless you choose Yes.                                        │
+           │                                                                            │
+           │ The window has the rest: per-key colours, images, undervolting.            │
+           │                                                                            │
+           ╰────────────────────────────────────────────────────────────────────────────╯
+
+
+ Eco / Quiet / Balanced / Performance / Turbo. Your pick is held for 30 minutes against Smart auto.
+ ↑↓ select   ←→ choose   Enter apply now   Tab page   ? help   q quit
+===== what you did (Dashboard, 100x40) =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+▸ Power mode              Eco   Quiet   Balanced   Performance   Turbo
+  Automatic power mode    Native   Smart   Off
+  Fans                    Smart   Auto   Max
+
+ ╭─ Temperatures ───────────────────────────────╮ ╭─ Fans ───────────────────────────────────────╮
+ │ CPU  ██████████░░░░░░░░░  55 °C  ▃▃▃▃▃▃▃▃▃   │ │ CPU  ██████░░░░░░░░░░░ 2400 rpm  ▃▃▃▃▃▃▃▃▃   │
+ │ GPU  ██████████░░░░░░░░░  50 °C  ▂▂▂▂▂▂▂▂▂   │ │ GPU  █████░░░░░░░░░░░░ 2100 rpm  ▃▃▃▃▃▃▃▃▃   │
+ │ SYS  ████████████░░░░░░░░░░░░░░░░░░░  40 °C  │ │ duty CPU 30 %  GPU 30 %  ·  auto             │
+ │ Now   quiet desktop                          │ ╰──────────────────────────────────────────────╯
+ ╰──────────────────────────────────────────────╯
+ ╭─ Load ───────────────────────────────────────╮ ╭─ Power ──────────────────────────────────────╮
+ │ CPU  ██░░░░░░░░░░░░░░░░░   12 %  ▁▁▁▁▁▁▁▁▁   │ │ Mode   Performance   on charger              │
+ │ GPU  █░░░░░░░░░░░░░░░░░░    5 %              │ │ Auto   smart · profile steady                │
+ │ GPU power 9 W                                │ │ Batt █████████████████████████░░░░░░   80 %  │
+ ╰──────────────────────────────────────────────╯ ╰──────────────────────────────────────────────╯
+ ╭─ What you did ─────────────────────────────────────────────────────────────────────────────────╮
+ │ 12:00:00 Power mode: Turbo (held 30 min)                                                       │
+ │ 12:00:00 Boot sound: on                                                                        │
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Boot sound: on
+ ↑↓ select   ←→ choose   Enter apply now   Tab page   ? help   q quit
+===== the colour prompt =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+ Keyboard  ───────────────────────────────────────────────────────────────────────────────────────
+  Effect           ‹ Static ›
+  Colour            White   Red   Orange   Yellow   Green   Teal   Blue   Purple   Pink
+▸ Custom colour    [ Type hex… ]
+  Brightness       ━━━━━━━━━━━━━━━━━━●─────────────────  50 %
+  Speed            ━━━━━━━━━━━━━●──────────────────────  5
+  Direction         Left to right   Right to left   Up   Down
+  Saved lighting   (not available)
+
+ Light bar (back of the laptop)  ─────────────────────────────────────────────────────────────────
+  Effect            Static   Br╭─ Type ────────────────────────────╮
+  Colour            White   Red│  Colour as 6 hex digits (RRGGBB)  │lue   Purple   Pink
+  Custom colour    [ Type hex… │                                   │
+  Brightness       ●───────────│                                   │
+  Speed            ━━━━━━━━━━━━│  > 00aec7_                        │
+                               ╰───────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+ Any colour as RRGGBB.
+ ↑↓ select   Enter run   Tab page   ? help   q quit
+===== after the health check (System) =====
+ TrueSense test                                                                    ↯80 %  ● service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+ TrueSense  ──────────────────────────────────────────────────────────────────────────────────────
+  Version           test
+  Kernel module     sim
+  Service           running
+  Window            truesense gui
+  Open the window   [ Open ]
+
+ Health check  ───────────────────────────────────────────────────────────────────────────────────
+▸ Run the check     [ Run doctor ]
+  Model             FAIL  'unknown' (unknown vendor) is not an Acer Predator: TrueSense does
+                    not apply   -> TrueSense is for Acer Predator laptops; the kernel module
+                    refuses to bind elsewhere
+  Kernel            WARN  kernel "test" is not a release number I understand   -> kernels older
+                    than 6.6 are untested
+  Kernel headers    FAIL  kernel headers for test: MISSING   -> install your kernel's -headers
+                    package (e.g. linux-cachyos-headers), then: sudo dkms autoinstall
+  DKMS              FAIL  truesense-wmi is not registered with DKMS   -> sudo tools/install.sh
+  Kernel module     FAIL  truesense_wmi is not loaded   -> sudo modprobe truesense_wmi   (or
+                    reinstall: sudo tools/install.sh)
+  Device            FAIL  /dev/truesense missing   -> the module did not bind: check `dmesg |
+                    grep truesense`
+  Conflicts         WARN  no modprobe block for the old drivers   -> sudo tools/install.sh
+  Power managers    OK  no other power manager is running
+  CPU turbo         OK  no intel_pstate turbo switch on this CPU
+  Daemon            FAIL  truesense.service is not running   -> sudo systemctl enable --now
+                    truesense.service ; journalctl -u truesense -b                                ▼
+ Check finished
+ ↑↓ select   Enter run   Tab page   ? help   q quit
+===== a terminal that is too small =====
+TrueSense needs
+a 44x12 terminal
+(this is 30x8)
+
+
+
+
+
+===== plain ASCII (Lighting) =====
+ TrueSense test                                                                   AC80 %  * service
+  1 Dashboard   2 Fans   3 Power   4 Lighting   5 Audio   6 Profiles   7 System
+ Keyboard  ---------------------------------------------------------------------------------------
+> Effect           < Static >
+  Colour            White   Red   Orange   Yellow   Green   Teal   Blue   Purple   Pink
+  Custom colour    [ Type hex… ]
+  Brightness       ==================o-----------------  50 %
+  Speed            =============o----------------------  5
+  Direction         Left to right   Right to left   Up   Down
+  Saved lighting   (not available)
+
+ Light bar (back of the laptop)  -----------------------------------------------------------------
+  Effect            Static   Breathing   Neon   Wave   Twinkling
+  Colour            White   Red   Orange   Yellow   Green   Teal   Blue   Purple   Pink
+  Custom colour    [ Type hex… ]
+  Brightness       o-----------------------------------  0 %
+  Speed            ==================o-----------------  3
+
+
+
+
+
+
+
+
+
+
+
+ The effects built into the keyboard. Per-key colours and your own images: truesense gui --page ke…
+ Up/Dn select   L/R choose   Enter apply now   Tab page   ? help   q quit

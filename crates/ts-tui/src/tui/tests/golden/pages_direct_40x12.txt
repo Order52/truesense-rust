@@ -1,0 +1,82 @@
+===== Dashboard (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== Fans (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== Power (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== Lighting (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== Audio (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== Profiles (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
+
+
+
+
+
+
+
+
+
+===== System (direct, 40x12) =====
+TrueSense needs
+a 44x12 terminal
+(this is 40x12)
