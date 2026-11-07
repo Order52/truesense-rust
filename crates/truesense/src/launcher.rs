@@ -38,6 +38,28 @@ fn current_exe() -> PathBuf {
     std::env::current_exe().unwrap_or_else(|_| PathBuf::from("truesense"))
 }
 
+/// The native window's program, found next to this one or in the usual install places.
+fn native_app() -> Option<PathBuf> {
+    let beside = current_exe().parent().map(|dir| dir.join("truesense-app"));
+    beside
+        .into_iter()
+        .chain(["/usr/local/bin/truesense-app", "/usr/bin/truesense-app"].map(PathBuf::from))
+        .find(|p| p.is_file())
+}
+
+/// Replaces this process with the native window (a second launch then just forwards the page to
+/// the open window and exits, which is the app's own single-instance logic).
+fn exec_native_app(app: &std::path::Path, page: Option<&str>) -> i32 {
+    use std::os::unix::process::CommandExt;
+    let mut command = Command::new(app);
+    if let Some(page) = page {
+        command.args(["--page", page]);
+    }
+    let error = command.exec();
+    let _ = writeln!(std::io::stderr(), "error: cannot start {}: {error}", app.display());
+    1
+}
+
 /// Starts `truesense gui` detached from this terminal (the terminal UI's "open the window" button).
 pub fn open_window_detached() -> Result<(), String> {
     use std::os::unix::process::CommandExt;
@@ -90,6 +112,11 @@ impl Launcher for SystemLauncher {
     }
 
     fn gui(&self, page: Option<&str>) -> i32 {
+        // The native window is the app; the web window is only the fallback for a machine where
+        // the app is not installed (no graphics libraries, a headless box, a bare `cargo build`).
+        if let Some(app) = native_app() {
+            return exec_native_app(&app, page);
+        }
         let stop = signals::interrupt_flag();
         let commands = Arc::new(ApiCommands::new(self.api.clone(), hooks::window_hooks(&self.api)));
         let mut options = Options::new(commands);
