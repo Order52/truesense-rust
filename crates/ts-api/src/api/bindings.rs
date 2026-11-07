@@ -98,16 +98,6 @@ impl fmt::Display for BindingsApplied {
     }
 }
 
-/// The lighting parser every copy goes through: the same test the service applies before it uses a
-/// look (it must decode and change something).
-fn parse_look(value: &Value) -> Result<Look, String> {
-    let look: Look = serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
-    if look.is_empty() {
-        return Err("a look needs keyboard and/or rear settings".to_owned());
-    }
-    Ok(look)
-}
-
 fn bad(e: BindingError) -> ApiError {
     ApiError::domain("mode bindings", e)
 }
@@ -120,7 +110,7 @@ impl Api {
     /// The look and fan curve copies of a name, as they would be bound now.
     fn bound_look(&self, name: &str) -> ApiResult<Bound> {
         let look = self.s.looks.load(name)?;
-        Bound::look(name, serde_json::to_value(&look)?, parse_look).map_err(bad)
+        Bound::look(name, serde_json::to_value(&look)?, Look::parse_copy).map_err(bad)
     }
 
     fn bound_curve(&self, name: &str) -> ApiResult<Bound> {

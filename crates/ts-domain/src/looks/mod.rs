@@ -170,6 +170,17 @@ impl Look {
         serde_json::from_str(text).map_err(|source| LooksError::Parse { what: "look".to_owned(), source })
     }
 
+    /// Decodes a look copy that a binding or the boot look keeps, and accepts it only when it
+    /// changes something: the one test every copy goes through before it is stored or applied,
+    /// in the daemon and in the application layer alike. The error is the text a person sees.
+    pub fn parse_copy(value: &serde_json::Value) -> Result<Look, String> {
+        let look: Look = serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
+        if look.is_empty() {
+            return Err("a look needs keyboard and/or rear settings".to_owned());
+        }
+        Ok(look)
+    }
+
     /// Whether the look changes nothing: no part, or only empty ones.
     pub fn is_empty(&self) -> bool {
         self.keyboard.as_ref().is_none_or(keyboard::State::is_empty)
