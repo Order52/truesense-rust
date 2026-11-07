@@ -17,6 +17,7 @@ mod rear;
 mod smart;
 mod status;
 mod system;
+mod themes;
 mod update;
 mod window;
 

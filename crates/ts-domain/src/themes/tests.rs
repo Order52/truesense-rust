@@ -294,14 +294,21 @@ fn a_theme_that_cannot_be_resolved_does_not_start_and_leaves_the_running_one_alo
 }
 
 #[test]
-fn halt_forgets_the_theme_and_keeps_the_reason_until_the_next_start() {
+fn a_halt_is_about_one_start_and_a_new_start_runs_again() {
     let r = rig();
     r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();
-    r.store.halt("the keyboard went away");
-    assert_eq!(r.store.active(), None);
+    assert_eq!(r.store.halt_reason(), None);
+    r.store.halt(1.0, "the keyboard went away");
     assert_eq!(r.store.halt_reason().as_deref(), Some("the keyboard went away"));
+    assert!(r.store.active().is_some(), "the record of the theme is left alone");
+    // Started again (even the same theme): it is a new start and the old halt does not apply.
     r.store.start(&ThemeSpec::new("hearth"), 2.0).unwrap();
     assert_eq!(r.store.halt_reason(), None);
+    // A halt for a start that is long gone cannot stop the one running now.
+    r.store.halt(1.0, "late");
+    assert_eq!(r.store.halt_reason(), None);
+    r.store.stop().unwrap();
+    assert_eq!(r.store.halt_reason(), None, "nothing runs, nothing is halted");
 }
 
 // ---- Look.theme --------------------------------------------------------------------------------
@@ -412,4 +419,69 @@ fn saving_a_look_checks_its_theme_part_and_the_running_theme_is_captured() {
     r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();
     let captured = looks.capture().unwrap();
     assert_eq!(captured.theme.unwrap().name, "hearth");
+}
+
+// ---- applying a look starts and ends the theme --------------------------------------------------
+
+fn static_keyboard() -> keyboard::State {
+    keyboard::State {
+        mode: "effect".into(),
+        name: "static".into(),
+        color: "112233".into(),
+        ..Default::default()
+    }
+}
+
+#[test]
+fn applying_a_themed_look_records_the_theme_after_the_static_parts() {
+    let r = rig();
+    let looks = looks(&r).with_clock(|| 42.0);
+    let look = Look {
+        keyboard: Some(static_keyboard()),
+        theme: Some(ThemeSpec { speed: Some(50), ..ThemeSpec::new("hearth") }),
+        ..Look::default()
+    };
+    let done = looks.apply(&look).unwrap();
+    assert_eq!(done, ["keyboard: nothing to restore", "theme: hearth"]);
+    let active = r.store.active().unwrap();
+    assert_eq!((active.spec.name.as_str(), active.spec.speed, active.started), ("hearth", Some(50), 42.0));
+}
+
+#[test]
+fn applying_a_look_with_a_keyboard_and_no_theme_ends_the_running_theme() {
+    let r = rig();
+    let looks = looks(&r);
+    r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();
+    let done = looks.apply(&Look { keyboard: Some(static_keyboard()), ..Look::default() }).unwrap();
+    assert_eq!(done.last().unwrap(), "theme: stopped");
+    assert_eq!(r.store.active(), None);
+    // With nothing running there is nothing to report.
+    let done = looks.apply(&Look { keyboard: Some(static_keyboard()), ..Look::default() }).unwrap();
+    assert_eq!(done, ["keyboard: nothing to restore"]);
+}
+
+#[test]
+fn a_rear_only_look_leaves_the_running_theme_alone() {
+    let r = rig();
+    let looks = looks(&r);
+    r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();
+    let rear: crate::looks::Rear =
+        serde_json::from_value(json!({"mode": "static", "color": "ff0000", "speed": 2, "brightness": 50}))
+            .unwrap();
+    // The fake rear light refuses (it is not under test); the theme must not have been touched
+    // by the attempt either way.
+    let _ = looks.apply(&Look { rear: Some(rear), ..Look::default() });
+    assert!(r.store.active().is_some());
+}
+
+#[test]
+fn a_theme_part_with_a_bad_shape_is_refused_when_applied() {
+    let r = rig();
+    let looks = looks(&r);
+    let bad = Look {
+        theme: Some(ThemeSpec { brightness: Some(500), ..ThemeSpec::new("hearth") }),
+        ..Look::default()
+    };
+    assert!(looks.apply(&bad).is_err());
+    assert_eq!(r.store.active(), None);
 }

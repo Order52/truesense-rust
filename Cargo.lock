@@ -842,6 +842,7 @@ dependencies = [
  "ts-api",
  "ts-domain",
  "ts-foundation",
+ "ts-fx",
  "ts-ipc",
  "ts-platform",
  "ts-system",

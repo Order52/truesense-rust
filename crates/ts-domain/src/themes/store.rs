@@ -14,7 +14,8 @@ use super::{ThemesError, invalid};
 
 /// Where the running theme is kept in the user state: the key service reads it.
 pub const ACTIVE_KEY: &str = "theme_active";
-/// Where the reason the last theme stopped by itself is kept, for `theme show`.
+/// Where the reason a theme stopped by itself is kept (with the start time of the theme it is
+/// about), for `theme show`.
 pub const HALT_KEY: &str = "theme_halt";
 /// The largest theme file read; the catalogue's biggest theme is a few kilobytes.
 pub const MAX_THEME_FILE: u64 = 256 * 1024;
@@ -87,6 +88,14 @@ pub struct Active {
     pub spec: ThemeSpec,
     /// When it was started.
     pub started: f64,
+}
+
+/// Why the key service stopped drawing a theme on its own, and which theme that was.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct Halt {
+    /// The `started` of the [`Active`] it is about: a theme started again is a new theme.
+    started: f64,
+    reason: String,
 }
 
 /// A store of user themes in a directory, over the user state for the running theme.
@@ -314,14 +323,13 @@ impl ThemeStore {
         self.state.get_as(ACTIVE_KEY)
     }
 
-    /// Starts a theme as the current look: checks it ([`ThemeStore::resolve`]), forgets why an earlier one
-    /// stopped, and records it with the time `now` for the key service to draw.
+    /// Starts a theme as the current look: checks it ([`ThemeStore::resolve`]) and records it with
+    /// the time `now` for the key service to draw. Starting again is a new start even for the
+    /// same theme, so a theme that stopped by itself runs again.
     pub fn start(&self, spec: &ThemeSpec, now: f64) -> Result<Active, ThemesError> {
         self.resolve(spec)?;
         let active = Active { spec: spec.clone(), started: now };
         self.state.set_as(ACTIVE_KEY, &active).map_err(file_error("start theme"))?;
-        // Best effort: the note is a convenience.
-        let _ = self.state.set(HALT_KEY, serde_json::Value::Null);
         Ok(active)
     }
 
@@ -335,15 +343,17 @@ impl ThemeStore {
         Ok(was)
     }
 
-    /// What the key service does when it cannot go on drawing: forgets the running theme and
-    /// keeps the reason where `theme show` can say it.
-    pub fn halt(&self, reason: &str) {
-        let _ = self.state.set(ACTIVE_KEY, serde_json::Value::Null);
-        let _ = self.state.set(HALT_KEY, serde_json::Value::String(reason.to_owned()));
+    /// What the key service does when it cannot go on drawing the theme that started at `started`:
+    /// it keeps the reason where `theme show` can say it. It never touches the running theme's
+    /// own record, so it cannot overwrite a theme the user started in the meantime; the key
+    /// service itself does not draw a halted theme again.
+    pub fn halt(&self, started: f64, reason: &str) {
+        let _ = self.state.set_as(HALT_KEY, &Halt { started, reason: reason.to_owned() });
     }
 
-    /// Why the last theme stopped by itself, if it did and nothing started since.
+    /// Why the running theme is not being drawn, if the key service stopped it.
     pub fn halt_reason(&self) -> Option<String> {
-        self.state.get_as::<String>(HALT_KEY)
+        let active = self.active()?;
+        self.state.get_as::<Halt>(HALT_KEY).filter(|h| h.started == active.started).map(|h| h.reason)
     }
 }

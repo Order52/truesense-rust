@@ -417,6 +417,10 @@ impl Api {
         cells: &[i64],
         base: Option<&[String]>,
     ) -> ApiResult<FxSettings> {
+        if mode != "off" {
+            // Two loops cannot draw on one keyboard: a running theme gives way.
+            self.theme_store().stop()?;
+        }
         let under = match base {
             Some(colours) => parse_cells(colours)?,
             None => {

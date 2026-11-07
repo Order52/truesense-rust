@@ -285,6 +285,7 @@ pub struct LookStore {
     state: Arc<Store>,
     keyboard: Arc<dyn KeyboardControl>,
     rear: Arc<dyn RearControl>,
+    now: Arc<dyn Fn() -> f64 + Send + Sync>,
 }
 
 /// Look names use letters, digits, `.`, `_` and `-`, at most 40 of them.
@@ -319,7 +320,21 @@ impl LookStore {
         keyboard: Arc<dyn KeyboardControl>,
         rear: Arc<dyn RearControl>,
     ) -> Self {
-        Self { dir: dir.into(), boot_file: boot_file.into(), state, keyboard, rear }
+        Self {
+            dir: dir.into(),
+            boot_file: boot_file.into(),
+            state,
+            keyboard,
+            rear,
+            now: Arc::new(crate::perkeyfx::epoch_seconds),
+        }
+    }
+
+    /// The same store reading the wall clock (seconds since the epoch) from `now`, which stamps
+    /// the start of a theme; tests pass a fixed one.
+    pub fn with_clock(mut self, now: impl Fn() -> f64 + Send + Sync + 'static) -> Self {
+        self.now = Arc::new(now);
+        self
     }
 
     fn path(&self, name: &str) -> Result<PathBuf, LooksError> {
@@ -448,7 +463,41 @@ impl LookStore {
             self.rear.rear_set(&r.settings()?).map_err(LooksError::Rear)?;
             done.push(format!("rear: {}", r.mode));
         }
+        // The theme goes last: it is drawn over the static keyboard look just written, and the key
+        // service takes that look as the one to put back when the theme stops. A look with a
+        // keyboard part and no theme ends the theme that was running; a rear-only look leaves it.
+        let keyboard_part = look.keyboard.as_ref().is_some_and(|k| !k.is_empty());
+        if look.theme.is_some() || keyboard_part {
+            if let Some(line) = self.set_theme(look.theme.as_ref())? {
+                done.push(line);
+            }
+        }
         Ok(done)
+    }
+
+    /// Records the theme to draw (`Some`) or ends the running one (`None`); answers the line to
+    /// report, if anything was done. A theme the store does not hold, or one that cannot run, is
+    /// the key service's to refuse (it records why where `theme show` says it); the shape is
+    /// checked here.
+    fn set_theme(&self, spec: Option<&ThemeSpec>) -> Result<Option<String>, LooksError> {
+        match spec {
+            Some(spec) => {
+                spec.check_shape().map_err(|e| invalid(e.to_string()))?;
+                let active = crate::themes::Active { spec: spec.clone(), started: (self.now)() };
+                self.state.set_as(crate::themes::ACTIVE_KEY, &active).map_err(file_error("start theme"))?;
+                Ok(Some(format!("theme: {}", spec.name)))
+            }
+            None => {
+                let running = self.state.get_as::<crate::themes::Active>(crate::themes::ACTIVE_KEY).is_some();
+                if !running {
+                    return Ok(None);
+                }
+                self.state
+                    .set(crate::themes::ACTIVE_KEY, serde_json::Value::Null)
+                    .map_err(file_error("stop theme"))?;
+                Ok(Some("theme: stopped".to_owned()))
+            }
+        }
     }
 
     // ---- the boot look (root; used by the daemon) ----------------------------------------------
