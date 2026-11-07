@@ -9,3 +9,4 @@ kernel/**/*.mod.c
 kernel/**/.*.cmd
 kernel/**/Module.symvers
 kernel/**/modules.order
+/crates/ts-qt/.qmlls.ini

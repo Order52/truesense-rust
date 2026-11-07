@@ -2,17 +2,21 @@
 CARGO  ?= cargo
 TARGET ?= x86_64-unknown-linux-musl
 BIN    := target/$(TARGET)/release/truesense
+# The Qt app needs the Qt 6 development files (qmake6, qmlcachegen, lrelease); it is not in the
+# default workspace members, so `make ci` never builds it. `make qt-ci` is its gate.
+QMAKE  ?= /usr/bin/qmake6
+QTENV  := QMAKE=$(QMAKE)
 
-.PHONY: debug build test lint fmt ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
-debug:           ## debug build of every crate
-	$(CARGO) build --workspace
+.PHONY: debug build test lint fmt ci qt-build qt-release qt-test qt-lint qt-ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
+debug:           ## debug build of every crate except the Qt app (see qt-build)
+	$(CARGO) build
 build:           ## the static release program, built the way releases are: target/$(TARGET)/release/truesense (truesense-fast is a link the installer makes)
 	@TARGET=$(TARGET) tools/ci/build-binary.sh >/dev/null && echo "built $(BIN)"
-test:            ## every test, hermetic (no hardware, no root)
-	$(CARGO) test --workspace
+test:            ## every test of the default members, hermetic (no hardware, no root, no Qt)
+	$(CARGO) test
 lint:            ## rustfmt and clippy with warnings as errors
 	$(CARGO) fmt --all -- --check
-	$(CARGO) clippy --workspace --all-targets -- -D warnings
+	$(CARGO) clippy --all-targets -- -D warnings
 fmt:
 	$(CARGO) fmt --all
 shelltest:       ## the installer and get.sh tests (bash only, nothing is installed)
@@ -23,7 +27,18 @@ verify-units:    ## systemd-analyze verify on every unit
 	@tools/ci/verify-units.sh | tail -3
 release-check:   ## do the version numbers, notes and tag agree?  (make release-check TAG=v0.5.0)
 	@tools/release.sh check $(if $(TAG),--tag $(TAG),)
-ci: lint test    ## rustfmt, clippy, tests: the Rust gate
+ci: lint test    ## rustfmt, clippy, tests: the Rust gate (without the Qt app)
+qt-build:        ## the Qt app (debug): target/debug/truesense-qt
+	$(QTENV) $(CARGO) build -p ts-qt
+qt-release:      ## the Qt app (release): target/release/truesense-qt
+	$(QTENV) $(CARGO) build --release -p ts-qt
+qt-test:         ## Qt app tests, offscreen: Rust unit and end-to-end tests, then the QML component tests
+	$(QTENV) QT_QPA_PLATFORM=offscreen $(CARGO) test -p ts-qt
+	$(QTENV) crates/ts-qt/tools/qml-tests.sh
+qt-lint:         ## rustfmt and clippy (warnings are errors) on the Qt app
+	$(CARGO) fmt -p ts-qt -- --check
+	$(QTENV) $(CARGO) clippy -p ts-qt --all-targets -- -D warnings
+qt-ci: qt-lint qt-test  ## the Qt app's gate
 static-ci:       ## what CI's static job runs, locally (tools that are not installed are skipped): version table, shell, units, installer tests
 	@tools/release.sh check
 	@if command -v actionlint >/dev/null 2>&1; then actionlint && echo "ok  actionlint"; else echo "skip actionlint"; fi
