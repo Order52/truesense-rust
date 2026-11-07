@@ -26,6 +26,7 @@ ColumnLayout {
     property int speed: 100
     property int brightness: 100
     property int pickSlot: 0
+    property var starred: []            // ids of the starred themes
 
     readonly property var entry: {
         for (var i = 0; i < themes.length; ++i)
@@ -35,7 +36,32 @@ ColumnLayout {
     readonly property bool running: active !== null && entry !== null && active.name === selected
     readonly property var ways: detail !== null ? detail.theme.colourways : []
 
-    function reload() {
+    /// The star on a card: stars or unstars the theme (the favourites list, which the PREDATOR key
+    /// and the Home page use), then shows what is stored.
+    function toggleStar(id) {
+        Api.call("favourite", "toggle", { kind: "theme", name: id }, function (r) {
+            var list = starred.filter(function (n) { return n !== id })
+            if (r.starred) list.push(id)
+            starred = list
+        })
+    }
+
+    function loadStars() {
+        Api.call("favourite", "list", {}, function (list) {
+            starred = (list || []).filter(function (f) { return f.kind === "theme" }).map(function (f) { return f.name })
+        }, function () {})
+    }
+
+    /// One-click Apply on a card: that theme in the colourway of the card, everything else as designed.
+    function applyCard(id, way) {
+        Api.call("theme", "apply", { name: id, colourway: way }, function () {
+            tab.selected = id
+            tab.reload(function () { tab.choose(id) })
+        })
+    }
+
+    function reload(done) {
+        loadStars()
         Api.call("theme", "list", {}, function (r) {
             themes = r.themes || []
             skipped = r.skipped || []
@@ -43,6 +69,7 @@ ColumnLayout {
             active = st.active ? st.active.spec : null
             halted = st.halted ? String(st.halted) : ""
             if (selected === "" && themes.length > 0) choose(active ? active.name : themes[0].id)
+            if (done) done()
         })
     }
 
@@ -96,7 +123,10 @@ ColumnLayout {
         edited()
     }
 
-    Component.onCompleted: reload()
+    Component.onCompleted: {
+        LightingVm.loadLayout()
+        reload()
+    }
 
     Card {
         Layout.fillWidth: true
@@ -142,84 +172,16 @@ ColumnLayout {
         title: qsTrId("light_theme_gallery")
         icon: "palette"
 
-        // The gallery scrolls inside its card so that the chosen theme's controls stay in reach.
-        Flickable {
-            id: gallery
+        ThemeGallery {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(flow.implicitHeight, 270)
-            contentWidth: width
-            contentHeight: flow.implicitHeight
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-            Flow {
-            id: flow
-            width: gallery.width - 12
-            spacing: 10
-            readonly property int columns: Math.max(1, Math.floor((width + spacing) / 190))
-            readonly property real tileWidth: (width - (columns - 1) * spacing) / columns
-            Repeater {
-                model: tab.themes
-                delegate: Button {
-                    id: tile
-                    required property var modelData
-                    readonly property bool picked: modelData.id === tab.selected
-                    readonly property bool live: tab.active !== null && tab.active.name === modelData.id
-                    width: flow.tileWidth
-                    height: 88
-                    hoverEnabled: true
-                    focusPolicy: Qt.StrongFocus
-                    Accessible.role: Accessible.RadioButton
-                    Accessible.name: modelData.name
-                    Accessible.checked: picked
-                    onClicked: tab.choose(modelData.id)
-                    contentItem: ColumnLayout {
-                        spacing: 4
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-                            Text {
-                                Layout.fillWidth: true
-                                text: tile.modelData.name
-                                color: tile.picked ? Theme.accent : Theme.text
-                                font.pixelSize: Theme.fontBody
-                                font.bold: true
-                                elide: Text.ElideRight
-                            }
-                            Icon {
-                                visible: tile.live
-                                name: "check"
-                                size: 14
-                                color: Theme.ok
-                            }
-                            Text {
-                                visible: !tile.modelData.builtin
-                                //% "Yours"
-                                text: qsTrId("light_theme_yours")
-                                color: Theme.muted
-                                font.pixelSize: Theme.fontSmall
-                            }
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            text: tile.modelData.mood
-                            color: Theme.muted
-                            font.pixelSize: Theme.fontSmall
-                            wrapMode: Text.Wrap
-                            elide: Text.ElideRight
-                            maximumLineCount: 3
-                        }
-                    }
-                    background: Rectangle {
-                        radius: Theme.radius
-                        color: tile.picked ? Theme.selBg : (tile.hovered ? Theme.tileHover : Theme.tile)
-                        border.width: tile.picked || tile.activeFocus ? 1 : 0
-                        border.color: tile.activeFocus ? Theme.focusRing : Theme.accent
-                    }
-                }
-            }
-            }
+            themes: tab.themes
+            starred: tab.starred
+            active: tab.active !== null ? tab.active.name : ""
+            selected: tab.selected
+            onPicked: (id) => tab.choose(id)
+            onApply: (id, way) => tab.applyCard(id, way)
+            onStop: Api.call("theme", "stop", {}, function () { tab.reload() })
+            onStarToggled: (id) => tab.toggleStar(id)
         }
         Repeater {
             model: tab.skipped

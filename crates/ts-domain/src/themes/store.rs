@@ -23,6 +23,23 @@ pub const MAX_THEME_FILE: u64 = 256 * 1024;
 /// cannot stall a listing.
 const MAX_USER_THEMES: usize = 500;
 
+/// One colourway of a theme as the gallery shows it: its name and its colours (`#RRGGBB`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ColourwayInfo {
+    /// The name, English.
+    pub name: String,
+    /// The colours of the palette slots.
+    pub palette: Vec<String>,
+}
+
+fn colourways_of(theme: &Theme) -> Vec<ColourwayInfo> {
+    theme
+        .colourways
+        .iter()
+        .map(|c| ColourwayInfo { name: c.name.clone(), palette: c.palette.clone() })
+        .collect()
+}
+
 /// One theme in a listing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ThemeEntry {
@@ -42,6 +59,8 @@ pub struct ThemeEntry {
     /// What the theme suits (power modes, activities), as the catalogue words it; the gallery
     /// filters on them.
     pub suits: Vec<String>,
+    /// Its built-in colourways, for the colour chips of its card.
+    pub colourways: Vec<ColourwayInfo>,
 }
 
 /// A user file that was not used, and why.
@@ -184,6 +203,7 @@ impl ThemeStore {
                 top: t.top,
                 runnable: !flash_unmeasured(t),
                 suits: t.suits.clone(),
+                colourways: colourways_of(t),
             })
             .collect();
         let mut skipped = Vec::new();
@@ -216,6 +236,7 @@ impl ThemeStore {
                     top: 0,
                     runnable: !flash_unmeasured(&t),
                     suits: t.suits.clone(),
+                    colourways: colourways_of(&t),
                 }),
                 Err(e) => skipped.push(Skipped { file, reason: e.to_string() }),
             }

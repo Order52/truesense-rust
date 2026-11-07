@@ -116,6 +116,10 @@ shows every translated string accented and padded: whatever stays plain bypasses
 | `Gauge { value; from; to; warnAt; critAt; text; caption }` | 270 degree dial |
 | `ConfirmDialog` | modal question, Cancel focused, `typeWord` for the danger zone |
 | `CapabilityNote { capability; text }` | "not available on this model" line, hidden while usable |
+| `DirectionPicker { current; onActivated(d) }` | the six wave directions as icon tiles (numbers 0 to 5, as stored); a `TileRow` with `turn`/`mirror` icons |
+| `GalleryCard { title; subtitle; layout; cells; starrable; starred; badge; selected; highlighted }` | a gallery card: keyboard thumbnail, name, text, star, badge; its children go under the text |
+| `KeyboardThumb { layout; cells }` | the keyboard as one Canvas (a card of a gallery must not be 100 items) |
+| `FilterChips { model: [{id,label,count}]; current; onPicked }`, `ColourwayChips { ways; current; onPicked }` | the gallery's filter row and a card's colour chips |
 | `Icon { name; size; color }` | tintable SVG from `qml/icons/<name>.svg` (24x24, `stroke="currentColor"`) |
 | `Placeholder` | the "coming in the next step" page body |
 | `StatusLine`, `ToastHost`, `Sidebar`, `SidebarItem`, `NarrowMenu` | shell parts, not for pages |

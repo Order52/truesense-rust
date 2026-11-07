@@ -675,6 +675,10 @@
         <source>Profile</source>
         <translation type="unfinished"></translation>
     </message>
+    <message id="home_kind_theme">
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="home_toast_power">
         <source>Power mode: %1 (held 30 min)</source>
         <translation type="unfinished"></translation>
@@ -949,6 +953,10 @@
     </message>
     <message id="profiles_kind_profile">
         <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="profiles_kind_theme">
+        <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="profiles_part_power_mode">
@@ -3183,6 +3191,10 @@
         <source>A look remembers the keyboard and the rear bar as they are now. Set the lights the way you like under Keyboard, Per-key and Rear bar, then save them here.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message id="light_looks_pictures">
+        <source>Your looks</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="light_looks_title">
         <source>Looks</source>
         <translation type="unfinished"></translation>
@@ -3201,6 +3213,10 @@
     </message>
     <message id="light_looks_applied">
         <source>Look &apos;%1&apos; applied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_looks_still_note">
+        <source>A moving effect is drawn as one still frame.</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="light_looks_copy">
@@ -3359,6 +3375,14 @@
         <source>The service applies the look when the power mode changes, also at boot and by Smart auto. Moving pictures need the key service.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message id="light_pk_template_applied">
+        <source>Template &apos;%1&apos; applied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_template_copied">
+        <source>Saved a copy as &apos;%1&apos;. Apply it under Designs, then change it on the board.</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message id="light_pk_none">
         <source>This laptop has no keyboard backlight control.</source>
         <translation type="unfinished"></translation>
@@ -3509,6 +3533,30 @@
     </message>
     <message id="light_pk_anim_speed">
         <source>Speed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_templates">
+        <source>Templates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_templates_help">
+        <source>Ready-made looks for gaming, typing, editing and the evening. Apply one to start from it: it goes to the keyboard and the board above, and Undo takes it back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_templates_search">
+        <source>Search templates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_template_apply">
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_template_copy">
+        <source>Save a copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_pk_templates_none">
+        <source>No template matches the search.</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="light_pk_designs">
@@ -3709,6 +3757,70 @@
     </message>
     <message id="light_theme_brightness">
         <source>Brightness</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_search">
+        <source>Search themes, moods and uses</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_all">
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_top">
+        <source>Top picks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_starred">
+        <source>Starred</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_gaming">
+        <source>Gaming</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_work">
+        <source>Work and typing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_night">
+        <source>Night</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_music">
+        <source>Music</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_calm">
+        <source>Calm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_chip_yours">
+        <source>Yours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_hint">
+        <source>Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_loading">
+        <source>Loading the themes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_none">
+        <source>No theme matches. Clear the search or pick another filter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_star">
+        <source>Star this theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_running">
+        <source>Running</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="light_gal_unavailable">
+        <source>Not available</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="light_theme_apply">

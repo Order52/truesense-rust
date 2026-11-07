@@ -33,7 +33,8 @@ pub use spec::{
     BRIGHTNESS_MAX, BRIGHTNESS_MIN, ColourwayPick, DEFAULT_SPEED, SPEED_MAX, SPEED_MIN, ThemeSpec,
 };
 pub use store::{
-    ACTIVE_KEY, Active, HALT_KEY, MAX_THEME_FILE, Resolved, Skipped, ThemeEntry, ThemeStore, Themes,
+    ACTIVE_KEY, Active, ColourwayInfo, HALT_KEY, MAX_THEME_FILE, Resolved, Skipped, ThemeEntry, ThemeStore,
+    Themes,
 };
 
 /// Why a theme operation failed.

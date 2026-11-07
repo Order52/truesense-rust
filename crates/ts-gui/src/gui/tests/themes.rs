@@ -217,4 +217,10 @@ fn the_list_says_what_each_theme_suits() {
     let list = m.ok("theme", "list", &json!({}));
     let hearth = list["themes"].as_array().unwrap().iter().find(|t| t["id"] == "hearth").unwrap().clone();
     assert_eq!(hearth["suits"], json!(["Balanced", "Quiet", "evenings"]));
+    let ways = hearth["colourways"].as_array().unwrap();
+    assert!(ways.len() >= 2);
+    assert!(
+        ways[0]["name"].is_string() && ways[0]["palette"][0].as_str().unwrap().starts_with('#'),
+        "{ways:?}"
+    );
 }

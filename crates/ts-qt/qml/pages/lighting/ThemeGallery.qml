@@ -1,0 +1,218 @@
+// The theme gallery: a search box, filter chips, and one card per theme with a picture of the
+// keyboard drawn from one frame of the theme (the Rust side draws it: `theme preview`), its
+// colourway chips (they redraw the picture), a star, and one-click Apply and Stop. The card of the
+// running theme is marked. Which cards show is decided in Rust (the gallery view-model); this file
+// only asks and lays them out.
+//
+// The page owns what is chosen and what runs; this file reports the person's choices as signals.
+import QtQuick
+import QtQuick.Layouts
+import org.truesense.app
+
+ColumnLayout {
+    id: gallery
+
+    /// `theme list` entries: {id, name, mood, builtin, top, runnable, suits, colourways}.
+    property var themes: []
+    /// The ids of the starred themes.
+    property var starred: []
+    /// The id of the running theme, "" for none.
+    property string active: ""
+    /// The id of the theme the detail below shows.
+    property string selected: ""
+    property string query: ""
+    property string chip: "all"
+
+    signal picked(string id)
+    signal apply(string id, int colourway)
+    signal stop()
+    signal starToggled(string id)
+
+    // What each card shows: the chosen colourway of each theme, and the pictures drawn so far.
+    property var ways: ({})
+    property var pictures: ({})
+    property var asked: ({})
+
+    readonly property var shown: LightingVm.gallery("filter", {
+        themes: themes, query: query, chip: chip, starred: starred, active: active,
+        pin_active: chip === "all" && query === "" }) || []
+    readonly property var chips: LightingVm.gallery("chips", { themes: themes, query: query, starred: starred }) || []
+    readonly property var byId: {
+        var o = {}
+        for (var i = 0; i < themes.length; ++i) o[themes[i].id] = themes[i]
+        return o
+    }
+
+    spacing: 10
+
+    function wayOf(id) { return ways[id] === undefined ? 0 : ways[id] }
+
+    function setWay(id, index) {
+        var o = {}
+        for (var k in ways) o[k] = ways[k]
+        o[id] = index
+        ways = o
+    }
+
+    function key(id, way) { return id + "#" + way }
+
+    /// Asks Rust for the picture of a theme in a colourway, once.
+    function ensure(id, way) {
+        var k = key(id, way)
+        if (asked[k] === true) return
+        var a = {}
+        for (var q in asked) a[q] = asked[q]
+        a[k] = true
+        asked = a
+        Api.call("theme", "preview", { name: id, colourway: way }, function (r) {
+            var p = {}
+            for (var q in pictures) p[q] = pictures[q]
+            p[k] = r.cells
+            pictures = p
+        }, function () {})
+    }
+
+    function isStarred(id) { return starred.indexOf(id) >= 0 }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+        AppTextField {
+            id: search
+            Layout.fillWidth: true
+            //% "Search themes, moods and uses"
+            placeholderText: qsTrId("light_gal_search")
+            Accessible.name: placeholderText
+            text: gallery.query
+            onTextEdited: gallery.query = text
+            Keys.onEscapePressed: { text = ""; gallery.query = "" }
+        }
+    }
+    FilterChips {
+        Layout.fillWidth: true
+        current: gallery.chip
+        model: gallery.chips.map(function (c) { return { id: c.id, label: gallery.chipName(c.id), count: c.count } })
+        onPicked: (id) => gallery.chip = id
+    }
+
+    function chipName(id) {
+        switch (id) {
+        //% "All"
+        case "all": return qsTrId("light_gal_chip_all")
+        //% "Top picks"
+        case "top": return qsTrId("light_gal_chip_top")
+        //% "Starred"
+        case "starred": return qsTrId("light_gal_chip_starred")
+        //% "Gaming"
+        case "gaming": return qsTrId("light_gal_chip_gaming")
+        //% "Work and typing"
+        case "work": return qsTrId("light_gal_chip_work")
+        //% "Night"
+        case "night": return qsTrId("light_gal_chip_night")
+        //% "Music"
+        case "music": return qsTrId("light_gal_chip_music")
+        //% "Calm"
+        case "calm": return qsTrId("light_gal_chip_calm")
+        //% "Yours"
+        case "yours": return qsTrId("light_gal_chip_yours")
+        default: return String(id)
+        }
+    }
+
+    Text {
+        Layout.fillWidth: true
+        visible: gallery.shown.length > 0
+        //% "Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery."
+        text: qsTrId("light_gal_hint")
+        color: Theme.muted
+        font.pixelSize: Theme.fontSmall + 1
+        wrapMode: Text.Wrap
+    }
+
+    Text {
+        Layout.fillWidth: true
+        visible: gallery.shown.length === 0
+        text: gallery.themes.length === 0
+            //% "Loading the themes."
+            ? qsTrId("light_gal_loading")
+            //% "No theme matches. Clear the search or pick another filter."
+            : qsTrId("light_gal_none")
+        color: Theme.muted
+        font.pixelSize: Theme.fontBody
+        wrapMode: Text.Wrap
+    }
+
+    GridLayout {
+        id: grid
+        Layout.fillWidth: true
+        columns: Math.max(1, Math.floor((width + columnSpacing) / (270 + columnSpacing)))
+        columnSpacing: 10
+        rowSpacing: 10
+
+        Repeater {
+            model: gallery.shown
+            delegate: GalleryCard {
+                id: card
+                required property string modelData
+                readonly property var theme: gallery.byId[modelData]
+                readonly property int way: gallery.wayOf(modelData)
+                readonly property bool live: gallery.active === modelData
+                readonly property var cellsNow: gallery.pictures[gallery.key(modelData, way)]
+
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.maximumWidth: 420
+                Layout.alignment: Qt.AlignTop
+                visible: theme !== undefined
+                title: theme ? theme.name : ""
+                subtitle: theme ? theme.mood : ""
+                layout: LightingVm.layout
+                cells: cellsNow === undefined ? [] : cellsNow
+                starrable: true
+                starred: gallery.isStarred(modelData)
+                //% "Star this theme"
+                starName: qsTrId("light_gal_star")
+                selected: gallery.selected === modelData
+                highlighted: live
+                badge: !theme ? "" : live
+                    //% "Running"
+                    ? qsTrId("light_gal_running")
+                    : (theme.runnable === false
+                        //% "Not available"
+                        ? qsTrId("light_gal_unavailable")
+                        : (!theme.builtin
+                            //% "Yours"
+                            ? qsTrId("light_theme_yours") : ""))
+                badgeKind: live ? "ok" : (theme && theme.runnable === false ? "warn" : "neutral")
+                onActivated: gallery.picked(modelData)
+                onStarToggled: gallery.starToggled(modelData)
+                Component.onCompleted: gallery.ensure(modelData, way)
+                onWayChanged: gallery.ensure(modelData, way)
+
+                ColourwayChips {
+                    Layout.fillWidth: true
+                    visible: card.theme !== undefined && card.theme.colourways !== undefined && card.theme.colourways.length > 1
+                    ways: card.theme && card.theme.colourways ? card.theme.colourways : []
+                    current: card.way
+                    onPicked: (i) => gallery.setWay(card.modelData, i)
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    PrimaryButton {
+                        //% "Apply"
+                        text: qsTrId("light_theme_apply")
+                        enabled: card.theme !== undefined && card.theme.runnable !== false
+                        onClicked: gallery.apply(card.modelData, card.way)
+                    }
+                    SecondaryButton {
+                        visible: card.live
+                        //% "Stop"
+                        text: qsTrId("light_theme_stop2")
+                        onClicked: gallery.stop()
+                    }
+                }
+            }
+        }
+    }
+}
