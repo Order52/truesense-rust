@@ -1023,3 +1023,161 @@ fn the_default_updater_uses_the_build_version_and_github() {
     assert_eq!(mirrored.web_base, "https://web.example");
     assert!(wall_clock() > 1.7e9);
 }
+
+// ---- resilience: truncated and interrupted downloads, no-op updates, the real hand-off ----------
+
+/// The cache file the Go 0.4.0 edition left on a laptop (field names are the Python edition's).
+const GO_CACHE: &str = r#"{"checked_at":1794050946.3348439,"info":{"version":"0.4.0","tag":"v0.4.0","url":"https://github.com/o/r/releases/tag/v0.4.0","notes":"notes"},"error":null}"#;
+
+#[test]
+fn a_download_cut_short_anywhere_never_reaches_extraction_and_leaves_nothing() {
+    let (world, blob) = World::with_good_release();
+    let sums = sums_for("9.9.9", &blob); // the list is of the whole file
+    let asset = format!("{WEB}/releases/download/v9.9.9/truesense-9.9.9.tar.gz");
+    for cut in (0..blob.len()).step_by(37).chain([blob.len() - 1]) {
+        world.net.serve(&asset, &blob[..cut]);
+        world.serve_release("9.9.9", &blob[..cut], Some(sums.clone()));
+        let err = world.updater().download("v9.9.9").err().expect("a truncated download must be refused");
+        assert!(matches!(err, UpdateError::ChecksumMismatch { .. }), "cut {cut}: {err}");
+        assert_eq!(world.work_entries(), 0, "cut {cut}: nothing left behind");
+    }
+}
+
+#[test]
+fn an_archive_that_is_truncated_but_published_with_its_own_checksum_fails_extraction_and_leaves_nothing() {
+    let (world, blob) = World::with_good_release();
+    let mut refused = 0;
+    for cut in (1..blob.len()).step_by(29) {
+        let part = &blob[..cut];
+        world.serve_release("9.9.9", part, Some(sums_for("9.9.9", part)));
+        match world.updater().download("v9.9.9") {
+            Err(e) => {
+                refused += 1;
+                assert!(matches!(e, UpdateError::Extract(_) | UpdateError::Layout(_)), "cut {cut}: {e}");
+            }
+            Ok(release) => drop(release), // a cut inside the gzip trailer may still inflate completely
+        }
+        assert_eq!(world.work_entries(), 0, "cut {cut}: the half-extracted tree is deleted");
+    }
+    assert!(refused > blob.len() / 29 / 2, "most cuts are refused ({refused})");
+    // and an apply on such an archive never runs an installer
+    let part = &blob[..blob.len() / 2];
+    world.serve_release("9.9.9", part, Some(sums_for("9.9.9", part)));
+    assert!(world.updater().apply(&ApplyOptions::default()).is_err());
+    assert!(world.host.runs().is_empty(), "no installer ran");
+}
+
+#[test]
+fn a_release_that_is_not_newer_is_not_installed_unless_a_tag_is_asked_for() {
+    let (world, _blob) = World::with_good_release();
+    // Running 9.9.9, newest is 9.9.9: the same version.
+    let same = world.updater().with_current("9.9.9");
+    let e = same.apply(&ApplyOptions::default()).unwrap_err();
+    assert!(matches!(e, UpdateError::AlreadyNewest { .. }), "{e}");
+    assert_eq!(e.to_string(), "TrueSense 9.9.9 is already the newest version (the newest release is 9.9.9)");
+    // Running newer than anything published (a development build): the published release is a downgrade.
+    let ahead = world.updater().with_current("10.0.0");
+    assert!(matches!(ahead.apply(&ApplyOptions::default()).unwrap_err(), UpdateError::AlreadyNewest { .. }));
+    assert!(!ahead.check(true, None).available);
+    assert!(world.host.runs().is_empty(), "no installer ran for either");
+    assert!(!world.net.asked().iter().any(|u| u.ends_with(".tar.gz")), "and nothing was downloaded");
+    // Asking for a tag by name is a decision, and is honoured (reinstall or an older release).
+    assert!(same.apply(&ApplyOptions { tag: Some("v9.9.9".into()), ..ApplyOptions::default() }).is_ok());
+}
+
+#[test]
+fn a_release_of_another_edition_is_refused_by_the_layout_check_not_installed() {
+    let world = World::new(FakeHost::user());
+    fs::create_dir_all(world.tmp.0.join("work")).unwrap();
+    // The Go edition's source release: no Cargo.toml, a go.mod.
+    let go = tarball(
+        &[("tools/install.sh", b"#!/bin/sh\n".to_vec()), ("go.mod", b"module x\n".to_vec()), ("kernel/truesense-wmi/truesense_wmi.c", b"//".to_vec())],
+        "truesense-9.9.9",
+    );
+    world.serve_release("9.9.9", &go, Some(sums_for("9.9.9", &go)));
+    world.serve_github(Some("v9.9.9"), &["v9.9.9"]);
+    let e = world.updater().apply(&ApplyOptions::default()).unwrap_err();
+    assert!(e.to_string().contains("missing Cargo.toml"), "{e}");
+    assert!(world.host.runs().is_empty());
+    assert_eq!(world.work_entries(), 0);
+}
+
+#[test]
+fn the_update_cache_the_go_edition_left_is_understood_and_gives_no_update() {
+    let world = World::new(FakeHost::user());
+    let cache = world.tmp.0.join("cache/update.json");
+    fs::create_dir_all(cache.parent().unwrap()).unwrap();
+    fs::write(&cache, GO_CACHE).unwrap();
+    // Offline, with the cache still fresh: its answer is used without any request.
+    let updater = world.updater().with_current("0.5.0").with_clock(Arc::new(|| 1_794_050_946.0 + 60.0));
+    let status = updater.check(false, None);
+    assert_eq!(status.latest.as_deref(), Some("0.4.0"));
+    assert!(!status.available, "0.4.0 is older than the running 0.5.0");
+    assert!(world.net.asked().is_empty());
+    // Offline with a stale cache: the last answer survives and the error says why.
+    let stale = world.updater().with_current("0.5.0").with_clock(Arc::new(|| 1_794_050_946.0 + 10.0 * 86_400.0));
+    let status = stale.check(false, None);
+    assert_eq!(status.latest.as_deref(), Some("0.4.0"));
+    assert!(status.error.is_some());
+}
+
+/// A host that really runs what it is asked to (the installer of the bundle, a shell script).
+struct ExecHost;
+
+impl Host for ExecHost {
+    fn euid(&self) -> u32 {
+        0
+    }
+    fn env(&self, _key: &str) -> Option<String> {
+        None
+    }
+    fn has_program(&self, _name: &str) -> bool {
+        false
+    }
+    fn polkit_agent_running(&self) -> bool {
+        false
+    }
+    fn installed_version(&self) -> Option<String> {
+        None
+    }
+    fn run_attached(&self, argv: &[String]) -> io::Result<i32> {
+        let status = std::process::Command::new(&argv[0]).args(&argv[1..]).status()?;
+        Ok(status.code().unwrap_or(-1))
+    }
+}
+
+#[test]
+fn the_real_installer_of_a_hand_built_bundle_is_run_from_the_verified_tree() {
+    let tmp = TempDir::new();
+    let work = tmp.0.join("work");
+    fs::create_dir_all(&work).unwrap();
+    let marker = tmp.0.join("marker");
+    // The bundle, built by hand: the layout of a real release and an installer that proves it
+    // runs inside the verified tree (Cargo.toml and the kernel source next to it).
+    let script = format!(
+        "#!/bin/sh\nset -e\nroot=$(cd \"$(dirname \"$0\")/..\" && pwd)\ngrep -q '^version = \"9.9.9\"' \"$root/Cargo.toml\"\ntest -f \"$root/kernel/truesense-wmi/truesense_wmi.c\"\nprintf '%s' \"$root\" > '{}'\nexit 3\n",
+        marker.display()
+    );
+    let mut files = release_files("9.9.9");
+    files[0].1 = script.into_bytes();
+    let blob = tarball(&files, "truesense-9.9.9");
+    let net = Arc::new(FakeNet::default());
+    net.serve(&format!("{WEB}/releases/download/v9.9.9/truesense-9.9.9.tar.gz"), &blob);
+    net.serve(&format!("{WEB}/releases/download/v9.9.9/SHA256SUMS"), &sums_for("9.9.9", &blob));
+    net.serve(
+        &format!("{API}/releases/latest"),
+        br#"{"tag_name":"v9.9.9","html_url":"https://github.com/o/r/releases/tag/v9.9.9","body":"n"}"#,
+    );
+    net.serve(&format!("{API}/tags?per_page=30"), br#"[{"name":"v9.9.9"}]"#);
+    let updater = Updater::new("o/r", net, Arc::new(ExecHost))
+        .unwrap()
+        .with_current("0.5.0")
+        .with_cache_path(None)
+        .with_temp_dir(&work);
+    let result = updater.apply(&ApplyOptions::default()).unwrap();
+    assert_eq!((result.returncode, result.via), (3, "installer"), "the installer's own exit code is reported");
+    let ran_in = fs::read_to_string(&marker).unwrap();
+    assert!(ran_in.ends_with("truesense-9.9.9"), "{ran_in}");
+    assert!(!Path::new(&ran_in).exists(), "and the tree is deleted afterwards");
+    assert_eq!(fs::read_dir(&work).unwrap().count(), 0);
+}

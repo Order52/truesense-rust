@@ -71,6 +71,14 @@ pub enum UpdateError {
     NoRelease,
     /// There is nothing known to install: nothing was asked for and no release is known.
     NothingToInstall,
+    /// No tag was asked for and the newest release is not newer than the running version:
+    /// installing it would be a reinstall or a downgrade nobody asked for.
+    AlreadyNewest {
+        /// The running version.
+        current: String,
+        /// The newest release known.
+        newest: String,
+    },
     /// GitHub's API could not be asked.
     Github(FetchError),
     /// GitHub answered with something that is not what the API documents.
@@ -135,6 +143,9 @@ impl fmt::Display for UpdateError {
             Self::NotAVersionTag(t) => write!(f, "not a version tag: {t:?}"),
             Self::NoRelease => f.write_str("no release or version tag found in the repository"),
             Self::NothingToInstall => f.write_str("no release known to install"),
+            Self::AlreadyNewest { current, newest } => {
+                write!(f, "TrueSense {current} is already the newest version (the newest release is {newest})")
+            }
             Self::Github(e) => e.fmt(f),
             Self::BadAnswer(why) => write!(f, "unexpected answer from GitHub: {why}"),
             Self::Unreachable(text) => f.write_str(text),
@@ -761,7 +772,13 @@ impl Updater {
         }
         let tag = match (&options.tag, &status.info) {
             (Some(tag), _) => tag.clone(),
-            (None, Some(info)) => info.tag.clone(),
+            (None, Some(info)) if status.available => info.tag.clone(),
+            (None, Some(info)) => {
+                return Err(UpdateError::AlreadyNewest {
+                    current: status.current.clone(),
+                    newest: info.version.clone(),
+                });
+            }
             (None, None) => return Err(UpdateError::NothingToInstall),
         };
         let version = Version::parse(&tag).ok_or_else(|| UpdateError::NotAVersionTag(tag.clone()))?;
