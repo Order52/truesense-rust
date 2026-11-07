@@ -50,7 +50,7 @@ PageFrame {
         Layout.fillWidth: true
         active: page.tab === "mode"
         visible: active
-        sourceComponent: Component { PerfModeTab { page: page } }
+        sourceComponent: Component { PerfModeTab { host: page } }
         onLoaded: item.width = Qt.binding(function () { return width })
         Layout.preferredHeight: item ? item.implicitHeight : 0
     }
@@ -58,7 +58,7 @@ PageFrame {
         Layout.fillWidth: true
         active: page.tab === "rules"
         visible: active
-        sourceComponent: Component { PerfGameTab { page: page } }
+        sourceComponent: Component { PerfGameTab { host: page } }
         onLoaded: item.width = Qt.binding(function () { return width })
         Layout.preferredHeight: item ? item.implicitHeight : 0
     }
@@ -66,7 +66,7 @@ PageFrame {
         Layout.fillWidth: true
         active: page.tab === "limits"
         visible: active
-        sourceComponent: Component { PerfLimitsTab { page: page } }
+        sourceComponent: Component { PerfLimitsTab { host: page } }
         onLoaded: item.width = Qt.binding(function () { return width })
         Layout.preferredHeight: item ? item.implicitHeight : 0
     }
@@ -74,7 +74,7 @@ PageFrame {
         Layout.fillWidth: true
         active: page.tab === "tuning"
         visible: active
-        sourceComponent: Component { PerfTuningTab { page: page } }
+        sourceComponent: Component { PerfTuningTab { host: page } }
         onLoaded: item.width = Qt.binding(function () { return width })
         Layout.preferredHeight: item ? item.implicitHeight : 0
     }

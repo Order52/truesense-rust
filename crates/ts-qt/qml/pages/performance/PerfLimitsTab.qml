@@ -10,7 +10,7 @@ import org.truesense.app
 ColumnLayout {
     id: root
 
-    required property var page
+    required property var host
 
     spacing: Theme.spacing + 4
 
@@ -26,7 +26,7 @@ ColumnLayout {
 
     readonly property var view: PerfVm.val("limits_view", { info: info }, { readable: false, locked: null, gpu_known: false, gpu: ({}) })
     readonly property var risk: PerfVm.val("risk_pl", { pl1: pl1, pl2: pl2 }, { level: "", why: "", problem: null })
-    readonly property bool engineUsable: Caps.usable("power-limits") && page.capUsable("power_limits")
+    readonly property bool engineUsable: Caps.usable("power-limits") && host.capUsable("power_limits")
     readonly property bool editable: engineUsable && view.locked !== true && view.readable === true
 
     function takeInfo(r) {
@@ -250,8 +250,8 @@ ColumnLayout {
             text: qsTrId("perf_pl_needs_service")
         }
         CapabilityNote {
-            stateOverride: root.page.capUsable("power_limits") ? "available" : "unavailable"
-            text: root.page.capWhy("power_limits")
+            stateOverride: root.host.capUsable("power_limits") ? "available" : "unavailable"
+            text: root.host.capWhy("power_limits")
         }
         HelpText {
             visible: root.asked && !root.view.readable && root.failure === ""

@@ -9,7 +9,7 @@ import org.truesense.app
 ColumnLayout {
     id: root
 
-    required property var page
+    required property var host
 
     spacing: Theme.spacing + 4
 

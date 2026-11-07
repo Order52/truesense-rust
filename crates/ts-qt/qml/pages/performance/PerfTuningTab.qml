@@ -10,7 +10,7 @@ import org.truesense.app
 ColumnLayout {
     id: root
 
-    required property var page
+    required property var host
 
     spacing: Theme.spacing + 4
 
@@ -46,8 +46,8 @@ ColumnLayout {
         sourceComponent: Component {
             UndervoltPanel {
                 kind: "cpu"
-                usable: Caps.usable("undervolt") && root.page.capUsable("cpu_undervolt")
-                whyNot: root.page.capWhy("cpu_undervolt")
+                usable: Caps.usable("undervolt") && root.host.capUsable("cpu_undervolt")
+                whyNot: root.host.capWhy("cpu_undervolt")
             }
         }
         onLoaded: item.width = Qt.binding(function () { return width })
@@ -60,8 +60,8 @@ ColumnLayout {
         sourceComponent: Component {
             UndervoltPanel {
                 kind: "gpu"
-                usable: Caps.usable("undervolt") && root.page.capUsable("gpu_undervolt")
-                whyNot: root.page.capWhy("gpu_undervolt")
+                usable: Caps.usable("undervolt") && root.host.capUsable("gpu_undervolt")
+                whyNot: root.host.capWhy("gpu_undervolt")
             }
         }
         onLoaded: item.width = Qt.binding(function () { return width })
