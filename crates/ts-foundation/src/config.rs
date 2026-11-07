@@ -130,6 +130,8 @@ pub struct Config {
     pub osd: OsdConfig,
     /// Shims for old status-bar widgets.
     pub compat: CompatConfig,
+    /// Desktop alerts the daemon raises by itself (added in 0.5; the Python and Go editions have no such section).
+    pub alerts: AlertsConfig,
 }
 
 /// `[daemon]`: a first install behaves like PredatorSense (firmware fans, native auto mode,
@@ -367,6 +369,36 @@ pub struct CompatConfig {
     pub predator_widgets: bool,
 }
 
+/// `[alerts]`: what the root daemon tells the desktop user without being asked (a hot CPU or GPU,
+/// a low battery, a clock held down by the governor, a lost sensor). It lives in the daemon so it
+/// works with every window closed. The urgency is never "critical" (a desktop never dismisses
+/// those), so there is no key for it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AlertsConfig {
+    /// Raise alerts at all.
+    pub enabled: bool,
+    /// Alert when the CPU temperature reaches this many degrees C (70..100). It re-arms 5 C below.
+    pub cpu_limit_c: i64,
+    /// The same for the GPU (70..100).
+    pub gpu_limit_c: i64,
+    /// Least minutes between two messages of the same alert (1..240), so a laptop that hovers
+    /// around the limit does not pester.
+    pub repeat_minutes: i64,
+    /// How many consecutive ticks (one or two seconds each) a condition must hold before it is
+    /// reported (1..30).
+    pub debounce_samples: i64,
+    /// Alert on battery at or below this percentage (5..50); 0 switches the battery alert off.
+    pub battery_low_pct: i64,
+    /// Tell when the thermal governor is holding the CPU clock down.
+    pub throttling: bool,
+    /// Tell when the CPU temperature cannot be read.
+    pub sensor_lost: bool,
+}
+
+/// The smallest and largest temperature limit an alert may use.
+pub const ALERT_LIMIT_RANGE: std::ops::RangeInclusive<i64> = 70..=100;
+
 fn strings(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_owned()).collect()
 }
@@ -505,6 +537,45 @@ impl Default for OsdConfig {
     }
 }
 
+impl Default for AlertsConfig {
+    fn default() -> Self {
+        AlertsConfig {
+            enabled: true,
+            cpu_limit_c: 90,
+            gpu_limit_c: 90,
+            repeat_minutes: 5,
+            debounce_samples: 3,
+            battery_low_pct: 15,
+            throttling: true,
+            sensor_lost: true,
+        }
+    }
+}
+
+impl AlertsConfig {
+    /// The mistakes in this section, one message each (empty means fine). Also run by
+    /// [`Config::validate`], and by the commands that write the section before they write it.
+    pub fn validate(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        let range = ALERT_LIMIT_RANGE;
+        for (key, v) in [("cpu_limit_c", self.cpu_limit_c), ("gpu_limit_c", self.gpu_limit_c)] {
+            if !range.contains(&v) {
+                out.push(format!("[alerts] {key} must be {}..{}", range.start(), range.end()));
+            }
+        }
+        if !(1..=240).contains(&self.repeat_minutes) {
+            out.push("[alerts] repeat_minutes must be 1..240".to_owned());
+        }
+        if !(1..=30).contains(&self.debounce_samples) {
+            out.push("[alerts] debounce_samples must be 1..30".to_owned());
+        }
+        if self.battery_low_pct != 0 && !(5..=50).contains(&self.battery_low_pct) {
+            out.push("[alerts] battery_low_pct must be 0 (off) or 5..50".to_owned());
+        }
+        out
+    }
+}
+
 /// Merges `over` into `base` the way the Python `merge()` does: a table on both sides merges
 /// key by key, anything else (scalar, list, or a table over a non-table) replaces.
 pub fn merge(base: &mut Table, over: Table) {
@@ -620,6 +691,7 @@ impl Config {
         if !matches!(self.osd.style.as_str(), "native" | "noctalia" | "none") {
             out.push("[osd] style must be native, noctalia or none".to_owned());
         }
+        out.extend(self.alerts.validate());
         out
     }
 }
@@ -759,7 +831,61 @@ mod tests {
         let golden: serde_json::Value =
             serde_json::from_str(include_str!("../testdata/python-config-defaults.json"))
                 .expect("golden JSON");
-        assert_eq!(serde_json::to_value(Config::default()).expect("encode"), golden);
+        // The Python edition has no `[alerts]` section (it is new in 0.5): everything else is its.
+        let mut ours = serde_json::to_value(Config::default()).expect("encode");
+        let alerts = ours.as_object_mut().expect("object").remove("alerts").expect("alerts section");
+        assert_eq!(ours, golden);
+        assert_eq!(
+            alerts,
+            serde_json::json!({
+                "enabled": true,
+                "cpu_limit_c": 90,
+                "gpu_limit_c": 90,
+                "repeat_minutes": 5,
+                "debounce_samples": 3,
+                "battery_low_pct": 15,
+                "throttling": true,
+                "sensor_lost": true
+            })
+        );
+    }
+
+    #[test]
+    fn alerts_section_loads_validates_and_is_known() {
+        let d = TempDir::new("cfg-alerts");
+        let p = put(
+            &d,
+            "c.toml",
+            "[alerts]\nenabled = false\ncpu_limit_c = 85\nrepeat_minutes = 10\nbattery_lo_pct = 1\n",
+        );
+        let c = Config::load(None, Some(&p), &no_env).expect("load");
+        assert!(!c.alerts.enabled);
+        assert_eq!((c.alerts.cpu_limit_c, c.alerts.gpu_limit_c, c.alerts.repeat_minutes), (85, 90, 10));
+        assert_eq!(unknown_keys(&p), ["alerts.battery_lo_pct"]);
+        assert_eq!(c.validate(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn alerts_validation_boundaries_and_messages() {
+        let check = |f: &dyn Fn(&mut AlertsConfig)| {
+            let mut c = Config::default();
+            f(&mut c.alerts);
+            c.validate()
+        };
+        assert!(check(&|a| a.cpu_limit_c = 70).is_empty());
+        assert!(check(&|a| a.gpu_limit_c = 100).is_empty());
+        assert_eq!(check(&|a| a.cpu_limit_c = 69), ["[alerts] cpu_limit_c must be 70..100"]);
+        assert_eq!(check(&|a| a.gpu_limit_c = 101), ["[alerts] gpu_limit_c must be 70..100"]);
+        assert_eq!(check(&|a| a.repeat_minutes = 0), ["[alerts] repeat_minutes must be 1..240"]);
+        assert!(check(&|a| a.repeat_minutes = 240).is_empty());
+        assert_eq!(check(&|a| a.repeat_minutes = 241).len(), 1);
+        assert_eq!(check(&|a| a.debounce_samples = 31), ["[alerts] debounce_samples must be 1..30"]);
+        assert!(check(&|a| a.debounce_samples = 1).is_empty());
+        assert!(check(&|a| a.battery_low_pct = 0).is_empty(), "0 switches the alert off");
+        assert!(check(&|a| a.battery_low_pct = 5).is_empty());
+        assert_eq!(check(&|a| a.battery_low_pct = 4), ["[alerts] battery_low_pct must be 0 (off) or 5..50"]);
+        assert_eq!(check(&|a| a.battery_low_pct = 51).len(), 1);
+        assert_eq!(check(&|a| a.cpu_limit_c = i64::MIN).len(), 1);
     }
 
     #[test]

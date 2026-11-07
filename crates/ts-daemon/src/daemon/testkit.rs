@@ -22,7 +22,7 @@ use ts_domain::looks::Look;
 use ts_domain::power::{Applied as PowerApplied, Info as PowerInfo, MsrLock, RawLimits};
 use ts_domain::powermgr::{CpuState, RestoreReport, TakeoverReport, UnitStatus};
 use ts_domain::undervolt::Offsets;
-use ts_foundation::config::Config;
+use ts_foundation::config::{AlertsConfig, Config};
 use ts_foundation::sdnotify::Notifier;
 use ts_foundation::state::Store;
 use ts_ipc::wire::{Args, Request};
@@ -31,6 +31,7 @@ use ts_platform::hw::Hw;
 use ts_system::osd::{UserDirectory, UserEntry};
 use ts_system::sensors::GpuReading;
 
+use super::alerts::AlertSettings;
 use super::deps::{
     BootLookPort, Clock, ClockCap, CpuUndervoltPort, Deps, GpuUndervoltPort, Level, LivePaths, Logger,
     Notice, OperatingLight, PortError, PortResult, PowerLimitsPort, PowerManagersPort, ProcessList, Sensors,
@@ -478,11 +479,42 @@ impl TouchpadPort for FakeTouchpad {
 #[derive(Default)]
 pub(super) struct FakeOsd {
     pub(super) shown: Mutex<Vec<String>>,
+    /// Makes the notifier panic, as a broken helper might.
+    pub(super) explode: AtomicBool,
 }
 
 impl Notice for FakeOsd {
     fn show(&self, text: &str, _icon: &str) {
+        assert!(!self.explode.load(Ordering::SeqCst), "the notifier blew up");
         locked(&self.shown).push(text.to_owned());
+    }
+}
+
+/// The `[alerts]` settings a test changes while the daemon runs; every change moves the stamp, as
+/// a rewritten configuration file moves its modification time.
+pub(super) struct FakeAlertSettings {
+    current: Mutex<Result<AlertsConfig, String>>,
+    stamp: std::sync::atomic::AtomicU64,
+}
+
+impl FakeAlertSettings {
+    fn new(initial: AlertsConfig) -> Self {
+        Self { current: Mutex::new(Ok(initial)), stamp: std::sync::atomic::AtomicU64::new(1) }
+    }
+
+    pub(super) fn set(&self, config: Result<AlertsConfig, String>) {
+        *locked(&self.current) = config;
+        self.stamp.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+impl AlertSettings for FakeAlertSettings {
+    fn stamp(&self) -> u64 {
+        self.stamp.load(Ordering::SeqCst)
+    }
+
+    fn load(&self) -> Result<AlertsConfig, String> {
+        locked(&self.current).clone()
     }
 }
 
@@ -538,6 +570,7 @@ pub(super) struct Rig {
     pub(super) keyboard: Arc<FakeKeyboard>,
     pub(super) touchpad: Arc<FakeTouchpad>,
     pub(super) osd: Arc<FakeOsd>,
+    pub(super) alert_settings: Arc<FakeAlertSettings>,
     pub(super) procs: Arc<FakeProcs>,
     pub(super) clock: Arc<FakeClock>,
     pub(super) sleeper: Arc<FakeSleeper>,
@@ -622,6 +655,7 @@ impl Rig {
         let keyboard = Arc::new(FakeKeyboard::default());
         let touchpad = Arc::new(FakeTouchpad { on: Mutex::new(Some(true)) });
         let osd = Arc::new(FakeOsd::default());
+        let alert_settings = Arc::new(FakeAlertSettings::new(setup.config.alerts.clone()));
         let procs = Arc::new(FakeProcs::default());
         let log = Arc::new(TestLog::default());
         let stop = StopToken::new();
@@ -639,6 +673,7 @@ impl Rig {
             keyboard: keyboard.clone(),
             touchpad: touchpad.clone(),
             osd: osd.clone(),
+            alert_settings: alert_settings.clone(),
             processes: procs.clone(),
             users: Arc::new(FakeUsers { uid: my_uid(), home: home.clone() }),
             curves: curves::Store::new(dir.join("curves")),
@@ -674,6 +709,7 @@ impl Rig {
             keyboard,
             touchpad,
             osd,
+            alert_settings,
             procs,
             clock,
             sleeper,

@@ -6,7 +6,7 @@
 //! never go through here: they build [`Deps`] from fakes.
 
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde_json::Value;
@@ -18,7 +18,7 @@ use ts_domain::looks::{self, LookStore};
 use ts_domain::power::{HostSysfs, MsrReader, PowerLimits};
 use ts_domain::powermgr::{self, PowerManagers};
 use ts_domain::undervolt::{DevMsr, Undervolt};
-use ts_foundation::config::Config;
+use ts_foundation::config::{self, Config};
 use ts_foundation::state::{self, Store};
 use ts_foundation::{fsx, sdnotify, userstate};
 use ts_platform::firmware::DeviceKind;
@@ -29,7 +29,8 @@ use ts_system::touchpad::Touchpad;
 
 use crate::daemon::adapt::{ProcFs, SystemSensors};
 use crate::daemon::{
-    self, DaemonError, Deps, Level, LivePaths, Logger, RealSleeper, StdoutLogger, StopToken, SystemClock,
+    self, ConfigFileAlerts, DaemonError, Deps, Level, LivePaths, Logger, RealSleeper, StdoutLogger,
+    StopToken, SystemClock,
 };
 
 /// Where the root service's home is when `HOME` is not set (systemd units run it as root).
@@ -168,9 +169,19 @@ pub fn build_deps(config: Config, stop: StopToken, log: Arc<dyn Logger>) -> Deps
     );
     let state = Arc::new(Store::open(state::default_path(), state::defaults(&config)));
     let curves_dir = curves::Store::default_dir().unwrap_or_else(|| home.join(".config/truesense/curves"));
+    let users = Arc::new(PasswdFile::new("/etc/passwd"));
+    // The alert settings are re-read while the daemon runs, from the machine's file and the
+    // desktop user's (a service has no HOME to find the latter by).
+    let alert_settings = ConfigFileAlerts::for_desktop_user(
+        Path::new(config::SYSTEM_PATH),
+        users.as_ref(),
+        &config.user,
+        &env,
+    );
     Deps {
-        users: Arc::new(PasswdFile::new("/etc/passwd")),
+        users,
         osd: Arc::new(Osd::system(&config.osd.style, &config.user)),
+        alert_settings: Arc::new(alert_settings),
         config,
         state,
         hw,
