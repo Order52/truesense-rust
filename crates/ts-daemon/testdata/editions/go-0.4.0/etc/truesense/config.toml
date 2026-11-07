@@ -1,0 +1,2 @@
+# TrueSense system configuration (see docs/USAGE.md). Built-in defaults apply to everything not set here.
+user = "alice"

@@ -1,0 +1,18 @@
+{
+ "keyboard": {
+  "mode": "effect",
+  "name": "wave",
+  "color": "00aec7",
+  "speed": 1,
+  "brightness": 0,
+  "direction": 0
+ },
+ "rear": {
+  "mode": "static",
+  "color": "00aec7",
+  "speed": 3,
+  "brightness": 0,
+  "direction": 1,
+  "zones": null
+ }
+}
