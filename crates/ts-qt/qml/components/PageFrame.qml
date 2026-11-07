@@ -20,6 +20,8 @@ Item {
     default property alias content: column.data
     /// The column, for pages that need its width.
     readonly property alias column: column
+    /// The scrolling area (tools/qtprofile scrolls it to measure what a backend costs while moving).
+    readonly property alias flick: scroll
     readonly property int margin: width < 560 ? 12 : 24
 
     Flickable {
@@ -30,6 +32,9 @@ Item {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
+        // Whole pixels only: a fractional offset makes the software renderer resample every glyph and
+        // image of the page on every scroll frame, and blurs text for no gain.
+        pixelAligned: true
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
             visible: size < 1.0

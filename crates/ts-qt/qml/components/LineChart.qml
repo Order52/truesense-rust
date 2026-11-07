@@ -16,13 +16,16 @@
 //   their label at the start edge; the page computes round numbers and unit texts (ts-ui-model).
 // * `capacity` > 0 fixes the time span at that many samples, newest at the right edge, so a chart
 //   that has just started fills from the right instead of stretching two points across the width.
-// * It repaints when `series`, the scale, the size or a colour changes and at no other time: no
-//   timer, no animation, so a hidden page costs nothing. A page must assign a new array to change
-//   the data (an in-place change raises no signal).
+// * It is scene-graph geometry (QtQuick.Shapes), not a script-drawn Canvas. The drawing is rebuilt when
+//   what would be drawn changes (the same numbers in a new array do not count) and at most every
+//   `minRepaintMs`, when the scale or the size changes, and at no other time: no timer that runs,
+//   no animation, so a hidden page costs nothing. A page must assign a new array to change the
+//   data (an in-place change raises no signal).
 // * Never mirrored: time runs left to right in every language (the legend above follows the
 //   language's direction).
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import org.truesense.app
 
 ColumnLayout {
@@ -44,8 +47,11 @@ ColumnLayout {
     property string emptyText: ""
     /// For screen readers: the latest values in words (the page knows the units).
     property string summary: ""
-    /// How often the canvas painted (for tests).
+    /// How often the drawing was rebuilt (for tests).
     property int paintCount: 0
+    /// The shortest time between two redraws caused by new `series` (the newest wins when it is
+    /// up). A resize or a new scale redraws at once.
+    property int minRepaintMs: 1000
 
     /// The numbers drawn, over all series.
     readonly property int pointCount: _count(series)
@@ -80,12 +86,58 @@ ColumnLayout {
         return { lo: lo, hi: hi }
     }
 
-    onSeriesChanged: canvas.requestPaint()
-    onMinimumChanged: canvas.requestPaint()
-    onMaximumChanged: canvas.requestPaint()
-    onZeroBasedChanged: canvas.requestPaint()
-    onCapacityChanged: canvas.requestPaint()
-    onGridChanged: canvas.requestPaint()
+    // What is drawn: a snapshot of `series` (so a throttled chart keeps showing one consistent
+    // picture), its scale, and the geometry built from both.
+    property string _drawn: ""
+    property var _shown: []
+    property var _view: ({ lo: 0, hi: 1, span: 2 })
+    property double _paintedAt: 0
+
+    function _seriesKey(list) {
+        var parts = []
+        for (var i = 0; i < list.length; ++i)
+            parts.push(JSON.stringify(list[i].values || []) + "|" + String(list[i].color) + "|" + (list[i].filled === true))
+        return parts.join(";")
+    }
+    function _redrawIfChanged() {
+        var key = _seriesKey(series)
+        if (key === _drawn) { settle.stop(); return }
+        var wait = minRepaintMs - (Date.now() - _paintedAt)
+        if (wait > 0) {
+            settle.interval = wait
+            settle.restart()
+            return
+        }
+        settle.stop()
+        _drawn = key
+        _shown = series
+        _paintedAt = Date.now()
+        _rebuild()
+    }
+    Timer {
+        id: settle
+        // Only runs while a change waits for its turn.
+        onTriggered: root._redrawIfChanged()
+    }
+    property string _built: ""
+    function _rebuild() {
+        var r = _range(_shown)
+        var longest = 0
+        for (var i = 0; i < _shown.length; ++i) longest = Math.max(longest, (_shown[i].values || []).length)
+        var span = Math.max(2, capacity > 0 ? capacity : longest)
+        // A NaN-valued property (`minimum`, `maximum`) announces itself at creation: do nothing
+        // when the picture would be the one already drawn.
+        var key = _drawn + "|" + r.lo + "|" + r.hi + "|" + span
+        if (key === _built) return
+        _built = key
+        paintCount++
+        _view = { lo: r.lo, hi: r.hi, span: span }
+    }
+    onSeriesChanged: _redrawIfChanged()
+    onMinimumChanged: Qt.callLater(_rebuild)
+    onMaximumChanged: Qt.callLater(_rebuild)
+    onZeroBasedChanged: Qt.callLater(_rebuild)
+    onCapacityChanged: Qt.callLater(_rebuild)
 
     Flow {
         id: legend
@@ -130,99 +182,106 @@ ColumnLayout {
             return w > 0 ? w + 8 : 0
         }
 
-        Canvas {
-            id: canvas
+        // The plot area: where the grid and the series are drawn.
+        readonly property real padTop: 6
+        readonly property real padBottom: 6
+        readonly property real padRight: 6
+        readonly property real plotH: Math.max(1, height - padTop - padBottom)
+        readonly property real plotW: Math.max(1, width - labelWidth - padRight)
+        function yOf(v) { return padTop + plotH * (1 - (v - root._view.lo) / (root._view.hi - root._view.lo)) }
+
+        // The grid: one line per entry of `grid` (three evenly spaced ones when the page gave none).
+        Shape {
             x: plot.labelWidth
-            width: plot.width - plot.labelWidth
+            width: plot.plotW
             height: plot.height
-            renderTarget: Canvas.Image
-            onPainted: root.paintCount++
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            Connections {
-                target: Theme
-                function onDarkChanged() { canvas.requestPaint() }
-            }
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.reset()
-                if (width <= 0 || height <= 0) return
-                var r = root._range(root.series)
-                var padTop = 6, padBottom = 6, padRight = 6
-                var plotH = height - padTop - padBottom
-                var plotW = width - padRight
-                function yOf(v) { return padTop + plotH * (1 - (v - r.lo) / (r.hi - r.lo)) }
-
-                // grid
-                ctx.lineWidth = 1
-                ctx.strokeStyle = Theme.chartGrid
-                var g = root.grid
-                var lines = g.length ? g.map(function (e) { return e.value }) : [r.lo, (r.lo + r.hi) / 2, r.hi]
-                for (var k = 0; k < lines.length; ++k) {
-                    var gy = Math.round(yOf(lines[k])) + 0.5
-                    ctx.beginPath()
-                    ctx.moveTo(0, gy)
-                    ctx.lineTo(plotW, gy)
-                    ctx.stroke()
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                strokeColor: Theme.chartGrid
+                strokeWidth: 1
+                fillColor: "transparent"
+                PathMultiline {
+                    paths: {
+                        var g = root.grid
+                        var lines = g.length ? g.map(function (e) { return e.value })
+                                             : [root._view.lo, (root._view.lo + root._view.hi) / 2, root._view.hi]
+                        return lines.map(function (v) {
+                            var gy = Math.round(plot.yOf(v)) + 0.5
+                            return [Qt.point(0, gy), Qt.point(plot.plotW, gy)]
+                        })
+                    }
                 }
+            }
+        }
 
-                var longest = 0
-                for (var s0 = 0; s0 < root.series.length; ++s0)
-                    longest = Math.max(longest, (root.series[s0].values || []).length)
-                var span = Math.max(2, root.capacity > 0 ? root.capacity : longest)
+        // The series, one Shape each (a Shape cannot be repeated in itself).
+        Repeater {
+            model: root._shown
+            delegate: Shape {
+                id: line
+                required property var modelData
+                x: plot.labelWidth
+                width: plot.plotW
+                height: plot.height
+                preferredRendererType: Shape.CurveRenderer
 
-                ctx.lineJoin = "round"
-                ctx.lineCap = "round"
-                for (var si = 0; si < root.series.length; ++si) {
-                    var spec = root.series[si]
-                    var a = spec.values || []
-                    var n = a.length
-                    if (n < 1) continue
-                    var color = spec.color
-                    // x of sample i: the newest sample is at the right edge
-                    var xOf = function (i) { return plotW - (n - 1 - i) * plotW / (span - 1) }
-                    var seg = []
-                    var runs = []
+                readonly property color tint: Qt.color(modelData.color)
+                readonly property var a: modelData.values || []
+                readonly property int n: a.length
+                readonly property real span: root._view.span
+                function xOf(i) { return plot.plotW - (n - 1 - i) * plot.plotW / (span - 1) }
+                // [[sample indexes of one unbroken run], ...]
+                readonly property var runs: {
+                    var out = [], seg = []
                     for (var i = 0; i < n; ++i) {
                         if (root._isNum(a[i])) seg.push(i)
-                        else if (seg.length) { runs.push(seg); seg = [] }
+                        else if (seg.length) { out.push(seg); seg = [] }
                     }
-                    if (seg.length) runs.push(seg)
-                    for (var ri = 0; ri < runs.length; ++ri) {
-                        var run = runs[ri]
-                        if (spec.filled && run.length > 1) {
-                            ctx.beginPath()
-                            ctx.moveTo(xOf(run[0]), padTop + plotH)
-                            for (var f = 0; f < run.length; ++f) ctx.lineTo(xOf(run[f]), yOf(a[run[f]]))
-                            ctx.lineTo(xOf(run[run.length - 1]), padTop + plotH)
-                            ctx.closePath()
-                            ctx.globalAlpha = 0.16
-                            ctx.fillStyle = color
-                            ctx.fill()
-                            ctx.globalAlpha = 1
-                        }
-                        ctx.beginPath()
-                        for (var j = 0; j < run.length; ++j) {
-                            var x = xOf(run[j]), y = yOf(a[run[j]])
-                            if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
-                        }
-                        ctx.lineWidth = root.lineWidth
-                        ctx.strokeStyle = color
-                        ctx.stroke()
-                        // a lone sample has no line: draw it as a dot
-                        if (run.length === 1) {
-                            ctx.beginPath()
-                            ctx.arc(xOf(run[0]), yOf(a[run[0]]), root.lineWidth + 0.6, 0, 2 * Math.PI)
-                            ctx.fillStyle = color
-                            ctx.fill()
-                        }
-                    }
-                    // the newest sample, when there is one
-                    if (root._isNum(a[n - 1]) && runs[runs.length - 1].length > 1) {
-                        ctx.beginPath()
-                        ctx.arc(xOf(n - 1), yOf(a[n - 1]), root.lineWidth + 0.8, 0, 2 * Math.PI)
-                        ctx.fillStyle = color
-                        ctx.fill()
+                    if (seg.length) out.push(seg)
+                    return out
+                }
+                readonly property var lines: runs.filter(function (r) { return r.length > 1 }).map(function (r) {
+                    return r.map(function (i) { return Qt.point(xOf(i), plot.yOf(a[i])) })
+                })
+                readonly property var polys: modelData.filled !== true ? [] : lines.map(function (pts) {
+                    return [Qt.point(pts[0].x, plot.padTop + plot.plotH)].concat(pts)
+                        .concat([Qt.point(pts[pts.length - 1].x, plot.padTop + plot.plotH)])
+                })
+                // A lone sample has no line: it is drawn as a dot; the newest sample gets one too.
+                readonly property var dots: {
+                    var out = []
+                    for (var i = 0; i < runs.length; ++i)
+                        if (runs[i].length === 1) out.push(Qt.point(xOf(runs[i][0]), plot.yOf(a[runs[i][0]])))
+                    var last = runs.length ? runs[runs.length - 1] : null
+                    if (last && last.length > 1 && last[last.length - 1] === n - 1)
+                        out.push(Qt.point(xOf(n - 1), plot.yOf(a[n - 1])))
+                    return out
+                }
+
+                ShapePath {
+                    strokeColor: "transparent"
+                    fillColor: Qt.rgba(line.tint.r, line.tint.g, line.tint.b, 0.16)
+                    PathMultiline { paths: line.polys }
+                }
+                ShapePath {
+                    strokeColor: line.tint
+                    strokeWidth: root.lineWidth
+                    fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap
+                    joinStyle: ShapePath.RoundJoin
+                    PathMultiline { paths: line.lines }
+                }
+                Repeater {
+                    model: line.dots
+                    delegate: Rectangle {
+                        required property var modelData
+                        readonly property real d: 2 * (root.lineWidth + 0.8)
+                        x: modelData.x - d / 2
+                        y: modelData.y - d / 2
+                        width: d
+                        height: d
+                        radius: d / 2
+                        color: line.tint
                     }
                 }
             }
@@ -236,7 +295,7 @@ ColumnLayout {
                 required property var modelData
                 x: 0
                 y: {
-                    var r = root._range(root.series)
+                    var r = root._view
                     var top = 6, h = plot.height - 12
                     var centred = top + h * (1 - (modelData.value - r.lo) / (r.hi - r.lo)) - implicitHeight / 2
                     return Math.max(0, Math.min(plot.height - implicitHeight, centred))

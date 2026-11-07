@@ -11,7 +11,7 @@ TestCase {
 
     Sparkline { id: s; width: 120; height: 30 }
 
-    function init() { s.values = []; s.minimum = NaN; s.maximum = NaN }
+    function init() { s.minRepaintMs = 0; s.values = []; s.minimum = NaN; s.maximum = NaN }
 
     function test_empty_draws_nothing_and_has_a_default_scale() {
         compare(s.pointCount, 0)
@@ -76,4 +76,36 @@ TestCase {
         tryVerify(function () { return s.paintCount > before }, 2000)
         s.minRepaintMs = 0
     }
+
+    function test_the_default_redraws_at_most_every_two_seconds() {
+        var fresh = createTemporaryObject(plain, this)
+        compare(fresh.minRepaintMs, 2000)
+    }
+
+    function test_static_values_cost_nothing_however_long_they_sit() {
+        s.values = [3, 4, 5, 4]
+        tryVerify(function () { return s.paintCount >= 1 })
+        wait(100)
+        var before = s.paintCount
+        wait(500)
+        compare(s.paintCount, before)
+        s.values = [3, 4, 5, 4]       // the live feed hands over a new array with the same numbers
+        s.values = [3, 4, 5, 4]
+        wait(150)
+        compare(s.paintCount, before)
+    }
+
+    function test_a_resize_redraws_once_even_when_throttled() {
+        s.values = [1, 2, 3]
+        tryVerify(function () { return s.paintCount >= 1 })
+        wait(100)
+        s.minRepaintMs = 5000
+        var before = s.paintCount
+        s.width = 140
+        tryVerify(function () { return s.paintCount > before })
+        s.width = 120
+        s.minRepaintMs = 0
+    }
+
+    Component { id: plain; Sparkline { } }
 }

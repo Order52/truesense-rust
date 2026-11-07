@@ -25,7 +25,7 @@ TestCase {
     }
 
     // ---- LineChart ------------------------------------------------------------------------
-    Component { id: chartC; LineChart { width: 400; chartHeight: 100 } }
+    Component { id: chartC; LineChart { width: 400; chartHeight: 100; minRepaintMs: 0 } }
 
     function test_linechart_scale_follows_data_ignores_gaps_and_can_be_fixed() {
         var c = createTemporaryObject(chartC, tc)
@@ -60,6 +60,32 @@ TestCase {
         compare(c.paintCount, before, "no repaint without a change")
         c.series = [ { values: [1, 2, 3, 4], color: "red" } ]
         tryVerify(function () { return c.paintCount > before })
+    }
+
+    function test_linechart_same_numbers_in_a_new_array_do_not_redraw() {
+        var c = createTemporaryObject(chartC, tc)
+        c.series = [ { values: [1, 2, 3], color: "red" } ]
+        tryVerify(function () { return c.paintCount >= 1 })
+        wait(50)
+        var before = c.paintCount
+        c.series = [ { values: [1, 2, 3], color: "red" } ]
+        c.series = [ { values: [1, 2, 3], color: "red" } ]
+        wait(200)
+        compare(c.paintCount, before)
+    }
+
+    function test_linechart_is_throttled_by_default_and_draws_the_newest_when_due() {
+        var c = createTemporaryObject(chartC, tc)
+        compare(c.minRepaintMs, 0)
+        c.minRepaintMs = 400
+        c.series = [ { values: [1, 2], color: "red" } ]
+        tryVerify(function () { return c.paintCount >= 1 })
+        var before = c.paintCount
+        c.series = [ { values: [1, 2, 3], color: "red" } ]
+        c.series = [ { values: [1, 2, 3, 4], color: "red" } ]
+        wait(100)
+        compare(c.paintCount, before, "held back")
+        tryVerify(function () { return c.paintCount === before + 1 }, 2000)
     }
 
     function test_linechart_is_never_mirrored() {

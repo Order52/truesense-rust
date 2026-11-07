@@ -13,7 +13,7 @@ Rectangle {
     property string subText: ""
     property var values: []
     /// Passed to the sparkline: the shortest time between two repaints of the chart.
-    property int minRepaintMs: 0
+    property int minRepaintMs: 2000
     property real minimum: NaN
     property real maximum: NaN
     property bool hot: false

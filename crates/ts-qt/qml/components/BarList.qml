@@ -101,7 +101,9 @@ GridLayout {
                     radius: parent.radius
                     visible: row.fraction > 0
                     color: root.levelColor(row.modelData.level)
-                    Behavior on width { NumberAnimation { duration: Theme.animMs; easing.type: Easing.OutCubic } }
+                    // No easing: the Monitor page hands over new numbers twice a second, and an eased
+                    // width kept the window rendering at the display's refresh rate for a third of every
+                    // second. The bar jumps; the number beside it says the same.
                 }
             }
 
