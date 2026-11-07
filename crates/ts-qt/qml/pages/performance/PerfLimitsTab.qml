@@ -87,8 +87,10 @@ ColumnLayout {
         confirm.ask({
             //% "Apply power limits"
             title: qsTrId("perf_pl_confirm_title"),
-            //% "Set PL1 to %1 W and PL2 to %2 W?\n\n%3\n\nSave your work first."
-            text: qsTrId("perf_pl_confirm_text").arg(a).arg(b).arg(r.why),
+            //% "Set PL1 to %1 W and PL2 to %2 W?"
+            text: qsTrId("perf_pl_confirm_text").arg(a).arg(b) + "\n\n" + r.why + "\n\n"
+                //% "Save your work first."
+                + qsTrId("perf_pl_confirm_footer"),
             //% "Apply"
             confirmText: qsTrId("perf_apply"),
             danger: plan.danger,

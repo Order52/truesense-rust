@@ -376,11 +376,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message id="perf_pl_confirm_text">
-        <source>Set PL1 to %1 W and PL2 to %2 W?
-
-%3
-
-Save your work first.</source>
+        <source>Set PL1 to %1 W and PL2 to %2 W?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="perf_pl_confirm_footer">
+        <source>Save your work first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="perf_apply">

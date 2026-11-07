@@ -376,12 +376,12 @@
         <translation>Apply power limits</translation>
     </message>
     <message id="perf_pl_confirm_text">
-        <source>Set PL1 to %1 W and PL2 to %2 W?
-
-%3
-
-Save your work first.</source>
+        <source>Set PL1 to %1 W and PL2 to %2 W?</source>
         <translation>Set PL1 to %1 W and PL2 to %2 W?</translation>
+    </message>
+    <message id="perf_pl_confirm_footer">
+        <source>Save your work first.</source>
+        <translation>Save your work first.</translation>
     </message>
     <message id="perf_apply">
         <source>Apply</source>
@@ -761,7 +761,7 @@ Save your work first.</source>
     </message>
     <message id="perf_mode_performance">
         <source>Performance</source>
-        <translation type="unfinished">Performance</translation>
+        <translation>Performance</translation>
     </message>
     <message id="perf_mode_turbo">
         <source>Turbo</source>

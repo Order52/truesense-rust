@@ -239,7 +239,7 @@ fn rules_model(args: &Value) -> Value {
         .and_then(Value::as_object)
         .map(|o| o.iter().filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_owned()))).collect())
         .unwrap_or_default();
-    rules.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+    rules.sort_by_key(|rule| rule.0.to_lowercase());
     let sharing = running.map_or(0, |m| rules.iter().filter(|(_, mode)| mode == m).count());
     let rows: Vec<Value> = rules
         .iter()
