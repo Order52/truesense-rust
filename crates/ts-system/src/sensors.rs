@@ -3,6 +3,17 @@
 //! `/sys/class/power_supply`), and the GPU's temperature, load and power draw (streamed from
 //! `nvidia-smi`, and only when something smart needs it).
 //!
+//! # The GPU stream must not keep the card awake
+//!
+//! On the PH16-71 the discrete GPU is runtime-suspended whenever nothing uses it, and every
+//! question to the card resumes it (see [`crate::nvidia`]). A permanent `nvidia-smi -l 2` asks
+//! every two seconds, so the card never reaches its 10 to 15 second suspend delay: the battery
+//! life of a laptop with a smart feature on would be that of one with the card always on, and
+//! every start of the program initialises NVML, which raises system management interrupts. So
+//! the stream follows a small policy ([`GpuGate`]): never start for a card that is asleep or
+//! absent, end when nothing wants it, and *park* (end, so that the card can suspend) after a
+//! minute of idle readings, then start again only when someone else wakes the card.
+//!
 //! The temperatures of the CPU package and of the GPU, and whether the laptop is on mains
 //! power, are read by `ts_platform::hw::LinuxSensors`; this module does not repeat them.
 //!
@@ -21,6 +32,8 @@ use std::time::Duration;
 
 use ts_platform::hw::Sleeper;
 
+use crate::nvidia::{self, GpuPower};
+
 /// Weight of a new CPU load sample (the daemon smooths the jittery `/proc/stat` deltas without
 /// a delay long enough to hide a real rise).
 pub const CPU_LOAD_ALPHA: f64 = 0.25;
@@ -28,8 +41,41 @@ pub const CPU_LOAD_ALPHA: f64 = 0.25;
 /// Weight of a new GPU load or power sample.
 pub const GPU_ALPHA: f64 = 0.3;
 
-/// Pause before the `nvidia-smi` stream is restarted after it ended or failed to start.
+/// Pause before the `nvidia-smi` stream is restarted after it ended or failed to start. Repeated
+/// failures double it up to [`GPU_RETRY_MAX`].
 pub const GPU_RESTART_DELAY: Duration = Duration::from_secs(5);
+
+/// The longest pause between two start attempts of a stream that keeps failing (no `nvidia-smi`
+/// installed, a driver that is not loaded): a dead path settles at one attempt per five minutes.
+pub const GPU_RETRY_MAX: Duration = Duration::from_secs(300);
+
+/// How often the stream thread looks at the card's power state while it has nothing to read.
+/// Reading `power/runtime_status` does not wake the card.
+pub const GPU_POLL: Duration = Duration::from_secs(2);
+
+/// A GPU reading older than this is not current: the stream emits a line every two seconds, so
+/// a gap of this length means it ended or is stuck, and the temperature must not be trusted.
+pub const GPU_FRESH_S: f64 = 6.0;
+
+/// Idle readings (load and power below the two limits that follow) for this many seconds end the
+/// stream so that the card can suspend.
+pub const GPU_IDLE_PARK_S: f64 = 60.0;
+
+/// The highest load, in percent, that still counts as idle for parking.
+pub const GPU_IDLE_UTIL_PCT: f64 = 5.0;
+
+/// The highest power draw, in watts, that still counts as idle for parking (an awake RTX 4060
+/// at P8 draws about 5 to 15 W; a game draws far more).
+pub const GPU_IDLE_POWER_W: f64 = 25.0;
+
+/// After a park the card should be seen asleep within this time; if it never is, something else
+/// holds it awake (a compositor on the card, a CUDA process, a card without runtime power
+/// management), so reading it costs nothing more and the stream starts again.
+pub const GPU_PARK_FALLBACK_S: f64 = 180.0;
+
+/// After that fallback restart the stream does not park again for this long, so that a card held
+/// awake by someone else is not started and stopped (each start initialises NVML) in a loop.
+pub const GPU_NO_PARK_S: f64 = 600.0;
 
 /// The seconds since the Unix epoch, as a float (the `time.time()` of the Python edition).
 pub type Clock = Arc<dyn Fn() -> f64 + Send + Sync>;
@@ -94,6 +140,34 @@ pub struct GpuReading {
     /// When the last line arrived (seconds since the epoch), `None` before the first. A reading
     /// older than a few seconds means the stream is stuck and the temperature must not be trusted.
     pub seen: Option<f64>,
+}
+
+/// Where the GPU numbers of the moment come from. The load and power of a card that is not
+/// being read are 0, and that 0 means different things: this says which.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GpuFeed {
+    /// There is no NVIDIA display card (an AMD or Intel-only machine, or the card is off the bus).
+    Absent,
+    /// The card is runtime-suspended. Nothing was asked of it, and the 0 load and 0 W are true:
+    /// an asleep card does no work.
+    Suspended,
+    /// The stream delivers current readings.
+    Live,
+    /// The card is awake but nothing is reading it (no smart feature needs it, the stream is
+    /// parked or starting). The 0 load and 0 W are "unknown", not "idle".
+    Unsampled,
+}
+
+impl GpuFeed {
+    /// The word of the live state (`gpu_state`).
+    pub fn name(self) -> &'static str {
+        match self {
+            GpuFeed::Absent => "absent",
+            GpuFeed::Suspended => "suspended",
+            GpuFeed::Live => "live",
+            GpuFeed::Unsampled => "unsampled",
+        }
+    }
 }
 
 /// Parses one line of `nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,power.draw
@@ -178,6 +252,15 @@ struct GpuState {
     seen: Option<f64>,
 }
 
+impl GpuState {
+    /// No reading. The averages start unseeded, so the first line of a session counts in full:
+    /// a card that has just been woken by a game must not read 8 seconds of "idle" while an
+    /// average climbs from 0.
+    fn empty() -> Self {
+        Self { temp: None, util: Ema::new(GPU_ALPHA), power: Ema::new(GPU_ALPHA), seen: None }
+    }
+}
+
 /// Turns raw counters and streams into readings. Shared between threads: the daemon's tick
 /// reads the CPU load and battery while a stream thread feeds in GPU lines.
 pub struct Sampler {
@@ -195,12 +278,7 @@ impl Sampler {
             root: root.into(),
             clock,
             cpu: Mutex::new(CpuState { previous: None, load: Ema::starting_at(CPU_LOAD_ALPHA, 0.0) }),
-            gpu: Mutex::new(GpuState {
-                temp: None,
-                util: Ema::starting_at(GPU_ALPHA, 0.0),
-                power: Ema::starting_at(GPU_ALPHA, 0.0),
-                seen: None,
-            }),
+            gpu: Mutex::new(GpuState::empty()),
         }
     }
 
@@ -287,36 +365,246 @@ impl Sampler {
     /// Folds one `nvidia-smi` line into the readings. Returns `false`, changing nothing, for a
     /// line that is not `temp, util, power`.
     pub fn feed_gpu_line(&self, line: &str) -> bool {
-        let Some((temp, util, power)) = parse_gpu_line(line) else { return false };
+        let Some(sample) = parse_gpu_line(line) else { return false };
+        self.feed_sample(sample);
+        true
+    }
+
+    fn feed_sample(&self, (temp, util, power): (f64, f64, f64)) {
         let mut g = self.gpu.lock().unwrap_or_else(PoisonError::into_inner);
         g.temp = Some(temp);
         g.util.update(util);
         g.power.update(power);
         g.seen = Some((self.clock)());
-        true
     }
 
-    /// Keeps the `nvidia-smi` stream running and feeds its lines in, until `stop` says so.
-    /// Blocks: run it on its own thread, and only when a smart feature needs the GPU (the
-    /// stream keeps the driver awake). A stream that ends or cannot start is restarted after
-    /// [`GPU_RESTART_DELAY`], so a machine without `nvidia-smi` just never gets a reading.
-    pub fn run_gpu_stream(&self, source: &dyn LineSource, stop: &dyn Fn() -> bool, sleeper: &Sleeper) {
-        let args = [
+    /// Forgets the GPU readings: the stream ended or the card went to sleep, so the numbers are
+    /// not current any more and a later session must start its averages afresh.
+    pub fn reset_gpu(&self) {
+        *self.gpu.lock().unwrap_or_else(PoisonError::into_inner) = GpuState::empty();
+    }
+
+    /// The runtime power state of the NVIDIA card, read without waking it.
+    pub fn gpu_power(&self) -> GpuPower {
+        nvidia::gpu_power(&self.root)
+    }
+
+    /// Where the GPU numbers come from now (see [`GpuFeed`]). One scan of the PCI devices
+    /// below `/sys`: files that do not wake the card.
+    pub fn gpu_feed(&self) -> GpuFeed {
+        match self.gpu_power() {
+            GpuPower::Absent => GpuFeed::Absent,
+            GpuPower::Suspended => GpuFeed::Suspended,
+            GpuPower::Active | GpuPower::Unknown => {
+                let now = (self.clock)();
+                let seen = self.gpu.lock().unwrap_or_else(PoisonError::into_inner).seen;
+                if seen.is_some_and(|seen| now - seen <= GPU_FRESH_S) {
+                    GpuFeed::Live
+                } else {
+                    GpuFeed::Unsampled
+                }
+            }
+        }
+    }
+
+    /// Keeps the `nvidia-smi` stream running and feeds its lines in, until `env.stop` says so or
+    /// nothing wants the GPU any more. Blocks: run it on its own thread.
+    ///
+    /// The stream is only started for a card that is awake, ends when `env.wanted` turns false,
+    /// parks itself after a minute of idle readings so the card can suspend, and starts again
+    /// when the card is woken by someone else (see [`GpuGate`]). A stream that ends or cannot
+    /// start is restarted after [`GPU_RESTART_DELAY`], doubling up to [`GPU_RETRY_MAX`] while it
+    /// keeps failing, so a machine without `nvidia-smi` hardly ever tries.
+    pub fn run_gpu_stream(&self, source: &dyn LineSource, env: &GpuStreamEnv<'_>) {
+        const ARGS: [&str; 4] = [
             "--query-gpu=temperature.gpu,utilization.gpu,power.draw",
             "--format=csv,noheader,nounits",
             "-l",
             "2",
         ];
-        while !stop() {
-            // A failure to start is the same as the stream ending: wait, then try again.
-            let _ = source.stream("nvidia-smi", &args, &mut |line| {
-                self.feed_gpu_line(line);
-                !stop()
+        let mut gate = GpuGate::default();
+        let going = || !(env.stop)() && (env.wanted)();
+        while going() {
+            let power = self.gpu_power();
+            if power == GpuPower::Suspended {
+                self.reset_gpu(); // asleep: whatever was read before is history
+            }
+            if gate.next((self.clock)(), power) == GateStep::Wait {
+                (env.sleeper)(GPU_POLL);
+                continue;
+            }
+            self.reset_gpu();
+            let mut got_line = false;
+            let mut end = SessionEnd::Stream;
+            // A failure to start is the same as the stream ending without a line.
+            let _ = source.stream("nvidia-smi", &ARGS, &mut |line| {
+                if let Some(sample) = parse_gpu_line(line) {
+                    got_line = true;
+                    self.feed_sample(sample);
+                    match gate.observe((self.clock)(), sample, self.gpu_power()) {
+                        Verdict::Continue => {}
+                        Verdict::Park => {
+                            end = SessionEnd::Park;
+                            return false;
+                        }
+                        Verdict::Asleep => {
+                            end = SessionEnd::Asleep;
+                            return false;
+                        }
+                    }
+                }
+                going()
             });
-            if stop() {
+            self.reset_gpu();
+            if !going() {
                 break;
             }
-            sleeper(GPU_RESTART_DELAY);
+            gate.ended((self.clock)(), end, got_line);
+        }
+    }
+}
+
+/// What the stream thread needs to know from the daemon.
+pub struct GpuStreamEnv<'a> {
+    /// The daemon is shutting down.
+    pub stop: &'a dyn Fn() -> bool,
+    /// A smart feature needs the GPU readings. When it turns false the stream ends within one
+    /// line (two seconds) and the card is left alone.
+    pub wanted: &'a dyn Fn() -> bool,
+    /// Waits between two looks at the card's power state.
+    pub sleeper: &'a Sleeper,
+}
+
+/// What the stream thread does next.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GateStep {
+    /// Start `nvidia-smi`.
+    Start,
+    /// Do not touch the card yet.
+    Wait,
+}
+
+/// What a line of a running session says about the session.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Verdict {
+    Continue,
+    /// Idle for long enough: end the stream so that the card can suspend.
+    Park,
+    /// The card reads as asleep: end the session.
+    Asleep,
+}
+
+/// How a session ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SessionEnd {
+    /// `nvidia-smi` ended or failed by itself.
+    Stream,
+    /// The gate parked it.
+    Park,
+    /// The gate saw the card asleep.
+    Asleep,
+}
+
+/// Where the stream waits for the card to sleep after a park.
+#[derive(Debug, Clone, Copy)]
+struct Parked {
+    since: f64,
+    /// The card has been seen suspended since the park: it is released.
+    slept: bool,
+}
+
+/// The decision whether the GPU stream may run now: pure, driven by the card's power state and
+/// the readings, so every transition is tested with a fake clock.
+///
+/// ```text
+///   Absent ---------------------------------------> never start
+///   Suspended ------------------------------------> never start (and note: released)
+///   Active/Unknown, nothing parked ---------------> start
+///   running, idle >= 60 s, card Active -----------> park (end the session)
+///   parked, card seen asleep, then Active --------> start (someone woke it)
+///   parked, never seen asleep for 180 s ----------> start, and do not park for 10 min
+/// ```
+///
+/// A card whose runtime status is unreadable ([`GpuPower::Unknown`]) has no runtime power
+/// management, so it is never asleep and never parked: the stream just runs.
+#[derive(Debug, Default)]
+struct GpuGate {
+    parked: Option<Parked>,
+    idle_since: Option<f64>,
+    hold_until: f64,
+    no_park_until: f64,
+    failures: u32,
+}
+
+impl GpuGate {
+    /// Whether to start a session at `now` with the card in state `power`.
+    fn next(&mut self, now: f64, power: GpuPower) -> GateStep {
+        if now < self.hold_until {
+            return GateStep::Wait;
+        }
+        match power {
+            GpuPower::Absent => GateStep::Wait,
+            GpuPower::Suspended => {
+                if let Some(parked) = &mut self.parked {
+                    parked.slept = true;
+                }
+                GateStep::Wait
+            }
+            GpuPower::Active | GpuPower::Unknown => match self.parked {
+                None => self.start(),
+                Some(p) if p.slept => self.start(),
+                Some(p) if now - p.since >= GPU_PARK_FALLBACK_S => {
+                    self.no_park_until = now + GPU_NO_PARK_S;
+                    self.start()
+                }
+                Some(_) => GateStep::Wait,
+            },
+        }
+    }
+
+    fn start(&mut self) -> GateStep {
+        self.parked = None;
+        self.idle_since = None;
+        GateStep::Start
+    }
+
+    /// Looks at one reading of a running session.
+    fn observe(&mut self, now: f64, (_, util, power_w): (f64, f64, f64), power: GpuPower) -> Verdict {
+        if power == GpuPower::Suspended {
+            return Verdict::Asleep;
+        }
+        let idle = util <= GPU_IDLE_UTIL_PCT && power_w <= GPU_IDLE_POWER_W;
+        if !idle {
+            self.idle_since = None;
+            return Verdict::Continue;
+        }
+        let since = *self.idle_since.get_or_insert(now);
+        if power == GpuPower::Active && now >= self.no_park_until && now - since >= GPU_IDLE_PARK_S {
+            Verdict::Park
+        } else {
+            Verdict::Continue
+        }
+    }
+
+    /// Records how a session ended.
+    fn ended(&mut self, now: f64, end: SessionEnd, got_line: bool) {
+        self.idle_since = None;
+        match end {
+            SessionEnd::Park => {
+                self.failures = 0;
+                self.parked = Some(Parked { since: now, slept: false });
+            }
+            SessionEnd::Asleep => self.failures = 0,
+            SessionEnd::Stream if got_line => {
+                self.failures = 0;
+                self.hold_until = now + GPU_RESTART_DELAY.as_secs_f64();
+            }
+            SessionEnd::Stream => {
+                self.failures = self.failures.saturating_add(1);
+                let doubled =
+                    GPU_RESTART_DELAY.as_secs_f64() * f64::from(1u32 << (self.failures - 1).min(10));
+                self.hold_until = now + doubled.min(GPU_RETRY_MAX.as_secs_f64());
+            }
         }
     }
 }
@@ -347,7 +635,7 @@ fn parse_cpu_counters(stat: &str) -> Option<CpuCounters> {
 #[allow(clippy::unwrap_used, clippy::float_cmp)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     struct TempDir(PathBuf);
     impl TempDir {
@@ -528,42 +816,225 @@ mod tests {
     }
 
     #[test]
-    fn gpu_readings_are_empty_then_smoothed_from_zero() {
+    fn gpu_readings_are_empty_and_the_first_line_of_a_session_counts_in_full() {
         let t = TempDir::new();
         let s = sampler(&t);
         assert_eq!(s.gpu(), GpuReading { temp: None, util: 0.0, power: 0.0, seen: None });
         assert!(!s.feed_gpu_line("61, 40"));
         assert_eq!(s.gpu().seen, None, "a rejected line changes nothing");
         assert!(s.feed_gpu_line("61, 40, 50"));
-        assert_eq!(s.gpu(), GpuReading { temp: Some(61.0), util: 12.0, power: 15.0, seen: Some(1000.0) });
+        assert_eq!(
+            s.gpu(),
+            GpuReading { temp: Some(61.0), util: 40.0, power: 50.0, seen: Some(1000.0) },
+            "a card just woken by a game must not read idle while an average climbs from 0"
+        );
         assert!(s.feed_gpu_line("65, 80, 50"));
         let g = s.gpu();
         assert_eq!(g.temp, Some(65.0), "the temperature is raw");
-        assert!((g.util - (12.0 + 0.3 * (80.0 - 12.0))).abs() < 1e-9);
+        assert!((g.util - (40.0 + 0.3 * (80.0 - 40.0))).abs() < 1e-9);
+        s.reset_gpu();
+        assert_eq!(s.gpu(), GpuReading { temp: None, util: 0.0, power: 0.0, seen: None });
+        assert!(s.feed_gpu_line("50, 10, 20"));
+        assert_eq!(s.gpu().util, 10.0, "after a reset the averages start afresh");
     }
 
-    /// A stream that plays scripted sessions: each call to `stream` consumes the next one.
-    struct Script {
+    // ---- the policy: when the card may be read --------------------------------------------------
+
+    fn idle_sample() -> (f64, f64, f64) {
+        (45.0, 1.0, 12.0)
+    }
+
+    #[test]
+    fn the_gate_never_starts_for_an_absent_or_sleeping_card() {
+        let mut gate = GpuGate::default();
+        assert_eq!(gate.next(0.0, GpuPower::Absent), GateStep::Wait);
+        assert_eq!(gate.next(0.0, GpuPower::Suspended), GateStep::Wait);
+        assert_eq!(gate.next(1.0, GpuPower::Active), GateStep::Start);
+        let mut gate = GpuGate::default();
+        assert_eq!(
+            gate.next(0.0, GpuPower::Unknown),
+            GateStep::Start,
+            "no runtime power management: just read it"
+        );
+    }
+
+    #[test]
+    fn the_gate_parks_after_a_minute_of_idle_and_a_busy_reading_restarts_the_minute() {
+        let mut gate = GpuGate::default();
+        assert_eq!(gate.next(0.0, GpuPower::Active), GateStep::Start);
+        let mut t = 0.0;
+        while t < GPU_IDLE_PARK_S - 2.0 {
+            t += 2.0;
+            assert_eq!(gate.observe(t, idle_sample(), GpuPower::Active), Verdict::Continue, "t={t}");
+        }
+        // A busy reading (a game's load, or a draw above the idle limit) restarts the count.
+        assert_eq!(gate.observe(t + 2.0, (70.0, 60.0, 40.0), GpuPower::Active), Verdict::Continue);
+        assert_eq!(
+            gate.observe(t + 4.0, (45.0, 1.0, 40.0), GpuPower::Active),
+            Verdict::Continue,
+            "40 W is not idle"
+        );
+        let from = t + 6.0;
+        assert_eq!(gate.observe(from, idle_sample(), GpuPower::Active), Verdict::Continue);
+        assert_eq!(
+            gate.observe(from + GPU_IDLE_PARK_S - 0.1, idle_sample(), GpuPower::Active),
+            Verdict::Continue
+        );
+        assert_eq!(gate.observe(from + GPU_IDLE_PARK_S, idle_sample(), GpuPower::Active), Verdict::Park);
+    }
+
+    #[test]
+    fn a_card_without_runtime_power_management_is_never_parked() {
+        let mut gate = GpuGate::default();
+        gate.next(0.0, GpuPower::Unknown);
+        for i in 0..200 {
+            let v = gate.observe(f64::from(i) * 2.0, idle_sample(), GpuPower::Unknown);
+            assert_eq!(v, Verdict::Continue, "it would be started again at once: pointless");
+        }
+    }
+
+    #[test]
+    fn a_session_whose_card_reads_asleep_ends() {
+        let mut gate = GpuGate::default();
+        gate.next(0.0, GpuPower::Active);
+        assert_eq!(gate.observe(2.0, (60.0, 90.0, 80.0), GpuPower::Suspended), Verdict::Asleep);
+    }
+
+    #[test]
+    fn after_a_park_the_stream_waits_for_the_card_to_sleep_and_for_someone_to_wake_it() {
+        let mut gate = GpuGate::default();
+        gate.next(0.0, GpuPower::Active);
+        gate.ended(100.0, SessionEnd::Park, true);
+        // The card is still awake for its suspend delay: that is our own last query, not a user.
+        assert_eq!(gate.next(102.0, GpuPower::Active), GateStep::Wait);
+        assert_eq!(gate.next(110.0, GpuPower::Active), GateStep::Wait);
+        assert_eq!(gate.next(112.0, GpuPower::Suspended), GateStep::Wait, "released");
+        assert_eq!(gate.next(500.0, GpuPower::Suspended), GateStep::Wait, "asleep as long as nobody uses it");
+        assert_eq!(gate.next(501.0, GpuPower::Active), GateStep::Start, "somebody woke it: read it now");
+        // The park is over: a new session parks again after its own idle minute.
+        assert_eq!(gate.next(503.0, GpuPower::Active), GateStep::Start);
+    }
+
+    #[test]
+    fn a_card_that_never_sleeps_after_a_park_is_read_again_and_not_parked_for_ten_minutes() {
+        let mut gate = GpuGate::default();
+        gate.next(0.0, GpuPower::Active);
+        gate.ended(100.0, SessionEnd::Park, true);
+        assert_eq!(gate.next(100.0 + GPU_PARK_FALLBACK_S - 1.0, GpuPower::Active), GateStep::Wait);
+        let restart = 100.0 + GPU_PARK_FALLBACK_S;
+        assert_eq!(gate.next(restart, GpuPower::Active), GateStep::Start, "something else holds it awake");
+        // Idle for far more than the park minute: held awake by another, so keep the stream.
+        for i in 0..40 {
+            let t = restart + f64::from(i) * 2.0;
+            assert_eq!(gate.observe(t, idle_sample(), GpuPower::Active), Verdict::Continue, "t={t}");
+        }
+        assert_eq!(
+            gate.observe(restart + GPU_NO_PARK_S - 2.0, idle_sample(), GpuPower::Active),
+            Verdict::Continue,
+            "still inside the pause"
+        );
+        assert_eq!(
+            gate.observe(restart + GPU_NO_PARK_S, idle_sample(), GpuPower::Active),
+            Verdict::Park,
+            "after the pause a long idle stretch parks it (the other holder has probably gone)"
+        );
+    }
+
+    #[test]
+    fn a_stream_that_keeps_failing_backs_off_to_five_minutes() {
+        let mut gate = GpuGate::default();
+        let mut now = 0.0;
+        let mut waits = Vec::new();
+        for _ in 0..9 {
+            assert_eq!(gate.next(now, GpuPower::Active), GateStep::Start);
+            gate.ended(now, SessionEnd::Stream, false);
+            waits.push(gate.hold_until - now);
+            assert_eq!(gate.next(now + 0.5, GpuPower::Active), GateStep::Wait, "held back");
+            now = gate.hold_until;
+        }
+        assert_eq!(waits, [5.0, 10.0, 20.0, 40.0, 80.0, 160.0, 300.0, 300.0, 300.0]);
+        // One session that delivered a line puts the pause back to the short one.
+        assert_eq!(gate.next(now, GpuPower::Active), GateStep::Start);
+        gate.ended(now, SessionEnd::Stream, true);
+        assert_eq!(gate.hold_until - now, 5.0);
+    }
+
+    // ---- the thread that runs the policy -------------------------------------------------------
+
+    /// A temporary machine: a PCI tree with one NVIDIA card, and a clock that moves when the
+    /// stream sleeps or reads a line.
+    struct World {
+        tree: TempDir,
+        now: Arc<Mutex<f64>>,
+    }
+
+    impl World {
+        fn new(status: Option<&str>) -> Self {
+            let w = Self { tree: TempDir::new(), now: Arc::new(Mutex::new(1000.0)) };
+            w.tree.put("sys/bus/pci/devices/0000:01:00.0/vendor", "0x10de\n");
+            w.tree.put("sys/bus/pci/devices/0000:01:00.0/class", "0x030200\n");
+            if let Some(s) = status {
+                w.status(s);
+            }
+            w
+        }
+
+        fn status(&self, s: &str) {
+            self.tree.put("sys/bus/pci/devices/0000:01:00.0/power/runtime_status", &format!("{s}\n"));
+        }
+
+        fn sampler(&self) -> Sampler {
+            let now = self.now.clone();
+            Sampler::new(&self.tree.0, Arc::new(move || *now.lock().unwrap()))
+        }
+
+        fn advance(&self, s: f64) {
+            *self.now.lock().unwrap() += s;
+        }
+
+        fn time(&self) -> f64 {
+            *self.now.lock().unwrap()
+        }
+    }
+
+    /// Plays scripted sessions; every line takes two seconds of fake time and a start is
+    /// recorded with the time it happened.
+    struct Script<'a> {
+        world: &'a World,
         sessions: Mutex<Vec<io::Result<Vec<&'static str>>>>,
-        starts: Mutex<Vec<(String, Vec<String>)>>,
+        starts: Mutex<Vec<f64>>,
     }
 
-    impl LineSource for Script {
+    impl<'a> Script<'a> {
+        fn new(world: &'a World, sessions: Vec<io::Result<Vec<&'static str>>>) -> Self {
+            Self { world, sessions: Mutex::new(sessions), starts: Mutex::new(Vec::new()) }
+        }
+    }
+
+    impl LineSource for Script<'_> {
         fn stream(
             &self,
             program: &str,
             args: &[&str],
             on_line: &mut dyn FnMut(&str) -> bool,
         ) -> io::Result<()> {
-            self.starts
-                .lock()
-                .unwrap()
-                .push((program.to_owned(), args.iter().map(|a| (*a).to_owned()).collect()));
+            assert_eq!(program, "nvidia-smi");
+            assert_eq!(
+                args,
+                [
+                    "--query-gpu=temperature.gpu,utilization.gpu,power.draw",
+                    "--format=csv,noheader,nounits",
+                    "-l",
+                    "2"
+                ]
+            );
+            self.starts.lock().unwrap().push(self.world.time());
             let next = {
                 let mut s = self.sessions.lock().unwrap();
                 if s.is_empty() { Ok(vec![]) } else { s.remove(0) }
             };
             for line in next? {
+                self.world.advance(2.0);
                 if !on_line(line) {
                     break;
                 }
@@ -572,84 +1043,177 @@ mod tests {
         }
     }
 
-    #[test]
-    fn the_gpu_stream_is_restarted_after_a_pause_until_stopped() {
-        let t = TempDir::new();
-        let s = sampler(&t);
-        let script = Script {
-            sessions: Mutex::new(vec![
-                Err(io::Error::from(io::ErrorKind::NotFound)),
-                Ok(vec!["60, 10, 20", "junk", "62, 30, 25"]),
-                Ok(vec!["70, 50, 80"]),
-            ]),
-            starts: Mutex::new(Vec::new()),
-        };
-        let pauses = Arc::new(Mutex::new(Vec::new()));
-        let p = pauses.clone();
-        let sleeper: Sleeper = Arc::new(move |d| p.lock().unwrap().push(d));
-        let calls = AtomicU32::new(0);
-        // Stop once the third session has started.
-        let stop = || script.starts.lock().unwrap().len() >= 3 && calls.fetch_add(1, Ordering::Relaxed) >= 1;
-        s.run_gpu_stream(&script, &stop, &sleeper);
-        let starts = script.starts.lock().unwrap();
-        assert_eq!(starts.len(), 3);
-        assert_eq!(starts[0].0, "nvidia-smi");
-        assert_eq!(
-            starts[0].1,
-            [
-                "--query-gpu=temperature.gpu,utilization.gpu,power.draw",
-                "--format=csv,noheader,nounits",
-                "-l",
-                "2"
-            ]
-        );
-        assert_eq!(
-            pauses.lock().unwrap().len(),
-            2,
-            "a pause after the failed start and after the first session"
-        );
-        assert!(pauses.lock().unwrap().iter().all(|d| *d == GPU_RESTART_DELAY));
-        assert_eq!(s.gpu().temp, Some(70.0));
+    /// A sleeper that moves the world's clock and counts the calls; `each` runs after the clock
+    /// moved, with the number of the call.
+    fn sleeper(world: &World, each: impl Fn(usize) + Send + Sync + 'static) -> (Sleeper, Arc<AtomicU32>) {
+        let now = world.now.clone();
+        let calls = Arc::new(AtomicU32::new(0));
+        let n = calls.clone();
+        let sleeper: Sleeper = Arc::new(move |d: Duration| {
+            *now.lock().unwrap() += d.as_secs_f64();
+            let k = n.fetch_add(1, Ordering::Relaxed) as usize + 1;
+            each(k);
+        });
+        (sleeper, calls)
     }
 
-    /// Wraps a source so that a flag turns on while its first line is being handled.
-    struct FlipOnFirstLine<'a>(&'a Script, &'a AtomicBool);
-    impl LineSource for FlipOnFirstLine<'_> {
-        fn stream(&self, p: &str, a: &[&str], on_line: &mut dyn FnMut(&str) -> bool) -> io::Result<()> {
-            self.0.stream(p, a, &mut |l| {
-                self.1.store(true, Ordering::Relaxed);
-                on_line(l)
-            })
-        }
+    #[test]
+    fn a_sleeping_card_is_never_asked_and_is_polled_without_waking() {
+        let w = World::new(Some("suspended"));
+        let s = w.sampler();
+        let script = Script::new(&w, vec![Ok(vec!["50, 1, 10"])]);
+        let (sleep, calls) = sleeper(&w, |_| {});
+        let stop = || calls.load(Ordering::Relaxed) >= 30;
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        assert!(script.starts.lock().unwrap().is_empty(), "no nvidia-smi for a card that is asleep");
+        assert_eq!(s.gpu_feed(), GpuFeed::Suspended);
+        assert_eq!(s.gpu().temp, None);
+    }
+
+    #[test]
+    fn no_card_no_stream() {
+        let w = World::new(None);
+        fs::remove_dir_all(w.tree.0.join("sys/bus/pci/devices")).unwrap();
+        let s = w.sampler();
+        let script = Script::new(&w, vec![Ok(vec!["50, 1, 10"])]);
+        let (sleep, calls) = sleeper(&w, |_| {});
+        let stop = || calls.load(Ordering::Relaxed) >= 10;
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        assert!(script.starts.lock().unwrap().is_empty());
+        assert_eq!(s.gpu_feed(), GpuFeed::Absent);
+    }
+
+    #[test]
+    fn a_stream_waits_for_the_card_to_be_woken_and_then_starts() {
+        let w = World::new(Some("suspended"));
+        let s = w.sampler();
+        let script = Script::new(&w, vec![Ok(vec!["60, 80, 90", "61, 85, 95"])]);
+        let woken = Arc::new(Mutex::new(None::<f64>));
+        let (wk, world_now) = (woken.clone(), w.now.clone());
+        let tree = w.tree.0.clone();
+        let (sleep, calls) = sleeper(&w, move |k| {
+            if k == 4 {
+                // A game starts: somebody else wakes the card.
+                fs::write(tree.join("sys/bus/pci/devices/0000:01:00.0/power/runtime_status"), "active\n")
+                    .unwrap();
+                *wk.lock().unwrap() = Some(*world_now.lock().unwrap());
+            }
+        });
+        let stop = || calls.load(Ordering::Relaxed) >= 8;
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        let starts = script.starts.lock().unwrap();
+        assert!(!starts.is_empty());
+        assert!(starts[0] >= woken.lock().unwrap().unwrap(), "started only after the card was awake");
+    }
+
+    #[test]
+    fn an_idle_stream_parks_so_the_card_can_sleep_and_restarts_when_it_is_woken() {
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        // 40 idle lines (80 s): parks after 60 s. Then a busy session after the wake.
+        let idle: Vec<&'static str> = vec!["45, 1, 12"; 40];
+        let script = Script::new(&w, vec![Ok(idle), Ok(vec!["70, 90, 80", "71, 92, 85"])]);
+        let flips = Arc::new(Mutex::new((0.0f64, 0.0f64)));
+        let (f, world_now) = (flips.clone(), w.now.clone());
+        let tree = w.tree.0.clone();
+        let status = tree.join("sys/bus/pci/devices/0000:01:00.0/power/runtime_status");
+        let (sleep, calls) = sleeper(&w, move |k| {
+            let now = *world_now.lock().unwrap();
+            if k == 5 {
+                fs::write(&status, "suspended\n").unwrap(); // our last query is over: it sleeps
+                f.lock().unwrap().0 = now;
+            }
+            if k == 25 {
+                fs::write(&status, "active\n").unwrap(); // a game wakes it
+                f.lock().unwrap().1 = now;
+            }
+        });
+        let stop = || calls.load(Ordering::Relaxed) >= 40;
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        let starts = script.starts.lock().unwrap().clone();
+        let (slept_at, woke_at) = *flips.lock().unwrap();
+        assert!(starts.len() >= 2, "{starts:?}");
+        assert!(starts[0] < slept_at, "the first session ran while the card was awake");
+        assert!(starts[1] >= woke_at, "restarted only when the card was woken: {starts:?} woke {woke_at}");
+        assert!(
+            starts[1] - starts[0] > GPU_IDLE_PARK_S,
+            "and not before the minute of idle was over: {starts:?}"
+        );
+    }
+
+    #[test]
+    fn the_stream_ends_when_nothing_wants_the_gpu_and_the_readings_go_with_it() {
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        let script = Script::new(&w, vec![Ok(vec!["60, 10, 20", "61, 10, 20", "62, 10, 20", "63, 10, 20"])]);
+        // Wanted until the second line has been read.
+        let wanted = || w.time() < 1004.0;
+        let (sleep, calls) = sleeper(&w, |_| {});
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &|| false, wanted: &wanted, sleeper: &sleep });
+        assert_eq!(script.starts.lock().unwrap().len(), 1);
+        assert_eq!(calls.load(Ordering::Relaxed), 0, "no pause and no restart once nothing wants it");
+        assert_eq!(s.gpu().temp, None, "the stream ended: its numbers are history");
     }
 
     #[test]
     fn a_stop_request_ends_the_stream_between_lines_and_never_sleeps() {
-        let t = TempDir::new();
-        let s = sampler(&t);
-        let script = Script {
-            sessions: Mutex::new(vec![Ok(vec!["60, 10, 20", "61, 10, 20", "62, 10, 20"])]),
-            starts: Mutex::new(Vec::new()),
-        };
-        let sleeps = Arc::new(AtomicU32::new(0));
-        let n = sleeps.clone();
-        let sleeper: Sleeper = Arc::new(move |_| {
-            n.fetch_add(1, Ordering::Relaxed);
-        });
-        let stopped = AtomicBool::new(false);
-        s.run_gpu_stream(&FlipOnFirstLine(&script, &stopped), &|| stopped.load(Ordering::Relaxed), &sleeper);
-        assert_eq!(s.gpu().temp, Some(60.0), "the first line was fed, then the stream was told to end");
-        assert_eq!(sleeps.load(Ordering::Relaxed), 0, "no restart pause once a stop was requested");
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        let script = Script::new(&w, vec![Ok(vec!["60, 10, 20", "61, 10, 20", "62, 10, 20"])]);
+        let (sleep, calls) = sleeper(&w, |_| {});
+        let stop = || w.time() >= 1002.0; // after the first line
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        assert_eq!(script.starts.lock().unwrap().len(), 1);
+        assert_eq!(calls.load(Ordering::Relaxed), 0, "no restart pause once a stop was requested");
     }
 
     #[test]
-    fn a_stream_that_is_already_stopped_never_starts() {
-        let t = TempDir::new();
-        let s = sampler(&t);
-        let script = Script { sessions: Mutex::new(vec![]), starts: Mutex::new(Vec::new()) };
-        let sleeper: Sleeper = Arc::new(|_| {});
-        s.run_gpu_stream(&script, &|| true, &sleeper);
+    fn a_stream_that_is_already_stopped_or_unwanted_never_starts() {
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        let script = Script::new(&w, vec![]);
+        let (sleep, _) = sleeper(&w, |_| {});
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &|| true, wanted: &|| true, sleeper: &sleep });
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &|| false, wanted: &|| false, sleeper: &sleep });
         assert!(script.starts.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn a_missing_nvidia_smi_is_retried_ever_more_rarely() {
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        let failures: Vec<io::Result<Vec<&'static str>>> =
+            (0..20).map(|_| Err(io::Error::from(io::ErrorKind::NotFound))).collect();
+        let script = Script::new(&w, failures);
+        let (sleep, _) = sleeper(&w, |_| {});
+        let stop = || w.time() >= 1000.0 + 3600.0;
+        s.run_gpu_stream(&script, &GpuStreamEnv { stop: &stop, wanted: &|| true, sleeper: &sleep });
+        let starts = script.starts.lock().unwrap();
+        // 5 + 10 + 20 + 40 + 80 + 160, then one try per five minutes: about 17 in an hour, not 720.
+        assert!((10..=20).contains(&starts.len()), "{} tries in an hour", starts.len());
+    }
+
+    #[test]
+    fn the_feed_says_what_a_zero_load_means() {
+        let w = World::new(Some("active"));
+        let s = w.sampler();
+        assert_eq!(s.gpu_feed(), GpuFeed::Unsampled, "awake, nothing reads it: zero means unknown");
+        s.feed_gpu_line("50, 10, 20");
+        assert_eq!(s.gpu_feed(), GpuFeed::Live);
+        w.advance(GPU_FRESH_S + 1.0);
+        assert_eq!(s.gpu_feed(), GpuFeed::Unsampled, "a reading that stopped coming is not live");
+        w.status("suspended");
+        assert_eq!(s.gpu_feed(), GpuFeed::Suspended, "asleep: zero means zero");
+        w.status("unsupported");
+        assert_eq!(s.gpu_feed(), GpuFeed::Unsampled, "no runtime power management: awake");
+        for (feed, name) in [
+            (GpuFeed::Absent, "absent"),
+            (GpuFeed::Suspended, "suspended"),
+            (GpuFeed::Live, "live"),
+            (GpuFeed::Unsampled, "unsampled"),
+        ] {
+            assert_eq!(feed.name(), name);
+        }
     }
 
     #[test]
