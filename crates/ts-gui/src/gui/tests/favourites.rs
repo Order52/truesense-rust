@@ -148,12 +148,24 @@ fn the_list_is_capped_at_twenty_four() {
 #[test]
 fn a_theme_is_starred_and_applied_through_the_bus() {
     let m = Machine::start();
-    assert_eq!(m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})), json!({"starred": true}));
+    assert_eq!(
+        m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})),
+        json!({"starred": true})
+    );
     assert_eq!(names(&m.ok("favourite", "list", &json!({}))), ["1:theme:hearth:true"]);
     assert_eq!(m.ok("favourite", "apply", &json!({"position": 1})), json!("Favourite 1/1: Theme hearth"));
     let listed = m.ok("theme", "list", &json!({}));
     assert_eq!(listed["status"]["active"]["spec"]["name"], "hearth", "{listed}");
-    assert!(m.refused("favourite", "toggle", &json!({"kind": "theme", "name": "ghost"})).contains("no theme 'ghost'"));
-    assert_eq!(m.ok("favourite", "apply", &json!({"kind": "theme", "name": "sunset"})), json!("Theme: sunset"));
-    assert_eq!(m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})), json!({"starred": false}));
+    assert!(
+        m.refused("favourite", "toggle", &json!({"kind": "theme", "name": "ghost"}))
+            .contains("no theme 'ghost'")
+    );
+    assert_eq!(
+        m.ok("favourite", "apply", &json!({"kind": "theme", "name": "sunset"})),
+        json!("Theme: sunset")
+    );
+    assert_eq!(
+        m.ok("favourite", "toggle", &json!({"kind": "theme", "name": "hearth"})),
+        json!({"starred": false})
+    );
 }

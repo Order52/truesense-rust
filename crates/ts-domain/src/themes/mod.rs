@@ -19,6 +19,7 @@
 #![forbid(unsafe_code)]
 
 mod cells;
+mod preview;
 mod spec;
 mod store;
 
@@ -27,6 +28,7 @@ use std::fmt;
 use ts_foundation::fsx::FsError;
 
 pub use cells::KEY_NAMES;
+pub use preview::{DEFAULT_T as PREVIEW_T, MAX_T as PREVIEW_MAX_T, STEP as PREVIEW_STEP, preview};
 pub use spec::{
     BRIGHTNESS_MAX, BRIGHTNESS_MIN, ColourwayPick, DEFAULT_SPEED, SPEED_MAX, SPEED_MIN, ThemeSpec,
 };
@@ -84,5 +86,7 @@ pub(crate) fn invalid(text: impl Into<String>) -> ThemesError {
 
 #[cfg(test)]
 mod cells_tests;
+#[cfg(test)]
+mod preview_tests;
 #[cfg(test)]
 mod tests;

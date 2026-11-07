@@ -121,6 +121,15 @@ impl Api {
         Ok(ThemeStatus { active: store.active(), halted: None })
     }
 
+    /// The 128 cell colours (`rrggbb`) of one still frame of a theme with the given choices at
+    /// time `t` seconds (`None`: a representative moment), for the gallery's thumbnails. Nothing is
+    /// sent to the keyboard, and a theme that cannot be started (its flashing is unmeasured) can
+    /// still be pictured.
+    pub fn theme_preview(&self, spec: &ThemeSpec, t: Option<f64>) -> ApiResult<Vec<String>> {
+        let cells = ts_domain::themes::preview(&self.theme_store(), spec, t)?;
+        Ok(super::keyboard::hex_cells(&cells))
+    }
+
     /// Ends the running theme: the key service puts the static look back. Answers whether one ran.
     pub fn stop_theme(&self) -> ApiResult<bool> {
         Ok(self.theme_store().stop()?)

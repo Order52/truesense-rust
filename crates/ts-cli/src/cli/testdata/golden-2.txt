@@ -982,9 +982,17 @@ rc 0
   arrows       built-in  only the arrow keys and WASD
   coding       built-in  dark board, function keys and Esc picked out
   ember        built-in  warm red and orange
+  fps          built-in  shooter: WASD, ability keys and the weapon numbers stand out
   gaming       built-in  WASD and the keys around it lit for play
   ice          built-in  cool blue to white
+  media        built-in  editing: arrows to scrub, space to play, J K L in the middle
+  moba         built-in  Q W E R skills, D F spells, the number row for items
+  neon-grid    built-in  cyan and magenta rows over a deep purple board
+  night        built-in  a dim amber board for a dark room, easy on the eyes
+  rainbow-rows built-in  every row of the keyboard in its own colour of the rainbow
   stealth      built-in  almost off, just the letters
+  sunset       built-in  a dusk gradient from violet at the top to gold at the bottom
+  typing       built-in  home-row guide: F and J bumps white, the rest of the row blue
 --- err
 === end
 $ --json keyboard design list
@@ -1014,6 +1022,38 @@ rc 0
   "stealth": {
     "info": "almost off, just the letters",
     "source": "built-in"
+  },
+  "fps": {
+    "info": "shooter: WASD, ability keys and the weapon numbers stand out",
+    "source": "built-in"
+  },
+  "moba": {
+    "info": "Q W E R skills, D F spells, the number row for items",
+    "source": "built-in"
+  },
+  "typing": {
+    "info": "home-row guide: F and J bumps white, the rest of the row blue",
+    "source": "built-in"
+  },
+  "media": {
+    "info": "editing: arrows to scrub, space to play, J K L in the middle",
+    "source": "built-in"
+  },
+  "sunset": {
+    "info": "a dusk gradient from violet at the top to gold at the bottom",
+    "source": "built-in"
+  },
+  "neon-grid": {
+    "info": "cyan and magenta rows over a deep purple board",
+    "source": "built-in"
+  },
+  "rainbow-rows": {
+    "info": "every row of the keyboard in its own colour of the rainbow",
+    "source": "built-in"
+  },
+  "night": {
+    "info": "a dim amber board for a dark room, easy on the eyes",
+    "source": "built-in"
   }
 }
 --- err
@@ -1042,10 +1082,18 @@ rc 0
   arrows       built-in  only the arrow keys and WASD
   coding       built-in  dark board, function keys and Esc picked out
   ember        built-in  warm red and orange
+  fps          built-in  shooter: WASD, ability keys and the weapon numbers stand out
   gaming       built-in  WASD and the keys around it lit for play
   ice          built-in  cool blue to white
+  media        built-in  editing: arrows to scrub, space to play, J K L in the middle
+  moba         built-in  Q W E R skills, D F spells, the number row for items
   mydesign     yours     saved from the keyboard
+  neon-grid    built-in  cyan and magenta rows over a deep purple board
+  night        built-in  a dim amber board for a dark room, easy on the eyes
+  rainbow-rows built-in  every row of the keyboard in its own colour of the rainbow
   stealth      built-in  almost off, just the letters
+  sunset       built-in  a dusk gradient from violet at the top to gold at the bottom
+  typing       built-in  home-row guide: F and J bumps white, the rest of the row blue
 --- err
 === end
 $ keyboard fill 0000ff --brightness 20

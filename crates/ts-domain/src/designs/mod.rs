@@ -12,6 +12,7 @@
 #![forbid(unsafe_code)]
 
 mod image;
+mod templates;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -281,7 +282,7 @@ fn cell_index(cell: &str) -> Result<usize, DesignError> {
     cell.parse::<usize>().ok().filter(|c| *c < NUM_CELLS).ok_or_else(bad)
 }
 
-/// The designs that ship with TrueSense, in display order: name, description, base colour,
+/// The designs of the earlier editions that ship with TrueSense (the templates follow them), in display order: name, description, base colour,
 /// keys and groups in painting order.
 type BuiltinRow = (&'static str, &'static str, &'static str, &'static [(&'static str, &'static str)]);
 
@@ -338,15 +339,20 @@ const BUILTIN: [BuiltinRow; 6] = [
 /// The built-in designs by name. A built-in that does not check out against `map` (a map of
 /// another laptop) is left out rather than failing everything.
 pub fn builtin(map: &KeyMap) -> Vec<(String, Design)> {
-    BUILTIN
-        .iter()
+    let earlier = BUILTIN.iter().map(|(name, info, base, keys)| (*name, *info, *base, Colors::of(keys)));
+    earlier
+        .chain(templates::all())
         .filter_map(|(name, info, base, keys)| {
-            Design::checked(map, info, base, Colors::of(keys), Colors::default(), Source::BuiltIn)
+            Design::checked(map, info, base, keys, Colors::default(), Source::BuiltIn)
                 .ok()
-                .map(|d| ((*name).to_owned(), d))
+                .map(|d| (name.to_owned(), d))
         })
         .collect()
 }
+
+/// How many of the built-in designs come from the earlier editions (the first ones, unchanged);
+/// the ones after them are the templates.
+pub const EARLIER_BUILTIN: usize = BUILTIN.len();
 
 /// The folder of your designs: `$XDG_CONFIG_HOME/truesense/designs` (an empty value counts as
 /// unset), else `~/.config/truesense/designs` under `home`.

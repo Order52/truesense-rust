@@ -39,6 +39,9 @@ pub struct ThemeEntry {
     /// Whether it can be run on this keyboard: a theme whose keyboard look has no flash
     /// measurement is listed but refused.
     pub runnable: bool,
+    /// What the theme suits (power modes, activities), as the catalogue words it; the gallery
+    /// filters on them.
+    pub suits: Vec<String>,
 }
 
 /// A user file that was not used, and why.
@@ -180,6 +183,7 @@ impl ThemeStore {
                 builtin: true,
                 top: t.top,
                 runnable: !flash_unmeasured(t),
+                suits: t.suits.clone(),
             })
             .collect();
         let mut skipped = Vec::new();
@@ -211,6 +215,7 @@ impl ThemeStore {
                     builtin: false,
                     top: 0,
                     runnable: !flash_unmeasured(&t),
+                    suits: t.suits.clone(),
                 }),
                 Err(e) => skipped.push(Skipped { file, reason: e.to_string() }),
             }
