@@ -19,7 +19,7 @@ use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
 use serde::Serialize;
@@ -47,6 +47,12 @@ const PL1_FILE: &str = "constraint_0_power_limit_uw";
 const PL2_FILE: &str = "constraint_1_power_limit_uw";
 /// `MSR_PKG_POWER_LIMIT`: its bit 63 locks PL1/PL2 until the next reboot.
 const MSR_PKG_POWER_LIMIT: u32 = 0x610;
+
+/// Where the PCI devices are. Reading `vendor`, `class` and `power/runtime_status` of a device
+/// does not wake it, which is how [`PowerLimits::info`] tells whether the NVIDIA card is asleep.
+const PCI_DIR: &str = "/sys/bus/pci/devices";
+/// The PCI vendor id of NVIDIA.
+const NVIDIA_VENDOR: &str = "0x10de";
 
 /// How long `nvidia-smi` may take when only reading: a wedged driver must not wedge the daemon.
 const NVIDIA_READ_TIMEOUT: Duration = Duration::from_secs(5);
@@ -346,13 +352,15 @@ pub struct PowerLimits {
     sys: Arc<dyn Sysfs>,
     msr: Option<Arc<dyn MsrReader>>,
     runner: Arc<dyn CommandRunner>,
+    /// The GPU limits as last read from an awake card, shown while it sleeps.
+    last_nvidia: Arc<Mutex<Option<NvidiaLimits>>>,
 }
 
 impl PowerLimits {
     /// Power limits over `sys`; `msr` (when the msr module may be read) gives the lock bit;
     /// `runner` runs `nvidia-smi`.
     pub fn new(sys: Arc<dyn Sysfs>, msr: Option<Arc<dyn MsrReader>>, runner: Arc<dyn CommandRunner>) -> Self {
-        Self { sys, msr, runner }
+        Self { sys, msr, runner, last_nvidia: Arc::new(Mutex::new(None)) }
     }
 
     fn attribute(name: &str) -> PathBuf {
@@ -369,7 +377,8 @@ impl PowerLimits {
     }
 
     /// The current limits. Every part is best effort: a missing RAPL zone, an unreadable MSR or
-    /// no `nvidia-smi` leaves that part `null` rather than failing.
+    /// no `nvidia-smi` leaves that part `null` rather than failing. A runtime-suspended NVIDIA
+    /// card is never woken for this (see `nvidia_limits_without_waking`).
     pub fn info(&self) -> Info {
         let watts = |name: &str| self.read_uw(name).ok().map(|uw| uw as f64 / 1e6);
         let msr_lock_bit = self.msr.as_ref().and_then(|m| m.read_msr(MSR_PKG_POWER_LIMIT).ok()).map_or_else(
@@ -381,8 +390,46 @@ impl PowerLimits {
             pl2_w: watts(PL2_FILE),
             rapl_enabled: self.sys.read(&Self::attribute("enabled")).ok().map(|t| t.trim().to_owned()),
             msr_lock_bit,
-            nvidia_power_limit_w: self.nvidia_limits(),
+            nvidia_power_limit_w: self.nvidia_limits_without_waking(),
         }
+    }
+
+    /// The first NVIDIA display controller's runtime power state: asleep (suspended or about to
+    /// be), judged from files that do not wake it. A machine without such a card, or whose card
+    /// has no runtime power management, is "not asleep". (The same rule as
+    /// `ts_system::nvidia::gpu_power`, which this crate sits below and so cannot call.)
+    fn gpu_asleep(&self) -> bool {
+        let dir = Path::new(PCI_DIR);
+        let Ok(names) = self.sys.list(dir) else { return false };
+        for name in names {
+            let device = dir.join(name);
+            let read = |file: &str| self.sys.read(&device.join(file)).ok().map(|t| t.trim().to_owned());
+            if read("vendor").as_deref() != Some(NVIDIA_VENDOR) {
+                continue;
+            }
+            // The card's audio and USB functions share the vendor id.
+            if !read("class").is_some_and(|c| c.starts_with("0x03")) {
+                continue;
+            }
+            return matches!(read("power/runtime_status").as_deref(), Some("suspended" | "suspending"));
+        }
+        false
+    }
+
+    /// The GPU power limits for [`info`](Self::info), which clients poll: every `nvidia-smi`
+    /// start wakes a runtime-suspended card and initialises NVML (which stalls every CPU core on
+    /// this laptop), so a sleeping card is not asked. Its limits do not change while it sleeps,
+    /// so the last answer from an awake card is shown instead (`None` before there was one).
+    fn nvidia_limits_without_waking(&self) -> Option<NvidiaLimits> {
+        let mut last = self.last_nvidia.lock().unwrap_or_else(PoisonError::into_inner);
+        if self.gpu_asleep() {
+            return last.clone();
+        }
+        let fresh = self.nvidia_limits();
+        if fresh.is_some() {
+            last.clone_from(&fresh);
+        }
+        fresh
     }
 
     fn nvidia_limits(&self) -> Option<NvidiaLimits> {
@@ -782,6 +829,67 @@ mod tests {
                 assert!(limits.is_none() || out.starts_with('\u{0}'), "{out:?}");
             }
         }
+    }
+
+    const SMI_LINE: &str = "80.00, 80.00, 35.00, 80.00\n";
+
+    fn card(fs: &MemSysfs, status: &str) {
+        fs.put("/sys/bus/pci/devices/0000:00:02.0/vendor", "0x8086\n");
+        fs.put("/sys/bus/pci/devices/0000:00:02.0/class", "0x030000\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/vendor", "0x10de\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/class", "0x030200\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/power/runtime_status", &format!("{status}\n"));
+        // the card's audio function shares the vendor id and may be in another state
+        fs.put("/sys/bus/pci/devices/0000:01:00.1/vendor", "0x10de\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.1/class", "0x040300\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.1/power/runtime_status", "active\n");
+    }
+
+    #[test]
+    fn a_sleeping_gpu_is_not_woken_to_read_its_power_limit() {
+        let fs = tree("80000000");
+        card(&fs, "suspended");
+        let runner = smi(SMI_LINE);
+        let p = PowerLimits::new(fs.clone(), None, runner.clone());
+        assert_eq!(p.info().nvidia_power_limit_w, None, "asleep and never read: nothing to show");
+        assert!(runner.lines().is_empty(), "nvidia-smi was not started: {:?}", runner.lines());
+        // Awake: asked, and the answer is remembered.
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/power/runtime_status", "active\n");
+        let awake = p.info().nvidia_power_limit_w.unwrap();
+        assert_eq!((awake.current.as_str(), awake.max.as_str()), ("80.00", "80.00"));
+        assert_eq!(runner.lines().len(), 1);
+        // Asleep again: the remembered limits are shown, nothing is asked.
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/power/runtime_status", "suspending\n");
+        assert_eq!(p.info().nvidia_power_limit_w.as_ref(), Some(&awake));
+        assert_eq!(runner.lines().len(), 1, "no second question");
+        // Clones share what was learned (the daemon hands out clones).
+        assert_eq!(p.clone().info().nvidia_power_limit_w.as_ref(), Some(&awake));
+    }
+
+    #[test]
+    fn a_machine_without_runtime_status_or_without_a_gpu_is_asked_as_before() {
+        let fs = tree("80000000");
+        let runner = smi(SMI_LINE);
+        let p = PowerLimits::new(fs.clone(), None, runner.clone());
+        assert!(p.info().nvidia_power_limit_w.is_some(), "no PCI tree at all: ask");
+        card(&fs, "unsupported");
+        assert!(p.info().nvidia_power_limit_w.is_some(), "unknown power state: ask");
+        // Only the audio function sleeps: that is not the card.
+        fs.put("/sys/bus/pci/devices/0000:01:00.0/power/runtime_status", "active\n");
+        fs.put("/sys/bus/pci/devices/0000:01:00.1/power/runtime_status", "suspended\n");
+        assert!(p.info().nvidia_power_limit_w.is_some());
+        assert_eq!(runner.lines().len(), 3);
+    }
+
+    #[test]
+    fn setting_the_gpu_limit_still_asks_the_card() {
+        let fs = tree("80000000");
+        card(&fs, "suspended");
+        let runner = smi("65.00, 80.00, 35.00, 80.00\n");
+        let p = PowerLimits::new(fs, None, runner.clone());
+        // An explicit request wakes the card on purpose: the read-back is part of the write.
+        assert!(p.set_nvidia_limit(65.0).is_ok());
+        assert!(runner.lines().iter().any(|l| l == "nvidia-smi -pl 65"));
     }
 
     #[test]
