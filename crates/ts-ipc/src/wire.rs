@@ -528,7 +528,7 @@ mod tests {
         let r =
             Request::new("fan", Args::new().with("mode", "manual").with("cpu", 50).with("gpu", Value::Null));
         let line = r.encode().unwrap_or_default();
-        assert_eq!(line, b"{\"cmd\":\"fan\",\"args\":{\"cpu\":50,\"gpu\":null,\"mode\":\"manual\"}}\n");
+        assert_eq!(line, b"{\"cmd\":\"fan\",\"args\":{\"mode\":\"manual\",\"cpu\":50,\"gpu\":null}}\n");
         assert_eq!(Request::parse(&line).ok(), Some(r));
         let no_args = Request::new("ping", Args::new()).encode().unwrap_or_default();
         assert_eq!(no_args, b"{\"cmd\":\"ping\",\"args\":{}}\n");
