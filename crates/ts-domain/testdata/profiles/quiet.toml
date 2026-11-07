@@ -1,0 +1,10 @@
+description = "As quiet as it gets: quiet power mode, firmware fan control, rear light off"
+
+[power]
+mode = "quiet"
+
+[fan]
+mode = "auto"
+
+[rear]
+on = false

@@ -1,0 +1,10 @@
+description = "Maximum performance: turbo, smart fans, overdrive on"
+
+[power]
+mode = "turbo"
+
+[fan]
+mode = "smart"
+
+[display]
+overdrive = true

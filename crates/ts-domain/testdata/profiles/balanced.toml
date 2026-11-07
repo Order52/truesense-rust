@@ -1,0 +1,10 @@
+description = "Everyday use: balanced power, smart fans"
+
+[power]
+mode = "balanced"
+
+[fan]
+mode = "smart"
+
+[display]
+overdrive = true
