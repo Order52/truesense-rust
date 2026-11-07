@@ -28,7 +28,7 @@ use super::testing::{Rig, daemon_state};
 use super::{Api, Services};
 
 /// A fresh directory under the system temp dir, removed when dropped.
-pub struct TempDir(pub PathBuf);
+pub(super) struct TempDir(pub PathBuf);
 
 impl TempDir {
     fn new() -> Self {
@@ -50,7 +50,7 @@ impl Drop for TempDir {
 }
 
 /// An application layer over simulated services, with its doubles.
-pub struct Fx {
+pub(super) struct Fx {
     pub api: Api,
     pub rig: Rig,
     pub dir: TempDir,
@@ -58,26 +58,26 @@ pub struct Fx {
 
 impl Fx {
     /// A running daemon.
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self::build(|s| s)
     }
 
     /// No daemon: its socket does not exist.
-    pub fn offline() -> Self {
+    pub(super) fn offline() -> Self {
         let fx = Self::new();
         fx.rig.daemon.set_available(false);
         fx
     }
 
     /// Services adjusted by `adjust` before the layer is built.
-    pub fn build(adjust: impl FnOnce(Services) -> Services) -> Self {
+    pub(super) fn build(adjust: impl FnOnce(Services) -> Services) -> Self {
         let dir = TempDir::new();
         let (services, rig) = Services::simulated(&dir.0).expect("simulated services");
         Self { api: Api::new(adjust(services)), rig, dir }
     }
 
     /// The text of the user's configuration file.
-    pub fn user_config(&self) -> String {
+    pub(super) fn user_config(&self) -> String {
         std::fs::read_to_string(self.dir.0.join("home/config.toml")).unwrap_or_default()
     }
 }

@@ -27,29 +27,33 @@ const SPEED: ParamDef = num("speed", 0.0, 100.0, 50.0);
 const PARAMS: &[ParamDef] = &[SPEED];
 const WAVE_PARAMS: &[ParamDef] = &[SPEED, num("dir", 1.0, 6.0, 1.0)];
 
-pub static STATIC: EffectDef =
+pub(crate) static STATIC: EffectDef =
     EffectDef::firmware("kb.static", "Static", PARAMS, create_static).keyboard(0x01);
-pub static BREATHING: EffectDef =
+pub(crate) static BREATHING: EffectDef =
     EffectDef::firmware("kb.breathing", "Breathing", PARAMS, create_breathing).keyboard(0x02);
-pub static WAVE: EffectDef =
+pub(crate) static WAVE: EffectDef =
     EffectDef::firmware("kb.wave", "Wave", WAVE_PARAMS, create_wave).keyboard(0x03).without_colour();
-pub static RAINBOW: EffectDef =
+pub(crate) static RAINBOW: EffectDef =
     EffectDef::firmware("kb.rainbow", "Rainbow", PARAMS, create_rainbow).keyboard(0x08).without_colour();
-pub static SNAKE: EffectDef = EffectDef::firmware("kb.snake", "Snake", PARAMS, create_snake).keyboard(0x05);
-pub static SPOT: EffectDef =
+pub(crate) static SNAKE: EffectDef =
+    EffectDef::firmware("kb.snake", "Snake", PARAMS, create_snake).keyboard(0x05);
+pub(crate) static SPOT: EffectDef =
     EffectDef::firmware("kb.spot", "Spot", PARAMS, create_spot).keyboard(0x25).reactive();
-pub static RIPPLE: EffectDef =
+pub(crate) static RIPPLE: EffectDef =
     EffectDef::firmware("kb.ripple", "Ripple", PARAMS, create_ripple).keyboard(0x06).reactive();
-pub static FIREBALL: EffectDef =
+pub(crate) static FIREBALL: EffectDef =
     EffectDef::firmware("kb.fireball", "Fireball", PARAMS, create_fireball).keyboard(0x27).reactive();
-pub static LIGHTNING: EffectDef = EffectDef::firmware("kb.lightning", "Lightning", PARAMS, create_lightning)
-    .keyboard(0x12)
-    .with_flash(Flash::Unmeasured);
-pub static RAIN: EffectDef = EffectDef::firmware("kb.rain", "Rain", PARAMS, create_rain).keyboard(0x0A);
-pub static SNOW: EffectDef =
+pub(crate) static LIGHTNING: EffectDef =
+    EffectDef::firmware("kb.lightning", "Lightning", PARAMS, create_lightning)
+        .keyboard(0x12)
+        .with_flash(Flash::Unmeasured);
+pub(crate) static RAIN: EffectDef =
+    EffectDef::firmware("kb.rain", "Rain", PARAMS, create_rain).keyboard(0x0A);
+pub(crate) static SNOW: EffectDef =
     EffectDef::firmware("kb.snow", "Snow", PARAMS, create_snow).keyboard(0x28).reactive();
-pub static STARS: EffectDef = EffectDef::firmware("kb.stars", "Stars", PARAMS, create_stars).keyboard(0x26);
-pub static HEARTBEAT: EffectDef =
+pub(crate) static STARS: EffectDef =
+    EffectDef::firmware("kb.stars", "Stars", PARAMS, create_stars).keyboard(0x26);
+pub(crate) static HEARTBEAT: EffectDef =
     EffectDef::firmware("kb.heartbeat", "Heartbeat", PARAMS, create_heartbeat).keyboard(0x29).reactive();
 
 fn create_static(cx: &mut Ctx) -> Box<dyn Render> {

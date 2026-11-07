@@ -26,7 +26,7 @@ pub const DEVICE_PATH: &str = "/dev/truesense";
 
 /// The longest command the kernel accepts: its write buffer is 96 bytes and a command of 96 bytes
 /// or more is refused with `EINVAL` before any reply is produced.
-pub const MAX_COMMAND_LEN: usize = 95;
+pub(crate) const MAX_COMMAND_LEN: usize = 95;
 
 /// Every command of the module that only reads. The module whitelists its commands; this is the
 /// subset that can never change a setting, and the only thing [`ReadOnly`] lets through.

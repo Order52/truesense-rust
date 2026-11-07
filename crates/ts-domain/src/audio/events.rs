@@ -5,7 +5,7 @@
 //! line per change of a card, an output, an input or the server, so one resident helper replaces
 //! all of those questions: the watcher waits, and runs its (unchanged) check when a line arrives.
 //!
-//! What stays as it was: the check itself, and a slow fallback pass every [`FALLBACK`] in case an
+//! What stays as it was: the check itself, and a slow fallback pass every `FALLBACK` in case an
 //! event never comes (a jack that the sound server does not announce). If the event stream cannot
 //! be started, or ends (the sound server restarted), the watcher goes back to its old one-second
 //! pace until the stream is up again.
@@ -17,25 +17,26 @@
 use std::io::{self, BufRead};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
+use ts_foundation::sync::locked;
 use ts_foundation::wake;
 
 /// How long the watcher sleeps between two checks while events arrive. The check runs sooner
 /// when an event comes; this is only the safety net for a change nobody announced.
-pub const FALLBACK: Duration = Duration::from_secs(10);
+pub(crate) const FALLBACK: Duration = Duration::from_secs(10);
 /// The quiet time that must follow the last event of a burst before the watcher looks: a volume
 /// slider or a profile switch produces dozens of lines at once.
-pub const QUIET: Duration = Duration::from_millis(400);
+pub(crate) const QUIET: Duration = Duration::from_millis(400);
 /// The pause before the event stream is started again after it ended or failed to start.
 const RECONNECT: Duration = Duration::from_secs(5);
 
 /// What a wait for events ended with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Wake {
-    /// Something changed (and has been quiet for [`QUIET`]).
+    /// Something changed (and has been quiet for `QUIET`).
     Changed,
     /// The time was up with no event.
     Timeout,
@@ -49,7 +50,7 @@ pub enum Wake {
 pub trait Events: Send + Sync {
     /// Whether events are flowing right now. Without them the watcher checks every second.
     fn healthy(&self) -> bool;
-    /// Waits up to `timeout` for a change, then for [`QUIET`] after the last one.
+    /// Waits up to `timeout` for a change, then for `QUIET` after the last one.
     fn wait(&self, timeout: Duration, stop: &AtomicBool) -> Wake;
 }
 
@@ -90,7 +91,7 @@ impl EventSource for PactlSubscribe {
         Ok(Stream {
             lines: Box::new(ReapOnEnd { inner: io::BufReader::new(stdout), child: reaper }),
             close: Box::new(move || {
-                if let Some(c) = killer.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
+                if let Some(c) = locked(&killer).as_mut() {
                     let _ = c.kill();
                 }
             }),
@@ -122,7 +123,7 @@ impl BufRead for ReapOnEnd {
 
 impl Drop for ReapOnEnd {
     fn drop(&mut self) {
-        if let Some(mut c) = self.child.lock().unwrap_or_else(PoisonError::into_inner).take() {
+        if let Some(mut c) = locked(&self.child).take() {
             let _ = c.kill();
             let _ = c.wait();
         }
@@ -174,10 +175,10 @@ impl Subscription {
 fn read_loop(source: &dyn EventSource, shared: &Shared) {
     while !shared.closing.load(Ordering::SeqCst) {
         if let Ok(stream) = source.open() {
-            *shared.close.lock().unwrap_or_else(PoisonError::into_inner) = Some(stream.close);
+            *locked(&shared.close) = Some(stream.close);
             // `close` may have been asked for while the helper was starting.
             if shared.closing.load(Ordering::SeqCst) {
-                if let Some(close) = shared.close.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+                if let Some(close) = locked(&shared.close).as_ref() {
                     close();
                 }
             }
@@ -233,7 +234,7 @@ impl Events for Subscription {
 impl Drop for Subscription {
     fn drop(&mut self) {
         self.shared.closing.store(true, Ordering::SeqCst);
-        if let Some(close) = self.shared.close.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+        if let Some(close) = locked(&self.shared.close).as_ref() {
             close();
         }
         wake::ring();

@@ -17,19 +17,19 @@ use crate::json::{at, bool_at, f64_at, str_at};
 
 /// Health at or above this is "good": batteries are rated for 80 % of their design capacity at the
 /// end of their rated life, so more than that is a healthy cell.
-pub const HEALTH_GOOD_PCT: f64 = 80.0;
+pub(crate) const HEALTH_GOOD_PCT: f64 = 80.0;
 /// Health at or above this (and below [`HEALTH_GOOD_PCT`]) is "fair"; under it the cell is "poor".
-pub const HEALTH_FAIR_PCT: f64 = 60.0;
+pub(crate) const HEALTH_FAIR_PCT: f64 = 60.0;
 /// A charge at or below this is "low": the page says so next to the gauge.
-pub const LOW_CHARGE_PCT: f64 = 15.0;
+pub(crate) const LOW_CHARGE_PCT: f64 = 15.0;
 
 /// Seconds between two stored charge samples unless the caller says otherwise.
-pub const DEFAULT_MIN_GAP_S: f64 = 30.0;
+pub(crate) const DEFAULT_MIN_GAP_S: f64 = 30.0;
 /// Samples kept: four hours at the default gap, a few kilobytes.
-pub const DEFAULT_HISTORY_CAP: usize = 480;
+pub(crate) const DEFAULT_HISTORY_CAP: usize = 480;
 
 /// Classifies the health percentage: `good`, `fair`, `poor`, or `unknown` when the kernel gave none.
-pub fn health_class(pct: Option<f64>) -> &'static str {
+pub(crate) fn health_class(pct: Option<f64>) -> &'static str {
     match pct.filter(|p| p.is_finite()) {
         None => "unknown",
         Some(p) if p >= HEALTH_GOOD_PCT => "good",
@@ -39,7 +39,7 @@ pub fn health_class(pct: Option<f64>) -> &'static str {
 }
 
 /// The kernel's status text as a code: `charging`, `discharging`, `full`, `not-charging`, `unknown`.
-pub fn status_code(raw: Option<&str>) -> &'static str {
+pub(crate) fn status_code(raw: Option<&str>) -> &'static str {
     match raw.map(|s| s.trim().to_ascii_lowercase()).as_deref() {
         Some("charging") => "charging",
         Some("discharging") => "discharging",

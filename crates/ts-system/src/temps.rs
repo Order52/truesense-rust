@@ -107,7 +107,7 @@ pub fn classify(chip: &str, label: &str) -> SensorKind {
 }
 
 /// Whether a chip is a graphics driver whose hwmon read resumes a runtime-suspended card.
-pub fn is_gpu_chip(chip: &str) -> bool {
+pub(crate) fn is_gpu_chip(chip: &str) -> bool {
     classify(chip, "") == SensorKind::Gpu
 }
 

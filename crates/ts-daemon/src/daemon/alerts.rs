@@ -37,6 +37,7 @@ use std::thread;
 
 use ts_decision::alerts::{Alert, Evaluator, Event, Sample, Settings};
 use ts_foundation::config::{self, AlertsConfig, Config};
+use ts_foundation::sync::locked;
 use ts_system::osd::UserDirectory;
 
 use super::daemon::{Daemon, Inner};
@@ -237,7 +238,7 @@ impl Daemon {
         let spawned = thread::Builder::new().name("alerts".to_owned()).spawn(move || me.alerts_show(&batch));
         match spawned {
             Ok(handle) => {
-                let mut running = self.background.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut running = locked(&self.background);
                 // Alerts come all through the daemon's life: do not keep the finished ones.
                 running.retain(|h| !h.is_finished());
                 running.push(handle);

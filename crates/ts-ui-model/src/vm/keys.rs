@@ -6,8 +6,8 @@
 //! cannot read as an error instead of silently replacing it. This module therefore owns the
 //! *editor state* of one action (`{kind, choice, text, percent, position, modes}`), turns a spec
 //! into that state ([`parse`](call) verb `parse`) and back (verb `compose`), and keeps the tables
-//! the pickers are built from. It cannot depend on `ts-domain`, so the grammar is mirrored here and
-//! the tests prove the mirror: every action text the real parser accepts or refuses (probed through
+//! the pickers are built from. The editor mirrors that grammar (it is a state machine over kinds and
+//! parameters, not a table the domain layer exposes), and the tests prove the mirror: every action text the real parser accepts or refuses (probed through
 //! the application layer's `set_key_action`, which runs that parser) gets the same verdict here, and
 //! every accepted text survives `parse` then `compose`.
 //!
@@ -28,31 +28,33 @@
 
 use serde_json::{Map, Value, json};
 
+use std::ops::RangeInclusive;
+
+use ts_domain::{favourites, keybinds};
+use ts_foundation::names;
+
 use crate::json::{at, f64_at, list_at, str_at};
 
 /// The power modes, in the order the firmware and the pages list them.
-pub const POWER_MODES: [&str; 5] = ["eco", "quiet", "balanced", "performance", "turbo"];
+pub(crate) use crate::limits::POWER_MODES;
 
 /// The gestures of the table, in the order the page shows them (the JSON names of `[keys]`).
 pub const GESTURES: [&str; 5] = ["tap", "double", "triple", "long", "fn_esc"];
 
 /// The lowest manual fan duty a key may set: a key can never stop a fan.
-pub const FAN_MIN: u64 = 20;
+pub(crate) const FAN_MIN: u64 = 20;
 /// The highest fan duty.
-pub const FAN_MAX: u64 = 100;
+pub(crate) const FAN_MAX: u64 = 100;
 /// How many favourites exist (`favourite:N` counts from 1 to this).
-pub const FAVOURITE_MAX: u64 = 24;
+pub(crate) const FAVOURITE_MAX: u64 = favourites::MAX_FAVOURITES as u64;
 
 /// Long press range, step and default of the built-in profiles (milliseconds).
-pub const LONG_MS: Range = Range { min: 300, max: 2000, step: 50, default: 800 };
+pub(crate) const LONG_MS: Range = Range::of(&keybinds::LONG_MS_RANGE, 50, 800);
 /// Multi-tap window range, step and default (milliseconds).
-pub const MULTI_MS: Range = Range { min: 200, max: 1000, step: 50, default: 450 };
+pub(crate) const MULTI_MS: Range = Range::of(&keybinds::MULTI_MS_RANGE, 50, 450);
 
 /// The profile names that ship with the program and cannot be overwritten or deleted.
-pub const BUILTIN_PROFILES: [&str; 5] = ["native", "default", "gaming", "work", "lights"];
-
-/// The longest profile name the library accepts.
-const NAME_MAX: usize = 40;
+pub(crate) const BUILTIN_PROFILES: [&str; 5] = keybinds::BUILTIN_NAMES;
 
 /// A timing slider's range.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +70,11 @@ pub struct Range {
 }
 
 impl Range {
+    /// The range of the domain layer's own limit, with the step and the default the page adds.
+    const fn of(limit: &RangeInclusive<i64>, step: i64, default: i64) -> Range {
+        Range { min: *limit.start(), max: *limit.end(), step, default }
+    }
+
     /// `value` inside the range and on a step (an out-of-range or off-step value in a hand-edited
     /// profile would otherwise leave the slider on a position no step reaches).
     fn fit(self, value: i64) -> i64 {
@@ -547,9 +554,9 @@ fn save_args(args: &Value) -> Result<Value, String> {
 fn name_problem(name: &str, existing_builtin: bool) -> &'static str {
     if name.is_empty() {
         "empty"
-    } else if name.len() > NAME_MAX {
+    } else if name.len() > names::NAME_MAX {
         "length"
-    } else if !name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-')) {
+    } else if !names::is_valid(name) {
         "chars"
     } else if existing_builtin || BUILTIN_PROFILES.contains(&name) {
         "builtin"

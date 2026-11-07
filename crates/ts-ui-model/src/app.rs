@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
 use ts_gui::gui::{ApiCommands, Commands};
@@ -15,6 +15,7 @@ use crate::hooks::window_hooks;
 use crate::live::{HISTORY_LEN, LiveStore};
 use crate::routes::Routes;
 use crate::settings::{self, UiStore};
+use ts_foundation::sync::locked;
 
 /// Everything the UI shell shares.
 pub struct AppModel {
@@ -27,10 +28,6 @@ pub struct AppModel {
     pub routes: Routes,
     ui: Mutex<UiStore>,
     caps: Mutex<Capabilities>,
-}
-
-fn locked<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 impl AppModel {
@@ -217,7 +214,7 @@ mod tests {
         assert_eq!(ui["problem"], Value::Null);
         m.set_ui("theme", &json!("light")).unwrap();
         assert!(m.set_ui("theme", &json!("x")).is_err());
-        assert_eq!(m.language("ar_SA"), "ar");
+        assert_eq!(m.language("ar_SA"), "en", "no Arabic catalogue any more");
         assert!(m.settings_problems().is_empty());
         m.set_window((1111, 700), None).unwrap();
         assert_eq!(m.settings().window_size(), (1111, 700));

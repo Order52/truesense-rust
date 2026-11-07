@@ -9,7 +9,7 @@
 //! * **Only while a theme is the current look.** The running theme is a record in the user state
 //!   ([`ThemeStore::active`]); the renderer looks at it twice a second and is otherwise asleep. A
 //!   new record (a new `started`) restarts the theme; no record stops it.
-//! * **Rate.** At most [`DEFAULT_FPS`] frames a second, and in practice fewer: an upload is eight
+//! * **Rate.** At most `DEFAULT_FPS` frames a second, and in practice fewer: an upload is eight
 //!   64-byte reports 16 ms apart and a 50 ms settle (`ts_domain::keyboard::FRAME_SETTLE`), about
 //!   180 ms, and `per_key_frame` blocks for all of it. Frames are never queued. Each one is drawn
 //!   for the moment it is sent, so a slow upload simply skips the frames that would have been sent
@@ -45,14 +45,14 @@ use ts_fx::cells::CellPainter;
 use ts_fx::engine::{Effect, Input};
 
 /// The frame rate cap unless told otherwise.
-pub const DEFAULT_FPS: u32 = 15;
+pub(crate) const DEFAULT_FPS: u32 = 15;
 /// The highest cap accepted: the keyboard cannot take more, and a higher number would only
 /// matter for a fake sink.
-pub const MAX_FPS: u32 = 30;
+pub(crate) const MAX_FPS: u32 = 30;
 /// How often the running-theme record is read while a theme is drawn.
 pub const POLL: Duration = Duration::from_millis(500);
 /// How long the loop sleeps while no theme runs.
-pub const IDLE: Duration = Duration::from_millis(500);
+pub(crate) const IDLE: Duration = Duration::from_millis(500);
 /// The longest step of a theme's own clock: after a suspend or a stall the theme resumes where it
 /// was instead of jumping.
 const MAX_STEP: f64 = 0.5;
@@ -105,7 +105,7 @@ pub struct Env {
     pub sleep: Box<dyn Fn(Duration) + Send>,
     /// The log.
     pub log: Box<dyn Fn(&str) + Send>,
-    /// The frame rate cap, [`DEFAULT_FPS`] normally.
+    /// The frame rate cap, `DEFAULT_FPS` normally.
     pub fps: u32,
 }
 
@@ -114,7 +114,7 @@ impl Renderer {
     /// the key service already holds, the cell numbering of the verified key map, the wall clock,
     /// the given wait and standard output as the log (the journal under systemd). The local hour is not
     /// known here, so a theme that follows the day shows noon.
-    pub fn from_api(api: &Api, sleep: Box<dyn Fn(Duration) + Send>) -> Renderer {
+    pub(crate) fn from_api(api: &Api, sleep: Box<dyn Fn(Duration) + Send>) -> Renderer {
         let services = api.services();
         Renderer::new(Env {
             themes: Box::new(ThemeStore::beside(services.config.user.as_deref(), Arc::clone(&services.user))),
@@ -167,7 +167,7 @@ enum State {
 }
 
 /// Draws the theme that is running.
-pub struct Renderer {
+pub(crate) struct Renderer {
     env: Env,
     state: State,
     next_poll: f64,
@@ -176,7 +176,7 @@ pub struct Renderer {
 
 impl Renderer {
     /// A renderer over `env`. The frame rate is held between 1 and [`MAX_FPS`].
-    pub fn new(env: Env) -> Self {
+    pub(crate) fn new(env: Env) -> Self {
         let fps = env.fps.clamp(1, MAX_FPS);
         Self {
             env,
@@ -188,7 +188,7 @@ impl Renderer {
 
     /// Runs until `stop` is set. A theme that is still running is taken off the keyboard first (the
     /// static look is put back): stopping the service must not leave the last frame lit.
-    pub fn run(&mut self, stop: &AtomicBool) {
+    pub(crate) fn run(&mut self, stop: &AtomicBool) {
         while !stop.load(Ordering::SeqCst) {
             let pause = self.step();
             (self.env.sleep)(pause);
@@ -200,7 +200,7 @@ impl Renderer {
     }
 
     /// One turn of the loop; answers how long to wait before the next.
-    pub fn step(&mut self) -> Duration {
+    pub(crate) fn step(&mut self) -> Duration {
         let now = (self.env.now)();
         // A running theme looks at the record twice a second; an idle renderer on every turn. A
         // clock that was set back also makes a look due.

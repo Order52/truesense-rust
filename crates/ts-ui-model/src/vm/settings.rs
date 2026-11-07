@@ -3,26 +3,30 @@
 //! summaries of an update check and of an installation, the licence text of the About box, and the
 //! summary of "reset everything".
 //!
-//! The validation here **mirrors** the rules of the layers below (`AlertsConfig::validate` in
-//! ts-foundation, `UiSettings::set` for the window's own settings) so that the page can refuse a
-//! value before sending it and say which range is allowed; the layers below stay the authority, and
+//! The validation here reads the rules of the layers below (the alert ranges of
+//! `ts_foundation::config`, `UiSettings::set` for the window's own settings) so that the page can
+//! refuse a value before sending it and say which range is allowed; the layers below stay the authority, and
 //! a value this module accepts may still be refused by them (their text is then shown as it is).
 //!
 //! Verbs: `checklist`, `alerts_view`, `alerts_validate`, `alerts_ranges`, `ui_validate`,
 //! `startup_options`, `update_summary`, `apply_summary`, `licence`, `reset_summary`.
 #![forbid(unsafe_code)]
 
+use std::ops::RangeInclusive;
+
 use serde_json::{Map, Value, json};
 
 use crate::json::{at, bool_at, f64_at, list_at, str_at};
+use ts_foundation::config;
+
 use crate::settings::UiSettings;
 
 /// The address updates may link to; anything else in a release's `url` is not offered as a link.
-pub const RELEASE_URL_PREFIX: &str = "https://github.com/";
+pub(crate) const RELEASE_URL_PREFIX: &str = "https://github.com/";
 /// Where the installer writes its log, named in the message when it exits with an error.
-pub const INSTALL_LOG: &str = "/var/log/truesense-install.log";
+pub(crate) const INSTALL_LOG: &str = "/var/log/truesense-install.log";
 /// Most characters of the licence file the About box shows (the file is a few kilobytes).
-pub const LICENCE_MAX_CHARS: usize = 60_000;
+pub(crate) const LICENCE_MAX_CHARS: usize = 60_000;
 
 /// The allowed range of one alert setting, as the daemon enforces it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,24 +39,32 @@ pub struct Range {
     pub also: Option<i64>,
 }
 
-/// The integer alert settings and their ranges: temperature limits 70 to 100 C, repeat 1 to 240
-/// minutes, debounce 1 to 30 samples, battery low 5 to 50 % or 0 for off.
-pub const ALERT_FIELDS: &[(&str, Range)] = &[
-    ("cpu_limit_c", Range { min: 70, max: 100, also: None }),
-    ("gpu_limit_c", Range { min: 70, max: 100, also: None }),
-    ("repeat_minutes", Range { min: 1, max: 240, also: None }),
-    ("debounce_samples", Range { min: 1, max: 30, also: None }),
-    ("battery_low_pct", Range { min: 5, max: 50, also: Some(0) }),
+/// The range `range` of ts-foundation as the page takes it, plus a value allowed besides it.
+const fn field(range: &RangeInclusive<i64>, also: Option<i64>) -> Range {
+    Range { min: *range.start(), max: *range.end(), also }
+}
+
+/// The integer alert settings and their ranges, read from `ts_foundation::config` (the daemon's
+/// own validation): temperature limits, repeat minutes, debounce samples, battery low (or 0 for off).
+pub(crate) const ALERT_FIELDS: &[(&str, Range)] = &[
+    ("cpu_limit_c", field(&config::ALERT_LIMIT_RANGE, None)),
+    ("gpu_limit_c", field(&config::ALERT_LIMIT_RANGE, None)),
+    ("repeat_minutes", field(&config::ALERT_REPEAT_MINUTES, None)),
+    ("debounce_samples", field(&config::ALERT_DEBOUNCE_SAMPLES, None)),
+    ("battery_low_pct", field(&config::ALERT_BATTERY_LOW_PCT, Some(0))),
 ];
 /// The yes/no alert settings.
-pub const ALERT_FLAGS: &[&str] = &["enabled", "throttling", "sensor_lost"];
+pub(crate) const ALERT_FLAGS: &[&str] = &["enabled", "throttling", "sensor_lost"];
 
+/// What the daemon uses when a setting is missing: `AlertsConfig::default()`.
 fn alert_default(field: &str) -> Value {
+    let d = config::AlertsConfig::default();
     match field {
-        "cpu_limit_c" | "gpu_limit_c" => json!(90),
-        "repeat_minutes" => json!(5),
-        "debounce_samples" => json!(3),
-        "battery_low_pct" => json!(15),
+        "cpu_limit_c" => json!(d.cpu_limit_c),
+        "gpu_limit_c" => json!(d.gpu_limit_c),
+        "repeat_minutes" => json!(d.repeat_minutes),
+        "debounce_samples" => json!(d.debounce_samples),
+        "battery_low_pct" => json!(d.battery_low_pct),
         _ => json!(true),
     }
 }
@@ -73,7 +85,7 @@ pub enum Refusal {
 ///
 /// # Errors
 /// [`Refusal`] with the reason.
-pub fn alert_value(field: &str, value: &Value) -> Result<Value, Refusal> {
+pub(crate) fn alert_value(field: &str, value: &Value) -> Result<Value, Refusal> {
     if ALERT_FLAGS.contains(&field) {
         return value.as_bool().map(Value::Bool).ok_or(Refusal::Type);
     }
@@ -106,7 +118,7 @@ pub fn alerts_validate(args: &Value) -> Value {
 
 /// `alerts_ranges`: every integer setting with its range, so the page builds its sliders from the
 /// same numbers the validation uses.
-pub fn alerts_ranges() -> Value {
+pub(crate) fn alerts_ranges() -> Value {
     let mut out = Map::new();
     for (name, r) in ALERT_FIELDS {
         out.insert((*name).to_owned(), json!({ "min": r.min, "max": r.max, "also": r.also, "default": alert_default(name) }));
@@ -138,7 +150,7 @@ pub fn alerts_view(alerts: &Value) -> Value {
 /// `ui_validate`: `{"key", "value"}` for the window's own settings (theme, language, text size,
 /// reduced motion, tray), judged by the rules of the settings file itself. Gives `{"ok": true}` or
 /// `{"ok": false, "error"}`.
-pub fn ui_validate(args: &Value) -> Value {
+pub(crate) fn ui_validate(args: &Value) -> Value {
     let key = str_at(args, "key").unwrap_or("");
     match UiSettings::default().set(key, args.get("value").unwrap_or(&Value::Null)) {
         Ok(()) => json!({ "ok": true }),
@@ -309,7 +321,7 @@ pub fn apply_summary(result: &Value) -> Value {
 /// The licence and attribution text for the About box, from the contents of `THIRD_PARTY.md`
 /// (or what stands in for it). `available` is false for missing or blank text. Control characters
 /// other than newline and tab are removed (the text is shown as plain text, never as markup), and
-/// the text is cut at [`LICENCE_MAX_CHARS`]; `truncated` says so.
+/// the text is cut at `LICENCE_MAX_CHARS`; `truncated` says so.
 pub fn licence(arg: &Value) -> Value {
     let raw = str_at(arg, "text").or_else(|| arg.as_str()).unwrap_or("");
     let clean: String =
@@ -339,7 +351,7 @@ pub fn reset_summary(result: &Value) -> Value {
 /// (a list of services, a failed read). QML therefore wraps what it passes as `{"value": x}`, and
 /// every view-model of this page set unwraps it here; an object with any other members is the
 /// argument itself.
-pub fn unwrap_value(args: &Value) -> &Value {
+pub(crate) fn unwrap_value(args: &Value) -> &Value {
     match args.as_object() {
         Some(map) if map.len() == 1 => map.get("value").unwrap_or(args),
         _ => args,
@@ -519,7 +531,7 @@ mod tests {
         assert!(ok("theme", json!("light")));
         assert!(!ok("theme", json!("blue")));
         assert!(ok("language", json!("pseudo")));
-        assert!(ok("language", json!("ar")));
+        assert!(!ok("language", json!("ar")), "Arabic was dropped");
         assert!(!ok("language", json!("fr")));
         assert!(ok("font_scale", json!(1.4)));
         assert!(!ok("font_scale", json!("big")));

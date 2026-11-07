@@ -114,7 +114,7 @@ fn code(lang: Lang) -> Option<&'static str> {
 
 /// A name as a key part: lower case ASCII letters and digits, anything else one `-`, none at
 /// either end; `%` is `percent` and `/` is `per`.
-pub fn slug(s: &str) -> String {
+pub(super) fn slug(s: &str) -> String {
     let s = s.replace('%', " percent ").replace('/', " per ");
     let mut out = String::new();
     for c in s.chars() {
@@ -197,7 +197,7 @@ impl Theme {
 
 /// Every key with its English, in catalogue order (a unit once, where it first appears).
 #[cfg(test)]
-pub fn keys() -> &'static [(String, &'static str)] {
+pub(super) fn keys() -> &'static [(String, &'static str)] {
     static KEYS: OnceLock<Vec<(String, &'static str)>> = OnceLock::new();
     // The catalogue is compiled in and its tests run this, so it cannot panic in a built app.
     KEYS.get_or_init(|| keys_of(catalogue()))
@@ -245,7 +245,7 @@ fn keys_of(themes: &[Theme]) -> Vec<(String, &str)> {
 /// A key's text in a language, English where the language lacks it; `None` for a key the
 /// catalogue does not have.
 #[cfg(test)]
-pub fn text_in(lang: Lang, key: &str) -> Option<&'static str> {
+pub(super) fn text_in(lang: Lang, key: &str) -> Option<&'static str> {
     let english = keys().iter().find(|(k, _)| k == key).map(|(_, e)| *e)?;
     Some(match code(lang) {
         Some(code) => pick(language(code), key, english),

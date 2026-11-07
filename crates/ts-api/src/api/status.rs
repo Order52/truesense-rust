@@ -3,13 +3,14 @@
 
 use std::fmt;
 use std::path::Path;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use serde_json::{Value, json};
 use ts_domain::keyboard::State as KeyboardState;
 use ts_foundation::fsx;
+use ts_foundation::sync::locked;
 use ts_ipc::wire::Args;
 use ts_platform::hw::{Coded, FanState, Reading, Sensors, UsbLevel};
 
@@ -194,7 +195,7 @@ pub(crate) struct RaplMeter {
 impl RaplMeter {
     /// The watts since the previous call; `None` for the first reading or after the counter wrapped.
     fn watts(&self, microjoules: f64, now: f64) -> Option<f64> {
-        let previous = self.last.lock().unwrap_or_else(PoisonError::into_inner).replace((microjoules, now));
+        let previous = locked(&self.last).replace((microjoules, now));
         let (before, then) = previous?;
         let dt = now - then;
         (dt > 0.0 && microjoules >= before).then(|| (microjoules - before) / 1e6 / dt)
@@ -223,7 +224,7 @@ impl FanCache {
         label: Option<&str>,
         read: impl FnOnce() -> Option<FanState>,
     ) -> Option<FanState> {
-        let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut last = locked(&self.last);
         if let (Some(label), Some((at, was, state))) = (label, last.as_ref())
             && was == label
             && (0.0..Self::FRESH_S).contains(&(now - at))

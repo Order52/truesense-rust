@@ -42,4 +42,4 @@ TrueSense changes how a real laptop runs: fans, power, voltages, battery. This p
 
 ## Reporting a safety problem
 
-See [SECURITY.md](../SECURITY.md).
+Open an issue in the repository with the steps that led to it, or, if it could be abused (a way for another user to change the fans or the voltage, say), report it privately through the repository's security advisories rather than in public.

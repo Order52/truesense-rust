@@ -21,7 +21,7 @@ use crate::signals;
 const EXIT_USAGE: i32 = 2;
 
 /// Runs the program with `args` (`args[0]` is the program name) and returns the exit code.
-pub fn run(args: &[String]) -> i32 {
+pub(crate) fn run(args: &[String]) -> i32 {
     let Some(program) = args.first() else { return EXIT_USAGE };
     let rest = &args[1..];
     let name = Path::new(program).file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -30,8 +30,14 @@ pub fn run(args: &[String]) -> i32 {
     }
     match rest.first().map(String::as_str) {
         // Nothing to build for these.
+        // `--version --long` adds the commit and the build date, for bug reports; the short form
+        // is what scripts compare.
         Some("-V" | "--version") => {
-            println!("truesense {}", buildinfo::VERSION);
+            if rest.get(1).map(String::as_str) == Some("--long") {
+                println!("truesense {}", buildinfo::long_version());
+            } else {
+                println!("{}", buildinfo::version_line());
+            }
             0
         }
         Some("daemon") if rest.len() == 1 => run_daemon(),
@@ -40,7 +46,7 @@ pub fn run(args: &[String]) -> i32 {
 }
 
 /// The root service: it builds its own components (see `ts_daemon::assembly`).
-pub fn run_daemon() -> i32 {
+pub(crate) fn run_daemon() -> i32 {
     match ts_daemon::assembly::run_daemon() {
         Ok(()) => 0,
         Err(e) => {
@@ -106,6 +112,7 @@ mod tests {
     fn the_version_needs_nothing_built() {
         assert_eq!(run(&args(&["truesense", "--version"])), 0);
         assert_eq!(run(&args(&["/usr/bin/truesense", "-V"])), 0);
+        assert_eq!(run(&args(&["truesense", "--version", "--long"])), 0);
     }
 
     #[test]

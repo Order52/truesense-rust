@@ -504,3 +504,14 @@ fn the_errors_say_what_failed() {
         KeyboardError::NotFound.to_string()
     );
 }
+
+#[test]
+fn a_look_copy_must_decode_and_change_something() {
+    let good = serde_json::to_value(effect_look()).unwrap();
+    assert_eq!(Look::parse_copy(&good).unwrap(), effect_look());
+    for empty in [serde_json::json!({}), serde_json::json!({"keyboard": null, "rear": null})] {
+        assert_eq!(Look::parse_copy(&empty).unwrap_err(), "a look needs keyboard and/or rear settings");
+    }
+    assert!(Look::parse_copy(&serde_json::json!("text")).is_err());
+    assert!(Look::parse_copy(&serde_json::json!({"keyboard": 5})).is_err());
+}

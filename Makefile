@@ -7,7 +7,9 @@ BIN    := target/$(TARGET)/release/truesense
 QMAKE  ?= /usr/bin/qmake6
 QTENV  := QMAKE=$(QMAKE)
 
-.PHONY: debug build test lint fmt ci qt-build qt-release qt-test qt-lint qt-ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
+.PHONY: help debug build test lint fmt doc check-docs ci qt-build qt-release qt-test qt-lint qt-ci static-ci shelltest check-shell verify-units release-check install uninstall doctor module-test audit
+help:            ## this list
+	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/^([a-zA-Z_-]+):[^#]*## */  \1\t/' | expand -t 16
 debug:           ## debug build of every crate except the Qt app (see qt-build)
 	$(CARGO) build
 build:           ## the static release program, built the way releases are: target/$(TARGET)/release/truesense (truesense-fast is a link the installer makes)
@@ -21,13 +23,17 @@ fmt:
 	$(CARGO) fmt --all
 shelltest:       ## the installer and get.sh tests (bash only, nothing is installed)
 	@tools/shelltest/run.sh
+check-docs:      ## do the relative links of README.md and docs/*.md point at files and headings that exist?
+	@tools/ci/check-doc-links.sh
 check-shell:     ## bash -n and shellcheck on every script we ship
 	@tools/ci/check-shell.sh
 verify-units:    ## systemd-analyze verify on every unit
 	@tools/ci/verify-units.sh | tail -3
 release-check:   ## do the version numbers, notes and tag agree?  (make release-check TAG=v0.5.0)
 	@tools/release.sh check $(if $(TAG),--tag $(TAG),)
-ci: lint test    ## rustfmt, clippy, tests: the Rust gate (without the Qt app)
+doc:             ## rustdoc with warnings as errors: broken or private intra-doc links fail the build
+	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --no-deps
+ci: lint test doc  ## rustfmt, clippy, tests, rustdoc: the Rust gate (without the Qt app)
 qt-build:        ## the Qt app (debug): target/debug/truesense-qt
 	$(QTENV) $(CARGO) build -p ts-qt
 qt-release:      ## the Qt app (release): target/release/truesense-qt
@@ -39,11 +45,12 @@ qt-lint:         ## rustfmt and clippy (warnings are errors) on the Qt app
 	$(CARGO) fmt -p ts-qt -- --check
 	$(QTENV) $(CARGO) clippy -p ts-qt --all-targets -- -D warnings
 qt-ci: qt-lint qt-test  ## the Qt app's gate
-static-ci:       ## what CI's static job runs, locally (tools that are not installed are skipped): version table, shell, units, installer tests
+static-ci:       ## what CI's static job runs, locally (tools that are not installed are skipped): version table, shell, units, doc links, installer tests
 	@tools/release.sh check
 	@if command -v actionlint >/dev/null 2>&1; then actionlint && echo "ok  actionlint"; else echo "skip actionlint"; fi
 	@tools/ci/verify-units.sh | tail -3
 	@tools/ci/check-shell.sh
+	@tools/ci/check-doc-links.sh
 	@tools/shelltest/run.sh
 audit:           ## known vulnerabilities in the dependencies of Cargo.lock (cargo-audit, if installed)
 	@if command -v cargo-audit >/dev/null 2>&1; then $(CARGO) audit; else echo "skip cargo-audit (cargo install cargo-audit --locked)"; fi

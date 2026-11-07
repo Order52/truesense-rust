@@ -33,8 +33,6 @@ Item {
             title_home: qsTrId("nav_home"),
             title_current: Nav.currentPage ? Nav.titleOf(Nav.currentPage) : "",
             language: Ui.language,
-            rtl: Ui.rtl,
-            mirrored: hook.target.LayoutMirroring.enabled,
             theme_dark: Theme.dark,
             width: window.width,
             height: window.height,

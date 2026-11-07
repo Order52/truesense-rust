@@ -24,7 +24,7 @@ const PARAMS: &[ParamDef] = &[
     choice("accumulate", &["Off", "On"], 1.0),
 ];
 
-pub static CASCADE: EffectDef = EffectDef::software("cascade", "Cascade", PARAMS, create);
+pub(crate) static CASCADE: EffectDef = EffectDef::software("cascade", "Cascade", PARAMS, create);
 
 /// Code: columns over the keyboard's width, drops per column, rows.
 const NC: usize = 20;

@@ -32,7 +32,7 @@ use crate::usage::files::{below, dir_names, read_i64, read_line, read_text};
 
 /// The most interfaces tracked. A machine with thousands of container interfaces cannot make
 /// the sampler allocate without bound.
-pub const MAX_INTERFACES: usize = 256;
+pub(crate) const MAX_INTERFACES: usize = 256;
 
 /// A gap longer than this between two samples (suspend) restarts the baseline instead of
 /// averaging a rate over the sleep.
@@ -66,7 +66,7 @@ impl InterfaceKind {
 
 /// The counters of one interface in `/proc/net/dev`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IfCounters {
+pub(crate) struct IfCounters {
     /// Interface name.
     pub name: String,
     /// Bytes received.
@@ -78,7 +78,7 @@ pub struct IfCounters {
 /// Parses `/proc/net/dev`: two header lines, then `name: rx_bytes packets ... tx_bytes ...`
 /// (16 numbers). The colon may touch the first number (`eth0:123`). A line that does not have
 /// both counters is skipped; so are names that are empty or too long for the kernel (15).
-pub fn parse_net_dev(text: &str) -> Vec<IfCounters> {
+pub(crate) fn parse_net_dev(text: &str) -> Vec<IfCounters> {
     let mut out = Vec::new();
     for line in text.lines() {
         let Some((name, rest)) = line.split_once(':') else { continue };
@@ -100,7 +100,7 @@ pub fn parse_net_dev(text: &str) -> Vec<IfCounters> {
 
 /// What sysfs says about an interface.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct InterfaceInfo {
+pub(crate) struct InterfaceInfo {
     /// What it is.
     pub kind: InterfaceKind,
     /// The kernel's operational state: `up`, `down`, `dormant`, `unknown` (loopback, many virtual ones).
@@ -113,7 +113,7 @@ pub struct InterfaceInfo {
 
 /// Reads an interface's facts from `/sys/class/net/<name>`. Missing files give the neutral
 /// answer (`other`, state `unknown`), never an error: an interface can vanish mid-read.
-pub fn interface_info(root: &Path, name: &str) -> InterfaceInfo {
+pub(crate) fn interface_info(root: &Path, name: &str) -> InterfaceInfo {
     let dir = below(root, "/sys/class/net").join(name);
     let arphrd = read_i64(&dir.join("type"));
     let kind = if dir.join("wireless").is_dir() || dir.join("phy80211").exists() {
@@ -139,7 +139,7 @@ pub fn interface_info(root: &Path, name: &str) -> InterfaceInfo {
 /// The interface of the default IPv4 route from `/proc/net/route` (lowest metric first).
 /// The file is `Iface Destination Gateway Flags RefCnt Use Metric Mask ...` in hex; a default
 /// route has destination `00000000` and the `RTF_UP` (1) and `RTF_GATEWAY` (2) flags.
-pub fn default_route_interface(text: &str) -> Option<String> {
+pub(crate) fn default_route_interface(text: &str) -> Option<String> {
     let mut best: Option<(u64, &str)> = None;
     for line in text.lines().skip(1) {
         let f: Vec<&str> = line.split_whitespace().collect();

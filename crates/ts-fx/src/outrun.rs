@@ -17,7 +17,7 @@ const PARAMS: &[ParamDef] = &[
     num("grid", 20.0, 100.0, 60.0),
 ];
 
-pub static OUTRUN: EffectDef = EffectDef::software("outrun", "Outrun", PARAMS, create);
+pub(crate) static OUTRUN: EffectDef = EffectDef::software("outrun", "Outrun", PARAMS, create);
 
 const I_SKY: usize = 0;
 

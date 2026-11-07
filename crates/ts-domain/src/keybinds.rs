@@ -202,7 +202,7 @@ impl Bindings {
 
 /// Fn+F10 always toggles the touchpad (the firmware has no other use for it here); it is not
 /// one of the bindable gestures.
-pub const FN_F10_ACTION: &str = "touchpad-toggle";
+pub(crate) const FN_F10_ACTION: &str = "touchpad-toggle";
 
 /// What the Fn-key HID interface reports (usage page 0x88, reports starting with `0x04`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -5,7 +5,7 @@
 #![forbid(unsafe_code)]
 
 /// The text for a value that is not known.
-pub const UNKNOWN: &str = "–";
+pub(crate) const UNKNOWN: &str = "–";
 
 fn known(v: Option<f64>) -> Option<f64> {
     v.filter(|n| n.is_finite())

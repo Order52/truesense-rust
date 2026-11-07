@@ -4,8 +4,6 @@
 // shader effect, so also the software and offscreen ones) and keeps the files standard SVG.
 //
 //   Icon { name: "fan"; size: 20; color: Theme.muted }
-//
-// `mirror` flips the icon in right-to-left layouts, for icons that point (back, chevron).
 import QtQuick
 import org.truesense.app
 
@@ -15,7 +13,6 @@ Item {
     property string name: ""
     property int size: 20
     property color color: Theme.text
-    property bool mirror: false
 
     implicitWidth: size
     implicitHeight: size
@@ -40,7 +37,6 @@ Item {
         sourceSize.height: Math.round(root.size * Screen.devicePixelRatio)
         fillMode: Image.PreserveAspectFit
         smooth: true
-        mirror: root.mirror && Ui.rtl
         opacity: root.enabled ? 1 : 0.5
     }
 

@@ -35,9 +35,9 @@ const MAX_ARGS: usize = 12;
 /// Only this much of a command line is read.
 const MAX_CMDLINE: usize = 4096;
 /// The longest program name a rule may have.
-const NAME_MAX: usize = 80;
+pub const PROGRAM_NAME_MAX: usize = 80;
 /// The process list is read every this many ticks (games do not start every second).
-pub const SCAN_EVERY_TICKS: u64 = 3;
+pub(crate) const SCAN_EVERY_TICKS: u64 = 3;
 
 /// Why a rule or a rule set was refused. The messages are the Python edition's.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,7 +83,7 @@ fn py_strip(s: &str) -> &str {
 /// because the name is matched against file names and must never look like a path.
 pub fn clean_name(name: &str) -> Result<String, RulesError> {
     let n = py_strip(name).to_lowercase();
-    let ok = (1..=NAME_MAX).contains(&n.len())
+    let ok = (1..=PROGRAM_NAME_MAX).contains(&n.len())
         && n.bytes().all(|b| {
             b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'.' | b'_' | b'+' | b' ' | b'-')
         });
@@ -259,7 +259,7 @@ fn read_prefix(path: &Path, limit: usize) -> Option<Vec<u8>> {
 }
 
 /// Remembers the game mode between ticks: the process list is only read every
-/// [`SCAN_EVERY_TICKS`] ticks.
+/// `SCAN_EVERY_TICKS` ticks.
 #[derive(Debug, Clone, Default)]
 pub struct Watcher {
     /// `None` until the first look; then the last answer.

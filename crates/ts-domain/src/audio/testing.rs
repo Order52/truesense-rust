@@ -122,25 +122,25 @@ impl FakeSystem {
     }
 
     /// The fake's state; never hold the guard across a call into the audio code.
-    pub fn state(&self) -> MutexGuard<'_, State> {
+    pub(super) fn state(&self) -> MutexGuard<'_, State> {
         self.state.lock().unwrap()
     }
 
-    pub fn clear(&self) {
+    pub(super) fn clear(&self) {
         self.state().calls.clear();
     }
 
     /// Every recorded command as one string each.
-    pub fn sent(&self) -> Vec<String> {
+    pub(super) fn sent(&self) -> Vec<String> {
         self.state().calls.iter().map(|c| c.join(" ")).collect()
     }
 
     /// Whether a command that starts with these words was sent.
-    pub fn did(&self, prefix: &[&str]) -> bool {
+    pub(super) fn did(&self, prefix: &[&str]) -> bool {
         self.count(prefix) > 0
     }
 
-    pub fn count(&self, prefix: &[&str]) -> usize {
+    pub(super) fn count(&self, prefix: &[&str]) -> usize {
         self.state()
             .calls
             .iter()
@@ -383,7 +383,7 @@ pub(crate) struct FakeClock {
 
 impl FakeClock {
     /// Calls `hook` after every sleep (on whichever thread slept), for tests that must stop a loop.
-    pub fn on_sleep(&self, hook: impl Fn(Duration) + Send + Sync + 'static) {
+    pub(super) fn on_sleep(&self, hook: impl Fn(Duration) + Send + Sync + 'static) {
         *self.hook.lock().unwrap() = Some(Arc::new(hook));
     }
 }
@@ -413,7 +413,7 @@ pub(crate) struct FakeOsd {
 
 impl FakeOsd {
     /// How many `quiet` guards are alive now.
-    pub fn quiet_depth(&self) -> u64 {
+    pub(super) fn quiet_depth(&self) -> u64 {
         self.depth.load(Ordering::SeqCst)
     }
 }
@@ -447,7 +447,7 @@ pub(crate) struct Rig {
 }
 
 impl Rig {
-    pub fn new(broken: bool) -> Self {
+    pub(super) fn new(broken: bool) -> Self {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let dir = std::env::temp_dir().join(format!(
             "ts-domain-audio-{}-{}",
@@ -492,25 +492,25 @@ impl Rig {
 
     /// The files the audio code uses, for a test that changes one (before any other holder of the
     /// audio value exists).
-    pub fn paths_mut(&mut self) -> &mut Paths {
+    pub(super) fn paths_mut(&mut self) -> &mut Paths {
         &mut Arc::get_mut(&mut self.audio).unwrap().paths
     }
 
     /// The configuration the audio code reads; changes apply at once, like a config edit.
-    pub fn config(&self) -> MutexGuard<'_, Config> {
+    pub(super) fn config(&self) -> MutexGuard<'_, Config> {
         self.config.lock().unwrap()
     }
 
-    pub fn shown(&self) -> Vec<String> {
+    pub(super) fn shown(&self) -> Vec<String> {
         self.osd.shown.lock().unwrap().clone()
     }
 
-    pub fn log_lines(&self) -> Vec<String> {
+    pub(super) fn log_lines(&self) -> Vec<String> {
         self.logs.lock().unwrap().clone()
     }
 
     /// The text of a file below the rig's directory.
-    pub fn read(&self, relative: &str) -> Option<String> {
+    pub(super) fn read(&self, relative: &str) -> Option<String> {
         std::fs::read_to_string(self.dir.join(relative)).ok()
     }
 }

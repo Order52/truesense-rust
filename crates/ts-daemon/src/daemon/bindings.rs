@@ -62,16 +62,6 @@ impl Report {
     }
 }
 
-/// Accepts a look copy only if it decodes as a look that changes something: the same test the boot
-/// look gets before it is stored.
-pub(super) fn parse_look(value: &Value) -> Result<Look, String> {
-    let look: Look = serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
-    if look.is_empty() {
-        return Err("a look needs keyboard and/or rear settings".to_owned());
-    }
-    Ok(look)
-}
-
 fn mode_of(text: &str) -> Result<Mode, String> {
     Mode::parse(text).ok_or_else(|| {
         format!("unknown power mode '{text}' (use eco, quiet, balanced, performance or turbo)")
@@ -110,7 +100,7 @@ impl Daemon {
             "set" => {
                 let mode = mode_of(a.require_str("mode")?)?;
                 let look = part(a, "look")?
-                    .map(|b| Bound::look(&b.name, b.data, parse_look).map_err(|e| e.to_string()))
+                    .map(|b| Bound::look(&b.name, b.data, Look::parse_copy).map_err(|e| e.to_string()))
                     .transpose()?;
                 let curve = part(a, "fan_curve")?
                     .map(|b| Bound::fan_curve(&b.name, &b.data).map_err(|e| e.to_string()))
@@ -138,7 +128,7 @@ impl Daemon {
                 let (target, fresh) = match a.require_str("kind")? {
                     "look" => (
                         Target::Look,
-                        Bound::look(name, data.clone(), parse_look).map_err(|e| e.to_string())?,
+                        Bound::look(name, data.clone(), Look::parse_copy).map_err(|e| e.to_string())?,
                     ),
                     "fan_curve" => {
                         (Target::FanCurve, Bound::fan_curve(name, data).map_err(|e| e.to_string())?)
@@ -162,7 +152,7 @@ impl Daemon {
                     },
                 };
                 let all = self.stored_bindings()?;
-                let actions = bindings::plan(now, self.bound_fan_mode(), &all, parse_look);
+                let actions = bindings::plan(now, self.bound_fan_mode(), &all, Look::parse_copy);
                 let reports = self.carry_out(&mut g, now, actions);
                 Ok(
                     json!({"mode": now.name(), "results": reports.iter().map(Report::to_json).collect::<Vec<_>>()}),
@@ -204,7 +194,7 @@ impl Daemon {
         if all.get(now).is_none() {
             return;
         }
-        let actions = bindings::edge(prev, now, self.bound_fan_mode(), &all, parse_look);
+        let actions = bindings::edge(prev, now, self.bound_fan_mode(), &all, Look::parse_copy);
         self.carry_out(g, now, actions);
     }
 

@@ -100,7 +100,7 @@ fn first_field<'a>(text: &'a str, key: &str) -> Option<&'a str> {
 
 /// Parses `/proc/cpuinfo`. x86 lists one block per logical processor with `physical id` and
 /// `core id`; on a machine without them (a virtual machine, ARM) the core count is unknown, not guessed.
-pub fn parse_cpuinfo(text: &str) -> CpuInfo {
+pub(crate) fn parse_cpuinfo(text: &str) -> CpuInfo {
     let model = first_field(text, "model name").or_else(|| first_field(text, "Model")).map(str::to_owned);
     let mut threads = 0u32;
     let mut sockets = BTreeSet::new();
@@ -136,7 +136,7 @@ pub fn parse_cpuinfo(text: &str) -> CpuInfo {
 }
 
 /// Parses `/etc/os-release`: `KEY=value` lines, the value optionally in single or double quotes.
-pub fn parse_os_release(text: &str) -> OsInfo {
+pub(crate) fn parse_os_release(text: &str) -> OsInfo {
     let value = |key: &str| {
         text.lines().find_map(|line| {
             let rest = line.trim().strip_prefix(key)?.strip_prefix('=')?;
@@ -162,7 +162,7 @@ fn vendor_name(id: &str) -> String {
 
 /// The display controllers (PCI class 0x03xx) in address order. Reads only `vendor`, `class`,
 /// `device` and `boot_vga`, which do not wake a sleeping card.
-pub fn gpu_devices(root: &Path) -> Vec<GpuDevice> {
+pub(crate) fn gpu_devices(root: &Path) -> Vec<GpuDevice> {
     let base = below(root, "/sys/bus/pci/devices");
     dir_names(&base)
         .into_iter()

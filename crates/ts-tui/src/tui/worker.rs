@@ -12,17 +12,14 @@ use std::collections::VecDeque;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use super::backend::Backend;
 use super::data::ReadKey;
 use super::model::{Msg, Ticket, Write};
-
-fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
-    m.lock().unwrap_or_else(PoisonError::into_inner)
-}
+use ts_foundation::sync::locked;
 
 /// The writes waiting for their turn.
 #[derive(Debug, Default)]
@@ -82,7 +79,7 @@ impl Worker {
     /// Queues a write; answers the tickets of the writes it replaced.
     pub(crate) fn submit(&self, write: Write) -> Vec<Ticket> {
         let (state, _) = &*self.shared;
-        let mut s = lock(state);
+        let mut s = locked(state);
         let dropped = s.queue.submit(write);
         let start = !s.running;
         s.running = true;
@@ -99,7 +96,7 @@ impl Worker {
     /// True when nothing is queued or running.
     #[cfg(test)]
     pub(crate) fn idle(&self) -> bool {
-        !lock(&self.shared.0).running
+        !locked(&self.shared.0).running
     }
 
     /// Waits until every queued write is done (on quit, so a change made a moment ago is not
@@ -107,7 +104,7 @@ impl Worker {
     pub(crate) fn drain(&self, timeout: Duration) -> bool {
         let (state, idle) = &*self.shared;
         let deadline = Instant::now() + timeout;
-        let mut s = lock(state);
+        let mut s = locked(state);
         while s.running {
             let left = deadline.saturating_duration_since(Instant::now());
             if left.is_zero() {
@@ -134,7 +131,7 @@ fn drain_queue(shared: &(Mutex<WorkerState>, Condvar), backend: &dyn Backend, re
     let (state, idle) = shared;
     loop {
         let next = {
-            let mut s = lock(state);
+            let mut s = locked(state);
             let next = s.queue.next();
             if next.is_none() {
                 s.running = false;
@@ -220,7 +217,7 @@ impl Readers {
 
     /// Reads these settings in the background; never two batches at once.
     pub(crate) fn slow(&self, keys: Vec<ReadKey>) {
-        let first = lock(&self.gate).request(keys);
+        let first = locked(&self.gate).request(keys);
         let Some(mut keys) = first else { return };
         let backend = Arc::clone(&self.backend);
         let results = self.results.clone();
@@ -238,7 +235,7 @@ impl Readers {
                         return;
                     }
                 }
-                match lock(&gate).finished() {
+                match locked(&gate).finished() {
                     Some(next) => keys = next,
                     None => return,
                 }
@@ -340,7 +337,7 @@ mod tests {
                 self.busy.store(false, Ordering::SeqCst);
                 panic_for_test();
             }
-            lock(&self.ran).push(op.clone());
+            locked(&self.ran).push(op.clone());
             self.busy.store(false, Ordering::SeqCst);
             Ok(Done::Unit)
         }
@@ -374,7 +371,7 @@ mod tests {
         backend.release.wait();
         assert!(worker.drain(Duration::from_secs(5)));
         assert!(worker.idle());
-        let ran = lock(&backend.ran).clone();
+        let ran = locked(&backend.ran).clone();
         assert_eq!(ran, vec![Op::ReleaseHold, Op::Calibration(true), Op::UsbCharge(30)]);
         assert!(!backend.overlapped.load(Ordering::SeqCst), "writes never overlap");
         let tickets: Vec<Ticket> = rx
@@ -422,7 +419,7 @@ mod tests {
         assert!(worker.drain(Duration::from_secs(5)));
         worker.submit(write(2, "", Op::ReleaseHold));
         assert!(worker.drain(Duration::from_secs(5)));
-        assert_eq!(lock(&backend.ran).len(), 2);
+        assert_eq!(locked(&backend.ran).len(), 2);
         // A write that never finishes within the timeout.
         let held = gated();
         let (tx, _rx) = mpsc::channel();

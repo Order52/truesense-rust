@@ -99,7 +99,6 @@ fn the_real_main_qml_loads_and_the_bus_round_trip_works() {
     assert_eq!(r["groups"], 5);
     assert_eq!(r["title_home"], "Home", "English catalogue is loaded: {r}");
     assert_eq!(r["language"], "en");
-    assert_eq!(r["rtl"], false);
     assert_eq!(r["theme_dark"], true, "the default look is dark");
     assert_eq!(r["width"], 1000);
     assert_eq!(r["height"], 680);
@@ -144,14 +143,34 @@ fn a_narrow_window_still_loads_with_the_menu_layout() {
     assert_eq!(r["page"], "home");
 }
 
+/// A `ui.json` written when Arabic still existed (`"language": "ar"`), or by hand with any
+/// language the app does not know, must load without an error and give English.
 #[test]
-fn arabic_switches_the_catalogue_and_mirrors_the_layout() {
-    let home = Home::new(Some(r#"{"language": "ar"}"#));
-    let r = run_once(&home, 300, &[]);
-    assert_eq!(r["language"], "ar");
-    assert_eq!(r["rtl"], true);
-    assert_eq!(r["mirrored"], true, "{r}");
-    assert_eq!(r["title_home"], "الرئيسية");
+fn a_settings_file_that_still_says_arabic_loads_in_english() {
+    for text in [r#"{"language": "ar"}"#, r#"{"language": "fr", "theme": "light"}"#] {
+        let home = Home::new(Some(text));
+        let out = home.command(300, &[]).output().unwrap();
+        assert!(out.status.success(), "{text}: {}", String::from_utf8_lossy(&out.stderr));
+        let r = report_of(&out);
+        assert_eq!(r["language"], "en", "{text}: {r}");
+        assert_eq!(r["title_home"], "Home", "{text}: {r}");
+        // Only a note in the log: the file is readable, one entry of it is not used.
+        let log = String::from_utf8_lossy(&out.stderr);
+        assert!(log.contains("ignored entry"), "{log}");
+        assert!(!log.contains("cannot be read"), "{log}");
+    }
+}
+
+#[test]
+fn a_desktop_in_arabic_gets_english() {
+    let home = Home::new(None);
+    let mut cmd = home.command(300, &[]);
+    cmd.env("LC_ALL", "ar_EG.UTF-8").env("LANG", "ar_EG.UTF-8").env("LANGUAGE", "ar");
+    let out = cmd.output().unwrap();
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let r = report_of(&out);
+    assert_eq!(r["language"], "en", "{r}");
+    assert_eq!(r["title_home"], "Home");
 }
 
 #[test]
@@ -160,7 +179,6 @@ fn the_pseudo_locale_marks_every_translated_string() {
     let r = run_once(&home, 300, &[]);
     let title = r["title_home"].as_str().unwrap();
     assert!(title.starts_with('⟦') && title.ends_with('⟧'), "{title}");
-    assert_eq!(r["rtl"], false);
 }
 
 #[test]

@@ -23,7 +23,7 @@ use crate::osd::effective_uid;
 
 /// Programs that show pkexec's password prompt. `polkitd` alone is not enough: `pkexec` needs an
 /// AGENT to ask for the password, and without one it fails silently.
-pub const POLKIT_AGENTS: [&str; 13] = [
+pub(crate) const POLKIT_AGENTS: [&str; 13] = [
     "polkit-gnome-authentication-agent",
     "polkit-kde-authentication-agent",
     "polkit-mate-authentication-agent",
@@ -40,7 +40,7 @@ pub const POLKIT_AGENTS: [&str; 13] = [
 ];
 
 /// Terminal emulators and how each runs `sh -c COMMAND` and waits until it ends.
-pub const TERMINALS: [(&str, &[&str]); 9] = [
+pub(crate) const TERMINALS: [(&str, &[&str]); 9] = [
     ("kitty", &["kitty", "sh", "-c"]),
     ("foot", &["foot", "sh", "-c"]),
     ("alacritty", &["alacritty", "-e", "sh", "-c"]),

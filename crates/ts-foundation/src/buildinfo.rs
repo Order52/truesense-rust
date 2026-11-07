@@ -24,10 +24,10 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The git commit of the build, or `None` for a build that did not set `TRUESENSE_COMMIT`.
-pub const COMMIT: Option<&str> = non_empty(option_env!("TRUESENSE_COMMIT"));
+pub(crate) const COMMIT: Option<&str> = non_empty(option_env!("TRUESENSE_COMMIT"));
 
 /// The build date (UTC, `YYYY-MM-DD` by convention) or `None` when `TRUESENSE_BUILD_DATE` was not set.
-pub const DATE: Option<&str> = non_empty(option_env!("TRUESENSE_BUILD_DATE"));
+pub(crate) const DATE: Option<&str> = non_empty(option_env!("TRUESENSE_BUILD_DATE"));
 
 /// Treats an empty variable like an unset one, so `TRUESENSE_COMMIT= cargo build` (what a
 /// failing `$(git ...)` in a script produces) does not print "commit ".

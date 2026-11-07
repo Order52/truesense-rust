@@ -31,7 +31,7 @@
 )]
 
 /// The circle constant times two, as `Math.PI * 2`.
-pub const TAU: f64 = std::f64::consts::TAU;
+pub(crate) const TAU: f64 = std::f64::consts::TAU;
 
 #[inline]
 fn hi(x: f64) -> i32 {
@@ -369,7 +369,7 @@ fn atan(x: f64) -> f64 {
 }
 
 /// `Math.atan2(y, x)`: fdlibm's `e_atan2.c` (FreeBSD).
-pub fn atan2(y: f64, x: f64) -> f64 {
+pub(crate) fn atan2(y: f64, x: f64) -> f64 {
     const TINY: f64 = 1.0e-300;
     const PI_O_4: f64 = 7.8539816339744827900E-01;
     const PI_O_2: f64 = 1.5707963267948965580E+00;
@@ -552,7 +552,7 @@ pub fn round(x: f64) -> f64 {
 }
 
 /// JS's ToUint32 (`x >>> 0`): truncate, then wrap modulo 2^32; NaN and infinities give 0.
-pub fn to_uint32(x: f64) -> u32 {
+pub(crate) fn to_uint32(x: f64) -> u32 {
     if (0.0..4_294_967_296.0).contains(&x) {
         return x as u32;
     }
@@ -564,7 +564,7 @@ pub fn to_uint32(x: f64) -> u32 {
 }
 
 /// JS's ToInt32 (`x | 0`, and every operand of `^`, `&`, `>>`).
-pub fn to_int32(x: f64) -> i32 {
+pub(crate) fn to_int32(x: f64) -> i32 {
     if x > -2_147_483_649.0 && x < 2_147_483_648.0 {
         return x as i32;
     }
@@ -636,12 +636,12 @@ pub fn fract(v: f64) -> f64 {
 }
 
 /// A Gaussian bump of width `w` at distance `d`.
-pub fn gauss(d: f64, w: f64) -> f64 {
+pub(crate) fn gauss(d: f64, w: f64) -> f64 {
     exp(-(d * d) / (w * w))
 }
 
 /// `a` wrapped into 0..TAU.
-pub fn wrap_angle(a: f64) -> f64 {
+pub(crate) fn wrap_angle(a: f64) -> f64 {
     a - TAU * (a / TAU).floor()
 }
 

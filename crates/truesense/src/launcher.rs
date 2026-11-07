@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 
 use ts_api::api::Api;
 use ts_cli::cli::Launcher;
@@ -16,13 +16,13 @@ use ts_system::services::Step;
 use crate::{hooks, signals};
 
 /// The launcher of the real program: it holds the application layer the foreground modes use.
-pub struct SystemLauncher {
+pub(crate) struct SystemLauncher {
     api: Arc<Api>,
 }
 
 impl SystemLauncher {
     /// A launcher whose window, terminal UI and key service run over `api`.
-    pub fn new(api: Arc<Api>) -> Self {
+    pub(crate) fn new(api: Arc<Api>) -> Self {
         Self { api }
     }
 }
@@ -79,7 +79,7 @@ fn exec_native_app(app: &std::path::Path, page: Option<&str>) -> i32 {
 }
 
 /// Starts `truesense gui` detached from this terminal (the terminal UI's "open the window" button).
-pub fn open_window_detached() -> Result<(), String> {
+pub(crate) fn open_window_detached() -> Result<(), String> {
     use std::os::unix::process::CommandExt;
     let mut child = Command::new(current_exe())
         .arg("gui")
@@ -182,12 +182,6 @@ impl Launcher for SystemLauncher {
     fn clock(&self) -> Arc<dyn Clock> {
         Arc::new(SystemClock::new())
     }
-}
-
-/// Whether a stop was requested (kept for symmetry with the services that poll it).
-#[allow(dead_code)]
-pub fn stop_requested(flag: &AtomicBool) -> bool {
-    flag.load(Ordering::SeqCst)
 }
 
 #[cfg(test)]

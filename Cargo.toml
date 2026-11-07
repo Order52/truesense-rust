@@ -25,6 +25,7 @@ crossterm = "0.28"
 tiny_http = "0.12"
 
 [workspace.lints.rust]
+unsafe_code = "deny"
 unsafe_op_in_unsafe_fn = "deny"
 missing_docs = "warn"
 

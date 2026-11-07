@@ -18,20 +18,25 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value, json};
 use ts_foundation::fsx::{self, FsError};
 
-/// The languages the app offers; `system` follows the desktop. `pseudo` is for tests and is not
-/// listed in the settings page.
-pub const LANGUAGES: &[&str] = &["system", "en", "ar", "pseudo"];
+/// The values the `language` setting accepts; `system` follows the desktop. `pseudo` is for tests
+/// and is not offered to people. A file naming a language that is not here (a catalogue that was
+/// dropped, such as Arabic) loses that one entry and falls back to the default, `system`.
+pub(crate) const LANGUAGES: &[&str] = &["system", "en", "pseudo"];
+/// The desktop languages that have a catalogue of their own in `i18n/`; any other desktop language
+/// gets English. English is always loaded underneath, so it is not listed. Add a code here when a
+/// `<code>.ts` file is added.
+pub(crate) const CATALOGUES: &[&str] = &[];
 /// The colour themes.
 pub const THEMES: &[&str] = &["dark", "light", "system"];
 
 /// Smallest window the layout is designed for; saved sizes below it are raised to it. Small on
 /// purpose: a tiling compositor gives the window the size of its tile, and a larger minimum makes
 /// the window overlap its neighbours (the pages scroll, so a short window loses nothing).
-pub const MIN_WINDOW: (u32, u32) = (320, 260);
+pub(crate) const MIN_WINDOW: (u32, u32) = (320, 260);
 /// Largest saved window dimension: a corrupt file must not ask for a 10-million-pixel window.
-pub const MAX_WINDOW: u32 = 16_384;
+pub(crate) const MAX_WINDOW: u32 = 16_384;
 /// Where the window opens the first time.
-pub const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
+pub(crate) const DEFAULT_WINDOW: (u32, u32) = (1000, 680);
 
 /// The settings with their defaults (what a missing file means).
 #[derive(Debug, Clone, PartialEq)]
@@ -46,7 +51,7 @@ pub struct UiSettings {
     pub y: Option<i32>,
     /// `dark` (default), `light` or `system`.
     pub theme: String,
-    /// `system` (default), `en`, `ar`, `pseudo`.
+    /// One of `system`, `en` or `pseudo` (see `LANGUAGES`); `system` by default.
     pub language: String,
     /// Closing the window keeps the app in the tray (where a tray exists).
     pub minimise_to_tray: bool,
@@ -206,21 +211,22 @@ fn set_choice(slot: &mut String, v: &Value, allowed: &[&str]) -> bool {
 }
 
 /// The language to load for the setting `choice` when the desktop's locale is `system_locale`
-/// (`ar_EG`, `en_US`, ...): `system` follows the desktop, and a desktop language we have no
-/// catalogue for gets English.
-pub fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
+/// (`de_DE`, `en_US`, ...): `system` follows the desktop, and a desktop language that is not in
+/// [`CATALOGUES`] gets English.
+pub(crate) fn resolve_language<'a>(choice: &'a str, system_locale: &str) -> &'a str {
+    resolve_in(CATALOGUES, choice, system_locale)
+}
+
+/// [`resolve_language`] against an explicit table, so the matching is tested with a language that
+/// has a catalogue.
+fn resolve_in<'a>(catalogues: &[&'a str], choice: &'a str, system_locale: &str) -> &'a str {
     match choice {
         "system" => {
             let lang = system_locale.split(['_', '-', '.', '@']).next().unwrap_or("");
-            if lang.eq_ignore_ascii_case("ar") { "ar" } else { "en" }
+            catalogues.iter().find(|c| c.eq_ignore_ascii_case(lang)).copied().unwrap_or("en")
         }
         other => other,
     }
-}
-
-/// Whether text runs right to left in `language`; the whole layout is mirrored then.
-pub fn is_rtl(language: &str) -> bool {
-    language == "ar"
 }
 
 /// What the settings store could not do.
@@ -489,9 +495,9 @@ mod tests {
         assert_eq!(s.settings().width, None);
         assert_eq!(s.settings().height, Some(700));
         assert_eq!(s.settings().theme, "dark", "an unknown theme falls back to the default");
-        assert_eq!(s.settings().language, "ar");
+        assert_eq!(s.settings().language, "system", "a dropped catalogue (Arabic) falls back to the default");
         assert_eq!(s.settings().font_scale, 1.6, "out-of-range scale is clamped");
-        assert_eq!(s.dropped().len(), 2);
+        assert_eq!(s.dropped().len(), 3);
         s.set("reduced_motion", &json!(true)).unwrap();
         let saved: Value = serde_json::from_str(&std::fs::read_to_string(t.file()).unwrap()).unwrap();
         assert_eq!(saved["future"], json!({"a": 1}));
@@ -550,14 +556,21 @@ mod tests {
 
     #[test]
     fn language_follows_the_desktop_only_when_asked_to() {
-        assert_eq!(resolve_language("system", "ar_EG.UTF-8"), "ar");
-        assert_eq!(resolve_language("system", "ar"), "ar");
         assert_eq!(resolve_language("system", "en_US"), "en");
         assert_eq!(resolve_language("system", "de_DE"), "en", "no catalogue: English");
+        assert_eq!(resolve_language("system", "ar_EG.UTF-8"), "en", "Arabic was dropped: English");
         assert_eq!(resolve_language("system", ""), "en");
         assert_eq!(resolve_language("en", "ar_EG"), "en");
         assert_eq!(resolve_language("pseudo", "de"), "pseudo");
-        assert!(is_rtl("ar") && !is_rtl("en") && !is_rtl("pseudo"));
+    }
+
+    #[test]
+    fn a_language_with_a_catalogue_is_matched_by_its_code_only_when_asked_to() {
+        let table = ["de", "pt"];
+        assert_eq!(resolve_in(&table, "system", "de_DE.UTF-8"), "de");
+        assert_eq!(resolve_in(&table, "system", "PT-br"), "pt");
+        assert_eq!(resolve_in(&table, "system", "fr_FR"), "en");
+        assert_eq!(resolve_in(&table, "en", "de_DE"), "en");
     }
 
     #[test]

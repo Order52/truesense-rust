@@ -252,7 +252,7 @@ fn channel(f: f64) -> u8 {
 }
 
 /// Blends two colours: `t` = 0 gives `a`, `t` = 1 gives `b`.
-pub fn lerp(a: Color, b: Color, t: f64) -> Color {
+pub(crate) fn lerp(a: Color, b: Color, t: f64) -> Color {
     let one = |i: usize| channel(f64::from(a[i]) + (f64::from(b[i]) - f64::from(a[i])) * t);
     [one(0), one(1), one(2)]
 }

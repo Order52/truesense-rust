@@ -18,7 +18,7 @@ use serde::Serialize;
 use super::files::{below, dir_names, indexed, read_line, read_text, read_u64};
 
 /// The most cores looked at. A hostile `/proc/stat` cannot make the sampler allocate without bound.
-pub const MAX_CORES: usize = 1024;
+pub(crate) const MAX_CORES: usize = 1024;
 
 /// A CPU frequency above this is a broken file, not a processor (kHz: 100 GHz).
 const MAX_PLAUSIBLE_KHZ: u64 = 100_000_000;
@@ -60,7 +60,7 @@ fn parse_ticks<'a>(fields: impl Iterator<Item = &'a str>) -> Option<CpuTicks> {
 }
 
 /// Parses `/proc/stat`. Lines that are not `cpu` or `cpuN`, and lines that are garbled, are
-/// skipped. Never fails and never reads more than [`MAX_CORES`] core lines.
+/// skipped. Never fails and never reads more than `MAX_CORES` core lines.
 pub fn parse_stat(text: &str) -> StatSnapshot {
     let mut snapshot = StatSnapshot::default();
     for line in text.lines() {

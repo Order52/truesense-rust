@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use ts_foundation::fsx::{self, FsError};
+use ts_foundation::names::is_valid as valid_name;
 use ts_foundation::userstate::{self, Store};
 use ts_platform::hw::{Coded, Hw, HwError, Rear as HwRear, RearMode, RearSettings, Rgb};
 
@@ -23,7 +24,7 @@ use crate::keyboard::{self, Keyboard, KeyboardError};
 use crate::themes::ThemeSpec;
 
 /// Where the daemon keeps the boot look unless `TRUESENSE_BOOT_LOOK` says otherwise.
-pub const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
+pub(crate) const DEFAULT_BOOT_FILE: &str = "/var/lib/truesense/boot-look.json";
 
 /// The built-in looks, which cannot be saved over or deleted.
 pub const BUILTIN_NAMES: [&str; 1] = ["native"];
@@ -169,6 +170,17 @@ impl Look {
         serde_json::from_str(text).map_err(|source| LooksError::Parse { what: "look".to_owned(), source })
     }
 
+    /// Decodes a look copy that a binding or the boot look keeps, and accepts it only when it
+    /// changes something: the one test every copy goes through before it is stored or applied,
+    /// in the daemon and in the application layer alike. The error is the text a person sees.
+    pub fn parse_copy(value: &serde_json::Value) -> Result<Look, String> {
+        let look: Look = serde_json::from_value(value.clone()).map_err(|e| e.to_string())?;
+        if look.is_empty() {
+            return Err("a look needs keyboard and/or rear settings".to_owned());
+        }
+        Ok(look)
+    }
+
     /// Whether the look changes nothing: no part, or only empty ones.
     pub fn is_empty(&self) -> bool {
         self.keyboard.as_ref().is_none_or(keyboard::State::is_empty)
@@ -273,7 +285,7 @@ pub fn default_dir(home: &Path) -> PathBuf {
     home.join(".config/truesense/looks")
 }
 
-/// The boot look path: `TRUESENSE_BOOT_LOOK` (empty counts as unset) or [`DEFAULT_BOOT_FILE`].
+/// The boot look path: `TRUESENSE_BOOT_LOOK` (empty counts as unset) or `DEFAULT_BOOT_FILE`.
 pub fn default_boot_file(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_BOOT_LOOK").map_or_else(|| PathBuf::from(DEFAULT_BOOT_FILE), PathBuf::from)
 }
@@ -286,12 +298,6 @@ pub struct LookStore {
     keyboard: Arc<dyn KeyboardControl>,
     rear: Arc<dyn RearControl>,
     now: Arc<dyn Fn() -> f64 + Send + Sync>,
-}
-
-/// Look names use letters, digits, `.`, `_` and `-`, at most 40 of them.
-fn valid_name(name: &str) -> bool {
-    (1..=40).contains(&name.chars().count())
-        && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
 }
 
 fn file_error(op: &'static str) -> impl FnOnce(FsError) -> LooksError {

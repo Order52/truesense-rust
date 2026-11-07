@@ -12,7 +12,7 @@ use super::palette::{add_p, cyc_index, put_l, soft_clip};
 const PARAMS: &[ParamDef] =
     &[num("speed", 0.0, 100.0, 40.0), num("density", 10.0, 100.0, 55.0), num("streaks", 0.0, 100.0, 55.0)];
 
-pub static WARP: EffectDef = EffectDef::software("warp", "Warp", PARAMS, create);
+pub(crate) static WARP: EffectDef = EffectDef::software("warp", "Warp", PARAMS, create);
 
 /// Stars in the pool; `density` decides how many of them fly.
 const S: usize = 44;

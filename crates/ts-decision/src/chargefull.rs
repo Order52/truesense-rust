@@ -14,9 +14,9 @@
 use serde_json::{Map, Value, json};
 
 /// A charge that has not ended after this many seconds ends anyway.
-pub const MAX_DURATION_S: f64 = 86_400.0;
+pub(crate) const MAX_DURATION_S: f64 = 86_400.0;
 /// The battery must have been seen full for more than this many seconds.
-pub const FULL_FOR_S: f64 = 300.0;
+pub(crate) const FULL_FOR_S: f64 = 300.0;
 /// The daemon looks at the record every this many ticks.
 pub const CHECK_EVERY_TICKS: u64 = 5;
 

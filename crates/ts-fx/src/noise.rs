@@ -5,7 +5,7 @@
 use super::jsmath::to_int32;
 
 /// `ihash`: the lowbias32 integer hash, scaled to 0..1.
-pub fn ihash(n: i32) -> f64 {
+pub(crate) fn ihash(n: i32) -> f64 {
     let mut n = n as u32;
     n = (n ^ (n >> 16)).wrapping_mul(0x7feb_352d);
     n = (n ^ (n >> 15)).wrapping_mul(0x846c_a68b);
@@ -15,12 +15,12 @@ pub fn ihash(n: i32) -> f64 {
 
 /// `hash2(i, j, seed)`. The products are taken in f64 and then wrapped to 32 bits, as JS
 /// does for `(i * 73856093) ^ (j * 19349663) ^ (seed * 83492791)`.
-pub fn hash2(i: f64, j: f64, seed: f64) -> f64 {
+pub(crate) fn hash2(i: f64, j: f64, seed: f64) -> f64 {
     ihash(to_int32(i * 73_856_093.0) ^ to_int32(j * 19_349_663.0) ^ to_int32(seed * 83_492_791.0))
 }
 
 /// `vnoise`: bilinear value noise on the integer lattice with a smoothstep fade, 0..1.
-pub fn vnoise(x: f64, y: f64, seed: f64) -> f64 {
+pub(crate) fn vnoise(x: f64, y: f64, seed: f64) -> f64 {
     let ix = x.floor();
     let iy = y.floor();
     let fx = x - ix;
@@ -35,7 +35,7 @@ pub fn vnoise(x: f64, y: f64, seed: f64) -> f64 {
 }
 
 /// `fbm`: three octaves of [`vnoise`], weights 4, 2, 1.
-pub fn fbm(x: f64, y: f64, seed: f64) -> f64 {
+pub(crate) fn fbm(x: f64, y: f64, seed: f64) -> f64 {
     (4.0 * vnoise(x, y, seed)
         + 2.0 * vnoise(x * 2.03, y * 2.03, seed + 1.0)
         + vnoise(x * 4.11, y * 4.11, seed + 2.0))
@@ -65,7 +65,7 @@ impl Mulberry32 {
 }
 
 /// `strSeed`: FNV-1a over the string's UTF-16 code units, as JS's `charCodeAt` sees it.
-pub fn str_seed(s: &str) -> u32 {
+pub(crate) fn str_seed(s: &str) -> u32 {
     let mut h: u32 = 2_166_136_261;
     for unit in s.encode_utf16() {
         h ^= unit as u32;

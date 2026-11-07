@@ -15,13 +15,14 @@
 
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, PoisonError};
+use std::sync::Mutex;
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 use crate::fsx::{self, FileLock, FsError};
+use crate::sync::locked;
 
 /// The keys of `user.json` as written by the Python and Go editions. They are the on-disk
 /// format; the shape of each value belongs to the layer that owns it (keyboard, rear lighting,
@@ -139,7 +140,7 @@ impl Store {
     /// the lock file cannot be created or locked the update still goes ahead, because losing a
     /// concurrent change to a convenience file is better than not remembering anything.
     pub fn set(&self, key: &str, value: Value) -> Result<(), FsError> {
-        let _threads = self.gate.lock().unwrap_or_else(PoisonError::into_inner);
+        let _threads = locked(&self.gate);
         if let Some(dir) = self.path.parent().filter(|d| !d.as_os_str().is_empty()) {
             fsx::ensure_dir(dir, 0o755)?;
         }

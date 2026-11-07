@@ -19,10 +19,11 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 
+use ts_foundation::sync::locked;
 use ts_platform::hw::Sleeper;
 
 /// How long one helper may take. A wedged compositor must not stall the daemon's tick or a key
@@ -77,7 +78,7 @@ pub trait SessionRunner: Send + Sync {
     fn run(&self, call: &Invocation) -> Option<Outcome>;
 }
 
-/// Runs real processes, killing one that overruns [`HELPER_TIMEOUT`].
+/// Runs real processes, killing one that overruns `HELPER_TIMEOUT`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProcessSessionRunner;
 
@@ -349,7 +350,7 @@ impl Osd {
     /// the outermost one disables and re-enables.
     pub fn quiet(&self, settle: Duration) -> Quiet {
         let first = {
-            let mut depth = self.quiet_depth.lock().unwrap_or_else(PoisonError::into_inner);
+            let mut depth = locked(&self.quiet_depth);
             *depth += 1;
             *depth == 1
         };
@@ -369,12 +370,12 @@ pub struct Quiet {
 
 impl Drop for Quiet {
     fn drop(&mut self) {
-        let last = *self.osd.quiet_depth.lock().unwrap_or_else(PoisonError::into_inner) == 1;
+        let last = *locked(&self.osd.quiet_depth) == 1;
         if last {
             (self.osd.sleeper)(self.settle);
             self.osd.run(&None, &None, "noctalia", &["msg", "osd-enable"]);
         }
-        let mut depth = self.osd.quiet_depth.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut depth = locked(&self.osd.quiet_depth);
         *depth = depth.saturating_sub(1);
     }
 }

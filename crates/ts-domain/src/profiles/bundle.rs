@@ -51,7 +51,7 @@ use crate::actions::{
 const STATE_KEY: &str = "profile";
 
 /// The rule for bundle names: the oldest kind, letters, digits, `-` and `_`.
-pub const NAME_RULE: NameRule = NameRule::Strict;
+pub(crate) const NAME_RULE: NameRule = NameRule::Strict;
 
 /// A decoded bundle: sections of settings.
 pub type Bundle = Table;

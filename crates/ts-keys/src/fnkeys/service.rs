@@ -206,7 +206,7 @@ const IDLE_PAUSE: Duration = crate::renderer::IDLE;
 /// The wait of a lighting loop: an idle pause becomes [`QUIET_HEARTBEAT`] when `watching` (a
 /// change of the user state rings the bell and ends it at once, and so does a stop); every other
 /// pause (a frame, a back-off) is kept.
-pub fn lighting_sleep(watching: bool) -> impl Fn(Duration) + Send + 'static {
+pub(crate) fn lighting_sleep(watching: bool) -> impl Fn(Duration) + Send + 'static {
     move |pause| wake::sleep(if watching && pause == IDLE_PAUSE { QUIET_HEARTBEAT } else { pause })
 }
 

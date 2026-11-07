@@ -1,4 +1,4 @@
-// Settings: this machine and what it supports, the window's own preferences (theme, language, text
+// Settings: this machine and what it supports, the window's own preferences (theme, text
 // size, motion, tray), start at login and what the lights do then, the touchpad, desktop alerts,
 // updates, reset and the About box. The update runs as a Job (progress shown, the answer kept).
 import QtQuick
@@ -241,21 +241,6 @@ PageFrame {
                 { value: "system", label: qsTrId("settings_theme_system"), icon: "auto" }
             ]
             onActivated: (value) => Ui.set("theme", value)
-        }
-        SelectRow {
-            Layout.fillWidth: true
-            //% "Language"
-            label: qsTrId("settings_language")
-            current: Ui.languageSetting
-            options: [
-                //% "Follow the desktop"
-                { value: "system", text: qsTrId("settings_lang_system") },
-                { value: "en", text: "English" },
-                { value: "ar", text: "العربية" },
-                //% "Pseudo-language (for testing the layout)"
-                { value: "pseudo", text: qsTrId("settings_lang_pseudo") }
-            ]
-            onActivated: (value) => Ui.set("language", value)
         }
         SliderRow {
             Layout.fillWidth: true

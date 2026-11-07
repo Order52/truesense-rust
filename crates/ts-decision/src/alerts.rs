@@ -24,7 +24,7 @@
 //!   the limit, so 89, 90, 89, 90 is one episode, not four;
 //! * **rate limits**: an alert is shown once per episode, never twice within `repeat_s` of its
 //!   own previous message (an episode that starts too soon waits and is shown when the time is
-//!   up, if it is still going), and no two messages of any kind come within [`MIN_GAP_S`].
+//!   up, if it is still going), and no two messages of any kind come within `MIN_GAP_S`.
 //!
 //! The severity is deliberately only ever [`Severity::Info`] or [`Severity::Warning`]. The
 //! reference project's finding 36: a notification with "critical" urgency is never dismissed by
@@ -34,9 +34,9 @@
 use ts_foundation::config::AlertsConfig;
 
 /// An episode of a temperature or battery alert ends this far below its limit.
-pub const REARM_BELOW: f64 = 5.0;
+pub(crate) const REARM_BELOW: f64 = 5.0;
 /// The least time in seconds between two messages of any kind: one a minute across all sensors.
-pub const MIN_GAP_S: f64 = 60.0;
+pub(crate) const MIN_GAP_S: f64 = 60.0;
 
 /// How serious an alert is. There is no "critical" on purpose (see the module documentation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -27,7 +27,7 @@ pub(crate) const INFO_NAME: &str = "truesense-gui.json";
 
 /// What the running server publishes so that a second launch can reach it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LockInfo {
+pub(crate) struct LockInfo {
     /// The loopback port.
     pub port: u16,
     /// The session token (the file is private to the user).

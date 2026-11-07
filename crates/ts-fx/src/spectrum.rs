@@ -23,7 +23,7 @@ const PARAMS: &[ParamDef] = &[
     num("floor", 0.0, 20.0, 3.0),
 ];
 
-pub static SPECTRUM: EffectDef =
+pub(crate) static SPECTRUM: EffectDef =
     EffectDef::software("spectrum", "Spectrum", PARAMS, create).with_needs(&[Need::Audio]);
 
 /// Key rows, bottom (0) to the F row (5).

@@ -9,6 +9,7 @@ use std::io;
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
+use ts_foundation::sync::locked;
 
 #[derive(Default)]
 struct Switch {
@@ -23,7 +24,7 @@ struct Shared {
 
 impl Shared {
     fn lock(&self) -> MutexGuard<'_, Switch> {
-        self.state.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.state)
     }
 }
 

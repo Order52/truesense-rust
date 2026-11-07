@@ -6,14 +6,14 @@
 //! ([`Validator`]), never at key-press time.
 //!
 //! Everything an action touches (the firmware, the daemon, the keyboard, the sound system, the
-//! user state, the shell) is reached through the traits of [`facade`], so each action is tested
+//! user state, the shell) is reached through the traits of `facade`, so each action is tested
 //! with fakes and no process, device or socket. Every multi-step action walks an ordered list
 //! (effects, modes, sections), never a hash map: the Go edition once had a map whose iteration
 //! order made a profile apply in a different order on each run.
 //!
-//! * [`parse`]: the vocabulary, the catalogue text, validation.
-//! * [`facade`]: the traits the assembly layer implements.
-//! * [`runner`]: [`Runner`], which executes actions against an [`Env`]. The favourite actions
+//! * `parse`: the vocabulary, the catalogue text, validation.
+//! * `facade`: the traits the assembly layer implements.
+//! * `runner`: [`Runner`], which executes actions against an [`Env`]. The favourite actions
 //!   need one more handle, added with [`Runner::with_favourites`], so that existing assemblies
 //!   of an [`Env`] keep compiling.
 #![forbid(unsafe_code)]

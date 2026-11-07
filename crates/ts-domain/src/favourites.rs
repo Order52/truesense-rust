@@ -42,7 +42,7 @@ use ts_foundation::fsx::{self, FileLock, FsError};
 pub const MAX_FAVOURITES: usize = 24;
 
 /// The file name beside the user configuration.
-pub const FILE_NAME: &str = "favourites.json";
+pub(crate) const FILE_NAME: &str = "favourites.json";
 
 /// The longest favourite name accepted (library names are short; this only bounds hostile input).
 const MAX_NAME_CHARS: usize = 128;
@@ -200,7 +200,7 @@ pub fn next_position(previous: Option<i64>, len: usize) -> Option<usize> {
 
 /// Where the file lives given the user's configuration file: beside it, so a `TRUESENSE_CONFIG`
 /// override (tests, a second profile of the program) moves the favourites with it.
-pub fn path_beside(user_config: &Path) -> PathBuf {
+pub(crate) fn path_beside(user_config: &Path) -> PathBuf {
     user_config.parent().unwrap_or(Path::new("")).join(FILE_NAME)
 }
 

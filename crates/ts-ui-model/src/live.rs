@@ -10,14 +10,15 @@
 
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Mutex, MutexGuard};
 
 use serde_json::{Map, Value, json};
 
 use crate::json::f64_at;
+use ts_foundation::sync::locked;
 
 /// Samples kept per series: two minutes at the one-second tick.
-pub const HISTORY_LEN: usize = 120;
+pub(crate) const HISTORY_LEN: usize = 120;
 
 /// The series every page may rely on: dotted paths into a live frame (`COMMANDS.md`, "The live
 /// stream"). Pages that need another one call [`LiveStore::track`].
@@ -64,7 +65,7 @@ impl LiveStore {
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+        locked(&self.inner)
     }
 
     /// The ticket for a read that is about to start.

@@ -17,13 +17,13 @@ use crate::json::{at, bool_at, f64_at, list_at, str_at};
 /// The DTS sound modes the firmware's audio profile knows, in the order the page lists them.
 pub const DTS_MODES: &[&str] = &["Music", "Movie", "Voice", "Game1", "Game2", "Game3", "Plain"];
 /// The Purified Voice noise-reduction modes.
-pub const VOICE_MODES: &[&str] = &["off", "conference", "personal"];
+pub(crate) const VOICE_MODES: &[&str] = &["off", "conference", "personal"];
 /// What the 3.5 mm jack setting can be.
-pub const JACK_SETTINGS: &[&str] = &["auto", "headphones", "headset"];
+pub(crate) const JACK_SETTINGS: &[&str] = &["auto", "headphones", "headset"];
 /// Largest microphone volume the page offers, in percent (above 100 amplifies).
-pub const MIC_VOLUME_MAX: f64 = 150.0;
+pub(crate) const MIC_VOLUME_MAX: f64 = 150.0;
 /// Largest headset microphone boost step.
-pub const BOOST_MAX: f64 = 3.0;
+pub(crate) const BOOST_MAX: f64 = 3.0;
 
 /// The next output for a "switch output" button: the other one. `headphones` is chosen only when
 /// the jack reports something plugged in; with nothing plugged in the answer stays `speakers`,

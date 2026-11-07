@@ -26,6 +26,7 @@ use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 use ts_foundation::buildinfo;
 use ts_foundation::config::{Config, ConfigError};
+use ts_foundation::sync::locked;
 use ts_platform::hw::{Capabilities, FanState, Hw, HwError};
 
 pub use checks::checks;
@@ -36,10 +37,10 @@ use crate::services::{Runner, SystemRunner};
 
 /// How long the doctor lets one program run (the Python edition's 6 s): a wedged tool must not
 /// hold up the whole report.
-pub const PROGRAM_TIMEOUT: Duration = Duration::from_secs(6);
+pub(crate) const PROGRAM_TIMEOUT: Duration = Duration::from_secs(6);
 
 /// How many checks run side by side unless told otherwise.
-pub const DEFAULT_WORKERS: usize = 8;
+pub(crate) const DEFAULT_WORKERS: usize = 8;
 
 /// The grade of one check.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -320,12 +321,12 @@ pub struct Env {
     pub kernel: String,
     /// This build's version.
     pub version: String,
-    /// How many checks run side by side; 0 means [`DEFAULT_WORKERS`].
+    /// How many checks run side by side; 0 means `DEFAULT_WORKERS`.
     pub workers: usize,
 }
 
 impl Env {
-    /// The real machine: the real file system, real programs (each given [`PROGRAM_TIMEOUT`]), the
+    /// The real machine: the real file system, real programs (each given `PROGRAM_TIMEOUT`), the
     /// running kernel, and the configuration from its standard places. The firmware, the daemon, the
     /// sound system and the domain probes are the caller's to connect.
     pub fn system(
@@ -429,7 +430,7 @@ pub fn run(env: &Env, checks: &[Check]) -> Report {
                     let i = next.fetch_add(1, Ordering::SeqCst);
                     let Some(check) = checks.get(i) else { break };
                     let result = run_one(env, check);
-                    slots.lock().unwrap_or_else(PoisonError::into_inner)[i] = Some(result);
+                    locked(&slots)[i] = Some(result);
                 }
             });
         }

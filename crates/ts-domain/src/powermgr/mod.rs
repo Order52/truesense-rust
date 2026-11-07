@@ -38,7 +38,7 @@ pub const UNITS: [&str; 6] =
 
 /// Where a takeover remembers what it stopped, so that [`PowerManagers::restore`] can undo it
 /// across restarts of the daemon.
-pub const DEFAULT_RECORD_PATH: &str = "/var/lib/truesense/power_managers.json";
+pub(crate) const DEFAULT_RECORD_PATH: &str = "/var/lib/truesense/power_managers.json";
 /// The kernel's CPU directory.
 pub const DEFAULT_CPU_DIR: &str = "/sys/devices/system/cpu";
 
@@ -50,7 +50,7 @@ const MAX_FAILURE_TEXT: usize = 80;
 const MAX_RECORD: u64 = 64 * 1024;
 
 /// The record path: `TRUESENSE_PM_RECORD` when set (tests, unusual installs), else
-/// [`DEFAULT_RECORD_PATH`]. The environment is passed in so that tests can inject one.
+/// `DEFAULT_RECORD_PATH`. The environment is passed in so that tests can inject one.
 pub fn record_path_from(env: &dyn Fn(&str) -> Option<String>) -> PathBuf {
     env("TRUESENSE_PM_RECORD").map_or_else(|| PathBuf::from(DEFAULT_RECORD_PATH), PathBuf::from)
 }

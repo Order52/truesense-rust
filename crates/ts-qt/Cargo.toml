@@ -24,10 +24,7 @@ path = "src/main.rs"
 cxx = "1"
 cxx-qt = "=0.10.0"
 cxx-qt-lib = { version = "=0.10.0", features = ["qt_full"] }
-ts-api = { path = "../ts-api" }
 ts-foundation = { path = "../ts-foundation" }
-ts-gui = { path = "../ts-gui" }
-ts-keys = { path = "../ts-keys" }
 ts-ui-model = { path = "../ts-ui-model" }
 serde_json.workspace = true
 
