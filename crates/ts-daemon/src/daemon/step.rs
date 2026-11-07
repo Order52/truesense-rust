@@ -73,8 +73,6 @@ pub(super) struct Frame {
     pub(super) wall: f64,
     pub(super) mono: f64,
     pub(super) tcpu: f64,
-    /// The GPU temperature the decisions use: the real reading, or the CPU's when there is none.
-    pub(super) tgpu: f64,
     /// The GPU temperature as really read, `None` while neither the firmware nor `nvidia-smi`
     /// gives one (the card asleep, no stream). This is what is shown.
     pub(super) tgpu_seen: Option<f64>,
@@ -255,7 +253,16 @@ impl Daemon {
             }
         }
         let chassis = g.tchassis.value();
-        let readings = Readings { tcpu, tgpu, cpu_load: load, gpu_util: gpu.util, gpu_power: gpu.power };
+        // The classifier compares the GPU's own temperature with the GPU's own hot line: with no
+        // GPU reading that is 0 (never hot by GPU), not the CPU's temperature, which would read
+        // "hot" at the GPU's 82 C while the CPU, whose line is 92 C, is merely busy.
+        let readings = Readings {
+            tcpu,
+            tgpu: tgpu_seen.unwrap_or(0.0),
+            cpu_load: load,
+            gpu_util: gpu.util,
+            gpu_power: gpu.power,
+        };
         g.activity = g.classifier.classify(&readings);
         if g.tick % 15 == 0 {
             let hw_ok = g.hw_ok;
@@ -275,7 +282,7 @@ impl Daemon {
                 g.cur_mode = Some(mode);
             }
         }
-        let frame = Frame { wall, mono, tcpu, tgpu, tgpu_seen, gpu_state, chassis, load, gpu, ac };
+        let frame = Frame { wall, mono, tcpu, tgpu_seen, gpu_state, chassis, load, gpu, ac };
         let smart = self.state.get_bool("smart_fan", false) && !self.legacy("predator-fan-mode") && g.hw_ok;
         if smart {
             let duties = g.fan.step(&fanctl::Inputs {
@@ -301,7 +308,7 @@ impl Daemon {
             self.mode_bindings_tick(g);
             self.operating_lighting(g);
         }
-        self.alerts_observe(g, mono, Observed { cpu_c: Some(tcpu), gpu_c: (raw_gpu > 0.0).then_some(tgpu) });
+        self.alerts_observe(g, mono, Observed { cpu_c: Some(tcpu), gpu_c: tgpu_seen });
         self.publish(g, smart, &frame);
     }
 
@@ -391,7 +398,7 @@ impl Daemon {
             wall: f.wall,
             activity: g.activity,
             tcpu: f.tcpu,
-            tgpu: f.tgpu,
+            tgpu: f.tgpu_seen.unwrap_or(0.0),
             ac: f.ac,
             battery_pct: self.sensors.battery_pct(),
             cur_mode: g.current(),
@@ -415,7 +422,7 @@ impl Daemon {
                     kind.name(),
                     decision.reason,
                     rounded(f.tcpu),
-                    rounded(f.tgpu),
+                    f.tgpu_seen.map_or(0, rounded),
                     rounded(f.gpu.util),
                 ));
                 if notify {

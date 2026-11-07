@@ -103,9 +103,9 @@ fn the_fan_curve_keeps_its_cpu_fallback_when_the_gpu_gives_no_temperature() {
     // The same heavy CPU load with and without a GPU reading: the GPU fan must not be left
     // behind because the GPU temperature is unknown.
     let blind = Rig::new();
-    blind.drive(15, 85, 0, 95.0);
+    blind.drive(15, 70, 0, 90.0);
     let sighted = Rig::new();
-    sighted.drive(15, 85, 85, 95.0);
+    sighted.drive(15, 70, 70, 90.0);
     assert_eq!(blind.snap().duty, sighted.snap().duty, "blind GPU side follows the CPU temperature");
 }
 
@@ -181,4 +181,19 @@ fn the_watchdog_says_a_silent_device_is_not_a_warm_laptop() {
     assert!(
         rig.osd.shown.lock().unwrap().iter().any(|t| t == "Fans back on Auto: the device stopped answering")
     );
+}
+
+#[test]
+fn a_busy_cpu_is_not_hot_by_the_gpu_line_when_the_gpu_gives_no_temperature() {
+    // CPU at 85 C is busy, not hot (its own line is 92 C). The GPU's line is 82 C: without a
+    // GPU reading the CPU's temperature must not be held against it.
+    let blind = Rig::new();
+    blind.drive(30, 85, 0, 95.0);
+    assert_ne!(live(&blind)["activity"], json!("hot"), "{}", live(&blind));
+    assert_ne!(blind.snap().duty, [100, 100], "no emergency full speed for a busy CPU");
+    // A real GPU reading over its own line is hot, as ever.
+    let sighted = Rig::new();
+    sighted.drive(30, 85, 85, 95.0);
+    assert_eq!(live(&sighted)["activity"], json!("hot"));
+    assert_eq!(sighted.snap().duty, [100, 100]);
 }
