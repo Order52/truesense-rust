@@ -259,6 +259,7 @@ fn shared(machine: &Machine) -> ApiResult<Shared> {
             .with_state(Arc::clone(&user))
             .with_env(Arc::clone(&machine.env))
             .with_dts_locator(Arc::clone(&machine.dts_locator))
+            .with_event_source(machine.audio_events.clone())
             // A client's standard output may be machine-readable (`--json`): the log goes to
             // standard error, which the key and audio services' journal collects as well.
             .with_logger(Arc::new(|line| eprintln!("{line}"))),

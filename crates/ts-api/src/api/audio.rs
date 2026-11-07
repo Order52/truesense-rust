@@ -10,6 +10,7 @@ use std::sync::atomic::AtomicBool;
 
 use serde::Serialize;
 use ts_domain::audio::DtsDevice;
+use ts_domain::audio::events::Subscription;
 use ts_domain::audio::{
     DtsScope, Jack, MicPolicy, MicState, MicWatcher, Output, OutputStatus, RepairOptions, RepairResult,
     SoundState, VoiceDevice, VoiceMode, VoiceModes,
@@ -238,7 +239,14 @@ impl Api {
     /// Keeps the default microphone on the right input until `stop` is set: it picks it again
     /// whenever the headset is plugged or a filter changes, and gives new outputs DTS once.
     pub fn watch_mic(&self, stop: &AtomicBool) {
-        MicWatcher::new(Arc::clone(&self.s.audio)).run(stop);
+        let mut watcher = MicWatcher::new(Arc::clone(&self.s.audio));
+        // One resident `pactl subscribe` replaces the questions the loop used to ask every
+        // second; it ends with the subscription when the watch does.
+        let subscription = self.s.audio.event_source().map(|source| Arc::new(Subscription::start(source)));
+        if let Some(subscription) = &subscription {
+            watcher = watcher.with_events(subscription.clone());
+        }
+        watcher.run(stop);
     }
 
     /// AcerUltraX's own status text.

@@ -531,6 +531,7 @@ impl Rig {
             dts_locator: Arc::new(|| None),
             sleep: no_sleep,
             clock: Arc::new(|| 1_800_000_000.0),
+            audio_events: None,
         };
         let services = Services::assemble(&machine).unwrap();
         let client = Client::new(&sock).with_timeout(Duration::from_secs(5));
