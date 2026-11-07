@@ -4,6 +4,7 @@
 
 mod bus;
 mod contract;
+mod favourites;
 mod harness;
 mod run;
 mod security;

@@ -24,6 +24,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
+    favourite    starred looks, fan curves, Smart profiles and profiles (the
+                 Home page and the PREDATOR key use them): list | add KIND
+                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
+                 NAME | next
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
     service      the daemon
@@ -1180,6 +1184,83 @@ usage: truesense profile delete [-h] name
 
 positional arguments:
   name
+
+options:
+  -h, --help  show this help message and exit
+
+======================================================================
+AREA favourite
+usage: truesense favourite [-h] {list,add,remove,move,apply,next} ...
+
+positional arguments:
+  {list,add,remove,move,apply,next}
+    add                 star something that exists (at most 24)
+    move                move the favourite at position FROM to position TO
+                        (positions count from 1)
+    apply               apply the Nth favourite, or any look, curve or profile
+                        by KIND NAME
+    next                apply the favourite after the last one applied (the
+                        key does the same)
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB favourite list
+usage: truesense favourite list [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB favourite add
+usage: truesense favourite add [-h]
+                               {look,fan_curve,smart_profile,profile} name
+
+positional arguments:
+  {look,fan_curve,smart_profile,profile}
+  name
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB favourite remove
+usage: truesense favourite remove [-h]
+                                  {look,fan_curve,smart_profile,profile} name
+
+positional arguments:
+  {look,fan_curve,smart_profile,profile}
+  name
+
+options:
+  -h, --help            show this help message and exit
+
+--------------------------------------------------
+VERB favourite move
+usage: truesense favourite move [-h] from to
+
+positional arguments:
+  from
+  to
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB favourite apply
+usage: truesense favourite apply [-h] what [name]
+
+positional arguments:
+  what
+  name
+
+options:
+  -h, --help  show this help message and exit
+
+--------------------------------------------------
+VERB favourite next
+usage: truesense favourite next [-h]
 
 options:
   -h, --help  show this help message and exit

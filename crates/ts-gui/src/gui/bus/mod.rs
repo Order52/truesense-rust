@@ -12,6 +12,7 @@
 #![forbid(unsafe_code)]
 
 mod args;
+mod favourites;
 mod hardware;
 mod keys;
 mod light;
@@ -190,6 +191,7 @@ impl Commands for ApiCommands {
             .or_else(|| hardware::dispatch(&ctx, &key, &a))
             .or_else(|| light::dispatch(&ctx, &key, &a))
             .or_else(|| keys::dispatch(&ctx, &key, &a))
+            .or_else(|| favourites::dispatch(&ctx, &key, &a))
             .or_else(|| system::dispatch(&ctx, &key, &a));
         done.unwrap_or_else(|| Err(CommandError::unknown(area, verb)))
     }

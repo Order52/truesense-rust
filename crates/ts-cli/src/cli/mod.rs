@@ -23,6 +23,7 @@
 
 mod argparse;
 mod completion;
+mod favourite;
 mod handlers;
 mod launcher;
 mod out;

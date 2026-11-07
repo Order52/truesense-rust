@@ -131,6 +131,11 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 | `profile` | `save` | `{"name", "description"?}` | the file path; saves the current state | `profiles.save(name, profiles.capture())` |
 | `profile` | `delete` | `{"name"}` | message | `profiles.delete` |
 | `profile` | `current` | **new**: none | `{"name": "gaming"\|null}`, the profile applied last | `userstate.get("profile")` |
+| `favourite` | `list` | **new**: none | `[{"position", "kind": "look"\|"fan_curve"\|"smart_profile"\|"profile", "name", "exists"}]` in the user's order, positions from 1; `exists: false` = the item was deleted since (shown greyed; apply fails with the library's message) | favourites file beside the user config (`~/.config/truesense/favourites.json`) |
+| `favourite` | `toggle` | **new**: `{"kind", "name"}` (`kind` also accepts `curve`, `smart`) | `{"starred": bool}`; starring needs the item to exist, un-starring never does; refused when 24 are starred | `favourites.toggle` |
+| `favourite` | `remove` | **new**: `{"kind", "name"}` | `{"removed": bool}` | `favourites.remove` |
+| `favourite` | `move` | **new**: `{"from", "to"}` (positions from 1; the others shift) | the new list, as `list` | `favourites.move_to` |
+| `favourite` | `apply` | **new**: `{"position"}` or `{"kind", "name"}` | message (`Favourite 2/4: Look calm` for a position, `Look: calm` for an item); applies through the library's own operation (`look apply`, `fan curve use`, `power smart use`, `profile apply`) | `look.apply`, `ipc fan_curve`, `ipc smart_profile`, `profiles.apply` |
 | `audio` | `output` | `{"action": "status"\|"speakers"\|"headphones"}` | `{"active", "jack_plugged"}` | `audio.output_status`, `audio.set_output` |
 | `audio` | `speaker-filter` | `{"action": "on"\|"off"\|"status"}` | bool | `audio.speaker_filter` |
 | `audio` | `dts` | `{"action": "status"\|"on"\|"off"\|"mode"\|"all", "name"?}`. Result is new in `--json`: the CLI prints text | `{"on": bool, "mode": "Music"\|null, "devices": [{"label", "kind", "profile", "current"}]}`; `all`: `{"done": [string]}` | `audio.dts_status`, `dts_power`, `dts_mode`, `dts_devices`, `dts_cover` |

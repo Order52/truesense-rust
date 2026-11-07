@@ -13,6 +13,7 @@ use serde_json::json;
 
 use super::fakes::World;
 use super::{ActionError, ActionRunner, FanCommand, Runner};
+use crate::favourites::{Favourite, Kind};
 
 fn setup() -> (Arc<World>, Runner) {
     let w = World::new();
@@ -435,4 +436,112 @@ fn a_failed_state_write_never_fails_an_action() {
     let out = r.run("keyboard-effect-next");
     std::fs::remove_file(&file).unwrap();
     assert_eq!(out.as_deref(), Ok("Keyboard effect: static"));
+}
+
+fn with_favourites(list: &[(Kind, &str)]) -> (Arc<World>, Runner) {
+    let w = World::new();
+    *w.favs.lock().unwrap() = list.iter().map(|(k, n)| Favourite::new(*k, *n)).collect();
+    let r = Runner::new(w.env()).with_favourites(w.clone());
+    (w, r)
+}
+
+fn four() -> [(Kind, &'static str); 4] {
+    [
+        (Kind::Look, "calm"),
+        (Kind::FanCurve, "quiet"),
+        (Kind::SmartProfile, "battery"),
+        (Kind::Profile, "gaming"),
+    ]
+}
+
+#[test]
+fn favourite_n_applies_each_kind_through_the_matching_call_and_says_what_it_did() {
+    let (w, r) = with_favourites(&four());
+    assert_eq!(run(&r, "favourite:1"), "Favourite 1/4: Look calm");
+    assert_eq!(run(&r, "favourite:2"), "Favourite 2/4: Fan curve quiet");
+    assert_eq!(run(&r, "favourite:3"), "Favourite 3/4: Smart profile battery");
+    assert_eq!(run(&r, "favourite:4"), "Favourite 4/4: Profile gaming");
+    assert_eq!(
+        w.calls().into_iter().filter(|c| !c.ends_with('?')).collect::<Vec<_>>(),
+        ["look:calm", "curve:quiet", "smart:battery", "profile_apply:gaming"]
+    );
+    // `favourite:N` does not move the position of `favourite-next`.
+    assert_eq!(w.state_get("favourite"), None);
+}
+
+#[test]
+fn favourite_n_past_the_list_or_with_no_list_is_a_normal_error() {
+    let (w, r) = with_favourites(&four());
+    assert_eq!(fails(&r, "favourite:5"), "no favourite 5: you have 4");
+    let (w1, r1) = with_favourites(&[(Kind::Look, "calm")]);
+    assert_eq!(fails(&r1, "favourite:2"), "no favourite 2: you have 1");
+    let (w0, r0) = with_favourites(&[]);
+    assert_eq!(fails(&r0, "favourite:1"), "no favourites yet (star one: truesense favourite add look NAME)");
+    assert_eq!(
+        fails(&r0, "favourite-next"),
+        "no favourites yet (star one: truesense favourite add look NAME)"
+    );
+    for w in [w, w1, w0] {
+        assert!(w.calls().iter().all(|c| c == "favourites?"), "nothing was applied: {:?}", w.calls());
+    }
+}
+
+#[test]
+fn favourite_next_cycles_remembers_the_position_and_wraps() {
+    let (w, r) = with_favourites(&four());
+    let said: Vec<String> = (0..6).map(|_| run(&r, "favourite-next")).collect();
+    assert_eq!(
+        said,
+        [
+            "Favourite 1/4: Look calm",
+            "Favourite 2/4: Fan curve quiet",
+            "Favourite 3/4: Smart profile battery",
+            "Favourite 4/4: Profile gaming",
+            "Favourite 1/4: Look calm",
+            "Favourite 2/4: Fan curve quiet",
+        ]
+    );
+    assert_eq!(w.state_get("favourite"), Some(json!(1)));
+    // Continues from the remembered place, also in a new runner (another key press, another process).
+    let r2 = Runner::new(w.env()).with_favourites(w.clone());
+    assert_eq!(run(&r2, "favourite-next"), "Favourite 3/4: Smart profile battery");
+}
+
+#[test]
+fn favourite_next_survives_a_list_that_shrank_and_a_hand_edited_position() {
+    let (w, r) = with_favourites(&four());
+    w.state_put("favourite", json!(3));
+    assert_eq!(run(&r, "favourite-next"), "Favourite 1/4: Look calm");
+    w.state_put("favourite", json!(9));
+    assert_eq!(run(&r, "favourite-next"), "Favourite 3/4: Smart profile battery");
+    w.state_put("favourite", json!("garbage"));
+    assert_eq!(run(&r, "favourite-next"), "Favourite 1/4: Look calm");
+    *w.favs.lock().unwrap() = vec![Favourite::new(Kind::Profile, "only")];
+    w.state_put("favourite", json!(2));
+    assert_eq!(run(&r, "favourite-next"), "Favourite 1/1: Profile only");
+}
+
+#[test]
+fn a_dangling_favourite_fails_once_and_the_next_press_moves_on() {
+    let (w, r) = with_favourites(&four());
+    w.fail("look");
+    assert_eq!(fails(&r, "favourite-next"), "look failed");
+    w.fail.lock().unwrap().clear();
+    assert_eq!(run(&r, "favourite-next"), "Favourite 2/4: Fan curve quiet");
+    w.fail("curve");
+    assert_eq!(fails(&r, "favourite:2"), "curve failed");
+    w.fail("smart");
+    assert_eq!(fails(&r, "favourite:3"), "smart failed");
+    w.fail("profile_apply");
+    assert_eq!(fails(&r, "favourite:4"), "profile_apply failed");
+}
+
+#[test]
+fn favourites_need_the_favourites_handle_and_a_readable_list() {
+    let (_w, r) = setup();
+    assert!(matches!(r.run("favourite:1"), Err(ActionError::Unavailable(_))));
+    assert_eq!(fails(&r, "favourite-next"), "favourites are not available here");
+    let (w, r) = with_favourites(&four());
+    w.fail("favourites?");
+    assert_eq!(fails(&r, "favourite:1"), "favourites? failed");
 }

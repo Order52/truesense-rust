@@ -304,6 +304,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
+    favourite    starred looks, fan curves, Smart profiles and profiles (the
+                 Home page and the PREDATOR key use them): list | add KIND
+                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
+                 NAME | next
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
     service      the daemon
@@ -362,6 +366,10 @@ positional arguments:
     keys         PREDATOR key and Fn+Esc: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
+    favourite    starred looks, fan curves, Smart profiles and profiles (the
+                 Home page and the PREDATOR key use them): list | add KIND
+                 NAME | remove KIND NAME | move FROM TO | apply N | apply KIND
+                 NAME | next
     cpu          CPU power limits and the guarded undervolt
     touchpad     touchpad on/off (Fn+F10)
     service      the daemon
@@ -806,7 +814,7 @@ rc 0
 --- out
 _truesense() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
+  if [ "$COMP_CWORD" -eq 1 ]; then COMPREPLY=( $(compgen -W "status sensors power fan battery display boot gpu rear update look startup keyboard audio keys profile favourite cpu touchpad service config doctor selftest completion gui probe tui daemon version --json --help --version" -- "$cur") ); return; fi
   case "${COMP_WORDS[1]}" in
     status) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "--help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
 
@@ -930,6 +938,14 @@ _truesense() {
         apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         save) COMPREPLY=( $(compgen -W "--help --description" -- "$cur") ); return;;
         delete) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
+    favourite) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "list add remove move apply next --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
+        list) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        add) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        remove) COMPREPLY=( $(compgen -W "look fan_curve smart_profile profile --help" -- "$cur") ); return;;
+        move) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        apply) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
+        next) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         *) COMPREPLY=( $(compgen -W "--json" -- "$cur") );; esac; fi;;
     cpu) if [ "$COMP_CWORD" -eq 2 ]; then COMPREPLY=( $(compgen -W "info limits undervolt --help" -- "$cur") ); else case "${COMP_WORDS[2]}" in
         info) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;

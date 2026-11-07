@@ -575,3 +575,26 @@ fn root_without_a_service_switches_the_touchpad_itself_and_everyone_else_is_told
     assert_eq!(root_api.touchpad(), Some(false));
     assert_eq!(root_api.test_action("touchpad-toggle").unwrap(), "Touchpad: on");
 }
+
+/// The favourite actions of the key service, over the real assembly: the list comes from the
+/// favourites file beside the user configuration, and each kind is applied through the same private
+/// application layer the other actions use (here against the real daemon in the rig).
+#[test]
+fn the_favourite_actions_apply_each_kind_through_the_assembly() {
+    use ts_domain::favourites::Kind;
+    let rig = Rig::new();
+    let api = &rig.api;
+    api.save_look_value("mine", &api.look("native").unwrap()).unwrap();
+    api.favourite_add(Kind::Look, "mine").unwrap();
+    api.favourite_add(Kind::FanCurve, "truesense").unwrap();
+    api.favourite_add(Kind::SmartProfile, "truesense").unwrap();
+    assert!(home_has(&rig, ".config/truesense/favourites.json"));
+    assert_eq!(api.test_action("favourite:1").unwrap(), "Favourite 1/3: Look mine");
+    assert_eq!(api.test_action("favourite:2").unwrap(), "Favourite 2/3: Fan curve truesense");
+    assert_eq!(api.test_action("favourite:3").unwrap(), "Favourite 3/3: Smart profile truesense");
+    assert_eq!(api.test_action("favourite-next").unwrap(), "Favourite 1/3: Look mine");
+    assert_eq!(api.test_action("favourite-next").unwrap(), "Favourite 2/3: Fan curve truesense");
+    assert_eq!(api.test_action("favourite:4").unwrap_err().to_string(), "no favourite 4: you have 3");
+    // A key bound to a favourite is accepted when it is configured.
+    api.set_key_action(Api::parse_gesture("tap").unwrap(), "favourite-next").unwrap();
+}

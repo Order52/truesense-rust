@@ -3,7 +3,7 @@
 
 export const POWER_MODES = ["eco", "quiet", "balanced", "performance", "turbo"];
 
-// kind: fixed (no detail) | mode | cycle | auto | fan | profile | look | command | text
+// kind: fixed (no detail) | mode | cycle | auto | fan | profile | look | favourite | command | text
 export const ACTION_TYPES = [
   { id: "none", label: "Nothing", kind: "fixed", base: "none" },
   { id: "power-next", label: "Next power mode", kind: "fixed", base: "power-next" },
@@ -18,6 +18,8 @@ export const ACTION_TYPES = [
   { id: "profile", label: "Apply a profile", kind: "profile", base: "profile" },
   { id: "profile-next", label: "Next profile", kind: "fixed", base: "profile-next" },
   { id: "look", label: "Apply a lighting look", kind: "look", base: "look" },
+  { id: "favourite", label: "Apply favourite number", kind: "favourite", base: "favourite" },
+  { id: "favourite-next", label: "Next favourite", kind: "fixed", base: "favourite-next" },
   { id: "output-toggle", label: "Switch speakers / headphones", kind: "fixed", base: "output-toggle" },
   { id: "output-cycle", label: "Cycle audio outputs", kind: "fixed", base: "output-cycle" },
   { id: "mic-toggle", label: "Mute the microphones", kind: "fixed", base: "mic-toggle" },
@@ -35,6 +37,8 @@ export const ACTION_TYPES = [
 
 export const FAN_CHOICES = ["smart", "auto", "max", "manual %"];
 export const AUTO_CHOICES = ["off", "native", "smart"];
+// `favourite:N` counts from 1; the list holds at most 24.
+export const FAVOURITE_CHOICES = Array.from({ length: 24 }, (_, i) => String(i + 1));
 
 const typeById = (id) => ACTION_TYPES.find((t) => t.id === id);
 export const typeOf = (id) => typeById(id) ?? ACTION_TYPES[0];
@@ -68,7 +72,7 @@ export function buildSpec(st) {
   const t = typeOf(st.id);
   switch (t.kind) {
     case "fixed": return t.base;
-    case "mode": case "auto": case "profile": case "look": return `${t.base}:${st.choice ?? ""}`;
+    case "mode": case "auto": case "profile": case "look": case "favourite": return `${t.base}:${st.choice ?? ""}`;
     case "cycle": return `power-cycle:${String(st.text ?? "").replace(/\s+/g, "")}`;
     case "fan": return st.choice === "manual %" ? `fan:${Math.round(st.percent)}` : `fan:${st.choice || "smart"}`;
     case "command": return `exec:${st.text ?? ""}`;
@@ -87,6 +91,7 @@ export function defaultsFor(id, lists = {}) {
     case "cycle": return { ...base, text: "eco,balanced,turbo" };
     case "profile": return { ...base, choice: (lists.profiles || [])[0] ?? "" };
     case "look": return { ...base, choice: (lists.looks || [])[0] ?? "" };
+    case "favourite": return { ...base, choice: "1" };
     default: return base;
   }
 }

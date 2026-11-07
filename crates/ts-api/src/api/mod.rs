@@ -38,6 +38,7 @@ mod cpu;
 mod daemon;
 mod error;
 mod fan;
+mod favourites;
 mod gpu;
 mod keyboard;
 mod keys;
@@ -93,6 +94,7 @@ pub use cpu::{
 pub use daemon::{Daemon, DaemonState};
 pub use error::{ApiError, ApiResult, Refusal};
 pub use fan::{CurveEdit, FanCurveInUse, FanOutcome, FanRequest, FanRoute, FanStatus, describe_curve};
+pub use favourites::{FavouriteInfo, FavouriteKind};
 pub use gpu::{AppliedGpuUndervolt, GpuApplied, GpuUndervoltState};
 pub use keyboard::{
     AnimationRequest, DesignInfo, EffectRequest, KeyCell, KeyLayout, KeyNames, KeyboardLook, KeyboardStatus,

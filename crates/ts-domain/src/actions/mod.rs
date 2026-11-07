@@ -13,7 +13,9 @@
 //!
 //! * [`parse`]: the vocabulary, the catalogue text, validation.
 //! * [`facade`]: the traits the assembly layer implements.
-//! * [`runner`]: [`Runner`], which executes actions against an [`Env`].
+//! * [`runner`]: [`Runner`], which executes actions against an [`Env`]. The favourite actions
+//!   need one more handle, added with [`Runner::with_favourites`], so that existing assemblies
+//!   of an [`Env`] keep compiling.
 #![forbid(unsafe_code)]
 
 mod facade;
@@ -29,9 +31,9 @@ use std::fmt;
 use std::sync::{Arc, OnceLock};
 
 pub use facade::{
-    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, FanSnapshot, HostError, HostResult,
-    LightingFacade, LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite, SettingsSource,
-    Spawner, truthy,
+    ActionSettings, ActionState, AudioFacade, DaemonFacade, FanCommand, FanSnapshot, FavouritesFacade,
+    HostError, HostResult, LightingFacade, LocalTouchpad, PowerFacade, ProfilesFacade, RearState, RearWrite,
+    SettingsSource, Spawner, truthy,
 };
 pub use parse::{
     ARG_NAMES, Action, AudioOutput, AutoMode, CATALOGUE, FIXED_NAMES, KB_EFFECTS, REAR_EFFECTS, Switch,

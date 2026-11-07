@@ -3,6 +3,7 @@
 pub mod actions;
 pub mod audio;
 pub mod designs;
+pub mod favourites;
 pub mod gpuundervolt;
 pub mod keybinds;
 pub mod keyboard;
