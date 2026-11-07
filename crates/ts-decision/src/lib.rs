@@ -1,6 +1,7 @@
 //! ts-decision: see docs/ARCHITECTURE.md for what this layer owns.
 
 pub mod autoprofile;
+pub mod bindings;
 pub mod chargefull;
 pub mod crashguard;
 pub mod curves;
