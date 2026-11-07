@@ -31,6 +31,15 @@ impl Daemon {
                 self.warn(format!("could not create the run directory: {e}"));
             }
         }
+        for warning in &self.warnings {
+            self.warn(warning);
+        }
+        // A daemon killed in the middle of a settings write leaves a temp file behind; we hold
+        // the single-instance lock, so no other writer owns one.
+        let swept = self.state.sweep_stale_temp();
+        if swept > 0 {
+            self.info(format!("removed {swept} temporary file(s) a crashed write left beside the settings"));
+        }
         // Offsets never survive a reboot, so nothing is applied now.
         self.save("uv_applied", Value::Null);
         self.save("gpu_uv_applied", Value::Null);

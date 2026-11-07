@@ -115,6 +115,7 @@ impl Daemon {
     /// clears it), and stores when it ends so it survives a restart. Returns the minutes held.
     pub(super) fn set_hold(&self, g: &mut Inner, minutes: f64) -> f64 {
         let ac = g.last_ac == Some(true);
+        let minutes = minutes.min(super::step::MAX_PLAUSIBLE_HOLD_S / 60.0);
         let held = g.engine.set_hold(self.clock.wall(), minutes, ac, g.activity);
         self.save("profile_hold_until", hold_value(g.engine.hold_until()));
         held

@@ -627,6 +627,31 @@ impl Config {
         Ok(cfg)
     }
 
+    /// The configuration to run with, whatever the files say: [`Config::load`] and
+    /// [`Config::validate`], or, when either finds a problem, the built-in defaults for
+    /// everything except `user`, plus the list of problems for the journal. A typo must not stop
+    /// the fan control, but it must not lock the desktop user out of the daemon either: `user`
+    /// is what decides who may use the control socket, so it is salvaged from the files with a
+    /// lenient read (a file whose other keys are wrong still says who the user is).
+    pub fn load_or_defaults(
+        system: Option<&Path>,
+        user: Option<&Path>,
+        env: &dyn Fn(&str) -> Option<String>,
+    ) -> (Config, Vec<String>) {
+        let problems = match Config::load(system, user, env) {
+            Ok(config) => {
+                let problems = config.validate();
+                if problems.is_empty() {
+                    return (config, problems);
+                }
+                problems
+            }
+            Err(e) => vec![e.to_string()],
+        };
+        let config = Config { user: salvage_user(system, user, env), ..Config::default() };
+        (config, problems)
+    }
+
     /// [`Config::load`] at the standard places with the real environment: the system file and
     /// the current user's file.
     pub fn load_standard() -> Result<Config, ConfigError> {
@@ -698,6 +723,43 @@ impl Config {
 
 fn startup_ok(value: &str, prefixes: &[&str]) -> bool {
     matches!(value, "last" | "default" | "none" | "off") || prefixes.iter().any(|p| value.starts_with(p))
+}
+
+/// The `user` of the files read as loosely as possible: a file that does not parse as a whole
+/// is scanned line by line for a top-level `user = "name"` before the first `[section]`.
+fn salvage_user(system: Option<&Path>, user: Option<&Path>, env: &dyn Fn(&str) -> Option<String>) -> String {
+    let mut found = String::new();
+    for path in [system, user].into_iter().flatten() {
+        let Ok(text) = fsx::read_to_string(path) else { continue };
+        if let Some(name) = top_level_user(&text) {
+            found = name;
+        }
+    }
+    if found.is_empty() {
+        found = env("SUDO_USER").or_else(|| env("USER")).unwrap_or_default();
+    }
+    found
+}
+
+fn top_level_user(text: &str) -> Option<String> {
+    if let Ok(table) = text.parse::<Table>() {
+        return table.get("user").and_then(Value::as_str).filter(|u| !u.is_empty()).map(str::to_owned);
+    }
+    for line in text.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            break;
+        }
+        let Some((key, value)) = line.split_once('=') else { continue };
+        if key.trim() == "user" {
+            let value = value.split('#').next().unwrap_or("").trim();
+            let name = value.strip_prefix('"').and_then(|v| v.strip_suffix('"'))?;
+            return (!name.is_empty()
+                && name.chars().all(|c| c.is_ascii_alphanumeric() || "_-.".contains(c)))
+            .then(|| name.to_owned());
+        }
+    }
+    None
 }
 
 /// Reads and parses one TOML file. `Ok(None)` when it does not exist.

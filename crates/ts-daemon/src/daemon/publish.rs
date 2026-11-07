@@ -48,6 +48,11 @@ impl Daemon {
             // but nobody reads it) or `absent`; `tgpu_real` whether `tgpu` is a GPU reading.
             .set("gpu_state", f.gpu_state.name())
             .set("tgpu_real", f.tgpu_seen.is_some());
+        // Appended last and only when there is something to say, so a status bar sees nothing
+        // new on a healthy machine; `truesense status` and bars can show it.
+        if !self.warnings.is_empty() {
+            live.set("warning", self.warnings.join("; "));
+        }
         let mut paths: Vec<&Path> = vec![&self.live_paths.run_state, &self.live_paths.tmp_state];
         if self.cfg.compat.predator_widgets {
             paths.push(&self.live_paths.predator_state);

@@ -460,6 +460,7 @@ impl Rig {
         let config = Config { user: setup.user.unwrap_or("tester").to_owned(), ..Config::default() };
         let deps = Deps {
             config,
+            warnings: Vec::new(),
             state: Arc::clone(&state),
             hw: hw.clone(),
             sensors: sensors.clone(),
