@@ -1,5 +1,6 @@
 //! ts-system: see docs/ARCHITECTURE.md for what this layer owns.
 
+pub mod battery;
 pub mod doctor;
 pub mod models;
 pub mod osd;

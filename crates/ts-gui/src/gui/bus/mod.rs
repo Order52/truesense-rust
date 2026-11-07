@@ -13,6 +13,7 @@
 
 mod args;
 mod hardware;
+mod info;
 mod keys;
 mod light;
 mod power;
@@ -190,7 +191,8 @@ impl Commands for ApiCommands {
             .or_else(|| hardware::dispatch(&ctx, &key, &a))
             .or_else(|| light::dispatch(&ctx, &key, &a))
             .or_else(|| keys::dispatch(&ctx, &key, &a))
-            .or_else(|| system::dispatch(&ctx, &key, &a));
+            .or_else(|| system::dispatch(&ctx, &key, &a))
+            .or_else(|| info::dispatch(&ctx, &key, &a));
         done.unwrap_or_else(|| Err(CommandError::unknown(area, verb)))
     }
 

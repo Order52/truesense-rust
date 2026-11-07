@@ -90,6 +90,9 @@ fn the_table_and_the_scanner_see_the_whole_contract() {
 /// Documented commands the server answers itself or that the page never sends.
 const SERVER_ONLY: [&str; 2] = ["gui/ping", "gui/quit"];
 
+/// Documented commands for the native Qt app only: the web page of this crate never calls them.
+const NATIVE_APP_ONLY: [&str; 2] = ["battery/info", "capabilities/get"];
+
 #[test]
 fn every_command_the_page_calls_is_documented_and_every_documented_one_is_called() {
     let (doc, calls) = (documented(), used());
@@ -98,7 +101,7 @@ fn every_command_the_page_calls_is_documented_and_every_documented_one_is_called
     }
     for c in &doc {
         assert!(
-            calls.contains(c) || SERVER_ONLY.contains(&c.as_str()),
+            calls.contains(c) || SERVER_ONLY.contains(&c.as_str()) || NATIVE_APP_ONLY.contains(&c.as_str()),
             "COMMANDS.md documents {c} but the front end never calls it: the table must stay minimal"
         );
     }
