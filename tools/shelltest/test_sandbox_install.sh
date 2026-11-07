@@ -91,6 +91,15 @@ t_upgrade_from_the_go_edition_replaces_the_program_and_the_module_and_keeps_ever
   [ -e "$SB/run/sandbox-active" ] || fail "the service is not running at the end"
 }
 
+t_a_loaded_module_is_replaced_only_after_the_service_that_holds_the_device_is_stopped() {
+  # the daemon keeps /dev/truesense open, so `modprobe -r` fails while it runs: the old code would stay loaded with the new build only installed on disk
+  sb_new; mkdir -p "$SB/sim"; printf 'truesense_wmi 32768 1\n' > "$SB/sim/lsmod"
+  sb_install
+  assert_code 0
+  assert_order "dkms install truesense-wmi/$NEWVER -k $SB_KERNEL --force" "systemctl stop truesense.service" "modprobe -r truesense_wmi" "modprobe truesense_wmi" "systemctl restart truesense.service"
+  assert_not_called "@ALERT"
+}
+
 t_upgrade_from_the_python_edition_removes_the_python_tree_only_after_the_service_started() {
   sb_new; sb_layout_python
   local before; before=$(user_data_tree)

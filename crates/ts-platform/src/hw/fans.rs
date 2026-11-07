@@ -60,7 +60,8 @@ impl Hw {
     /// leaves the two fan-speed reads out (each firmware call is an SMI that stalls every core
     /// for milliseconds). The fan speeds in the result are `last_rpm`, what the caller read
     /// before; they are only for display, no decision uses them. A module that predates the
-    /// command answers "unknown command" once and is asked for the full reading from then on.
+    /// command refuses it once ("unknown command", or "invalid argument" from the oldest handler)
+    /// and is asked for the full reading from then on.
     pub fn sensor_temps(&self, last_rpm: (i64, i64)) -> Result<Sensors, HwError> {
         if self.temps_command.load(Ordering::Relaxed) {
             match self.exec("sensors_temps") {
@@ -73,8 +74,12 @@ impl Hw {
                         gpu_fan_rpm: last_rpm.1,
                     });
                 }
+                // `sensors_temps` takes no argument, so any refusal means the loaded module does
+                // not have it. An older module says "unknown command" in its reply but then
+                // overwrites that reply with "invalid argument" (its write handler leaves
+                // -EINVAL set), so both words mean the same thing here.
                 Err(HwError::Firmware(FirmwareError::Rejected { reason, .. }))
-                    if reason == "unknown command" =>
+                    if reason == "unknown command" || reason == "invalid argument" =>
                 {
                     self.temps_command.store(false, Ordering::Relaxed);
                 }

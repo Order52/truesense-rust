@@ -533,6 +533,22 @@ fn a_module_without_the_temperatures_command_is_asked_for_the_full_reading_from_
 }
 
 #[test]
+fn the_oldest_module_answers_invalid_argument_and_is_treated_the_same_way() {
+    // Real behaviour of the shipped module: for an unknown command its write handler replies
+    // "unknown command", then overwrites it with "invalid argument" and fails the write.
+    let spy = Spy::new(|c, _| match c {
+        "sensors_temps" => Some(Ok("err invalid argument\n".to_string())),
+        "sensors" => Some(Ok("ok cpu=1 sys=2 gpu=3 cpu_rpm=4 gpu_rpm=5\n".to_string())),
+        _ => None,
+    });
+    let (hw, _) = spy_rig(&spy);
+    let s = hw.sensor_temps((9, 9)).unwrap();
+    assert_eq!((s.cpu_temp, s.cpu_fan_rpm, s.gpu_fan_rpm), (1, 4, 5));
+    hw.sensor_temps((9, 9)).unwrap();
+    assert_eq!(spy.sent(), ["sensors_temps", "sensors", "sensors"]);
+}
+
+#[test]
 fn a_failing_temperature_read_is_an_error_not_a_reason_to_stop_using_the_command() {
     let spy =
         Spy::new(|c, _| (c == "sensors_temps").then(|| Ok("err sensor read failed (-5)\n".to_string())));

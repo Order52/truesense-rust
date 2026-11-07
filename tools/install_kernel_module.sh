@@ -139,8 +139,16 @@ for kdir in "$R"/lib/modules/*/build; do
 done
 [ "$ok_running" = 1 ] || { echo "the module could not be built for the running kernel $running (are the kernel headers installed?). No truesense_wmi is installed for it now: the fans stay under the firmware's control until this succeeds."; exit 1; }
 sys depmod -a
+# A loaded module is only replaced when nothing holds /dev/truesense open, and the daemon keeps it open: stop the service first (its ExecStopPost hands the fans back to the firmware;
+# install.sh starts it again at the end). Without this `modprobe -r` fails quietly and the OLD code stays loaded although the new build is installed.
+if sys lsmod 2>/dev/null | grep -q '^truesense_wmi '; then sys systemctl stop truesense.service 2>/dev/null || true; fi
 sys modprobe -r truesense_wmi 2>/dev/null || true
 sys modprobe truesense_wmi || { echo "modprobe truesense_wmi failed (dmesg | grep truesense)"; exit 1; }
 for _ in $(seq 1 50); do [ -e "$R/dev/truesense" ] && break; nap 0.1; done
 [ -e "$R/dev/truesense" ] || { echo "module loaded but /dev/truesense did not appear: this is not a PH16-71, or the firmware lacks the Acer WMI interface (dmesg | grep truesense)"; exit 1; }
 say "loaded: $(sys modinfo -F version truesense_wmi) -> /dev/truesense"
+# the same version string can hide different code: compare what is loaded with what was just built
+loaded_src=$(cat "$R/sys/module/truesense_wmi/srcversion" 2>/dev/null || true); built_src=$(sys modinfo -F srcversion truesense_wmi 2>/dev/null || true)
+if [ -n "$loaded_src" ] && [ -n "$built_src" ] && [ "$loaded_src" != "$built_src" ]; then
+  say "NOTE: the loaded module is not the one just built (it could not be unloaded: something still holds /dev/truesense). The new build is used after the next reboot; until then the older code runs."
+fi
