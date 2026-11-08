@@ -112,3 +112,23 @@ fn the_window_is_opaque() {
     let found = offenders("Qt.transparent", &[]);
     assert!(found.is_empty(), "a transparent colour at the window level:\n{}", found.join("\n"));
 }
+
+#[test]
+fn what_a_page_shows_is_never_fixed_to_a_constant() {
+    // `shownFan: "manual"` once made the Home page highlight Manual whatever the fans were doing.
+    // A `shown...` property is "the pick, else what the machine reports": never a bare literal.
+    let found: Vec<String> = code_lines()
+        .into_iter()
+        .filter(|(_, _, line)| {
+            let t = line.trim();
+            t.contains("property ")
+                && t.split("shown").nth(1).is_some_and(|rest| {
+                    let value = rest.split_once(':').map(|(_, v)| v.trim()).unwrap_or("");
+                    value.starts_with('"') && value.ends_with('"') && value.matches('"').count() == 2
+                        || matches!(value, "true" | "false")
+                })
+        })
+        .map(|(file, n, line)| format!("{file}:{n}: {}", line.trim()))
+        .collect();
+    assert!(found.is_empty(), "a shown value is a constant:\n{}", found.join("\n"));
+}

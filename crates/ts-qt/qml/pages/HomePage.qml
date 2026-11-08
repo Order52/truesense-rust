@@ -48,7 +48,7 @@ PageFrame {
 
     readonly property string shownPower: powerPick !== "" ? powerPick : (Live.value("power_mode") || "")
     readonly property string shownControl: controlPick !== "" ? controlPick : (control.mode_control || "")
-    readonly property string shownFan: "manual"
+    readonly property string shownFan: fanPick !== "" ? fanPick : (fans.mode || "auto")
 
     function labelOfPower(m) {
         switch (m) {

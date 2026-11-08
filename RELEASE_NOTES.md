@@ -4,6 +4,7 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
+- Home: the Fans card always highlighted "Manual" whatever the fans were doing (the Cooling page was right); it now shows what the machine reports (Smart, Auto, Max or Manual). Found by opening the app on Hyprland; a source test now refuses any `shown...` value that is a constant.
 - The update check no longer trusts an answer cached for another repository: after moving from the Go or Python edition, `truesense update check` could say "newest 0.4.0" for a day from the old repository's cache.
 
 ## 0.5.0 (2026-11-08): TrueSense in Rust, with a native Qt app
