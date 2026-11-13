@@ -136,11 +136,11 @@ TestCase {
     }
 
     // ---- Toasts ----------------------------------------------------------------------------
-    function test_toasts_keep_the_last_four() {
+    function test_a_new_toast_replaces_the_one_showing() {
         for (var i = 0; i < 6; ++i) Toasts.show("t" + i)
-        compare(Toasts.items.length, 4)
-        compare(Toasts.items[3].text, "t5")
+        compare(Toasts.items.length, 1)
+        compare(Toasts.items[0].text, "t5")
         Toasts.dismiss(Toasts.items[0].id)
-        compare(Toasts.items.length, 3)
+        compare(Toasts.items.length, 0)
     }
 }
