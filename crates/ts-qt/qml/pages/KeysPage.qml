@@ -418,7 +418,7 @@ PageFrame {
             }
             AppButton {
                 visible: !page.locked && !page.unsaved
-                kind: "danger"
+                kind: "danger-quiet"
                 //% "Delete"
                 text: qsTrId("keys_delete")
                 iconName: "trash"
@@ -550,8 +550,8 @@ PageFrame {
         }
 
         HelpText {
-            //% "Favourites are the looks, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them."
-            text: qsTrId("keys_favourites_help")
+            //% "Favourites are the looks, lighting themes, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them."
+            text: qsTrId("keys_favourites_help2")
         }
     }
 

@@ -20,7 +20,8 @@ PageFrame {
     property var partsOf: ({})              // name -> vm `parts` answer
     property bool savingBusy: false
 
-    readonly property var profiles: Vm.call("profiles", "profiles", { list: rawProfiles, current: currentName })
+    readonly property var starredProfiles: favRaw.filter(function (f) { return f.kind === "profile" }).map(function (f) { return f.name })
+    readonly property var profiles: Vm.call("profiles", "profiles", { list: rawProfiles, current: currentName, starred: starredProfiles })
         || ({ count: 0, empty: true, rows: [] })
     readonly property var favs: Vm.call("profiles", "favourites", { list: favRaw })
         || ({ count: 0, empty: true, full: false, items: [] })
@@ -118,6 +119,18 @@ PageFrame {
     function removeFavourite(item) {
         Api.call("favourite", "remove", { kind: item.kind, name: item.name }, function () { loadFavourites() })
     }
+    /// What a favourite is called: a profile as in the list above, the rest as the view-model says.
+    function favTitle(item) {
+        if (item.kind === "profile") {
+            var rows = profiles.rows
+            for (var i = 0; i < rows.length; ++i)
+                if (rows[i].name === item.name) return rows[i].title
+        }
+        return item.title !== undefined ? item.title : item.name
+    }
+    function toggleStar(name) {
+        Api.call("favourite", "toggle", { kind: "profile", name: name }, function () { loadFavourites() })
+    }
     function applyFavourite(item) {
         Api.call("favourite", "apply", { position: item.position }, function (r) {
             Toasts.ok(messageOr(r, item.name))
@@ -191,24 +204,6 @@ PageFrame {
 
     ConfirmDialog { id: confirm }
 
-    // A one-line field in the look of the app.
-    component Field: TextField {
-        Layout.fillWidth: true
-        implicitHeight: Theme.controlHeight
-        color: Theme.text
-        placeholderTextColor: Theme.muted
-        font.pixelSize: Theme.fontBody
-        selectByMouse: true
-        leftPadding: 12
-        rightPadding: 12
-        background: Rectangle {
-            radius: Theme.radiusSmall + 1
-            color: Theme.field
-            border.width: 1
-            border.color: parent.activeFocus ? Theme.focusRing : Theme.buttonLine
-        }
-    }
-
     HelpText {
         //% "A profile is a one-click bundle: it sets the power mode, fans, rear light, battery limit, screen overdrive, boot sound and audio in one go. It applies once (the power mode is then held like when you pick a tile). A profile changes only what it lists: anything it does not list stays as it is."
         text: qsTrId("profiles_intro")
@@ -258,33 +253,30 @@ PageFrame {
                             Layout.fillWidth: true
                             spacing: 2
                             RowLayout {
+                                Layout.fillWidth: true
                                 spacing: 8
                                 Text {
-                                    text: row.modelData.name
+                                    Layout.fillWidth: implicitWidth > width
+                                    Layout.maximumWidth: implicitWidth
+                                    text: row.modelData.title !== undefined ? row.modelData.title : row.modelData.name
                                     color: Theme.text
                                     font.pixelSize: Theme.fontSection
                                     font.bold: true
                                     elide: Text.ElideRight
                                 }
-                                Text {
+                                Badge {
                                     text: row.modelData.source === "yours"
-                                        //% "yours"
-                                        ? qsTrId("profiles_yours")
-                                        //% "shipped"
-                                        : qsTrId("profiles_shipped")
-                                    color: Theme.muted
-                                    font.pixelSize: Theme.fontSmall
+                                        //% "Yours"
+                                        ? qsTrId("profiles_yours2")
+                                        //% "Built in"
+                                        : qsTrId("profiles_builtin")
+                                    kind: row.modelData.source === "yours" ? "accent" : "neutral"
                                 }
-                                RowLayout {
+                                Badge {
                                     visible: row.modelData.current
-                                    spacing: 4
-                                    Icon { name: "check"; size: 14; color: Theme.ok }
-                                    Text {
-                                        //% "last applied"
-                                        text: qsTrId("profiles_current")
-                                        color: Theme.ok
-                                        font.pixelSize: Theme.fontSmall
-                                    }
+                                    //% "Last applied"
+                                    text: qsTrId("profiles_current2")
+                                    kind: "ok"
                                 }
                                 Item { Layout.fillWidth: true }
                             }
@@ -307,6 +299,16 @@ PageFrame {
                                     //% "Details"
                                     : qsTrId("profiles_details")
                                 onClicked: page.showParts(row.modelData.name)
+                            }
+                            ListIconButton {
+                                iconName: row.modelData.starred ? "star-filled" : "star"
+                                tint: row.modelData.starred ? Theme.warn : "transparent"
+                                text: row.modelData.starred
+                                    //% "Remove from favourites"
+                                    ? qsTrId("profiles_unstar")
+                                    //% "Add to favourites"
+                                    : qsTrId("profiles_star")
+                                onClicked: page.toggleStar(row.modelData.name)
                             }
                             ListIconButton {
                                 visible: row.modelData.deletable
@@ -387,16 +389,18 @@ PageFrame {
             columns: page.narrow ? 1 : 3
             columnSpacing: 8
             rowSpacing: 8
-            Field {
+            AppTextField {
                 id: nameField
+                Layout.fillWidth: true
                 maximumLength: 40
                 //% "Name, e.g. my-gaming"
                 placeholderText: qsTrId("profiles_name_placeholder")
                 Accessible.name: qsTrId("profiles_name_placeholder")
                 onAccepted: page.saveCurrent()
             }
-            Field {
+            AppTextField {
                 id: descField
+                Layout.fillWidth: true
                 maximumLength: 120
                 //% "Description (optional)"
                 placeholderText: qsTrId("profiles_desc_placeholder")
@@ -430,8 +434,8 @@ PageFrame {
             spacing: 12
             visible: page.favs.empty
             HelpText {
-                //% "Nothing is starred yet. Use the star on a look, a fan curve, a Smart profile or a profile to keep it here for one-click use on Home and on the keys."
-                text: qsTrId("profiles_fav_empty")
+                //% "Nothing is starred yet. Star a profile above, a theme under Lighting, a fan curve or a Smart profile to keep it here for one-click use on Home and on the PREDATOR key."
+                text: qsTrId("profiles_fav_empty2")
             }
         }
 
@@ -465,7 +469,7 @@ PageFrame {
                         spacing: 0
                         Text {
                             Layout.fillWidth: true
-                            text: fav.modelData.name
+                            text: page.favTitle(fav.modelData)
                             color: fav.modelData.exists ? Theme.text : Theme.disabledText
                             font.pixelSize: Theme.fontBody
                             font.strikeout: !fav.modelData.exists

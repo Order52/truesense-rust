@@ -1,13 +1,14 @@
 // Lighting > Keyboard: a live picture of the keyboard, the 13 built-in effects with their options,
 // the backlight, and what follows the power mode, idle and boot. Which options an effect uses
-// (colour, speed, direction) comes from the view-model's catalogue; the controls it does not use
-// stay visible and greyed, with a line saying why.
+// (colour, speed, direction) comes from the view-model's catalogue; only those are shown, and a
+// line says so when an effect makes its own colours.
 import QtQuick
 import QtQuick.Layouts
 import org.truesense.app
 
 ColumnLayout {
     id: tab
+    objectName: "keyboardTab"
 
     spacing: Theme.spacing + 2
 
@@ -200,17 +201,19 @@ ColumnLayout {
             onActivated: (id) => tab.pick(id)
         }
 
+        // The options of the chosen effect, and only those.
         Text {
             Layout.fillWidth: true
             Layout.topMargin: 4
+            visible: tab.effectActive && tab.rule.colour
             //% "Colour"
             text: qsTrId("light_kb_colour")
-            color: tab.effectActive && tab.rule.colour ? Theme.text : Theme.disabledText
+            color: Theme.text
             font.pixelSize: Theme.fontBody
         }
         SwatchRow {
             Layout.fillWidth: true
-            enabled: tab.effectActive && tab.rule.colour
+            visible: tab.effectActive && tab.rule.colour
             colors: LightingVm.call("palette").map(LightingVm.css)
             current: LightingVm.css(tab.colour)
             allowCustom: true
@@ -219,12 +222,17 @@ ColumnLayout {
         }
         HelpText {
             visible: tab.effectActive && !tab.rule.colour
-            //% "This effect has its own colours: the keyboard ignores a colour choice."
-            text: qsTrId("light_kb_no_colour")
+            //% "%1 makes its own colours, so it has no colour to choose."
+            text: qsTrId("light_kb_no_colour2").arg(LightingVm.effectName(tab.effectId))
+        }
+        HelpText {
+            visible: tab.kind === "unknown" || tab.kind === "off"
+            //% "Pick an effect to choose its colour and speed."
+            text: qsTrId("light_kb_pick_first")
         }
         SliderRow {
             Layout.fillWidth: true
-            enabled: tab.effectActive && tab.rule.speed
+            visible: tab.effectActive && tab.rule.speed
             //% "Speed"
             label: qsTrId("light_kb_speed")
             from: 1

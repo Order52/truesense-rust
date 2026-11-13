@@ -112,56 +112,57 @@ Card {
             //% "No look (leave the lights as they are)"
             var out = [{ value: "", text: qsTrId("light_strip_none") }]
             for (var i = 0; i < LightingVm.looks.length; ++i)
-                out.push({ value: LightingVm.looks[i], text: LightingVm.looks[i] })
+                out.push({ value: LightingVm.looks[i], text: LightingVm.lookName(LightingVm.looks[i]) })
             return out
         }
         current: root.row === null ? undefined : (root.row.look === null ? "" : root.row.look)
         onActivated: (name) => root._edit("bindings_choose", { mode: root.view.selected, look: name === "" ? null : name })
     }
 
+    // Only what can be done now: Undo and Save while the choice is not saved, "Show on my laptop"
+    // while the mode has a look (a row of greyed buttons said nothing).
     Flow {
         Layout.fillWidth: true
         spacing: 8
+        visible: undoButton.visible || saveButton.visible || showButton.visible
 
-        Rectangle {
+        Item {
             visible: root.row !== null && root.row.changed
+            width: changed.implicitWidth
             height: Theme.controlHeight
-            width: badge.implicitWidth + 24
-            radius: height / 2
-            color: Theme.accentSoft
-            border.color: Theme.accentLine
-            Text {
-                id: badge
-                anchors.centerIn: parent
+            Badge {
+                id: changed
+                anchors.verticalCenter: parent.verticalCenter
                 //% "Changed"
                 text: qsTrId("light_strip_changed")
-                color: Theme.accent
-                font.pixelSize: Theme.fontSmall + 1
-                font.bold: true
+                kind: "accent"
+                //% "Changed: not saved to the power mode yet"
+                Accessible.name: qsTrId("light_strip_changed_a11y")
             }
-            Accessible.role: Accessible.StaticText
-            //% "Changed: not saved to the power mode yet"
-            Accessible.name: qsTrId("light_strip_changed_a11y")
         }
         SecondaryButton {
+            id: undoButton
             //% "Undo"
             text: qsTrId("light_strip_undo")
             iconName: "undo"
-            enabled: root.usable && root.row !== null && root.row.can_undo
+            visible: root.usable && root.row !== null && root.row.can_undo
             onClicked: root._edit("bindings_undo", { mode: root.view.selected })
         }
         PrimaryButton {
+            id: saveButton
             //% "Save"
             text: qsTrId("light_strip_save")
             iconName: "save"
             busy: root.busy
-            enabled: root.usable && root.row !== null && root.row.changed
+            visible: root.usable && root.row !== null && (root.row.changed || root.busy)
             onClicked: root.save()
         }
         SecondaryButton {
+            id: showButton
             //% "Show on my laptop"
             text: qsTrId("light_strip_show")
-            enabled: root.usable && root.row !== null && root.row.look !== null
+            iconName: "play"
+            visible: root.usable && root.row !== null && root.row.look !== null
             onClicked: Api.call("look", "apply", { name: root.row.look }, function () {
                 //% "Look applied to the lights, not to the power mode"
                 Toasts.show(qsTrId("light_strip_shown"), "info")

@@ -137,10 +137,17 @@ Rectangle {
             }
         }
 
+        // When the grid makes the card taller (a row of cards is as tall as its tallest), the room
+        // goes here, so the controls of every card of a row line up at the bottom.
+        Item {
+            Layout.fillHeight: true
+            Layout.preferredHeight: 0
+            visible: extra.children.length > 0
+        }
         ColumnLayout {
             id: extra
             Layout.fillWidth: true
-            spacing: 6
+            spacing: 8
         }
     }
 }

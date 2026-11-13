@@ -18,6 +18,9 @@ PageFrame {
     // ---- what the page knows beyond the live frame -------------------------------------------
     property var supportedModes: null      // `power status` supported (null: not read yet)
     property var smartProfiles: []
+    /// The Smart profile in use as `power smart current` says it, for when the live frame does not
+    /// name one (the selector would be blank otherwise).
+    property string smartCurrent: ""
     property var fanCurves: []
     property bool statusLoaded: false
     property string gpuMode: ""             // "" = the laptop has no GPU switch (once statusLoaded)
@@ -162,6 +165,9 @@ PageFrame {
             supportedModes = (r && Array.isArray(r.supported)) ? r.supported : null
         }, quiet)
         Api.call("power", "smart", { action: "list" }, function (r) { smartProfiles = Array.isArray(r) ? r : [] }, quiet)
+        Api.call("power", "smart", { action: "current" }, function (r) {
+            smartCurrent = (r && typeof r.name === "string") ? r.name : ""
+        }, quiet)
         Api.call("fan", "curve", { action: "list" }, function (r) { fanCurves = Array.isArray(r) ? r : [] }, quiet)
         Api.call("status", "get", {}, function (r) {
             gpuMode = (r && typeof r.gpu_mode === "string") ? r.gpu_mode : ""
@@ -213,6 +219,7 @@ PageFrame {
     }
     function useSmartProfile(name) {
         Api.call("power", "smart", { action: "use", name: name }, function (r) {
+            page.smartCurrent = r && r.name ? r.name : name
             //% "Smart auto profile in use: %1"
             Toasts.ok(qsTrId("home_toast_smart").arg(r && r.name ? r.name : name))
         })
@@ -459,7 +466,7 @@ PageFrame {
                 model: page.favourites.items
                 delegate: FavouriteChip {
                     required property var modelData
-                    text: modelData.name
+                    text: modelData.title !== undefined ? modelData.title : modelData.name
                     iconName: modelData.icon
                     missing: !modelData.exists
                     kindLabel: page.kindName(modelData.kind)
@@ -509,7 +516,8 @@ PageFrame {
                 //% "Smart profile"
                 label: qsTrId("home_smart_profile")
                 options: page.smartProfiles
-                current: page.control.smart_profile === null ? undefined : page.control.smart_profile
+                current: page.control.smart_profile !== null && page.control.smart_profile !== undefined
+                    ? page.control.smart_profile : (page.smartCurrent !== "" ? page.smartCurrent : undefined)
                 onActivated: (value) => page.useSmartProfile(value)
                 SecondaryButton {
                     //% "Edit"
@@ -631,7 +639,7 @@ PageFrame {
                 //% "Asks first; only allowed while cool."
                 sub: qsTrId("home_off_sub")
                 AppButton {
-                    kind: "danger"
+                    kind: "danger-quiet"
                     //% "Turn fans off…"
                     text: qsTrId("home_off_button")
                     onClicked: page.askFansOff()

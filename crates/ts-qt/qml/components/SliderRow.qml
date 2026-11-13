@@ -123,8 +123,9 @@ SettingRow {
         }
 
         Text {
-            Layout.minimumWidth: 52
-            text: root.valueText !== "" ? root.valueText : (Math.round(slider.value * 100) / 100) + (root.unit !== "" ? " " + root.unit : "")
+            // Wide enough for "0.8 lines/s", so the sliders of a card line up whatever their unit.
+            Layout.minimumWidth: 80
+            text: root.valueText !== "" ? root.valueText : (Math.round(slider.value * 100) / 100) + (root.unit.trim() !== "" ? " " + root.unit.trim() : "")
             color: Theme.stat
             font.pixelSize: Theme.fontBody
             horizontalAlignment: Text.AlignRight

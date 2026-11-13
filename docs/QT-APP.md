@@ -21,6 +21,12 @@ TRUESENSE_QT_EXIT_AFTER_MS=2000 TRUESENSE_QT_SHOT=/path/shot.png truesense-qt --
 at nothing, so nothing touches the real desktop). Never run the GUI without
 `QT_QPA_PLATFORM=offscreen` on a machine where somebody works.
 
+To picture a state that needs clicks (a Lighting tab, an open theme editor), the test hook also takes
+`TRUESENSE_QT_SET='{"objectName": {"property": value, "function()": [arguments]}}'`: it sets the
+properties on (or calls the functions of) the items with that `objectName`, retrying for two seconds
+while Loaders create them. Example: `{"lightingPage": {"tab": "themes"}, "themesTab": {"choose()":
+["hearth"]}}`. Test-only: it runs only with `TRUESENSE_QT_TEST=1`, and no page reads it.
+
 ## Installing and releasing
 
 `truesense-qt` is an optional, dynamic program next to the static `truesense`: `truesense gui` hands over to it when it is installed (and opens the web window when it is not). `tools/install.sh` finds or builds it (`TRUESENSE_QT_BIN`, `bin/truesense-qt`, `target/release/truesense-qt` from `make qt-release`, else a build from source as your user), refuses a stale one, installs the Qt 6 run-time packages, swaps it in with a `.prev` rollback copy and installs the launcher entry and the About-box texts; see docs/INSTALL.md ("The Qt window"). The Arch package builds and ships it (it depends on `qt6-base`, `qt6-declarative`, `qt6-svg`), the release workflow attaches it as `truesense-qt-X.Y.Z-linux-x86_64.tar.gz`, and CI runs `make qt-ci` in an Arch container (docs/RELEASING.md). The shell tests that cover this are `tools/shelltest/test_sandbox_qt.sh` (installer and uninstaller in the sandbox), and the Qt cases of `test_installer.sh`, `test_packaging.sh` and `test_get.sh`.
@@ -112,11 +118,12 @@ plain bypasses `qsTrId`.
 | `Segmented { model: [{value,label}]; current; onActivated }` | pill of choices |
 | `ToggleRow { label; sub; checked; onToggled(bool) }` | switch, signal only on user action |
 | `SliderRow { label; from; to; stepSize; value; unit; valueText; coalesceMs; onEdited(v); onReleased(v) }` | `edited` throttled during a drag (first move at once, then the newest every `coalesceMs`), final value guaranteed |
-| `SelectRow { label; options: ["a", {value,text}]; current; onActivated(value) }` | drop-down |
+| `SelectRow { label; options: ["a", {value,text}]; current; placeholder; onActivated(value) }` | drop-down; shows "Choose…" (or `placeholder`) while nothing is chosen, never a blank box |
 | `SwatchRow { colors; current; allowCustom; onActivated(color); onCustomRequested }` | colour swatches |
 | `SettingRow { label; sub }` | the row layout the others share; put your own controls inside |
 | `HelpText` | muted explanation paragraph |
-| `PrimaryButton`, `SecondaryButton`, `AppButton { kind: "danger"; busy; iconName }` | buttons (`busy` disables and shows ...) |
+| `PrimaryButton`, `SecondaryButton`, `AppButton { kind: "danger"\|"danger-quiet"; busy; iconName }` | buttons (`busy` disables and shows ...); one primary per card; `danger-quiet` (red text, outline) for a page button that starts something destructive, `danger` (red fill) only for the confirming button of a dialog |
+| `ListIconButton { iconName; text; tone; tint }` | icon-only button of a list row; `text` is its tooltip and accessible name |
 | `NavGrid { model: [{id,title,icon}]; onNavigate(id) }` | grid of page buttons |
 | `Sparkline { values; minimum; maximum; filled; dot }` | line chart, null = gap, repaints on change only |
 | `Gauge { value; from; to; warnAt; critAt; text; caption }` | 270 degree dial |
@@ -124,6 +131,7 @@ plain bypasses `qsTrId`.
 | `CapabilityNote { capability; text }` | "not available on this model" line, hidden while usable |
 | `DirectionPicker { current; onActivated(d) }` | the six wave directions as icon tiles (numbers 0 to 5, as stored); a `TileRow` with `turn`/`mirror` icons |
 | `GalleryCard { title; subtitle; layout; cells; starrable; starred; badge; selected; highlighted }` | a gallery card: keyboard thumbnail, name, text, star, badge; its children go under the text |
+| `GalleryGrid { minCardWidth; detailAfter }` | the grid of a gallery: equal card widths (`cardWidth`), rows as tall as their tallest card, columns that follow the width both ways, and a detail row under the chosen card's row (`rowOf`, `columnOf`, `detailRow`) |
 | `KeyboardThumb { layout; cells }` | the keyboard as one Canvas (a card of a gallery must not be 100 items) |
 | `FilterChips { model: [{id,label,count}]; current; onPicked }`, `ColourwayChips { ways; current; onPicked }` | the gallery's filter row and a card's colour chips |
 | `Icon { name; size; color }` | tintable SVG from `qml/icons/<name>.svg` (24x24, `stroke="currentColor"`) |

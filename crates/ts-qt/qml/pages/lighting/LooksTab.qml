@@ -1,39 +1,26 @@
 // Lighting > Looks: a look remembers the keyboard and the rear bar as they are now. Save the lights
-// the way you like (Keyboard, Per-key, Rear bar), then keep them here; apply, copy, delete, and
-// choose which one is put on at boot. Per-key sets are the bare key colours (no effect, no bar).
+// the way you like (Keyboard, Per-key, Rear bar), then keep them here. Every look is a card with its
+// own actions (apply, copy, update, delete); below: save the lights as a new look, the per-key sets
+// (the bare key colours, no effect, no bar) and which look is put on at boot.
 import QtQuick
 import QtQuick.Layouts
 import org.truesense.app
 
 ColumnLayout {
     id: tab
+    objectName: "looksTab"
 
     spacing: Theme.spacing + 2
 
-    property string selected: "native"
-    property bool builtin: true
-    property string details: ""
+    /// The look applied last from this tab (its card is outlined).
+    property string applied: ""
     property var sets: []
     property string selectedSet: ""
 
     function reload(pick) {
         lookGallery.forget()
-        LightingVm.refreshLooks(function () {
-            var names = LightingVm.looks
-            if (pick !== undefined) selected = pick
-            else if (names.indexOf(selected) < 0) selected = "native"
-            show()
-        })
+        LightingVm.refreshLooks()
         loadSets()
-    }
-
-    function show() {
-        var name = selected
-        Api.call("look", "show", { name: name }, function (look) {
-            if (name !== selected) return
-            builtin = look.builtin === true
-            details = LightingVm.describeLook(look)
-        }, function () { details = "" })
     }
 
     function loadSets(pick) {
@@ -54,14 +41,29 @@ ColumnLayout {
         return true
     }
 
-    function save() {
-        var name = nameField.text.trim() !== "" ? nameField.text.trim() : selected
+    function applyLook(name) {
+        Api.call("look", "apply", { name: name }, function () {
+            tab.applied = name
+            //% "Look '%1' applied"
+            Toasts.show(qsTrId("light_looks_applied").arg(LightingVm.lookName(name)), "ok")
+        })
+    }
+
+    function copyLook(name) {
+        Api.call("look", "copy", { name: name }, function (made) {
+            //% "Copied to '%1'. Set the lights the way you like, then update it with the save button on its card."
+            Toasts.show(qsTrId("light_looks_copied2").arg(made), "ok")
+            tab.reload()
+        })
+    }
+
+    function save(name, done) {
         if (_badName(name, "look")) return
         Api.call("look", "save", { name: name }, function () {
             //% "Saved look '%1'"
             Toasts.show(qsTrId("light_looks_saved").arg(name), "ok")
-            nameField.text = ""
-            reload(name)
+            if (done) done()
+            tab.reload()
         })
     }
 
@@ -81,17 +83,38 @@ ColumnLayout {
         Layout.fillWidth: true
         //% "Your looks"
         title: qsTrId("light_looks_pictures")
-        icon: "keyboard"
+        icon: "profiles"
 
         LookGallery {
             id: lookGallery
             Layout.fillWidth: true
             names: LightingVm.looks
-            selected: tab.selected
-            onPicked: (name) => { tab.selected = name; tab.show() }
-            onApply: (name) => Api.call("look", "apply", { name: name }, function () {
-                Toasts.show(qsTrId("light_looks_applied").arg(name), "ok")
+            selected: tab.applied
+            onApply: (name) => tab.applyLook(name)
+            onCopy: (name) => tab.copyLook(name)
+            onUpdate: (name) => confirm.ask({
+                //% "Update look"
+                title: qsTrId("light_looks_update_title"),
+                //% "Replace the look '%1' with the lights as they are now?"
+                text: qsTrId("light_looks_update_text").arg(name),
+                //% "Update"
+                confirmText: qsTrId("light_looks_update_confirm")
+            }, function () { tab.save(name) })
+            onRemove: (name) => confirm.ask({
+                //% "Delete look"
+                title: qsTrId("light_looks_delete_title"),
+                //% "Delete the look '%1'?"
+                text: qsTrId("light_looks_delete_text").arg(name),
+                confirmText: qsTrId("light_looks_delete"),
+                danger: true
+            }, function () {
+                Api.call("look", "delete", { name: name }, function () { tab.reload() })
             })
+        }
+        HelpText {
+            visible: LightingVm.looks.length <= 1
+            //% "Only the default look so far. Save the lights below to add your own."
+            text: qsTrId("light_looks_only_default")
         }
         HelpText {
             //% "A moving effect is drawn as one still frame."
@@ -101,91 +124,30 @@ ColumnLayout {
 
     Card {
         Layout.fillWidth: true
-        //% "Looks"
-        title: qsTrId("light_looks_title")
-        icon: "profiles"
+        //% "Save the lights"
+        title: qsTrId("light_looks_save_title")
+        icon: "save"
 
-        SelectRow {
-            Layout.fillWidth: true
-            //% "Look"
-            label: qsTrId("light_looks_look")
-            options: LightingVm.looks
-            current: tab.selected
-            onActivated: (name) => { tab.selected = name; tab.show() }
-        }
-        Text {
-            Layout.fillWidth: true
-            visible: text !== ""
-            text: (tab.builtin
-                //% "Built in and read-only. Copy it to make your own."
-                ? qsTrId("light_looks_builtin") + "  " : "") + tab.details
-            color: Theme.muted
-            font.pixelSize: Theme.fontSmall + 1
-            wrapMode: Text.Wrap
-        }
-        Flow {
-            Layout.fillWidth: true
-            spacing: 8
-            PrimaryButton {
-                //% "Apply"
-                text: qsTrId("light_looks_apply")
-                onClicked: Api.call("look", "apply", { name: tab.selected }, function () {
-                    //% "Look '%1' applied"
-                    Toasts.show(qsTrId("light_looks_applied").arg(tab.selected), "ok")
-                })
-            }
-            SecondaryButton {
-                //% "Copy to edit"
-                text: qsTrId("light_looks_copy")
-                onClicked: {
-                    var n = nameField.text.trim()
-                    if (n !== "" && tab._badName(n, "look")) return
-                    var src = tab.selected
-                    Api.call("look", "copy", n !== "" ? { name: src, new: n } : { name: src }, function (made) {
-                        //% "Copied '%1' to '%2'. Change the lights, then Save to update it."
-                        Toasts.show(qsTrId("light_looks_copied").arg(src).arg(made), "ok")
-                        nameField.text = ""
-                        tab.reload(typeof made === "string" ? made : undefined)
-                    })
-                }
-            }
-            AppButton {
-                kind: "danger"
-                //% "Delete"
-                text: qsTrId("light_looks_delete")
-                iconName: "trash"
-                enabled: !tab.builtin
-                onClicked: {
-                    var name = tab.selected
-                    confirm.ask({
-                        //% "Delete look"
-                        title: qsTrId("light_looks_delete_title"),
-                        //% "Delete the look '%1'?"
-                        text: qsTrId("light_looks_delete_text").arg(name),
-                        confirmText: qsTrId("light_looks_delete"),
-                        danger: true
-                    }, function () {
-                        Api.call("look", "delete", { name: name }, function () { tab.reload("native") })
-                    })
-                }
-            }
-        }
         SettingRow {
             Layout.fillWidth: true
-            //% "Save the lights as"
-            label: qsTrId("light_looks_save_as")
+            //% "Save the lights as they are now"
+            label: qsTrId("light_looks_save_as2")
+            //% "The keyboard and the rear bar, as a new look."
+            sub: qsTrId("light_looks_save_sub")
             LightNameField {
                 id: nameField
-                Layout.preferredWidth: 180
-                //% "Name"
-                placeholderText: qsTrId("light_looks_name")
-                onAccepted: tab.save()
+                Layout.preferredWidth: 200
+                //% "Name of the look"
+                placeholderText: qsTrId("light_looks_name2")
+                onAccepted: saveButton.clicked()
             }
             SecondaryButton {
+                id: saveButton
                 //% "Save"
                 text: qsTrId("light_looks_save")
                 iconName: "save"
-                onClicked: tab.save()
+                enabled: nameField.text.trim() !== ""
+                onClicked: tab.save(nameField.text.trim(), function () { nameField.text = "" })
             }
         }
         SettingRow {
@@ -196,9 +158,9 @@ ColumnLayout {
                 //% "Reset to the default look"
                 text: qsTrId("light_looks_reset")
                 onClicked: Api.call("look", "apply", { name: "native" }, function () {
+                    tab.applied = "native"
                     //% "Lighting back to the default look"
                     Toasts.show(qsTrId("light_looks_reset_done"), "ok")
-                    tab.reload("native")
                 })
             }
         }
@@ -214,32 +176,38 @@ ColumnLayout {
             //% "Only the 128 key colours, no effect and no rear bar. Used by the command line and by the login setting."
             text: qsTrId("light_sets_help")
         }
-        SelectRow {
+        HelpText {
+            visible: tab.sets.length === 0
+            //% "No key sets saved yet."
+            text: qsTrId("light_sets_none")
+            color: Theme.stat
+        }
+        SettingRow {
             Layout.fillWidth: true
-            enabled: tab.sets.length > 0
+            visible: tab.sets.length > 0
             //% "Key set"
             label: qsTrId("light_sets_set")
-            options: tab.sets
-            current: tab.selectedSet
-            onActivated: (name) => tab.selectedSet = name
-        }
-        Flow {
-            Layout.fillWidth: true
-            spacing: 8
-            PrimaryButton {
+            SelectRow {
+                Layout.preferredWidth: 220
+                options: tab.sets
+                current: tab.selectedSet
+                onActivated: (name) => tab.selectedSet = name
+            }
+            SecondaryButton {
                 //% "Apply"
                 text: qsTrId("light_sets_apply")
+                iconName: "play"
                 enabled: tab.selectedSet !== ""
                 onClicked: Api.call("keyboard", "profile", { action: "load", name: tab.selectedSet }, function () {
                     //% "Key set '%1' applied"
                     Toasts.show(qsTrId("light_sets_applied").arg(tab.selectedSet), "ok")
                 })
             }
-            AppButton {
-                kind: "danger"
+            ListIconButton {
+                iconName: "trash"
+                tone: "danger"
                 //% "Delete"
                 text: qsTrId("light_sets_delete")
-                iconName: "trash"
                 enabled: tab.selectedSet !== ""
                 onClicked: {
                     var name = tab.selectedSet
@@ -262,7 +230,7 @@ ColumnLayout {
             label: qsTrId("light_sets_save_as")
             LightNameField {
                 id: setField
-                Layout.preferredWidth: 180
+                Layout.preferredWidth: 200
                 //% "Name"
                 placeholderText: qsTrId("light_sets_name")
                 onAccepted: setSave.clicked()
@@ -272,6 +240,7 @@ ColumnLayout {
                 //% "Save"
                 text: qsTrId("light_sets_save")
                 iconName: "save"
+                enabled: setField.text.trim() !== ""
                 onClicked: {
                     var name = setField.text.trim()
                     if (tab._badName(name, "set")) return

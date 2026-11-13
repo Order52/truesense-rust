@@ -9,6 +9,7 @@ import org.truesense.app
 
 PageFrame {
     id: page
+    objectName: "lightingPage"
 
     title: Nav.currentPage ? Nav.titleOf(Nav.currentPage) : ""
 

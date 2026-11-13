@@ -9,6 +9,7 @@ import org.truesense.app
 
 ColumnLayout {
     id: tab
+    objectName: "perKeyTab"
 
     spacing: Theme.spacing + 2
 
@@ -528,12 +529,9 @@ ColumnLayout {
             onTextEdited: tab.templateQuery = text
             Keys.onEscapePressed: { text = ""; tab.templateQuery = "" }
         }
-        GridLayout {
+        GalleryGrid {
             id: templateGrid
-            Layout.fillWidth: true
-            columns: Math.max(1, Math.floor((width + columnSpacing) / (250 + columnSpacing)))
-            columnSpacing: 10
-            rowSpacing: 10
+            minCardWidth: 250
             Repeater {
                 model: LightingVm.gallery("filter", { themes: tab.templates, query: tab.templateQuery, chip: "all" }) || []
                 delegate: GalleryCard {
@@ -544,11 +542,9 @@ ColumnLayout {
                             if (tab.templates[i].id === modelData) return tab.templates[i]
                         return null
                     }
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    Layout.maximumWidth: 420
-                    Layout.alignment: Qt.AlignTop
-                    title: modelData
+                    Layout.preferredWidth: templateGrid.cardWidth
+                    Layout.fillHeight: true
+                    title: LightingVm.prettyName(modelData)
                     subtitle: entry ? entry.mood : ""
                     layout: LightingVm.layout
                     cells: tab.pictureOf(modelData)
@@ -556,9 +552,10 @@ ColumnLayout {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
-                        PrimaryButton {
+                        SecondaryButton {
                             //% "Apply"
                             text: qsTrId("light_pk_template_apply")
+                            iconName: "play"
                             onClicked: tab.applyTemplate(tcard.modelData)
                         }
                         SecondaryButton {

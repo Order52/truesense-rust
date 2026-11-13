@@ -83,7 +83,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             // Never wider than the inside of the ring: a long text ("5324 RPM") shrinks instead of
             // running over the arc.
-            width: Math.max(10, 2 * root._r - root._lw * 1.3)
+            width: Math.max(10, 2 * root._r - root._lw * 2.2)
             horizontalAlignment: Text.AlignHCenter
             text: root.text !== "" ? root.text : String(Math.round(root.value))
             color: Theme.text

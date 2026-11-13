@@ -285,10 +285,10 @@ ColumnLayout {
         title: qsTrId("perf_profile_title")
         icon: "smart"
         rightText: root.locked
-            //% "built in"
-            ? qsTrId("perf_profile_builtin")
-            //% "yours"
-            : qsTrId("perf_profile_yours")
+            //% "Built in"
+            ? qsTrId("perf_profile_builtin2")
+            //% "Yours"
+            : qsTrId("perf_profile_yours2")
 
         HelpText {
             //% "How Smart auto chooses the power mode. Built-in profiles cannot be edited: copy one, then change the copy."
@@ -344,11 +344,12 @@ ColumnLayout {
                 onClicked: root.copyProfile()
             }
             AppButton {
-                kind: "danger"
+                kind: "danger-quiet"
                 iconName: "trash"
                 //% "Delete"
                 text: qsTrId("perf_delete")
-                enabled: !root.locked
+                // A built-in profile cannot be deleted: no button rather than a dead one.
+                visible: !root.locked
                 onClicked: root.deleteProfile()
             }
             AppButton {
@@ -367,8 +368,8 @@ ColumnLayout {
             label: qsTrId("perf_save_as")
             //% "Names use letters, digits, . _ - (up to 40)."
             sub: qsTrId("perf_name_help")
-            //% "name"
-            placeholder: qsTrId("perf_name_placeholder")
+            //% "Name of your profile"
+            placeholder: qsTrId("perf_name_placeholder2")
             maxLength: 40
             onAccepted: root.saveProfile()
             AppButton {

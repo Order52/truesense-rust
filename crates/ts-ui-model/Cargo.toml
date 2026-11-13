@@ -16,6 +16,7 @@ ts-foundation = { path = "../ts-foundation" }
 ts-api = { path = "../ts-api" }
 ts-decision = { path = "../ts-decision" }
 ts-domain = { path = "../ts-domain" }
+ts-fx = { path = "../ts-fx" }
 ts-gui = { path = "../ts-gui" }
 ts-keys = { path = "../ts-keys" }
 ts-system = { path = "../ts-system" }

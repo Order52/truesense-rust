@@ -2,7 +2,9 @@
 //
 //   kind "primary": accent fill, for the one action of a card (Apply, Save)
 //   kind "secondary": quiet outline (Edit, Cancel)
-//   kind "danger": red fill, for destructive confirmations
+//   kind "danger": red fill, for the confirming button of a destructive dialog
+//   kind "danger-quiet": an outline with red text, for the button on a page that starts something
+//     destructive (Delete, Stop both fans): it asks first, so it need not shout
 //
 // `busy` disables the button while its command runs and shows "..." so a double click cannot send
 // the command twice. Focus is drawn as a ring (keyboard users).
@@ -29,7 +31,8 @@ Button {
 
     readonly property color _fg: !enabled && !busy ? Theme.disabledText
         : kind === "primary" ? Theme.accentInk
-        : kind === "danger" ? "#ffffff" : Theme.text
+        : kind === "danger" ? "#ffffff"
+        : kind === "danger-quiet" ? Theme.bad : Theme.text
     readonly property color _bg: !enabled && !busy ? Theme.buttonOff
         : kind === "primary" ? (down ? Qt.darker(Theme.accent, 1.2) : hovered ? Qt.lighter(Theme.accent, 1.1) : Theme.accent)
         : kind === "danger" ? (down ? Qt.darker(Theme.bad, 1.2) : hovered ? Qt.lighter(Theme.bad, 1.08) : Theme.bad)
@@ -48,7 +51,7 @@ Button {
             text: root.busy ? "…" : root.text
             color: root._fg
             font.pixelSize: Theme.fontBody
-            font.bold: root.kind !== "secondary"
+            font.bold: root.kind === "primary" || root.kind === "danger"
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
@@ -58,8 +61,11 @@ Button {
     background: Rectangle {
         radius: Theme.radiusSmall + 1
         color: root._bg
-        border.width: root.kind === "secondary" || root.activeFocus ? 1 : 0
-        border.color: root.activeFocus ? Theme.focusRing : (root.enabled ? Theme.buttonLine : Theme.buttonOffLine)
+        border.width: root.kind === "secondary" || root.kind === "danger-quiet" || root.activeFocus ? 1 : 0
+        border.color: root.activeFocus ? Theme.focusRing
+            : !root.enabled ? Theme.buttonOffLine
+            : root.kind === "danger-quiet" ? Qt.rgba(Theme.bad.r, Theme.bad.g, Theme.bad.b, root.hovered ? 0.8 : 0.45)
+            : Theme.buttonLine
         Behavior on color { ColorAnimation { duration: Theme.animMs } }
     }
 }

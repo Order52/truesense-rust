@@ -183,10 +183,6 @@
         <source>This desktop shows no tray, so closing the window ends the app.</source>
         <translation>This desktop shows no tray, so closing the window ends the app.</translation>
     </message>
-    <message id="settings_english_note">
-        <source>Messages from the service (errors, refusals) are shown in English; the rest of the window is translated.</source>
-        <translation>Messages from the service (errors, refusals) are shown in English; the rest of the window is translated.</translation>
-    </message>
     <message id="settings_startup">
         <source>Start up</source>
         <translation>Start up</translation>
@@ -1043,17 +1039,21 @@
         <source>No profiles yet. Set things the way you like and save them below.</source>
         <translation>No profiles yet. Set things the way you like and save them below.</translation>
     </message>
-    <message id="profiles_yours">
-        <source>yours</source>
-        <translation>yours</translation>
+    <message id="profiles_yours2">
+        <source>Yours</source>
+        <translation>Yours</translation>
     </message>
-    <message id="profiles_shipped">
-        <source>shipped</source>
-        <translation>shipped</translation>
+    <message id="profiles_builtin">
+        <source>Built in</source>
+        <translation>Built in</translation>
     </message>
-    <message id="profiles_current">
-        <source>last applied</source>
-        <translation>last applied</translation>
+    <message id="profiles_current2">
+        <source>Last applied</source>
+        <translation>Last applied</translation>
+    </message>
+    <message id="profiles_fav_empty2">
+        <source>Nothing is starred yet. Star a profile above, a theme under Lighting, a fan curve or a Smart profile to keep it here for one-click use on Home and on the PREDATOR key.</source>
+        <translation>Nothing is starred yet. Star a profile above, a theme under Lighting, a fan curve or a Smart profile to keep it here for one-click use on Home and on the PREDATOR key.</translation>
     </message>
     <message id="profiles_hide">
         <source>Hide details</source>
@@ -1062,6 +1062,14 @@
     <message id="profiles_details">
         <source>Details</source>
         <translation>Details</translation>
+    </message>
+    <message id="profiles_unstar">
+        <source>Remove from favourites</source>
+        <translation>Remove from favourites</translation>
+    </message>
+    <message id="profiles_star">
+        <source>Add to favourites</source>
+        <translation>Add to favourites</translation>
     </message>
     <message id="profiles_delete">
         <source>Delete</source>
@@ -1106,10 +1114,6 @@
     <message id="profiles_fav_title">
         <source>Favourites</source>
         <translation>Favourites</translation>
-    </message>
-    <message id="profiles_fav_empty">
-        <source>Nothing is starred yet. Use the star on a look, a fan curve, a Smart profile or a profile to keep it here for one-click use on Home and on the keys.</source>
-        <translation>Nothing is starred yet. Use the star on a look, a fan curve, a Smart profile or a profile to keep it here for one-click use on Home and on the keys.</translation>
     </message>
     <message id="profiles_fav_missing">
         <source>%1, no longer exists</source>
@@ -2007,6 +2011,10 @@
         <source>This needs the TrueSense service.</source>
         <translation>This needs the TrueSense service.</translation>
     </message>
+    <message id="battery_full_at">
+        <source>Battery at %1. </source>
+        <translation>Battery at %1. </translation>
+    </message>
     <message id="battery_full_active">
         <source>Charging to full this time.</source>
         <translation>Charging to full this time.</translation>
@@ -2111,9 +2119,9 @@
         <source>Checking the system</source>
         <translation>Checking the system</translation>
     </message>
-    <message id="health_doctor_counts">
-        <source>%1 problems, %2 warnings. Score %3 of 100. Kernel %4.</source>
-        <translation>%1 problems, %2 warnings. Score %3 of 100. Kernel %4.</translation>
+    <message id="health_doctor_counts2">
+        <source>Problems: %1 · warnings: %2 · score %3 of 100 · kernel %4</source>
+        <translation>Problems: %1 · warnings: %2 · score %3 of 100 · kernel %4</translation>
     </message>
     <message id="health_fix">
         <source>Fix: %1</source>
@@ -2899,9 +2907,13 @@
         <source>Colour</source>
         <translation>Colour</translation>
     </message>
-    <message id="light_kb_no_colour">
-        <source>This effect has its own colours: the keyboard ignores a colour choice.</source>
-        <translation>This effect has its own colours: the keyboard ignores a colour choice.</translation>
+    <message id="light_kb_no_colour2">
+        <source>%1 makes its own colours, so it has no colour to choose.</source>
+        <translation>%1 makes its own colours, so it has no colour to choose.</translation>
+    </message>
+    <message id="light_kb_pick_first">
+        <source>Pick an effect to choose its colour and speed.</source>
+        <translation>Pick an effect to choose its colour and speed.</translation>
     </message>
     <message id="light_kb_speed">
         <source>Speed</source>
@@ -2966,6 +2978,10 @@
     <message id="light_kb_reset_done">
         <source>Keyboard back to the stock look</source>
         <translation>Keyboard back to the stock look</translation>
+    </message>
+    <message id="light_look_native">
+        <source>Default</source>
+        <translation>Default</translation>
     </message>
     <message id="light_fx_static">
         <source>Static</source>
@@ -3171,6 +3187,10 @@
         <source>Names use letters, digits, . _ - (up to 40).</source>
         <translation>Names use letters, digits, . _ - (up to 40).</translation>
     </message>
+    <message id="light_looks_copied2">
+        <source>Copied to &apos;%1&apos;. Set the lights the way you like, then update it with the save button on its card.</source>
+        <translation>Copied to &apos;%1&apos;. Set the lights the way you like, then update it with the save button on its card.</translation>
+    </message>
     <message id="light_looks_saved">
         <source>Saved look &apos;%1&apos;</source>
         <translation>Saved look &apos;%1&apos;</translation>
@@ -3183,37 +3203,45 @@
         <source>Your looks</source>
         <translation>Your looks</translation>
     </message>
-    <message id="light_looks_title">
-        <source>Looks</source>
-        <translation>Looks</translation>
-    </message>
-    <message id="light_looks_look">
-        <source>Look</source>
-        <translation>Look</translation>
-    </message>
-    <message id="light_looks_builtin">
-        <source>Built in and read-only. Copy it to make your own.</source>
-        <translation>Built in and read-only. Copy it to make your own.</translation>
+    <message id="light_looks_builtin_badge">
+        <source>Built in</source>
+        <translation>Built in</translation>
     </message>
     <message id="light_looks_apply">
         <source>Apply</source>
         <translation>Apply</translation>
     </message>
+    <message id="light_looks_copy2">
+        <source>Copy to make your own</source>
+        <translation>Copy to make your own</translation>
+    </message>
+    <message id="light_looks_update">
+        <source>Update with the lights as they are now</source>
+        <translation>Update with the lights as they are now</translation>
+    </message>
     <message id="light_looks_applied">
         <source>Look &apos;%1&apos; applied</source>
         <translation>Look &apos;%1&apos; applied</translation>
     </message>
+    <message id="light_looks_update_title">
+        <source>Update look</source>
+        <translation>Update look</translation>
+    </message>
+    <message id="light_looks_update_text">
+        <source>Replace the look &apos;%1&apos; with the lights as they are now?</source>
+        <translation>Replace the look &apos;%1&apos; with the lights as they are now?</translation>
+    </message>
+    <message id="light_looks_update_confirm">
+        <source>Update</source>
+        <translation>Update</translation>
+    </message>
+    <message id="light_looks_only_default">
+        <source>Only the default look so far. Save the lights below to add your own.</source>
+        <translation>Only the default look so far. Save the lights below to add your own.</translation>
+    </message>
     <message id="light_looks_still_note">
         <source>A moving effect is drawn as one still frame.</source>
         <translation>A moving effect is drawn as one still frame.</translation>
-    </message>
-    <message id="light_looks_copy">
-        <source>Copy to edit</source>
-        <translation>Copy to edit</translation>
-    </message>
-    <message id="light_looks_copied">
-        <source>Copied &apos;%1&apos; to &apos;%2&apos;. Change the lights, then Save to update it.</source>
-        <translation>Copied &apos;%1&apos; to &apos;%2&apos;. Change the lights, then Save to update it.</translation>
     </message>
     <message id="light_looks_delete">
         <source>Delete</source>
@@ -3227,13 +3255,21 @@
         <source>Delete the look &apos;%1&apos;?</source>
         <translation>Delete the look &apos;%1&apos;?</translation>
     </message>
-    <message id="light_looks_save_as">
-        <source>Save the lights as</source>
-        <translation>Save the lights as</translation>
+    <message id="light_looks_save_title">
+        <source>Save the lights</source>
+        <translation>Save the lights</translation>
     </message>
-    <message id="light_looks_name">
-        <source>Name</source>
-        <translation>Name</translation>
+    <message id="light_looks_save_as2">
+        <source>Save the lights as they are now</source>
+        <translation>Save the lights as they are now</translation>
+    </message>
+    <message id="light_looks_save_sub">
+        <source>The keyboard and the rear bar, as a new look.</source>
+        <translation>The keyboard and the rear bar, as a new look.</translation>
+    </message>
+    <message id="light_looks_name2">
+        <source>Name of the look</source>
+        <translation>Name of the look</translation>
     </message>
     <message id="light_looks_save">
         <source>Save</source>
@@ -3258,6 +3294,10 @@
     <message id="light_sets_help">
         <source>Only the 128 key colours, no effect and no rear bar. Used by the command line and by the login setting.</source>
         <translation>Only the 128 key colours, no effect and no rear bar. Used by the command line and by the login setting.</translation>
+    </message>
+    <message id="light_sets_none">
+        <source>No key sets saved yet.</source>
+        <translation>No key sets saved yet.</translation>
     </message>
     <message id="light_sets_set">
         <source>Key set</source>
@@ -3703,6 +3743,10 @@
         <source>No theme is running. The lights show the look you set last.</source>
         <translation>No theme is running. The lights show the look you set last.</translation>
     </message>
+    <message id="light_theme_edit_running">
+        <source>Change it</source>
+        <translation>Change it</translation>
+    </message>
     <message id="light_theme_halted">
         <source>Stopped: %1</source>
         <translation>Stopped: %1</translation>
@@ -3727,6 +3771,14 @@
         <source>Not a theme: %1 (%2)</source>
         <translation>Not a theme: %1 (%2)</translation>
     </message>
+    <message id="light_theme_edit_title">
+        <source>Change %1</source>
+        <translation>Change %1</translation>
+    </message>
+    <message id="light_theme_close">
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
     <message id="light_theme_not_runnable">
         <source>This theme flashes in a way that was never measured, so it is listed but cannot be started.</source>
         <translation>This theme flashes in a way that was never measured, so it is listed but cannot be started.</translation>
@@ -3734,10 +3786,6 @@
     <message id="light_theme_colours">
         <source>Colours</source>
         <translation>Colours</translation>
-    </message>
-    <message id="light_theme_custom">
-        <source>Custom</source>
-        <translation>Custom</translation>
     </message>
     <message id="light_theme_speed">
         <source>Speed</source>
@@ -3787,9 +3835,13 @@
         <source>Yours</source>
         <translation>Yours</translation>
     </message>
-    <message id="light_gal_hint">
-        <source>Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery.</source>
-        <translation>Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery.</translation>
+    <message id="light_gal_hint2">
+        <source>Apply puts a theme on the keyboard. Click a picture to change its colours and settings, and to keep your version.</source>
+        <translation>Apply puts a theme on the keyboard. Click a picture to change its colours and settings, and to keep your version.</translation>
+    </message>
+    <message id="light_gal_customise">
+        <source>Change colours and settings</source>
+        <translation>Change colours and settings</translation>
     </message>
     <message id="light_gal_loading">
         <source>Loading the themes.</source>
@@ -3798,6 +3850,14 @@
     <message id="light_gal_none">
         <source>No theme matches. Clear the search or pick another filter.</source>
         <translation>No theme matches. Clear the search or pick another filter.</translation>
+    </message>
+    <message id="light_gal_none_starred">
+        <source>No starred themes yet. Star a theme to keep it here, on Home and on the PREDATOR key.</source>
+        <translation>No starred themes yet. Star a theme to keep it here, on Home and on the PREDATOR key.</translation>
+    </message>
+    <message id="light_gal_none_yours">
+        <source>No themes of your own yet. Open a theme, change its colours or settings, then save it as a new theme.</source>
+        <translation>No themes of your own yet. Open a theme, change its colours or settings, then save it as a new theme.</translation>
     </message>
     <message id="light_gal_star">
         <source>Star this theme</source>
@@ -3831,22 +3891,6 @@
         <source>Delete your theme &apos;%1&apos;?</source>
         <translation>Delete your theme &apos;%1&apos;?</translation>
     </message>
-    <message id="light_theme_keep">
-        <source>Keep my version as</source>
-        <translation>Keep my version as</translation>
-    </message>
-    <message id="light_theme_keep_sub">
-        <source>Saves these colours and settings as a theme of your own, in ~/.config/truesense/themes.</source>
-        <translation>Saves these colours and settings as a theme of your own, in ~/.config/truesense/themes.</translation>
-    </message>
-    <message id="light_theme_keep_name">
-        <source>Theme name</source>
-        <translation>Theme name</translation>
-    </message>
-    <message id="light_theme_keep_save">
-        <source>Save</source>
-        <translation>Save</translation>
-    </message>
     <message id="light_theme_keep_bad">
         <source>Give the theme a name made of letters and digits that no built-in theme has.</source>
         <translation>Give the theme a name made of letters and digits that no built-in theme has.</translation>
@@ -3854,6 +3898,46 @@
     <message id="light_theme_keep_saved">
         <source>Saved theme &apos;%1&apos;</source>
         <translation>Saved theme &apos;%1&apos;</translation>
+    </message>
+    <message id="light_theme_preview_a11y">
+        <source>Picture of the theme with the colours and settings chosen here</source>
+        <translation>Picture of the theme with the colours and settings chosen here</translation>
+    </message>
+    <message id="light_theme_custom2">
+        <source>Your colours</source>
+        <translation>Your colours</translation>
+    </message>
+    <message id="light_theme_custom_help">
+        <source>Click a colour to change it.</source>
+        <translation>Click a colour to change it.</translation>
+    </message>
+    <message id="light_theme_live_note">
+        <source>This theme is running: your changes show on the keyboard at once.</source>
+        <translation>This theme is running: your changes show on the keyboard at once.</translation>
+    </message>
+    <message id="light_theme_apply_note">
+        <source>Apply shows your changes on the keyboard.</source>
+        <translation>Apply shows your changes on the keyboard.</translation>
+    </message>
+    <message id="light_theme_keep_title">
+        <source>Keep your version</source>
+        <translation>Keep your version</translation>
+    </message>
+    <message id="light_theme_save_changes">
+        <source>Save changes</source>
+        <translation>Save changes</translation>
+    </message>
+    <message id="light_theme_keep_name2">
+        <source>Name of the new theme</source>
+        <translation>Name of the new theme</translation>
+    </message>
+    <message id="light_theme_save_new">
+        <source>Save as a new theme</source>
+        <translation>Save as a new theme</translation>
+    </message>
+    <message id="light_theme_keep_sub2">
+        <source>Your themes keep their colours and settings, are listed under Yours and live in ~/.config/truesense/themes. Speed and brightness are chosen each time you apply one.</source>
+        <translation>Your themes keep their colours and settings, are listed under Yours and live in ~/.config/truesense/themes. Speed and brightness are chosen each time you apply one.</translation>
     </message>
     <message id="light_theme_keys_sub">
         <source>Key names separated by commas, for example w, a, s, d</source>
@@ -4299,13 +4383,17 @@
         <source>Smart auto profile</source>
         <translation>Smart auto profile</translation>
     </message>
-    <message id="perf_profile_builtin">
-        <source>built in</source>
-        <translation>built in</translation>
+    <message id="perf_profile_builtin2">
+        <source>Built in</source>
+        <translation>Built in</translation>
     </message>
-    <message id="perf_profile_yours">
-        <source>yours</source>
-        <translation>yours</translation>
+    <message id="perf_profile_yours2">
+        <source>Yours</source>
+        <translation>Yours</translation>
+    </message>
+    <message id="perf_name_placeholder2">
+        <source>Name of your profile</source>
+        <translation>Name of your profile</translation>
     </message>
     <message id="perf_profile_help">
         <source>How Smart auto chooses the power mode. Built-in profiles cannot be edited: copy one, then change the copy.</source>
@@ -4346,10 +4434,6 @@
     <message id="perf_save_as">
         <source>Save as</source>
         <translation>Save as</translation>
-    </message>
-    <message id="perf_name_placeholder">
-        <source>name</source>
-        <translation>name</translation>
     </message>
     <message id="perf_save">
         <source>Save</source>
@@ -5343,9 +5427,9 @@
         <source>Changed</source>
         <translation>Changed</translation>
     </message>
-    <message id="keys_favourites_help">
-        <source>Favourites are the looks, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</source>
-        <translation>Favourites are the looks, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</translation>
+    <message id="keys_favourites_help2">
+        <source>Favourites are the looks, lighting themes, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</source>
+        <translation>Favourites are the looks, lighting themes, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</translation>
     </message>
     <message id="keys_timing_title">
         <source>Timing</source>
@@ -5363,6 +5447,14 @@
         <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</source>
         <oldsource>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</oldsource>
         <translation>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</translation>
+    </message>
+    <message id="select_choose">
+        <source>Choose…</source>
+        <translation>Choose…</translation>
+    </message>
+    <message id="select_empty">
+        <source>Nothing to choose</source>
+        <translation>Nothing to choose</translation>
     </message>
 </context>
 </TS>
