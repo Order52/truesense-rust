@@ -13,7 +13,11 @@
 //! * `gpu_tiles` `{current}`: the three GPU modes;
 //! * `duties` `{linked, single, cpu, gpu}`: the duties a manual fan write carries (never below 20);
 //! * `link` `{linked, single, cpu, gpu}`: the slider values after the "both fans together" switch;
-//! * `stop_verdict` `{cpu_rpm, gpu_rpm}`: whether the fans really stopped after a stop.
+//! * `stop_verdict` `{cpu_rpm, gpu_rpm}`: whether the fans really stopped after a stop;
+//! * `dashboard` `{frame, tiles}`: the dashboard tiles the person chose (`ui.json` `home_tiles`),
+//!   each with its reading, its dial range and warning marks, its history series and whether it
+//!   is hot; unknown ids are skipped;
+//! * `dashboard_choices` `{tiles}`: every tile id with whether it is shown and where, for the editor.
 //!
 //! Safety: nothing here can produce a duty of 0. A stop exists only as the separate, confirmed
 //! `fan off` command of the page; the manual sliders are clamped to `20..=100`.
@@ -59,6 +63,8 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
         "duties" => Ok(duties(args)),
         "link" => Ok(link(args)),
         "stop_verdict" => Ok(stop_verdict(args)),
+        "dashboard" => Ok(dashboard(args)),
+        "dashboard_choices" => Ok(dashboard_choices(args)),
         _ => Err(format!("unknown home verb: {verb}")),
     }
 }
@@ -181,6 +187,101 @@ fn tiles(frame: &Value) -> Value {
             "low": ac == Some(false) && pct.is_some_and(|p| p <= BATTERY_LOW_PCT),
         },
     })
+}
+
+/// The highest fan speed a dial shows (the PH16-71's fans reach about 6000 RPM at Max).
+pub(crate) const DIAL_RPM_MAX: f64 = 6500.0;
+
+/// One dashboard tile: `kind` "dial" (a gauge with `from`, `to`, `warn`, `crit`) or "mode" (the
+/// power mode as a word and icon); `unit` tells the page how to format `value`
+/// (temp, rpm, percent, watts, mode); `series` is the live history to draw, or null.
+fn dash_tile(id: &str, frame: &Value) -> Option<Value> {
+    let dial = |icon: &str, value: Option<f64>, unit: &str, to: f64, warn: f64, crit: f64, series: &str| {
+        json!({
+            "id": id, "kind": "dial", "icon": icon, "value": value, "unit": unit,
+            "from": 0, "to": to, "warn": warn, "crit": crit, "series": series,
+            "hot": value.is_some_and(|v| v >= warn),
+        })
+    };
+    let tiles = tiles(frame);
+    Some(match id {
+        "cpu" => dial("chip", f64_at(frame, "sensors.cpu_temp"), "temp", 105.0, CPU_HOT_C, 95.0, "sensors.cpu_temp"),
+        "gpu" => dial("gpu", f64_at(frame, "sensors.gpu_temp"), "temp", 95.0, GPU_HOT_C, 87.0, "sensors.gpu_temp"),
+        "board" => dial("monitor", f64_at(frame, "sensors.sys_temp"), "temp", 90.0, 70.0, 80.0, "sensors.sys_temp"),
+        "fans" => {
+            let mut t = dial("fan", f64_at(&tiles, "fan.rpm"), "rpm", DIAL_RPM_MAX, DIAL_RPM_MAX + 1.0, DIAL_RPM_MAX + 1.0, "sensors.cpu_fan_rpm");
+            t["sub"] = json!({"cpu_rpm": f64_at(&tiles, "fan.cpu_rpm"), "gpu_rpm": f64_at(&tiles, "fan.gpu_rpm")});
+            t["hot"] = json!(false);
+            t
+        }
+        "battery" => {
+            let pct = f64_at(frame, "battery_pct");
+            let mut t = dial("battery", pct, "percent", 100.0, 101.0, 101.0, "battery_pct");
+            t["sub"] = json!({"ac": bool_at(frame, "ac")});
+            t["hot"] = json!(bool_at(&tiles, "battery.low") == Some(true));
+            t
+        }
+        "cpu_load" => dial("chip", f64_at(frame, "load.cpu_pct"), "percent", 100.0, 90.0, 98.0, "load.cpu_pct"),
+        "gpu_load" => dial("gpu", f64_at(frame, "load.gpu_pct"), "percent", 100.0, 90.0, 98.0, "load.gpu_pct"),
+        "cpu_watts" => dial("power", f64_at(frame, "power.cpu_w"), "watts", 140.0, 115.0, 130.0, "power.cpu_w"),
+        "gpu_watts" => dial("power", f64_at(frame, "power.gpu_w"), "watts", 175.0, 150.0, 165.0, "power.gpu_w"),
+        "power" => {
+            let mode = str_at(frame, "power_mode").filter(|m| POWER_MODES.contains(m));
+            json!({"id": id, "kind": "mode", "icon": mode.unwrap_or("performance"), "value": mode, "unit": "mode",
+                   "series": Value::Null, "hot": false})
+        }
+        _ => return None,
+    })
+}
+
+fn dashboard(args: &Value) -> Value {
+    let frame = args.get("frame").unwrap_or(&Value::Null);
+    let ids: Vec<&str> = list_at(args, "tiles").unwrap_or_default().iter().filter_map(Value::as_str).collect();
+    let mut seen: Vec<&str> = Vec::new();
+    let out: Vec<Value> = ids
+        .into_iter()
+        .filter(|id| {
+            let fresh = !seen.contains(id);
+            seen.push(id);
+            fresh
+        })
+        .filter_map(|id| dash_tile(id, frame))
+        .collect();
+    Value::Array(out)
+}
+
+/// Every tile the dashboard offers, in the order of `ui.json` (`tiles`) first, then the rest; each
+/// with `shown`, `can_up`, `can_down` (moves among the shown ones) and `can_hide` (at least one stays).
+fn dashboard_choices(args: &Value) -> Value {
+    let chosen: Vec<&str> = list_at(args, "tiles")
+        .unwrap_or_default()
+        .iter()
+        .filter_map(Value::as_str)
+        .filter(|id| crate::settings::HOME_TILES.contains(id))
+        .collect();
+    let mut order: Vec<&str> = Vec::new();
+    for id in chosen.iter().chain(crate::settings::HOME_TILES.iter()) {
+        if !order.contains(id) {
+            order.push(id);
+        }
+    }
+    let shown_count = order.iter().filter(|id| chosen.contains(id)).count();
+    let full = shown_count >= crate::settings::MAX_HOME_TILES;
+    let out: Vec<Value> = order
+        .iter()
+        .map(|id| {
+            let pos = chosen.iter().position(|c| c == id);
+            json!({
+                "id": id,
+                "shown": pos.is_some(),
+                "can_up": pos.is_some_and(|p| p > 0),
+                "can_down": pos.is_some_and(|p| p + 1 < chosen.len()),
+                "can_hide": pos.is_some() && shown_count > 1,
+                "can_show": pos.is_none() && !full,
+            })
+        })
+        .collect();
+    json!({"items": out, "full": full})
 }
 
 /// The health banner: the problems that make the page unreliable, none when all is well.
@@ -521,5 +622,65 @@ mod tests {
             let v = run("view", json!({"frame": frame}));
             assert!(v["control"].is_object() && v["fans"].is_object() && v["tiles"].is_object());
         }
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+mod dashboard_tests {
+    use super::*;
+
+    fn frame() -> Value {
+        json!({
+            "sensors": {"cpu_temp": 88, "gpu_temp": 50, "sys_temp": 44, "cpu_fan_rpm": 3000, "gpu_fan_rpm": 3200},
+            "power_mode": "turbo", "ac": false, "battery_pct": 15,
+            "load": {"cpu_pct": 40, "gpu_pct": null}, "power": {"cpu_w": 45.5, "gpu_w": 20}
+        })
+    }
+
+    #[test]
+    fn the_dashboard_follows_the_chosen_tiles_in_order_and_skips_unknown_and_repeated_ones() {
+        let v = call("dashboard", &json!({"frame": frame(), "tiles": ["power", "cpu", "nope", "cpu", "fans", "battery", "gpu_load"]})).unwrap();
+        let ids: Vec<&str> = v.as_array().unwrap().iter().map(|t| t["id"].as_str().unwrap()).collect();
+        assert_eq!(ids, ["power", "cpu", "fans", "battery", "gpu_load"]);
+        let t = v.as_array().unwrap();
+        assert_eq!((t[0]["kind"].as_str(), t[0]["value"].as_str(), t[0]["icon"].as_str()), (Some("mode"), Some("turbo"), Some("turbo")));
+        assert_eq!(t[1]["value"], json!(88.0));
+        assert_eq!(t[1]["hot"], json!(true), "88 °C is past the CPU's warning mark");
+        assert_eq!(t[1]["series"], json!("sensors.cpu_temp"));
+        assert_eq!(t[2]["value"], json!(3200.0), "the faster fan");
+        assert_eq!(t[2]["sub"]["cpu_rpm"], json!(3000.0));
+        assert_eq!(t[3]["hot"], json!(true), "15 % on battery is low");
+        assert_eq!(t[4]["value"], Value::Null, "an unknown reading stays unknown, not 0");
+        assert_eq!(call("dashboard", &json!({})).unwrap(), json!([]));
+    }
+
+    #[test]
+    fn every_tile_the_settings_allow_can_be_drawn_without_a_frame() {
+        for id in crate::settings::HOME_TILES {
+            let t = dash_tile(id, &Value::Null).unwrap_or_else(|| panic!("{id} has no tile"));
+            assert_eq!(t["hot"], json!(false), "{id}");
+            if t["kind"] == json!("dial") {
+                assert!(t["to"].as_f64().unwrap() > 0.0);
+            }
+        }
+        assert_eq!(dash_tile("power", &json!({"power_mode": "weird"})).unwrap()["value"], Value::Null);
+    }
+
+    #[test]
+    fn the_editor_lists_shown_tiles_first_and_keeps_at_least_one() {
+        let v = call("dashboard_choices", &json!({"tiles": ["gpu", "cpu"]})).unwrap();
+        let items = v["items"].as_array().unwrap();
+        assert_eq!(items.len(), crate::settings::HOME_TILES.len());
+        assert_eq!((items[0]["id"].as_str(), items[1]["id"].as_str()), (Some("gpu"), Some("cpu")));
+        assert_eq!((items[0]["can_up"].clone(), items[0]["can_down"].clone()), (json!(false), json!(true)));
+        assert_eq!((items[1]["can_up"].clone(), items[1]["can_down"].clone()), (json!(true), json!(false)));
+        assert_eq!(items[2]["shown"], json!(false));
+        assert_eq!(items[2]["can_show"], json!(true));
+        let one = call("dashboard_choices", &json!({"tiles": ["cpu"]})).unwrap();
+        assert_eq!(one["items"][0]["can_hide"], json!(false), "the last tile cannot be hidden");
+        let full = call("dashboard_choices", &json!({"tiles": ["cpu", "gpu", "fans", "battery", "power", "board"]})).unwrap();
+        assert_eq!(full["full"], json!(true));
+        assert!(full["items"].as_array().unwrap().iter().filter(|i| i["shown"] == json!(false)).all(|i| i["can_show"] == json!(false)));
     }
 }

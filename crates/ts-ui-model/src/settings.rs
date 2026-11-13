@@ -28,6 +28,21 @@ pub(crate) const LANGUAGES: &[&str] = &["system", "en", "pseudo"];
 pub(crate) const CATALOGUES: &[&str] = &[];
 /// The colour themes.
 pub const THEMES: &[&str] = &["dark", "light", "system"];
+/// The accent colours (`Theme.qml` has their values): Predator-style cyan by default.
+pub const ACCENTS: &[&str] = &["cyan", "blue", "red", "orange", "purple", "green"];
+/// How much room the controls take: `comfortable` (default) or `compact` (smaller gaps and rows).
+pub const DENSITIES: &[&str] = &["comfortable", "compact"];
+/// The tiles the Home dashboard can show, and the ones it shows by default (in that order).
+/// (`vm/home.rs` `dashboard` draws them from the live frame.)
+pub const HOME_TILES: &[&str] =
+    &["cpu", "gpu", "fans", "battery", "power", "board", "cpu_load", "gpu_load", "cpu_watts", "gpu_watts"];
+/// The drawing routes Settings offers (`ui.json` `renderer`, read by the program before Qt starts):
+/// `software` (default, light) or `opengl` (GPU buffers; smoother on some compositors, more memory).
+pub const RENDERERS: &[&str] = &["software", "opengl"];
+/// The Home dashboard's tiles when the person has not chosen.
+pub const DEFAULT_HOME_TILES: &[&str] = &["cpu", "gpu", "fans", "battery"];
+/// The most tiles the dashboard shows at once.
+pub const MAX_HOME_TILES: usize = 6;
 
 /// Smallest window the layout is designed for; saved sizes below it are raised to it. Small on
 /// purpose: a tiling compositor gives the window the size of its tile, and a larger minimum makes
@@ -61,6 +76,13 @@ pub struct UiSettings {
     pub reduced_motion: bool,
     /// The first-run wizard was finished or skipped; it is shown once.
     pub onboarded: bool,
+    /// One of [`ACCENTS`].
+    pub accent: String,
+    /// One of [`DENSITIES`].
+    pub density: String,
+    /// The Home dashboard's tiles in order: known ids of [`HOME_TILES`], no repeats, 1 to
+    /// [`MAX_HOME_TILES`].
+    pub home_tiles: Vec<String>,
     extra: Map<String, Value>,
 }
 
@@ -77,9 +99,27 @@ impl Default for UiSettings {
             font_scale: 1.0,
             reduced_motion: false,
             onboarded: false,
+            accent: "cyan".to_owned(),
+            density: "comfortable".to_owned(),
+            home_tiles: DEFAULT_HOME_TILES.iter().map(|t| (*t).to_owned()).collect(),
             extra: Map::new(),
         }
     }
+}
+
+/// A list of dashboard tiles if it is acceptable: an array of known ids, without repeats, 1 to
+/// [`MAX_HOME_TILES`] long.
+fn tiles_of(v: &Value) -> Option<Vec<String>> {
+    let list = v.as_array()?;
+    let mut out: Vec<String> = Vec::new();
+    for t in list {
+        let id = t.as_str().filter(|id| HOME_TILES.contains(id))?;
+        if out.iter().any(|o| o == id) {
+            return None;
+        }
+        out.push(id.to_owned());
+    }
+    (!out.is_empty() && out.len() <= MAX_HOME_TILES).then_some(out)
 }
 
 fn clamp_scale(v: f64) -> f64 {
@@ -103,6 +143,9 @@ impl UiSettings {
                 "minimise_to_tray" => value.as_bool().map(|b| out.minimise_to_tray = b).is_some(),
                 "reduced_motion" => value.as_bool().map(|b| out.reduced_motion = b).is_some(),
                 "onboarded" => value.as_bool().map(|b| out.onboarded = b).is_some(),
+                "accent" => set_choice(&mut out.accent, value, ACCENTS),
+                "density" => set_choice(&mut out.density, value, DENSITIES),
+                "home_tiles" => tiles_of(value).map(|t| out.home_tiles = t).is_some(),
                 "font_scale" => value
                     .as_f64()
                     .filter(|f| f.is_finite())
@@ -144,6 +187,9 @@ impl UiSettings {
         put("font_scale", json!(self.font_scale));
         put("reduced_motion", json!(self.reduced_motion));
         put("onboarded", json!(self.onboarded));
+        put("accent", json!(self.accent));
+        put("density", json!(self.density));
+        put("home_tiles", json!(self.home_tiles));
         map
     }
 
@@ -164,6 +210,18 @@ impl UiSettings {
             "minimise_to_tray" => value.as_bool().map(|b| self.minimise_to_tray = b).is_some(),
             "reduced_motion" => value.as_bool().map(|b| self.reduced_motion = b).is_some(),
             "onboarded" => value.as_bool().map(|b| self.onboarded = b).is_some(),
+            "accent" => set_choice(&mut self.accent, value, ACCENTS),
+            "density" => set_choice(&mut self.density, value, DENSITIES),
+            "home_tiles" => tiles_of(value).map(|t| self.home_tiles = t).is_some(),
+            // Kept as an unmanaged member: the program reads it before Qt starts (`extra_str`), so a
+            // change applies at the next start.
+            "renderer" => match value.as_str().filter(|r| RENDERERS.contains(r)) {
+                Some(r) => {
+                    self.extra.insert("renderer".to_owned(), json!(r));
+                    true
+                }
+                None => false,
+            },
             "font_scale" => {
                 value.as_f64().filter(|f| f.is_finite()).map(|f| self.font_scale = clamp_scale(f)).is_some()
             }
@@ -503,6 +561,52 @@ mod tests {
         assert_eq!(saved["future"], json!({"a": 1}));
         assert_eq!(saved["reduced_motion"], json!(true));
         assert!(saved.get("width").is_none(), "an unset size is not written as null");
+    }
+
+    #[test]
+    fn accent_density_and_dashboard_tiles_are_checked_and_kept() {
+        let mut s = UiSettings::default();
+        assert_eq!((s.accent.as_str(), s.density.as_str()), ("cyan", "comfortable"));
+        assert_eq!(s.home_tiles, ["cpu", "gpu", "fans", "battery"]);
+        s.set("accent", &json!("red")).unwrap();
+        s.set("density", &json!("compact")).unwrap();
+        s.set("home_tiles", &json!(["power", "cpu"])).unwrap();
+        assert!(s.set("accent", &json!("pink")).is_err());
+        assert!(s.set("density", &json!(1)).is_err());
+        for bad in [
+            json!([]),
+            json!(["cpu", "cpu"]),
+            json!(["cpu", "nope"]),
+            json!("cpu"),
+            json!(["cpu", "gpu", "fans", "battery", "power", "board", "cpu_load"]),
+        ] {
+            assert!(s.set("home_tiles", &bad).is_err(), "{bad}");
+        }
+        let map = s.to_map();
+        assert_eq!(map["accent"], json!("red"));
+        assert_eq!(map["density"], json!("compact"));
+        assert_eq!(map["home_tiles"], json!(["power", "cpu"]));
+        let (back, dropped) = UiSettings::from_map(&map);
+        assert!(dropped.is_empty());
+        assert_eq!(back, s);
+        let (_, dropped) = UiSettings::from_map(
+            &json!({"home_tiles": ["x"], "accent": "pink"}).as_object().unwrap().clone(),
+        );
+        assert_eq!(dropped.len(), 2, "a broken entry is dropped and the default kept");
+    }
+
+    #[test]
+    fn the_drawing_route_is_one_of_two_and_lands_where_the_program_reads_it() {
+        let mut s = UiSettings::default();
+        assert_eq!(s.extra_str("renderer"), None, "no choice: the program's default (software)");
+        s.set("renderer", &json!("opengl")).unwrap();
+        assert_eq!(s.extra_str("renderer"), Some("opengl"));
+        assert_eq!(s.to_map()["renderer"], json!("opengl"));
+        s.set("renderer", &json!("software")).unwrap();
+        assert_eq!(s.extra_str("renderer"), Some("software"));
+        assert!(s.set("renderer", &json!("vulkan")).is_err(), "only the two routes Settings offers");
+        assert!(s.set("renderer", &json!(true)).is_err());
+        assert_eq!(s.extra_str("renderer"), Some("software"), "a refused value changes nothing");
     }
 
     #[test]
