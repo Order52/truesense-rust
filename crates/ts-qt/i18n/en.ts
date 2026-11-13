@@ -3887,6 +3887,18 @@
         <source>Rear light bar</source>
         <translation>Rear light bar</translation>
     </message>
+    <message id="light_rear_picture_a11y">
+        <source>Picture of the rear light bar as it is set now</source>
+        <translation>Picture of the rear light bar as it is set now</translation>
+    </message>
+    <message id="light_rear_picture_help">
+        <source>Click a part of the bar to change its colour.</source>
+        <translation>Click a part of the bar to change its colour.</translation>
+    </message>
+    <message id="light_rear_picture_moves">
+        <source>A still frame of the effect: the bar itself moves.</source>
+        <translation>A still frame of the effect: the bar itself moves.</translation>
+    </message>
     <message id="light_rear_on">
         <source>Light</source>
         <translation>Light</translation>

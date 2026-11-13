@@ -87,6 +87,48 @@ ColumnLayout {
         title: qsTrId("light_rear_title")
         icon: "bar"
 
+        // The bar as it is set now, drawn after the laptop's rear. In the static effect a click on a
+        // part picks its colour.
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: bar.height + 2 * Theme.pad
+            radius: Theme.radius
+            color: "#0b0d10"
+            border.width: 1
+            border.color: Theme.cardLine
+            RearBarPicture {
+                id: bar
+                y: Theme.pad
+                width: Math.min(parent.width - 2 * Theme.pad, 900)
+                anchors.horizontalCenter: parent.horizontalCenter
+                height: Math.round(width * 0.2)
+                effect: tab.effectId
+                colour: tab.colour
+                zones: tab.zones
+                brightness: tab.brightness
+                on: tab.lightOn
+                direction: tab.direction
+                partsClickable: tab.usable && tab.effectId === "static"
+                //% "Picture of the rear light bar as it is set now"
+                Accessible.name: qsTrId("light_rear_picture_a11y")
+                onPartClicked: (part) => {
+                    tab.zonePicking = part
+                    picker.start(tab.zones[part])
+                    picker.open()
+                }
+            }
+        }
+        HelpText {
+            visible: tab.effectId === "static" && tab.lightOn
+            //% "Click a part of the bar to change its colour."
+            text: qsTrId("light_rear_picture_help")
+        }
+        HelpText {
+            visible: tab.effectId !== "static" && tab.lightOn
+            //% "A still frame of the effect: the bar itself moves."
+            text: qsTrId("light_rear_picture_moves")
+        }
+
         ToggleRow {
             Layout.fillWidth: true
             //% "Light"
@@ -154,7 +196,7 @@ ColumnLayout {
         Text {
             Layout.fillWidth: true
             Layout.topMargin: 4
-            visible: tab.effectId !== "static"
+            visible: tab.effectId !== "static" && tab.effectId !== "neon"
             //% "Colour"
             text: qsTrId("light_rear_colour")
             color: Theme.text
@@ -162,7 +204,7 @@ ColumnLayout {
         }
         SwatchRow {
             Layout.fillWidth: true
-            visible: tab.effectId !== "static"
+            visible: tab.effectId !== "static" && tab.effectId !== "neon"
             colors: LightingVm.call("palette").map(LightingVm.css)
             current: LightingVm.css(tab.colour)
             allowCustom: true
