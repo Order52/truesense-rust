@@ -70,12 +70,19 @@ pub fn default_path_from(env: &dyn Fn(&str) -> Option<String>, temp_dir: &Path) 
         return PathBuf::from(p);
     }
     if env("TRUESENSE_SIM").is_some() {
-        return temp_dir.join(format!("truesense-sim-{}", current_uid())).join("user.json");
+        return sim_dir(temp_dir).join("user.json");
     }
     match env("HOME") {
         Some(home) => PathBuf::from(home).join(".local/state/truesense/user.json"),
         None => temp_dir.join("truesense-user.json"),
     }
+}
+
+/// The throwaway directory of a simulated run (`TRUESENSE_SIM`): `truesense-sim-<uid>` in the temp
+/// directory. Everything a simulated run would otherwise share with the real machine (the user
+/// state, the daemon socket) lives here instead.
+pub fn sim_dir(temp_dir: &Path) -> PathBuf {
+    temp_dir.join(format!("truesense-sim-{}", current_uid()))
 }
 
 /// [`default_path_from`] for the running process.

@@ -266,7 +266,12 @@ fn shared(machine: &Machine) -> ApiResult<Shared> {
     );
 
     let socket = (machine.env)(wire::SOCKET_ENV);
-    let client = Client::new(wire::socket_path_from(socket.as_deref().map(std::ffi::OsStr::new)));
+    // Under the simulator the client never falls back to the real daemon's socket.
+    let client = Client::new(wire::socket_path_for(
+        socket.as_deref().map(std::ffi::OsStr::new),
+        machine.simulated(),
+        &std::env::temp_dir(),
+    ));
     let sys = Arc::new(HostSysfs::new(machine.root.clone()));
     let power_managers = Arc::new(PowerManagers::new(
         Arc::clone(&machine.runner),

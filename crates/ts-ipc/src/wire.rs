@@ -21,7 +21,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::io::{self, BufRead, BufReader, Read};
 use std::os::unix::net::UnixStream;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -49,9 +49,33 @@ pub fn socket_path_from(env: Option<&OsStr>) -> PathBuf {
     }
 }
 
-/// The socket to use: `TRUESENSE_SOCKET` if set and non-empty, else `DEFAULT_SOCKET`.
+/// The socket of a simulated run (`TRUESENSE_SIM`) when `TRUESENSE_SOCKET` does not name one:
+/// `truesense.sock` in the run's throwaway directory. A simulated client must never reach the real
+/// daemon (it would change the real fans and power mode), and a simulated daemon must never take
+/// the real daemon's place.
+pub fn sim_socket_path(temp_dir: &Path) -> PathBuf {
+    ts_foundation::userstate::sim_dir(temp_dir).join("truesense.sock")
+}
+
+/// The socket for these settings: `TRUESENSE_SOCKET` if set and non-empty; else, under
+/// `TRUESENSE_SIM`, [`sim_socket_path`]; else `DEFAULT_SOCKET`.
+pub fn socket_path_for(socket: Option<&OsStr>, sim: bool, temp_dir: &Path) -> PathBuf {
+    match socket {
+        Some(p) if !p.is_empty() => PathBuf::from(p),
+        _ if sim => sim_socket_path(temp_dir),
+        _ => PathBuf::from(DEFAULT_SOCKET),
+    }
+}
+
+/// Whether the process runs on the simulator (`TRUESENSE_SIM` set and non-empty).
+pub fn simulated() -> bool {
+    std::env::var_os("TRUESENSE_SIM").is_some_and(|v| !v.is_empty())
+}
+
+/// The socket to use: `TRUESENSE_SOCKET` if set and non-empty; else the simulated run's own socket
+/// under `TRUESENSE_SIM`; else `DEFAULT_SOCKET`.
 pub fn socket_path() -> PathBuf {
-    socket_path_from(std::env::var_os(SOCKET_ENV).as_deref())
+    socket_path_for(std::env::var_os(SOCKET_ENV).as_deref(), simulated(), &std::env::temp_dir())
 }
 
 /// The text of the "no such command" reply. A client recognises an older daemon by this
@@ -521,6 +545,18 @@ mod tests {
         assert_eq!(socket_path_from(None), PathBuf::from(DEFAULT_SOCKET));
         assert_eq!(socket_path_from(Some(OsStr::new(""))), PathBuf::from(DEFAULT_SOCKET));
         assert_eq!(socket_path_from(Some(OsStr::new("/tmp/x.sock"))), PathBuf::from("/tmp/x.sock"));
+    }
+
+    #[test]
+    fn a_simulated_run_never_falls_back_to_the_real_socket() {
+        let tmp = Path::new("/t");
+        assert_eq!(socket_path_for(None, false, tmp), PathBuf::from(DEFAULT_SOCKET));
+        let sim = socket_path_for(None, true, tmp);
+        assert_ne!(sim, PathBuf::from(DEFAULT_SOCKET));
+        assert!(sim.starts_with("/t"), "{}", sim.display());
+        assert_eq!(socket_path_for(Some(OsStr::new("")), true, tmp), sim);
+        // An explicit socket still wins (a test daemon of its own).
+        assert_eq!(socket_path_for(Some(OsStr::new("/x.sock")), true, tmp), PathBuf::from("/x.sock"));
     }
 
     #[test]
