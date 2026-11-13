@@ -121,7 +121,7 @@ TestCase {
         compare(Theme.fontBody, Math.round(14 * 1.2))
         Ui.load('{"theme":"dark","font_scale":1,"reduced_motion":false}')
         compare(Theme.dark, true)
-        compare(Theme.bg.toString(), "#17181c")
+        compare(Theme.bg.toString(), "#111317")
         compare(Ui.problem, "")
     }
 

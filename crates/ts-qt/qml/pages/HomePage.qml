@@ -12,6 +12,7 @@ import org.truesense.app
 
 PageFrame {
     id: page
+    objectName: "homePage"
 
     title: Nav.currentPage ? Nav.titleOf(Nav.currentPage) : ""
 
@@ -166,7 +167,8 @@ PageFrame {
         }, quiet)
         Api.call("power", "smart", { action: "list" }, function (r) { smartProfiles = Array.isArray(r) ? r : [] }, quiet)
         Api.call("power", "smart", { action: "current" }, function (r) {
-            smartCurrent = (r && typeof r.name === "string") ? r.name : ""
+            // No name means the built-in profile is in use (the Performance page reads it the same way).
+            smartCurrent = (r && typeof r.name === "string" && r.name !== "") ? r.name : "native"
         }, quiet)
         Api.call("fan", "curve", { action: "list" }, function (r) { fanCurves = Array.isArray(r) ? r : [] }, quiet)
         Api.call("status", "get", {}, function (r) {
@@ -176,6 +178,28 @@ PageFrame {
         }, function (e) { statusLoaded = true })
         readCapabilities()
         loadFavourites()
+        readQuick()
+    }
+    // ---- quick actions: what the lights and the theme are now (read once, and after each action)
+    property int kbLevel: -1            // keyboard brightness, -1 = unknown
+    property int rearLevel: -1
+    property string runningTheme: ""
+    function readQuick() {
+        Api.call("keyboard", "status", {}, function (r) {
+            kbLevel = (r && typeof r.brightness === "number") ? r.brightness : -1
+        }, quiet)
+        Api.call("rear", "status", {}, function (r) {
+            rearLevel = (r && typeof r.brightness === "number") ? r.brightness : -1
+        }, quiet)
+        Api.call("theme", "list", {}, function (r) {
+            var a = r && r.status && r.status.active ? r.status.active.spec : null
+            var name = ""
+            if (a) {
+                name = a.name
+                for (var i = 0; i < (r.themes || []).length; ++i) if (r.themes[i].id === a.name) name = r.themes[i].name
+            }
+            runningTheme = name
+        }, quiet)
     }
     function readCapabilities() {
         Api.call("capabilities", "get", {}, function (r) {
@@ -382,71 +406,265 @@ PageFrame {
         }
     }
 
-    // ---- live readings -------------------------------------------------------------------------
+    // ---- dashboard: the tiles the person chose (Settings or "Customise" here) -------------------
+    readonly property var dashTiles: Vm.call("home", "dashboard", { frame: Live.frame, tiles: Ui.homeTiles }) || []
+    property bool editingDash: false
+    readonly property var dashChoices: Vm.call("home", "dashboard_choices", { tiles: Ui.homeTiles }) || ({ items: [], full: false })
+
+    function dashLabel(id) {
+        switch (id) {
+        //% "CPU"
+        case "cpu": return qsTrId("home_tile_cpu")
+        //% "GPU"
+        case "gpu": return qsTrId("home_tile_gpu")
+        //% "Fans"
+        case "fans": return qsTrId("home_tile_fans")
+        //% "Battery"
+        case "battery": return qsTrId("home_tile_battery")
+        //% "Power mode"
+        case "power": return qsTrId("home_tile_power")
+        //% "Board"
+        case "board": return qsTrId("home_tile_board")
+        //% "CPU load"
+        case "cpu_load": return qsTrId("home_tile_cpu_load")
+        //% "GPU load"
+        case "gpu_load": return qsTrId("home_tile_gpu_load")
+        //% "CPU power"
+        case "cpu_watts": return qsTrId("home_tile_cpu_watts")
+        //% "GPU power"
+        case "gpu_watts": return qsTrId("home_tile_gpu_watts")
+        }
+        return id
+    }
+    function dashValue(t) {
+        if (t.unit === "mode") return t.value ? labelOfPower(t.value) : Fmt.unknown
+        if (t.value === null || t.value === undefined) return Fmt.unknown
+        if (t.unit === "temp") return Fmt.temp(t.value)
+        if (t.unit === "rpm") return Fmt.rpm(t.value)
+        if (t.unit === "percent") return Fmt.percent(t.value)
+        if (t.unit === "watts") return Fmt.watts(t.value)
+        return String(t.value)
+    }
+    function dashSub(t) {
+        switch (t.id) {
+        //% "Load %1"
+        case "cpu": return qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.cpu.load))
+        case "gpu": return qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.gpu.load))
+        case "fans":
+            //% "CPU %1 · GPU %2"
+            return qsTrId("home_tile_fan_sub").arg(t.sub.cpu_rpm == null ? Fmt.unknown : Math.round(t.sub.cpu_rpm))
+                                              .arg(t.sub.gpu_rpm == null ? Fmt.unknown : Math.round(t.sub.gpu_rpm))
+        case "battery":
+            return t.sub.ac === true
+                //% "Plugged in"
+                ? qsTrId("home_tile_ac")
+                : t.sub.ac === false
+                    //% "On battery"
+                    ? qsTrId("home_tile_batt") : ""
+        //% "Click for the next mode"
+        case "power": return qsTrId("home_tile_power_sub")
+        }
+        return ""
+    }
+    /// The power mode after the one in force, among those this laptop has (the mode tile's click).
+    function nextPower() {
+        var usable = page.powerTiles.filter(function (t) { return t.enabled }).map(function (t) { return t.value })
+        if (usable.length === 0) return
+        var i = usable.indexOf(page.shownPower)
+        page.pickPower(usable[(i + 1) % usable.length])
+    }
+    function setTiles(list) { Ui.set("home_tiles", list) }
+    function moveTile(id, delta) {
+        var l = Ui.homeTiles.slice()
+        var i = l.indexOf(id)
+        var j = i + delta
+        if (i < 0 || j < 0 || j >= l.length) return
+        l.splice(i, 1)
+        l.splice(j, 0, id)
+        setTiles(l)
+    }
+    function toggleTile(id, show) {
+        var l = Ui.homeTiles.filter(function (x) { return x !== id })
+        if (show) l.push(id)
+        if (l.length > 0) setTiles(l)
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 8
+        Text {
+            Layout.fillWidth: true
+            //% "Dashboard"
+            text: qsTrId("home_dash_title")
+            color: Theme.stat
+            font.pixelSize: Theme.fontSmall
+            font.bold: true
+            font.letterSpacing: 1
+            Accessible.role: Accessible.Heading
+        }
+        SecondaryButton {
+            text: page.editingDash ? page._doneWord : page._customiseWord
+            iconName: page.editingDash ? "check" : "sliders"
+            onClicked: page.editingDash = !page.editingDash
+        }
+    }
+    //% "Done"
+    readonly property string _doneWord: qsTrId("home_dash_done_edit")
+    //% "Customise"
+    readonly property string _customiseWord: qsTrId("home_dash_edit")
+
+    // The editor: which tiles show and in what order (saved in ui.json, so it stays).
+    Card {
+        Layout.fillWidth: true
+        visible: page.editingDash
+        //% "Dashboard tiles"
+        title: qsTrId("home_dash_editor_title")
+        icon: "sliders"
+        //% "Up to %1 tiles"
+        rightText: qsTrId("home_dash_editor_max").arg(6)
+
+        HelpText {
+            //% "Choose the readings Home shows and their order. The power mode tile changes the mode when you click it."
+            text: qsTrId("home_dash_editor_help")
+        }
+        Repeater {
+            model: page.dashChoices.items
+            delegate: RowLayout {
+                required property var modelData
+                Layout.fillWidth: true
+                spacing: 8
+                ToggleRow {
+                    Layout.fillWidth: true
+                    label: page.dashLabel(modelData.id)
+                    checked: modelData.shown
+                    enabled: modelData.shown ? modelData.can_hide : modelData.can_show
+                    onToggled: (on) => page.toggleTile(modelData.id, on)
+                }
+                ListIconButton {
+                    iconName: "chevron"
+                    iconRotation: -90
+                    enabled: modelData.can_up
+                    opacity: modelData.shown ? 1 : 0
+                    //% "Move up"
+                    text: qsTrId("home_dash_up")
+                    onClicked: page.moveTile(modelData.id, -1)
+                }
+                ListIconButton {
+                    iconName: "chevron"
+                    iconRotation: 90
+                    enabled: modelData.can_down
+                    opacity: modelData.shown ? 1 : 0
+                    //% "Move down"
+                    text: qsTrId("home_dash_down")
+                    onClicked: page.moveTile(modelData.id, 1)
+                }
+            }
+        }
+        SettingRow {
+            Layout.fillWidth: true
+            SecondaryButton {
+                //% "Back to the default tiles"
+                text: qsTrId("home_dash_reset")
+                onClicked: page.setTiles(["cpu", "gpu", "fans", "battery"])
+            }
+        }
+    }
+
     GridLayout {
         Layout.fillWidth: true
-        columns: width >= 640 ? 4 : (width >= 330 ? 2 : 1)
+        // As many as fit (170 px each), then balanced: four tiles that do not fit in a row make two
+        // rows of two, not three and one.
+        readonly property int fit: Math.max(1, Math.floor((width + columnSpacing) / (170 + columnSpacing)))
+        readonly property int n: Math.max(1, page.dashTiles.length)
+        columns: Math.ceil(n / Math.ceil(n / Math.min(fit, n)))
         columnSpacing: Theme.spacing
         rowSpacing: Theme.spacing
 
-        HomeStatTile {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            icon: "chip"
-            //% "CPU"
-            label: qsTrId("home_tile_cpu")
-            valueText: Fmt.temp(page.tiles.cpu.temp)
-            //% "Load %1"
-            subText: qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.cpu.load))
-            values: Live.history("sensors.cpu_temp")
-            minRepaintMs: 3000
-            hot: page.tiles.cpu.hot === true
+        Repeater {
+            model: page.dashTiles.length
+            delegate: DashTile {
+                required property int index
+                readonly property var t: page.dashTiles[index]
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.fillHeight: true
+                label: page.dashLabel(t.id)
+                icon: t.icon
+                kind: t.kind
+                known: t.value !== null && t.value !== undefined
+                value: known && t.kind === "dial" ? t.value : 0
+                from: t.from !== undefined ? t.from : 0
+                to: t.to !== undefined ? t.to : 100
+                warnAt: t.warn !== undefined ? t.warn : NaN
+                critAt: t.crit !== undefined ? t.crit : NaN
+                valueText: page.dashValue(t)
+                subText: page.dashSub(t)
+                modeIcon: t.kind === "mode" && t.value ? t.value : "performance"
+                hasHistory: t.series !== null
+                values: t.series !== null ? Live.history(t.series) : []
+                historyMinimum: t.unit === "temp" ? NaN : 0
+                historyMaximum: t.unit === "percent" ? 100 : NaN
+                hot: t.hot === true
+                clickable: t.kind === "mode"
+                //% "Power mode: %1. Click for the next mode."
+                Accessible.description: t.kind === "mode" ? qsTrId("home_tile_power_a11y").arg(valueText) : ""
+                onClicked: page.nextPower()
+            }
         }
-        HomeStatTile {
+    }
+
+    // ---- quick actions --------------------------------------------------------------------------
+    Card {
+        Layout.fillWidth: true
+        //% "Quick actions"
+        title: qsTrId("home_quick_title")
+        icon: "sparkle"
+
+        Flow {
             Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            icon: "gpu"
-            //% "GPU"
-            label: qsTrId("home_tile_gpu")
-            valueText: Fmt.temp(page.tiles.gpu.temp)
-            subText: qsTrId("home_tile_load").arg(Fmt.percent(page.tiles.gpu.load))
-            values: Live.history("sensors.gpu_temp")
-            minRepaintMs: 3000
-            hot: page.tiles.gpu.hot === true
-        }
-        HomeStatTile {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            icon: "fan"
-            //% "Fans"
-            label: qsTrId("home_tile_fans")
-            valueText: Fmt.rpm(page.tiles.fan.rpm)
-            //% "CPU %1 · GPU %2"
-            subText: qsTrId("home_tile_fan_sub").arg(page.tiles.fan.cpu_rpm == null ? Fmt.unknown : Math.round(page.tiles.fan.cpu_rpm))
-                                                   .arg(page.tiles.fan.gpu_rpm == null ? Fmt.unknown : Math.round(page.tiles.fan.gpu_rpm))
-            values: Live.history("sensors.cpu_fan_rpm")
-            minRepaintMs: 3000
-            minimum: 0
-        }
-        HomeStatTile {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            icon: "battery"
-            //% "Battery"
-            label: qsTrId("home_tile_battery")
-            valueText: Fmt.percent(page.tiles.battery.pct)
-            subText: page.tiles.battery.ac === true
-                //% "Plugged in"
-                ? qsTrId("home_tile_ac")
-                : page.tiles.battery.ac === false
-                    //% "On battery"
-                    ? qsTrId("home_tile_batt")
-                    : ""
-            values: Live.history("battery_pct")
-            minRepaintMs: 3000
-            minimum: 0
-            maximum: 100
-            hot: page.tiles.battery.low === true
+            spacing: 8
+            SecondaryButton {
+                iconName: "profiles"
+                //% "Next profile"
+                text: qsTrId("home_quick_next_profile")
+                onClicked: Api.call("profile", "next", {}, function (r) {
+                    //% "Next profile applied"
+                    Toasts.ok(typeof r === "string" && r !== "" ? r : qsTrId("home_quick_next_done"))
+                })
+            }
+            SecondaryButton {
+                iconName: "keyboard"
+                enabled: page.kbLevel >= 0 && Caps.usable("keyboard-light")
+                text: page.kbLevel > 0
+                    //% "Keyboard light off"
+                    ? qsTrId("home_quick_kb_off")
+                    //% "Keyboard light on"
+                    : qsTrId("home_quick_kb_on")
+                onClicked: Api.call("keyboard", page.kbLevel > 0 ? "off" : "on", {}, function () { page.readQuick() })
+            }
+            SecondaryButton {
+                iconName: "bar"
+                enabled: page.rearLevel >= 0 && Caps.usable("rear-light")
+                text: page.rearLevel > 0
+                    //% "Rear light off"
+                    ? qsTrId("home_quick_rear_off")
+                    //% "Rear light on"
+                    : qsTrId("home_quick_rear_on")
+                onClicked: Api.call("rear", page.rearLevel > 0 ? "off" : "on", {}, function () { page.readQuick() })
+            }
+            SecondaryButton {
+                visible: page.runningTheme !== ""
+                iconName: "stop"
+                //% "Stop the theme %1"
+                text: qsTrId("home_quick_stop_theme").arg(page.runningTheme)
+                onClicked: Api.call("theme", "stop", {}, function () { page.readQuick() })
+            }
+            SecondaryButton {
+                iconName: "palette"
+                //% "Lighting themes"
+                text: qsTrId("home_quick_themes")
+                onClicked: Nav.go("lighting")
+            }
         }
     }
 
@@ -516,8 +734,9 @@ PageFrame {
                 //% "Smart profile"
                 label: qsTrId("home_smart_profile")
                 options: page.smartProfiles
-                current: page.control.smart_profile !== null && page.control.smart_profile !== undefined
-                    ? page.control.smart_profile : (page.smartCurrent !== "" ? page.smartCurrent : undefined)
+                // The live frame's name when it is one of the list, else what `power smart current` said.
+                current: page.smartProfiles.indexOf(page.control.smart_profile) >= 0
+                    ? page.control.smart_profile : (page.smartProfiles.indexOf(page.smartCurrent) >= 0 ? page.smartCurrent : undefined)
                 onActivated: (value) => page.useSmartProfile(value)
                 SecondaryButton {
                     //% "Edit"

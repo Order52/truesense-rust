@@ -85,7 +85,8 @@ visible**; a hidden or minimised window polls nothing. Tracked series are `DEFAU
   `capabilities get` (the application layer's capability probe) overrides them.
 * `Toasts.show(text, "info"|"ok"|"error")`; `ConfirmDialog { id: confirm }` and
   `confirm.ask({title, text, confirmText, danger, typeWord}, function () { ... })`.
-* `Ui.theme`, `Ui.fontScale`, `Ui.reducedMotion`; change them with `Ui.set(key, value)`
+* `Ui.theme`, `Ui.accent` (cyan, blue, red, orange, purple, green), `Ui.density` (comfortable, compact),
+  `Ui.homeTiles`, `Ui.renderer`, `Ui.fontScale`, `Ui.reducedMotion`; change them with `Ui.set(key, value)`
   (saved in `~/.config/truesense/ui.json`). Navigation: `Nav.go("cooling")`.
 * Colours, sizes, fonts: **only** `Theme.*` tokens (`Theme.qml` is the one place with colour
   literals). Respect `Theme.animMs` for animations (0 with reduced motion). No timer or animation may run
@@ -132,6 +133,8 @@ plain bypasses `qsTrId`.
 | `DirectionPicker { current; onActivated(d) }` | the six wave directions as icon tiles (numbers 0 to 5, as stored); a `TileRow` with `turn`/`mirror` icons |
 | `GalleryCard { title; subtitle; layout; cells; starrable; starred; badge; selected; highlighted }` | a gallery card: keyboard thumbnail, name, text, star, badge; its children go under the text |
 | `GalleryGrid { minCardWidth; detailAfter }` | the grid of a gallery: equal card widths (`cardWidth`), rows as tall as their tallest card, columns that follow the width both ways, and a detail row under the chosen card's row (`rowOf`, `columnOf`, `detailRow`) |
+| `DashTile { label; icon; kind: "dial"\|"mode"; value; to; warnAt; critAt; valueText; subText; values; hot; clickable }` | one Home dashboard tile (the page asks `home dashboard` which ones, ui.json `home_tiles`) |
+| `AccentPicker { current; model: [{id,label}]; onPicked }`, `RendererChoice { current; onPicked }`, `KeyCap { text }` | Settings parts: accent swatches, the drawing route with its restart note, a key in the shortcut list |
 | `KeyboardThumb { layout; cells }` | the keyboard as one Canvas (a card of a gallery must not be 100 items) |
 | `FilterChips { model: [{id,label,count}]; current; onPicked }`, `ColourwayChips { ways; current; onPicked }` | the gallery's filter row and a card's colour chips |
 | `Icon { name; size; color }` | tintable SVG from `qml/icons/<name>.svg` (24x24, `stroke="currentColor"`) |
@@ -165,7 +168,7 @@ route when needed:
 | Route | How |
 |---|---|
 | `TRUESENSE_QT_RENDER=software\|opengl\|vulkan` | environment, wins over everything |
-| `"renderer": "opengl"` in `ui.json` | per user |
+| `"renderer": "opengl"` in `ui.json` | per user; Settings > Appearance > Drawing writes it ("Light" = software, "GPU" = opengl), applied at the next start |
 | `QT_QUICK_BACKEND` | Qt's own variable, honoured if none of the above is set |
 
 An OpenGL choice is probed first (a context is created and thrown away) and falls back to software

@@ -473,45 +473,98 @@ screenshots (`TRUESENSE_QT_SHOT`, plus `TRUESENSE_QT_SET` to open a tab or an ed
 
 1. **One strong action per card.** Only the action a card exists for is a filled `PrimaryButton`; the
    rest are quiet. A gallery of 32 cards has 32 quiet Apply buttons, the editor has the one filled Apply.
-   (Microsoft Fluent, "Buttons": one accent button per view; Material 3, "Buttons": emphasis by
-   importance.)
+   (Fluent 2, Button usage: "Only use one primary button in a layout for the most important action" [F2];
+   GNOME HIG, Buttons: one suggested or destructive button per view [GH-B].)
 2. **Destructive actions are quiet until confirmed.** A button that deletes or stops something on a page
    is `kind: "danger-quiet"` (red text, outline); the red fill is for the confirming button of the
    `ConfirmDialog`, which focuses Cancel first. Confirm only what is destructive or risky, never a
-   harmless change. (NN/g, "Confirmation dialogs"; GNOME HIG, "Destructive actions".)
+   harmless change. (GNOME HIG, Buttons: the destructive style "works as a warning", one per view
+   [GH-B]; NN/g heuristic 5, "Error prevention" [NN].)
 3. **Show only the controls that do something.** An effect that makes its own colours shows no colour
    row; a rear-bar effect without a speed or direction shows neither; a built-in profile shows no Delete.
    A disabled control is kept only when the reason is shown next to it (a capability the laptop lacks).
-   (NN/g heuristic 8, "Aesthetic and minimalist design"; KDE HIG, "Disabled controls".)
+   (NN/g heuristic 8, "Aesthetic and minimalist design" [NN]; KDE HIG, "Simple by default" [KH].)
 4. **Edit where you picked.** Clicking a theme card opens its editor right under the card's row
    (`GalleryGrid` `detailAfter`), with a live picture of the theme as edited, and the page scrolls once to
-   it. "Save changes" for your own theme, "Save as a new theme" for any. (NN/g heuristic 6, "Recognition
-   rather than recall"; heuristic 1, "Visibility of system status".)
+   it. "Save changes" for your own theme, "Save as a new theme" for any. (NN/g heuristics 6, "Recognition
+   rather than recall", and 1, "Visibility of system status" [NN].)
 5. **Empty and error states say what to do.** A filter with no result says why and how to fill it (no
    starred themes, no themes of your own); a select box with nothing chosen shows "Choose…" (or "Nothing to
-   choose"), never a blank box. (NN/g, "Designing empty states"; GNOME HIG, "Placeholders".)
+   choose"), never a blank box. (GNOME HIG, Placeholder pages [GH-P]; NN/g heuristic 10 [NN].)
 6. **Feedback for every action.** Busy buttons show "…" and cannot be pressed twice; every command answers
    with a toast or a visible state; a running theme's edits show on the keyboard at once and the editor
-   says so. (NN/g heuristic 1.)
+   says so. (NN/g heuristic 1 [NN].)
 7. **Consistent names and words.** What ships with TrueSense is "Built in", what the person made is
    "Yours" (both as `Badge`s); built-in ids are shown as titles ("battery-saver" is "Battery saver",
    the look `native` is "Default", the theme `vision` is "Predator Vision"); sentences in plain words, no
-   plural slips ("Problems: 1"). (NN/g heuristic 4, "Consistency and standards"; KDE HIG, "Wording".)
+   plural slips ("Problems: 1"). (NN/g heuristic 4, "Consistency and standards" [NN]; KDE HIG, "Text and
+   labels" [KH]; GNOME HIG, Writing style [GH-W].)
 8. **A steady grid.** Cards of a gallery share one width and every card of a row is as tall as the
    tallest, so their buttons line up; the value column of every slider is one width, so the sliders of a
    card line up whatever their unit; units get exactly one space. Spacing comes from `Theme.spacing`/`pad`
-   (4/8 px multiples). (Material 3, "Layout: spacing"; Fluent, "Spacing and alignment".)
-9. **Icon-only buttons have a tooltip and an accessible name** (`ListIconButton`), hit targets are at
-   least 30 px (WCAG 2.2 SC 2.5.8 asks 24), focus is always drawn (SC 2.4.7, 2.4.11), text contrast is at
-   least 4.5:1 in both themes (SC 1.4.3), state is never shown by colour alone (SC 1.4.1).
+   (4/8 px multiples); Settings > Density "Compact" takes about a fifth off. (KDE HIG, "Layout and
+   navigation" [KH].)
+9. **Icon-only buttons have a tooltip and an accessible name** (`ListIconButton`; GNOME HIG, Tooltips
+   [GH-T]), hit targets are at least 30 px, 32 in Compact (WCAG 2.2 SC 2.5.8 asks "at least 24 by 24 CSS
+   pixels" [W]), focus is always drawn (SC 2.4.7, 2.4.11), text contrast is at least 4.5:1 in both themes
+   and every accent (SC 1.4.3; the accent table in `Theme.qml` was chosen for it), controls' edges 3:1
+   (SC 1.4.11), state is never shown by colour alone (SC 1.4.1).
 10. **No layout jumps, no idle work.** Values that update keep their width; nothing animates by itself
     (`tests/render.rs`); a picture is asked for once after an edit pauses, not per slider step.
 
-Sources: Nielsen Norman Group, "10 Usability Heuristics for User Interface Design"
-(nngroup.com/articles/ten-usability-heuristics); W3C, "Web Content Accessibility Guidelines (WCAG) 2.2"
-(w3.org/TR/WCAG22); KDE Human Interface Guidelines (develop.kde.org/hig); GNOME Human Interface
-Guidelines (developer.gnome.org/hig); Microsoft Fluent 2 design system (fluent2.microsoft.design); Material
-Design 3 (m3.material.io).
+Sources (fetched 2026-11-13):
+
+- [NN] Nielsen Norman Group, "10 Usability Heuristics for User Interface Design",
+  https://www.nngroup.com/articles/ten-usability-heuristics/
+- [W] W3C, "Web Content Accessibility Guidelines (WCAG) 2.2", https://www.w3.org/TR/WCAG22/ (1.4.1, 1.4.3,
+  1.4.11, 2.4.7, 2.4.11, 2.5.8)
+- [KH] KDE Human Interface Guidelines, https://develop.kde.org/hig/ ("Simple by default", "Layout and
+  navigation", "Text and labels", "Icons")
+- [GH-B] GNOME HIG, Buttons, https://developer.gnome.org/hig/patterns/controls/buttons.html;
+  [GH-P] Placeholder pages, https://developer.gnome.org/hig/patterns/feedback/placeholders.html;
+  [GH-T] Tooltips, https://developer.gnome.org/hig/patterns/feedback/tooltips.html;
+  [GH-W] Writing style, https://developer.gnome.org/hig/guidelines/writing-style.html
+- [F2] Microsoft Fluent 2, Button usage, https://fluent2.microsoft.design/components/web/react/core/button/usage
+
+### 4.12 PredatorSense parity (what Acer's app does, and what TrueSense does on Linux)
+
+Researched from Acer's own manual for the current PredatorSense (5.x, the Helios 16 AI manual
+PH16-73/PH18-73, which covers the same app family as the PH16-71's: "The PredatorSense main screen",
+"Widget cards", "Scenario", "Fan Control", "Pulsar Lighting", "Personal Settings", "Checkup",
+"Monitoring", "App Center", "PredatorSense settings") [A-M], Acer's PredatorSense page [A-P], Acer's
+support article [A-K] and reviews of the Helios 16 (PredatorSense 5.0: Quiet, Balanced, Performance,
+Turbo; WASD lighting; fan speeds; custom profiles) [R1]. Nothing of Acer's artwork, logos or names is
+used in the app: the look is our own (graphite surfaces, a cyan accent by default, dials).
+
+| PredatorSense | TrueSense | |
+|---|---|---|
+| Home: one-glance temperatures and performance, live 3D avatar of the mode | Home dashboard: dials for the readings you choose (CPU, GPU, board, fans, battery, loads, power, the power mode) in your order, quick actions; no 3D avatar | have (better: customisable) |
+| Widget cards (scenario, monitoring with chosen items, live update, app shortcuts) on every screen | the status bar on every page (service, power mode, CPU/GPU temperature, fans, battery); Home dashboard tiles chosen in "Customise" | have (no app shortcuts) |
+| Operating modes Quiet, Balanced, Performance, Turbo, Eco; mode switch key (cycle or Turbo on/off) | the five modes, Manual/Native/Smart auto control with Smart profiles, the PREDATOR key with tap/double/triple/long bindings | better |
+| Fan control Auto / Max / Custom (CPU and GPU sliders) | Smart (our fan curves, editable), Auto, Max, Manual, curve library, curve per power mode, confirmed fan stop | better |
+| Scenario profiles (mode + fans + lighting + audio), App Sync (switch when an app starts) | Profiles (power, fans, rear light, battery, screen, boot sound, audio), favourites, game rules that raise the power mode when a game runs | have (game rules switch the mode, not a whole profile) |
+| Pulsar lighting: global effects, areas, per-key static and dynamic, MagKey, cover logo | 13 firmware effects, per-key painting with tools and templates, software animations, 32 themes with colourways and your own themes, looks per power mode, rear bar | better (no MagKey or cover logo on the PH16-71) |
+| Backlight off after 30 s | the same switch (Lighting and Battery and screen) | have |
+| Battery: Optimized (80 %) or Full charge; power-off USB charging with a level; calibration | 80 % limit, "charge to 100 % once", USB charging while off with its level, calibration, charge history | have (better: one-off full charge) |
+| Screen: Bluelight Shield, LCD Overdrive, Display Power Saver (60 Hz on battery), Dual-Mode Display | Screen overdrive | partly: blue-light and refresh rate belong to the desktop on Linux (night light, compositor settings); Dual-Mode is a different panel |
+| GPU operating mode: Automatic, Optimus, NVIDIA only | the same three, with the reboot note | have |
+| System boot effect, boot logo customisation | boot animation and sound switch; looks at boot | partly: a custom boot logo is firmware territory and not possible from Linux |
+| Checkup: battery, storage (cleanup), RAM health | Health: system check, services, self-test, configuration check, report | partly: no storage cleanup (the desktop's job) |
+| Monitoring: CPU, GPU, system temperature and load, 60 minutes | Monitor: overview, CPU, GPU, memory and disks, network, with min/max; history of the last minutes | have (shorter history) |
+| Overclocking (CPU/GPU) | CPU and GPU undervolt with safe limits, power limits | different on purpose (undervolt instead of overclock) |
+| Acer TrueHarmony audio modes | DTS sound modes, output switch, jack mode, mic noise reduction | have |
+| Settings: temperature unit, firmware/app updates, 3D avatar | appearance (theme, accent, density, text size, motion, drawing route), update check, shortcuts list | have (no °F yet) |
+| App Center, Planet9, Acer ID, Experience Zone | – | not adopted (not hardware control) |
+
+Sources:
+- [A-M] Acer, Predator Helios 16 / 18 user's manual (PH16-73 / PH18-73), chapter "PredatorSense",
+  https://content.etilize.com/User-Manual/1086789443.pdf
+- [A-P] Acer, PredatorSense, https://www.acer.com/us-en/predator/predatorsense (control of lighting,
+  overclocking, hotkeys, fan control; the page timed out for us, the summary is from the search index)
+- [A-K] Acer Community, "How do I use the PredatorSense software?",
+  https://community.acer.com/en/kb/articles/83-predatorsense-software (fan Auto/Max/Custom, CoolBoost;
+  read through the search index, the page refused our fetch)
+- [R1] nxtmag, "When Power Meets AI Precision: Predator Helios 16 AI Review", https://nxtmag.tech/?p=37095
 
 ---
 

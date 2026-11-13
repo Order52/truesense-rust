@@ -242,6 +242,67 @@ PageFrame {
             ]
             onActivated: (value) => Ui.set("theme", value)
         }
+        Text {
+            Layout.fillWidth: true
+            //% "Accent colour"
+            text: qsTrId("settings_accent")
+            color: Theme.text
+            font.pixelSize: Theme.fontBody
+        }
+        AccentPicker {
+            Layout.fillWidth: true
+            current: Ui.accent
+            model: [
+                //% "Cyan"
+                { id: "cyan", label: qsTrId("settings_accent_cyan") },
+                //% "Blue"
+                { id: "blue", label: qsTrId("settings_accent_blue") },
+                //% "Red"
+                { id: "red", label: qsTrId("settings_accent_red") },
+                //% "Orange"
+                { id: "orange", label: qsTrId("settings_accent_orange") },
+                //% "Purple"
+                { id: "purple", label: qsTrId("settings_accent_purple") },
+                //% "Green"
+                { id: "green", label: qsTrId("settings_accent_green") }
+            ]
+            onPicked: (id) => Ui.set("accent", id)
+        }
+        SettingRow {
+            Layout.fillWidth: true
+            //% "Density"
+            label: qsTrId("settings_density")
+            //% "Compact fits more on the screen; comfortable gives every control more room."
+            sub: qsTrId("settings_density_sub")
+            Segmented {
+                current: Ui.density
+                model: [
+                    //% "Comfortable"
+                    { value: "comfortable", label: qsTrId("settings_density_comfortable") },
+                    //% "Compact"
+                    { value: "compact", label: qsTrId("settings_density_compact") }
+                ]
+                onActivated: (v) => Ui.set("density", v)
+            }
+        }
+        RendererChoice {
+            Layout.fillWidth: true
+            current: Ui.renderer
+            onPicked: (v) => Ui.set("renderer", v)
+        }
+        SettingRow {
+            Layout.fillWidth: true
+            //% "Home dashboard"
+            label: qsTrId("settings_dashboard")
+            //% "Which readings Home shows, and in what order: use Customise on Home."
+            sub: qsTrId("settings_dashboard_sub")
+            SecondaryButton {
+                //% "Open Home"
+                text: qsTrId("settings_dashboard_open")
+                iconName: "home"
+                onClicked: Nav.go("home")
+            }
+        }
         SliderRow {
             Layout.fillWidth: true
             //% "Text size"
@@ -277,6 +338,75 @@ PageFrame {
             visible: Ui.problem !== ""
             text: Ui.problem
             color: Theme.warn
+        }
+    }
+
+    // ---- keyboard shortcuts -------------------------------------------------------------------
+    Card {
+        Layout.fillWidth: true
+        //% "Keyboard shortcuts"
+        title: qsTrId("settings_shortcuts")
+        icon: "keyboard"
+
+        GridLayout {
+            Layout.fillWidth: true
+            columns: page.width < 560 ? 1 : 2
+            columnSpacing: Theme.spacing * 2
+            rowSpacing: 6
+            Repeater {
+                model: Nav.pages.filter(function (p) { return p.shortcut > 0 })
+                delegate: RowLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    spacing: 10
+                    KeyCap { text: "Ctrl+" + modelData.shortcut }
+                    Text {
+                        Layout.fillWidth: true
+                        text: Nav.titleOf(modelData)
+                        color: Theme.text
+                        font.pixelSize: Theme.fontBody
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                KeyCap { text: "Ctrl+W" }
+                Text {
+                    Layout.fillWidth: true
+                    //% "Close the window (to the tray when there is one)"
+                    text: qsTrId("settings_shortcut_close")
+                    color: Theme.text
+                    font.pixelSize: Theme.fontBody
+                    wrapMode: Text.Wrap
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                KeyCap { text: "Ctrl+Q" }
+                Text {
+                    Layout.fillWidth: true
+                    //% "Quit TrueSense"
+                    text: qsTrId("settings_shortcut_quit")
+                    color: Theme.text
+                    font.pixelSize: Theme.fontBody
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                KeyCap { text: "PREDATOR" }
+                Text {
+                    Layout.fillWidth: true
+                    //% "What it does is set on the Keys page"
+                    text: qsTrId("settings_shortcut_predator")
+                    color: Theme.text
+                    font.pixelSize: Theme.fontBody
+                    wrapMode: Text.Wrap
+                }
+            }
         }
     }
 

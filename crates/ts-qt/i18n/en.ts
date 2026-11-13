@@ -35,6 +35,26 @@
         <source>History chart</source>
         <translation>History chart</translation>
     </message>
+    <message id="status_mode_eco">
+        <source>Eco</source>
+        <translation>Eco</translation>
+    </message>
+    <message id="status_mode_quiet">
+        <source>Quiet</source>
+        <translation>Quiet</translation>
+    </message>
+    <message id="status_mode_balanced">
+        <source>Balanced</source>
+        <translation>Balanced</translation>
+    </message>
+    <message id="status_mode_performance">
+        <source>Performance</source>
+        <translation>Performance</translation>
+    </message>
+    <message id="status_mode_turbo">
+        <source>Turbo</source>
+        <translation>Turbo</translation>
+    </message>
     <message id="status_reading">
         <source>Reading the laptop…</source>
         <translation>Reading the laptop…</translation>
@@ -47,17 +67,21 @@
         <source>TrueSense service not running</source>
         <translation>TrueSense service not running</translation>
     </message>
-    <message id="status_cpu">
-        <source>CPU %1</source>
-        <translation>CPU %1</translation>
+    <message id="status_cpu_a11y">
+        <source>CPU temperature</source>
+        <translation>CPU temperature</translation>
     </message>
-    <message id="status_gpu">
-        <source>GPU %1</source>
-        <translation>GPU %1</translation>
+    <message id="status_gpu_a11y">
+        <source>GPU temperature</source>
+        <translation>GPU temperature</translation>
     </message>
-    <message id="status_fans">
-        <source>Fans %1</source>
-        <translation>Fans %1</translation>
+    <message id="status_fans_a11y">
+        <source>Fan speed</source>
+        <translation>Fan speed</translation>
+    </message>
+    <message id="status_battery_a11y">
+        <source>Battery</source>
+        <translation>Battery</translation>
     </message>
     <message id="swatch_custom">
         <source>Choose another colour</source>
@@ -163,6 +187,62 @@
         <source>System</source>
         <translation>System</translation>
     </message>
+    <message id="settings_accent">
+        <source>Accent colour</source>
+        <translation>Accent colour</translation>
+    </message>
+    <message id="settings_accent_cyan">
+        <source>Cyan</source>
+        <translation>Cyan</translation>
+    </message>
+    <message id="settings_accent_blue">
+        <source>Blue</source>
+        <translation>Blue</translation>
+    </message>
+    <message id="settings_accent_red">
+        <source>Red</source>
+        <translation>Red</translation>
+    </message>
+    <message id="settings_accent_orange">
+        <source>Orange</source>
+        <translation>Orange</translation>
+    </message>
+    <message id="settings_accent_purple">
+        <source>Purple</source>
+        <translation>Purple</translation>
+    </message>
+    <message id="settings_accent_green">
+        <source>Green</source>
+        <translation>Green</translation>
+    </message>
+    <message id="settings_density">
+        <source>Density</source>
+        <translation>Density</translation>
+    </message>
+    <message id="settings_density_sub">
+        <source>Compact fits more on the screen; comfortable gives every control more room.</source>
+        <translation>Compact fits more on the screen; comfortable gives every control more room.</translation>
+    </message>
+    <message id="settings_density_comfortable">
+        <source>Comfortable</source>
+        <translation>Comfortable</translation>
+    </message>
+    <message id="settings_density_compact">
+        <source>Compact</source>
+        <translation>Compact</translation>
+    </message>
+    <message id="settings_dashboard">
+        <source>Home dashboard</source>
+        <translation>Home dashboard</translation>
+    </message>
+    <message id="settings_dashboard_sub">
+        <source>Which readings Home shows, and in what order: use Customise on Home.</source>
+        <translation>Which readings Home shows, and in what order: use Customise on Home.</translation>
+    </message>
+    <message id="settings_dashboard_open">
+        <source>Open Home</source>
+        <translation>Open Home</translation>
+    </message>
     <message id="settings_text_size">
         <source>Text size</source>
         <translation>Text size</translation>
@@ -182,6 +262,22 @@
     <message id="settings_tray_missing">
         <source>This desktop shows no tray, so closing the window ends the app.</source>
         <translation>This desktop shows no tray, so closing the window ends the app.</translation>
+    </message>
+    <message id="settings_shortcuts">
+        <source>Keyboard shortcuts</source>
+        <translation>Keyboard shortcuts</translation>
+    </message>
+    <message id="settings_shortcut_close">
+        <source>Close the window (to the tray when there is one)</source>
+        <translation>Close the window (to the tray when there is one)</translation>
+    </message>
+    <message id="settings_shortcut_quit">
+        <source>Quit TrueSense</source>
+        <translation>Quit TrueSense</translation>
+    </message>
+    <message id="settings_shortcut_predator">
+        <source>What it does is set on the Keys page</source>
+        <translation>What it does is set on the Keys page</translation>
     </message>
     <message id="settings_startup">
         <source>Start up</source>
@@ -759,6 +855,30 @@
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
+    <message id="home_tile_power">
+        <source>Power mode</source>
+        <translation>Power mode</translation>
+    </message>
+    <message id="home_tile_board">
+        <source>Board</source>
+        <translation>Board</translation>
+    </message>
+    <message id="home_tile_cpu_load">
+        <source>CPU load</source>
+        <translation>CPU load</translation>
+    </message>
+    <message id="home_tile_gpu_load">
+        <source>GPU load</source>
+        <translation>GPU load</translation>
+    </message>
+    <message id="home_tile_cpu_watts">
+        <source>CPU power</source>
+        <translation>CPU power</translation>
+    </message>
+    <message id="home_tile_gpu_watts">
+        <source>GPU power</source>
+        <translation>GPU power</translation>
+    </message>
     <message id="home_tile_load">
         <source>Load %1</source>
         <translation>Load %1</translation>
@@ -786,6 +906,86 @@
     <message id="home_tile_batt">
         <source>On battery</source>
         <translation>On battery</translation>
+    </message>
+    <message id="home_tile_power_sub">
+        <source>Click for the next mode</source>
+        <translation>Click for the next mode</translation>
+    </message>
+    <message id="home_dash_title">
+        <source>Dashboard</source>
+        <translation>Dashboard</translation>
+    </message>
+    <message id="home_dash_done_edit">
+        <source>Done</source>
+        <translation>Done</translation>
+    </message>
+    <message id="home_dash_edit">
+        <source>Customise</source>
+        <translation>Customise</translation>
+    </message>
+    <message id="home_dash_editor_title">
+        <source>Dashboard tiles</source>
+        <translation>Dashboard tiles</translation>
+    </message>
+    <message id="home_dash_editor_max">
+        <source>Up to %1 tiles</source>
+        <translation>Up to %1 tiles</translation>
+    </message>
+    <message id="home_dash_editor_help">
+        <source>Choose the readings Home shows and their order. The power mode tile changes the mode when you click it.</source>
+        <translation>Choose the readings Home shows and their order. The power mode tile changes the mode when you click it.</translation>
+    </message>
+    <message id="home_dash_up">
+        <source>Move up</source>
+        <translation>Move up</translation>
+    </message>
+    <message id="home_dash_down">
+        <source>Move down</source>
+        <translation>Move down</translation>
+    </message>
+    <message id="home_dash_reset">
+        <source>Back to the default tiles</source>
+        <translation>Back to the default tiles</translation>
+    </message>
+    <message id="home_tile_power_a11y">
+        <source>Power mode: %1. Click for the next mode.</source>
+        <translation>Power mode: %1. Click for the next mode.</translation>
+    </message>
+    <message id="home_quick_title">
+        <source>Quick actions</source>
+        <translation>Quick actions</translation>
+    </message>
+    <message id="home_quick_next_profile">
+        <source>Next profile</source>
+        <translation>Next profile</translation>
+    </message>
+    <message id="home_quick_next_done">
+        <source>Next profile applied</source>
+        <translation>Next profile applied</translation>
+    </message>
+    <message id="home_quick_kb_off">
+        <source>Keyboard light off</source>
+        <translation>Keyboard light off</translation>
+    </message>
+    <message id="home_quick_kb_on">
+        <source>Keyboard light on</source>
+        <translation>Keyboard light on</translation>
+    </message>
+    <message id="home_quick_rear_off">
+        <source>Rear light off</source>
+        <translation>Rear light off</translation>
+    </message>
+    <message id="home_quick_rear_on">
+        <source>Rear light on</source>
+        <translation>Rear light on</translation>
+    </message>
+    <message id="home_quick_stop_theme">
+        <source>Stop the theme %1</source>
+        <translation>Stop the theme %1</translation>
+    </message>
+    <message id="home_quick_themes">
+        <source>Lighting themes</source>
+        <translation>Lighting themes</translation>
     </message>
     <message id="home_fav_title">
         <source>Favourites</source>
@@ -5455,6 +5655,26 @@
     <message id="select_empty">
         <source>Nothing to choose</source>
         <translation>Nothing to choose</translation>
+    </message>
+    <message id="settings_renderer">
+        <source>Drawing</source>
+        <translation>Drawing</translation>
+    </message>
+    <message id="settings_renderer_software">
+        <source>Light (software, about 100 MB)</source>
+        <translation>Light (software, about 100 MB)</translation>
+    </message>
+    <message id="settings_renderer_gpu">
+        <source>GPU (smoother on some desktops, about 300 MB)</source>
+        <translation>GPU (smoother on some desktops, about 300 MB)</translation>
+    </message>
+    <message id="settings_renderer_help">
+        <source>If parts of the window look stale or only update under the pointer, try GPU.</source>
+        <translation>If parts of the window look stale or only update under the pointer, try GPU.</translation>
+    </message>
+    <message id="settings_renderer_restart">
+        <source>Applies the next time TrueSense starts: close it (Ctrl+Q) and open it again.</source>
+        <translation>Applies the next time TrueSense starts: close it (Ctrl+Q) and open it again.</translation>
     </message>
 </context>
 </TS>
