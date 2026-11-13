@@ -19,6 +19,7 @@
 #![allow(unsafe_code)]
 
 use core::pin::Pin;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -28,7 +29,7 @@ use serde_json::{Value, json};
 use ts_ui_model::app::AppModel;
 use ts_ui_model::bus::{CODE_BAD_ARGS, CmdError, Done, Reply, Request};
 use ts_ui_model::json::parse_args;
-use ts_ui_model::poller::Poller;
+use ts_ui_model::poller::{Poke, Poller};
 use ts_ui_model::single::{Primary, Server};
 
 /// The tick of the live values.
@@ -53,6 +54,10 @@ pub struct TestConfig {
     pub set: Option<Value>,
     /// `TRUESENSE_QT_PROBE='["objectName.property", ...]'`: values the report carries (`probe`).
     pub probe: Option<Value>,
+    /// `TRUESENSE_QT_BENCH=1` (or a comma list of phases: `pages,tabs,actions`): the shell runs the
+    /// responsiveness script of `qml/BenchHook.qml` (page switches, tabs, actions), prints one
+    /// `BENCH {json}` line per measurement and quits (`tools/qtprofile/qtprofile.py respond`).
+    pub bench: Option<String>,
 }
 
 impl TestConfig {
@@ -67,6 +72,7 @@ impl TestConfig {
             scroll: get("TRUESENSE_QT_SCROLL").is_some(),
             set: get("TRUESENSE_QT_SET").and_then(|v| serde_json::from_str(&v).ok()),
             probe: get("TRUESENSE_QT_PROBE").and_then(|v| serde_json::from_str(&v).ok()),
+            bench: get("TRUESENSE_QT_BENCH"),
         }
     }
 }
@@ -85,14 +91,36 @@ pub struct Shared {
     pub started: Instant,
     /// The single-instance socket, until the Bus takes it over to serve it.
     pub primary: Mutex<Option<Primary>>,
+    /// Milliseconds from `started` to named moments of the start (`model`: the application layer
+    /// is built; `qml`: the shell's QML is complete), for `BenchHook.qml`'s start line.
+    pub marks: Mutex<Vec<(&'static str, f64)>>,
 }
 
 static SHARED: OnceLock<Arc<Shared>> = OnceLock::new();
+/// View-model calls and the time they took on the GUI thread (nanoseconds), since the last
+/// `BENCH` line; read only by the responsiveness script.
+static VM_CALLS: AtomicU64 = AtomicU64::new(0);
+static VM_NANOS: AtomicU64 = AtomicU64::new(0);
+/// Live ticks and the time they took on the poller thread (nanoseconds), likewise.
+static TICKS: AtomicU64 = AtomicU64::new(0);
+static TICK_NANOS: AtomicU64 = AtomicU64::new(0);
+
+fn add_nanos(counter: &AtomicU64, since: Instant) {
+    counter.fetch_add(u64::try_from(since.elapsed().as_nanos()).unwrap_or(u64::MAX), Ordering::Relaxed);
+}
 static RENDERER: OnceLock<String> = OnceLock::new();
 
 /// Records which scene-graph backend was chosen (reported by the test hook and `tools/qtprofile`).
 pub fn set_renderer(name: String) {
     let _ = RENDERER.set(name);
+}
+
+/// Records a start-up moment (see [`Shared::marks`]).
+pub fn mark(shared: &Shared, name: &'static str) {
+    let ms = shared.started.elapsed().as_secs_f64() * 1000.0;
+    if let Ok(mut marks) = shared.marks.lock() {
+        marks.push((name, ms));
+    }
 }
 
 /// Hands the shared state to the Bus before the QML engine creates it (set once per process).
@@ -215,6 +243,22 @@ pub mod qobject {
         #[qinvokable]
         fn report(self: &Bus, state_json: &QString);
 
+        /// Milliseconds since the process started, with a fraction (a monotonic clock for the
+        /// measurements of `BenchHook.qml`; QML's own `Date.now()` has whole milliseconds only).
+        #[qinvokable]
+        #[cxx_name = "clockMs"]
+        fn clock_ms(self: &Bus) -> f64;
+
+        /// Records the start-up moment `qml` (the shell's QML is complete; see `Shared::marks`).
+        #[qinvokable]
+        #[cxx_name = "shellCompleted"]
+        fn shell_completed(self: &Bus);
+
+        /// Prints `BENCH {json}` (one measurement of `BenchHook.qml`), merged with the start-up marks.
+        #[qinvokable]
+        #[cxx_name = "benchLine"]
+        fn bench_line(self: &Bus, json: &QString);
+
         /// A command finished (see `run`).
         #[qsignal]
         #[cxx_name = "commandFinished"]
@@ -241,6 +285,8 @@ pub struct BusRust {
     start_page: QString,
     start_hidden: bool,
     poller: Option<Poller>,
+    /// Asks the poller for a tick after a command that changed the machine.
+    poke: Option<Poke>,
     server: Option<Server>,
     first_frame_ms: Mutex<Option<u128>>,
 }
@@ -263,7 +309,10 @@ impl cxx_qt::Initialize for qobject::Bus {
         let ticker = {
             let (shared, qt) = (shared.clone(), qt.clone());
             Poller::spawn(LIVE_INTERVAL, move || {
+                let started = Instant::now();
                 let snapshot = shared.model.poll_live();
+                TICKS.fetch_add(1, Ordering::Relaxed);
+                add_nanos(&TICK_NANOS, started);
                 let ok = snapshot.is_some();
                 let _ = qt.queue(move |mut bus| {
                     if let Some(text) = snapshot {
@@ -276,7 +325,11 @@ impl cxx_qt::Initialize for qobject::Bus {
             })
         };
         match ticker {
-            Ok(p) => self.as_mut().rust_mut().poller = Some(p),
+            Ok(p) => {
+                let mut rust = self.as_mut().rust_mut();
+                rust.poke = Some(p.poke_handle());
+                rust.poller = Some(p);
+            }
             Err(e) => eprintln!("truesense-qt: cannot start the live ticker: {e}"),
         }
 
@@ -312,22 +365,33 @@ impl qobject::Bus {
         shared()
     }
 
-    fn deliver(&self) -> impl Fn(Reply) + Send + 'static {
+    /// Where the answer of a command goes. A command that may have changed the machine also asks
+    /// for a live tick at once (whether it worked or not: a failed change must show the real state
+    /// again), so what the page shows from the live values follows within milliseconds, not at
+    /// the next one-second tick.
+    fn deliver(&self, mutates: bool) -> impl Fn(Reply) + Send + 'static {
         let qt = self.qt_thread();
+        let poke = if mutates { self.poke.clone() } else { None };
         move |reply: Reply| {
+            let superseded = reply.outcome.as_ref().err().is_some_and(CmdError::is_superseded);
             let (ok, text) = reply_parts(&reply);
             let id = reply.id as i32;
             let _ = qt.queue(move |bus| bus.command_finished(id, ok, QString::from(text.as_str())));
+            if let (Some(p), false) = (&poke, superseded) {
+                p.poke();
+            }
         }
     }
 
     /// Runs a command on a worker thread.
     pub fn run(self: Pin<&mut Self>, area: &QString, verb: &QString, args_json: &QString) -> i32 {
         let Some(shared) = self.shared() else { return -1 };
-        let done: Done = Box::new(self.deliver());
         match Request::parse(&area.to_string(), &verb.to_string(), &args_json.to_string()) {
-            Ok(request) => shared.model.bus.run(request, done) as i32,
-            Err(e) => shared.model.bus.refuse(e, done) as i32,
+            Ok(request) => {
+                let done: Done = Box::new(self.deliver(request.mutates()));
+                shared.model.bus.run(request, done) as i32
+            }
+            Err(e) => shared.model.bus.refuse(e, Box::new(self.deliver(false))) as i32,
         }
     }
 
@@ -340,15 +404,18 @@ impl qobject::Bus {
         args_json: &QString,
     ) -> i32 {
         let Some(shared) = self.shared() else { return -1 };
-        let done: Done = Box::new(self.deliver());
         match Request::parse(&area.to_string(), &verb.to_string(), &args_json.to_string()) {
-            Ok(request) => shared.model.bus.write(&key.to_string(), request, done) as i32,
-            Err(e) => shared.model.bus.refuse(e, done) as i32,
+            Ok(request) => {
+                let done: Done = Box::new(self.deliver(request.mutates()));
+                shared.model.bus.write(&key.to_string(), request, done) as i32
+            }
+            Err(e) => shared.model.bus.refuse(e, Box::new(self.deliver(false))) as i32,
         }
     }
 
     /// A pure view-model call.
     pub fn vm(&self, module: &QString, verb: &QString, args_json: &QString) -> QString {
+        let started = Instant::now();
         let answer = match parse_args(&args_json.to_string()) {
             Ok(args) => match ts_ui_model::vm::dispatch(&module.to_string(), &verb.to_string(), &args) {
                 Ok(result) => json!({"ok": true, "result": result}),
@@ -356,7 +423,10 @@ impl qobject::Bus {
             },
             Err(e) => json!({"ok": false, "error": CmdError::new(e, Some(CODE_BAD_ARGS)).message}),
         };
-        QString::from(answer.to_string().as_str())
+        let text = QString::from(answer.to_string().as_str());
+        VM_CALLS.fetch_add(1, Ordering::Relaxed);
+        add_nanos(&VM_NANOS, started);
+        text
     }
 
     /// Whether the tray has a host (see `shim.h`).
@@ -420,7 +490,7 @@ impl qobject::Bus {
     pub fn test_config(&self) -> QString {
         let t = self.shared().map(|s| s.test.clone()).unwrap_or_default();
         QString::from(
-            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot, "fps": t.fps, "scroll": t.scroll, "set": t.set, "probe": t.probe})
+            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot, "fps": t.fps, "scroll": t.scroll, "set": t.set, "probe": t.probe, "bench": t.bench})
                 .to_string()
                 .as_str(),
         )
@@ -444,5 +514,47 @@ impl qobject::Bus {
         state["live_frames"] = json!(self.shared().map_or(0, |s| s.model.live.accepted()));
         state["renderer"] = json!(RENDERER.get().map_or("", String::as_str));
         println!("REPORT {state}");
+    }
+
+    /// The measurement clock.
+    pub fn clock_ms(&self) -> f64 {
+        self.shared().map_or(0.0, |s| s.started.elapsed().as_secs_f64() * 1000.0)
+    }
+
+    /// Records the `qml` mark.
+    pub fn shell_completed(&self) {
+        if let Some(s) = self.shared() {
+            mark(s, "qml");
+        }
+    }
+
+    /// One measurement line.
+    pub fn bench_line(&self, json: &QString) {
+        let mut v: Value = serde_json::from_str(&json.to_string()).unwrap_or_else(|_| json!({}));
+        let calls = VM_CALLS.swap(0, Ordering::Relaxed);
+        let nanos = VM_NANOS.swap(0, Ordering::Relaxed);
+        let ticks = TICKS.swap(0, Ordering::Relaxed);
+        let tick_nanos = TICK_NANOS.swap(0, Ordering::Relaxed);
+        if v.get("phase").and_then(Value::as_str) == Some("reset") {
+            return;
+        }
+        v["vm_calls"] = json!(calls);
+        v["vm_ms"] = json!((nanos as f64 / 1e4).round() / 100.0);
+        v["ticks"] = json!(ticks);
+        v["tick_ms"] =
+            json!(if ticks == 0 { 0.0 } else { (tick_nanos as f64 / ticks as f64 / 1e4).round() / 100.0 });
+        if v.get("phase").and_then(Value::as_str) == Some("start") {
+            v["first_frame_ms"] = json!(self.first_frame_ms.lock().ok().and_then(|s| *s));
+            v["rss_kb"] = json!(crate::rss_kb());
+            v["renderer"] = json!(RENDERER.get().map_or("", String::as_str));
+            if let Some(s) = self.shared()
+                && let Ok(marks) = s.marks.lock()
+            {
+                for (name, ms) in marks.iter() {
+                    v[format!("{name}_ms")] = json!((ms * 10.0).round() / 10.0);
+                }
+            }
+        }
+        println!("BENCH {v}");
     }
 }

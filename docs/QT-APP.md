@@ -186,7 +186,8 @@ Two rules keep an idle window idle, and `crates/ts-qt/tests/render.rs` pins them
   store refreshes every second (that was ~50 to 140 frames per second at 165 Hz).
 
 `tools/qtprofile/` measures a page (`profile`), compares two routes (`compare`), looks for flicker
-(`glitch`) and counts wakeups (`bench`); `tools/qtprofile/stale.py` compares the whole window on the
+(`glitch`), counts wakeups (`bench`) and times start, page and tab switches and actions
+(`respond`, the script is `qml/BenchHook.qml`); `tools/qtprofile/stale.py` compares the whole window on the
 screen with the app's own picture (`run`) or watches the real window for a stale frame (`watch`).
 
 ### On Wayland (Hyprland): what was checked, what is known
@@ -235,3 +236,10 @@ test loads every page and fails on any QML error or binding loop.
 Two Hyprland settings make test pictures differ from the app's without any fault:
 `decoration:dim_inactive` darkens an unfocused window by 10 % (the test rule sets `no_dim`), and
 the compositor rounds the corners and draws a border over the outermost pixels.
+
+Responsiveness rules: the GUI thread never waits for the machine (`Api.call`/`Api.write` run on
+worker threads; `Vm.call` is pure computation). A command that changes the machine gets a fresh
+live reading as soon as it finishes (the bus pokes the poller), so a control bound to `Live` follows
+within milliseconds. A tile row whose pick is safe to show early sets `optimistic: true` and calls
+`settle()` in its fail callback; anything that asks first (a fan stop, GPU mode, undervolt) does not.
+Data a gallery draws once per run (theme pictures) lives in a singleton, not in the page.

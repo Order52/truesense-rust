@@ -205,9 +205,17 @@ fn connect_error(e: io::Error) -> ClientError {
 
 /// Connects within `timeout`. std has no connect timeout for Unix sockets, and a blocking
 /// `connect` waits forever when the daemon's accept queue is full (a stopped or wedged
-/// daemon), which would hang a status bar. The connect runs on a helper thread that is
-/// abandoned on timeout; it ends by itself when the kernel finally answers.
+/// daemon), which would hang a status bar.
+///
+/// The connect is first tried without blocking on the calling thread ([`connect_now`]): a Unix
+/// socket connects at once or fails at once unless the accept queue is full. Only then does it
+/// run on a helper thread that is abandoned on timeout (it ends by itself when the kernel finally
+/// answers). The helper thread used to be started for every call: two or three extra wake-ups a
+/// call, and the window's live values ask the daemon every second.
 fn connect(path: &Path, timeout: Duration) -> io::Result<UnixStream> {
+    if let Some(done) = connect_now(path) {
+        return done;
+    }
     let (tx, rx) = mpsc::channel();
     let target = path.to_path_buf();
     thread::Builder::new().name("ipc-connect".to_owned()).spawn(move || {
@@ -220,6 +228,51 @@ fn connect(path: &Path, timeout: Duration) -> io::Result<UnixStream> {
             Err(io::Error::other("the connect thread ended without a result"))
         }
     }
+}
+
+/// A non-blocking connect: `Some` with the connected (blocking again) stream or the error the
+/// kernel gave at once, `None` when the connect would have to wait (`EAGAIN`: the accept queue is
+/// full) or the path does not fit a socket address, which the caller then handles the slow way.
+#[allow(unsafe_code)]
+fn connect_now(path: &Path) -> Option<io::Result<UnixStream>> {
+    use std::os::fd::{AsRawFd, FromRawFd};
+    use std::os::unix::ffi::OsStrExt;
+
+    let bytes = path.as_os_str().as_bytes();
+    // SAFETY: `sockaddr_un` is plain old data (an integer and a byte array); all zeroes is a valid
+    // value of it.
+    let mut addr: libc::sockaddr_un = unsafe { std::mem::zeroed() };
+    // Room for the terminating zero byte, and no zero byte inside (the kernel would cut the path).
+    if bytes.is_empty() || bytes.len() >= addr.sun_path.len() || bytes.contains(&0) {
+        return None;
+    }
+    addr.sun_family = libc::sa_family_t::try_from(libc::AF_UNIX).ok()?;
+    for (dst, src) in addr.sun_path.iter_mut().zip(bytes) {
+        *dst = libc::c_char::from_ne_bytes([*src]);
+    }
+    let len = libc::socklen_t::try_from(std::mem::offset_of!(libc::sockaddr_un, sun_path) + bytes.len() + 1)
+        .ok()?;
+    // SAFETY: plain system call with constant arguments; the result is checked before use.
+    let fd = unsafe {
+        libc::socket(libc::AF_UNIX, libc::SOCK_STREAM | libc::SOCK_CLOEXEC | libc::SOCK_NONBLOCK, 0)
+    };
+    if fd < 0 {
+        return Some(Err(io::Error::last_os_error()));
+    }
+    // SAFETY: `fd` is a socket that was just opened and is owned by nothing else; the stream takes
+    // ownership and closes it on every path below.
+    let stream = unsafe { UnixStream::from_raw_fd(fd) };
+    // SAFETY: `addr` is a live, initialised `sockaddr_un` and `len` is no larger than it (checked
+    // above), so the kernel reads only memory of `addr`; the descriptor is open (owned by `stream`).
+    let rc = unsafe { libc::connect(stream.as_raw_fd(), (&raw const addr).cast::<libc::sockaddr>(), len) };
+    if rc != 0 {
+        let e = io::Error::last_os_error();
+        return match e.raw_os_error() {
+            Some(code) if code == libc::EAGAIN || code == libc::EINPROGRESS => None,
+            _ => Some(Err(e)),
+        };
+    }
+    Some(stream.set_nonblocking(false).map(|()| stream))
 }
 
 #[cfg(test)]
@@ -443,6 +496,29 @@ mod tests {
         let c = Client::new("/a/b.sock").with_timeout(Duration::from_millis(5));
         assert_eq!(c.path(), Path::new("/a/b.sock"));
         assert_eq!(Client::from_env().path(), wire::socket_path());
+    }
+
+    #[test]
+    fn the_direct_connect_reaches_a_listener_and_reports_errors_like_std() {
+        let dir = std::env::temp_dir().join(format!("ts-ipc-now-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("s.sock");
+        let _ = std::fs::remove_file(&path);
+        let listener = std::os::unix::net::UnixListener::bind(&path).unwrap();
+        let stream = connect_now(&path).expect("decided at once").expect("connected");
+        let (served, _) = listener.accept().unwrap();
+        // The stream is blocking again: a read with a timeout waits instead of failing at once.
+        stream.set_read_timeout(Some(Duration::from_millis(30))).unwrap();
+        let mut buf = [0u8; 1];
+        let e = io::Read::read(&mut &stream, &mut buf).unwrap_err();
+        assert!(matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut), "{e:?}");
+        drop(served);
+        let missing = connect_now(&dir.join("missing.sock")).expect("decided at once").unwrap_err();
+        assert_eq!(missing.kind(), io::ErrorKind::NotFound);
+        let long = dir.join("x".repeat(200));
+        assert!(connect_now(&long).is_none(), "a path too long for a socket address goes the slow way");
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_dir(&dir);
     }
 
     #[test]

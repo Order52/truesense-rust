@@ -34,10 +34,9 @@ ColumnLayout {
     signal stop()
     signal starToggled(string id)
 
-    // What each card shows: the chosen colourway of each theme, and the pictures drawn so far.
+    // What each card shows: the chosen colourway of each theme. The pictures are LightingVm's
+    // (kept between visits, updated once per batch of answers).
     property var ways: ({})
-    property var pictures: ({})
-    property var asked: ({})
 
     // Which cards show, in which order. The Repeater's model is only replaced when that list really
     // changes: a new array with the same ids (every reload after Apply, a star, a stop) would destroy
@@ -86,23 +85,8 @@ ColumnLayout {
         ways = o
     }
 
-    function key(id, way) { return id + "#" + way }
-
-    /// Asks Rust for the picture of a theme in a colourway, once.
-    function ensure(id, way) {
-        var k = key(id, way)
-        if (asked[k] === true) return
-        var a = {}
-        for (var q in asked) a[q] = asked[q]
-        a[k] = true
-        asked = a
-        Api.call("theme", "preview", { name: id, colourway: way }, function (r) {
-            var p = {}
-            for (var q in pictures) p[q] = pictures[q]
-            p[k] = r.cells
-            pictures = p
-        }, function () {})
-    }
+    /// Asks Rust for the picture of a theme in a colourway, once per run.
+    function ensure(id, way) { LightingVm.ensurePreview(id, way) }
 
     function isStarred(id) { return starred.indexOf(id) >= 0 }
 
@@ -210,7 +194,10 @@ ColumnLayout {
                 readonly property var theme: gallery.byId[modelData]
                 readonly property int way: gallery.wayOf(modelData)
                 readonly property bool live: gallery.active === modelData
-                readonly property var cellsNow: gallery.pictures[gallery.key(modelData, way)]
+                readonly property var cellsNow: {
+                    LightingVm.previewSerial    // re-read when a batch of pictures arrived
+                    return LightingVm.previews[LightingVm.previewKey(modelData, way)]
+                }
 
                 Layout.preferredWidth: grid.cardWidth
                 Layout.fillHeight: true

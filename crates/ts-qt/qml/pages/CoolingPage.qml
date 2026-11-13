@@ -115,14 +115,16 @@ PageFrame {
     // ---- fan mode and manual duty ----------------------------------------------------------------
     function pickMode(mode) {
         var done = function () { page.forcedMode = mode; page.forcedTicks = 0 }
-        if (mode === "smart") Api.call("fan", "smart", { action: "on" }, done)
-        else if (mode === "auto") Api.call("fan", "auto", {}, done)
-        else if (mode === "max") Api.call("fan", "max", {}, done)
+        // The tile shows the pick at once (optimistic); a refusal puts the real mode back.
+        var fail = function (err) { modeRow.settle(); Toasts.error(err.message) }
+        if (mode === "smart") Api.call("fan", "smart", { action: "on" }, done, fail)
+        else if (mode === "auto") Api.call("fan", "auto", {}, done, fail)
+        else if (mode === "max") Api.call("fan", "max", {}, done, fail)
         else {
             // Manual starts from the sliders, never from a stop: a stop has its own question.
             var r = vm.call("manual", { cpu: Math.max(20, cpuS.value), gpu: Math.max(20, gpuS.value), snap: true })
-            if (r.error !== undefined) { Toasts.error(r.error); return }
-            Api.call("fan", "set", r.args, done)
+            if (r.error !== undefined) { modeRow.settle(); Toasts.error(r.error); return }
+            Api.call("fan", "set", r.args, done, fail)
         }
     }
 
@@ -496,7 +498,9 @@ PageFrame {
         icon: "sliders"
 
         TileRow {
+            id: modeRow
             Layout.fillWidth: true
+            optimistic: true
             enabled: Caps.usable("fans")
             model: [
                 { value: "smart", label: page.modeNames.smart, icon: "smart" },

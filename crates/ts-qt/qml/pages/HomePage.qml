@@ -227,12 +227,16 @@ PageFrame {
     }
 
     // ---- actions -----------------------------------------------------------------------------
+    /// The fail callback of an optimistic tile row: the row shows the machine's state again.
+    function failed(row) {
+        return function (err) { row.settle(); Toasts.error(err && err.message ? err.message : String(err)) }
+    }
     function pickPower(mode) {
         Api.call("power", "set", { mode: mode }, function (r) {
             powerPick = mode
             //% "Power mode: %1 (held 30 min)"
             Toasts.ok(qsTrId("home_toast_power").arg(labelOfPower(typeof r === "string" && r !== "" ? r : mode)))
-        })
+        }, failed(powerRow))
     }
     function pickControl(c) {
         Api.call("power", "auto", { action: c }, function (r) {
@@ -260,19 +264,19 @@ PageFrame {
                 fanPick = mode
                 //% "Fans: smart"
                 Toasts.ok(qsTrId("home_toast_fan_smart"))
-            })
+            }, failed(fanRow))
         } else if (mode === "auto") {
             Api.call("fan", "auto", {}, function () {
                 fanPick = mode
                 //% "Fans: firmware auto"
                 Toasts.ok(qsTrId("home_toast_fan_auto"))
-            })
+            }, failed(fanRow))
         } else if (mode === "max") {
             Api.call("fan", "max", {}, function () {
                 fanPick = mode
                 //% "Fans: max"
                 Toasts.ok(qsTrId("home_toast_fan_max"))
-            })
+            }, failed(fanRow))
         } else {
             enterManual()
         }
@@ -286,13 +290,13 @@ PageFrame {
             setSliders(d.cpu, d.gpu)
         }
         var out = Vm.call("home", "duties", { linked: linked, single: single.value, cpu: cpuSlider.value, gpu: gpuSlider.value })
-        if (!out) return
+        if (!out) { fanRow.settle(); return }
         lastTouch = Date.now()
         Api.call("fan", "set", { cpu: out.cpu, gpu: out.gpu }, function () {
             fanPick = "manual"
             //% "Fans: manual %1 % / %2 %"
             Toasts.ok(qsTrId("home_toast_fan_manual").arg(out.cpu).arg(out.gpu))
-        })
+        }, failed(fanRow))
     }
     function setSliders(cpu, gpu) {
         single.value = Math.max(cpu, gpu)
@@ -706,7 +710,9 @@ PageFrame {
         rightText: qsTrId("home_power_right").arg(Fmt.temp(page.tiles.cpu.temp)).arg(Fmt.rpm(Live.value("sensors.cpu_fan_rpm")))
 
         TileRow {
+            id: powerRow
             Layout.fillWidth: true
+            optimistic: true
             model: page.powerTiles
             current: page.shownPower !== "" ? page.shownPower : undefined
             onActivated: (value) => page.pickPower(value)
@@ -782,7 +788,9 @@ PageFrame {
         rightText: Fmt.rpm(page.tiles.fan.rpm)
 
         TileRow {
+            id: fanRow
             Layout.fillWidth: true
+            optimistic: true
             model: page.fanTiles
             current: page.shownFan
             onActivated: (value) => page.pickFan(value)

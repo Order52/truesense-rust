@@ -199,13 +199,15 @@ ColumnLayout {
         rightText: PerfVm.modeText(Live.value("power_mode"))
 
         TileRow {
+            id: modeRow
             Layout.fillWidth: true
+            optimistic: true
             model: PerfVm.modeNames.map(function (m) { return { value: m, label: PerfVm.modeText(m), icon: PerfVm.modeIcon(m) } })
             current: Live.value("power_mode")
             onActivated: (mode) => Api.call("power", "set", { mode: mode }, function () {
                 //% "Power mode %1, held for 30 minutes"
                 Toasts.ok(qsTrId("perf_mode_held").arg(PerfVm.modeText(mode)))
-            })
+            }, function (err) { modeRow.settle(); Toasts.error(err.message) })
         }
         HelpText {
             //% "A mode you pick stays for 30 minutes, or until something changes (plug in, a game starts or stops, heat). Then the control below takes over again."

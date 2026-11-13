@@ -110,7 +110,7 @@ The Qt window with the software renderer: about 130 MB resident (268-323 MB with
 - **Thread stacks.** Helper threads get 32 to 64 KiB stacks where this branch added them; the existing threads were left: their stacks are virtual memory that is never touched (the private memory above is what counts).
 - **The 17 `coretemp` inputs** could still be read when the package value is high (a cheap way to keep the "hottest core" semantics where it matters); not done, because the firmware temperature already covers bursts and Go shipped with the package input alone. Reverting is one function (`LinuxSensors::cpu_temp`).
 - **`truesense doctor`** (73 ms, 16 helper programs) already runs its checks on a worker pool; the time is the slowest helper.
-- **The Qt live poller** wakes about four times per tick (a socket round trip to the daemon plus file reads); a persistent connection would save two or three.
+- **The Qt live poller** woke about five times per tick against the real service; the connect helper thread is gone (see "Qt app responsiveness"), which saved one. A persistent connection would need a protocol change in the daemon (one request per connection today) and was not made.
 
 ## What to check on the real laptop
 
@@ -119,6 +119,62 @@ The Qt window with the software renderer: about 130 MB resident (268-323 MB with
 3. Plug and unplug a headset: the `microphone policy:` line should appear within about a second. If it only appears after about ten seconds, `pactl subscribe` does not announce the jack on this system and `FALLBACK` in `ts-domain/src/audio/events.rs` should be shortened.
 4. `truesense keys run`: edit a binding in the window (applied at once), start and stop a theme (starts at once), press the PREDATOR key twenty times (all actions run: the old stdout lock dropped them after eight), stop the service (immediate).
 5. Window: close it with and without a StatusNotifier host (a panel with a tray, then without): without one, closing must quit the program. The host check reads `IsStatusNotifierHostRegistered` from the session bus.
+
+## Qt app responsiveness
+
+Measured 2026-11-13 with `tools/qtprofile/qtprofile.py respond` (the program's own script, `qml/BenchHook.qml`, run with `TRUESENSE_QT_BENCH=1`): an isolated test window on the real display (Hyprland, eDP-1 2560x1600 at 165 Hz, software renderer, 760x520), simulated firmware, no root service, medians of 3 runs (start: 10 runs), "before" = this branch's first commit (the script only), "after" = the branch. The machine was busy with other builds (load average 6 to 18), so single numbers move by a few milliseconds; the before/after runs alternate. Times are milliseconds from the moment of the act.
+
+**What a person waited for.** Everything the window shows from the live values (the power mode tile, the fan mode, the dials) followed a change only at the next one-second live tick, so a click on a power mode answered in 3 ms and was *shown* 0.5 to 0.75 s later (a tick that had just passed meant a full second):
+
+| Action | Command answered | Shown before | Shown after |
+|---|---|---|---|
+| Power mode (Performance page tiles) | 3 | 532 to 751 | **3.5** (the tile itself: at the click) |
+| Fan max / fan auto (Cooling) | 3 to 7 | 202 / 750 | **6.6 / 5.4** (the tile itself: at the click) |
+| Keyboard colour (simulated 187 ms keyboard write) | 187 | not on screen | not on screen (the page shows its own choice at once) |
+| Theme apply / stop | 16 / 5 | | |
+
+Two changes did it:
+
+- **A command that changes the machine asks for a live reading at once.** The bus knows which commands only read (`Request::mutates` in `ts-ui-model/src/bus.rs`: verbs such as `status`, `list`, `show`, `preview`, `monitor ...`, or an `action` of `status`/`list`/...); when any other command finishes, worked or not, the bridge pokes the live poller (`Poke` in `poller.rs`). The first poke after a quiet moment ticks at once; pokes close together (a slider drag) fold into at most one extra reading every 250 ms, and a poke while the window is hidden does nothing. Idle cost is unchanged (nothing is poked when nothing is done).
+- **Tiles answer the click.** `TileRow { optimistic: true }` shows the picked tile as selected at once and lets the live value take over as soon as it changes; the page's fail callback calls `settle()` to put the real state back (and shows the error), and without any change the pick falls back after 2.5 s. Used for the power mode (Home, Performance) and the fan mode (Home, Cooling: Smart, Auto, Max, Manual at its slider values). Never for a choice that asks first: a model entry with `asks: true` is never shown early, and the GPU mode, fan stop and undervolt paths are not optimistic at all.
+
+**Pages and tabs.** A page is built synchronously when it is shown (the Loader of the shell); that is the time the GUI thread is busy (`sync`) and the first frame follows 2 to 5 ms later. Revisits cost the same as first visits (a page is destroyed when left, which is what keeps a hidden page from running at all):
+
+| Page (after) | first visit: sync / frame / with data | revisit: sync / frame / with data |
+|---|---|---|
+| Home | (cold start) | 13.5 / 15.4 / 19.3 |
+| Monitor | 19.8 / 21.6 / 665 ¹ | 9.8 / 11.5 / 46 |
+| Performance | 30.7 / 35.2 / 38 | 19.5 / 23.4 / 26 |
+| Cooling | 21.0 / 23.3 / 40 | 13.5 / 15.5 / 35 |
+| Lighting | 38.0 / 41.0 / 57 | 16.9 / 21.1 / 40 |
+| Keys | 29.7 / 32.1 / 52 | 12.4 / 14.8 / 35 |
+| Battery and screen | 18.7 / 21.9 / 28 | 9.7 / 11.2 / 21 |
+| Audio | 14.2 / 16.3 / 34 | 15.2 / 18.5 / 22 |
+| Profiles and favourites | 15.2 / 17.1 / 30 | 8.5 / 12.6 / 24 |
+| Health | 14.2 / 15.9 / 36 | 12.8 / 15.0 / 25 |
+| Settings | 18.8 / 23.0 / 30 | 13.5 / 17.6 / 37 |
+
+¹ The Monitor page's first CPU reading needs two samples of `/proc/stat` some time apart; the page shows its frame at once and the numbers when they exist.
+
+The view-model calls (`Vm.call` into Rust) are not the cost: 2 to 27 calls per page, 0.1 to 0.9 ms together (`vm_calls`, `vm_ms` in the script's output). The rest is creating the QML objects; a page cache was considered and not made, because a kept page would keep evaluating its bindings on every live frame while hidden.
+
+Lighting tabs (after; before in brackets where it differed): Per-key 37 ms to build, 76 with its pictures; Rear 18; Looks 17; Keyboard 15 (26). **Themes**: the gallery's 32 pictures were asked for again on every visit and each answer copied the whole picture map and re-evaluated every card (32 answers x 32 cards); they are now kept in `LightingVm` for the run (a saved or deleted theme is drawn again) and the cards are told once per batch of answers. Revisit with all pictures shown: 132 to 96 ms, longest GUI stall 67 to 42 ms (offscreen, busier machine: 440 to 177 ms and 110 to 43 ms).
+
+**Writes while dragging.** Sliders already send at most one value per 60 to 250 ms (`SliderRow.coalesceMs`) and the bus keeps only the newest unstarted write per control (`Bus::write`), so a 190 ms keyboard frame never builds a queue: measured with 30 raw writes 16 ms apart, the last value is on the device when the drag ends. The GUI thread never waits for a write.
+
+**Cold start** (10 runs, the same before and after): the application layer 0.4 ms, the shell's QML complete 87 ms, first frame 135 ms, window mapped (seen by the compositor) 150 ms, every first command answered and the first live frame in 17 ms after the first frame, shown at 33 ms.
+
+**Idle and the live poller.** Idle on the real display, side by side (`qtprofile.py compare`, 20 s): Cooling 0.3 to 0.1 % CPU, 20 to 19 wake-ups a second; Home 0.3 to 0.2 %, 21 to 22; no change in memory. The live tick against the real root service (read-only `state` request, ticking with nothing drawn): 4.85 to 3.8 wake-ups a second: every daemon call started a helper thread for its connect (a guard against a full accept queue); `ts-ipc` now connects without blocking on the calling thread and only falls back to the helper when the connect would wait.
+
+**A trap found on the way.** `TRUESENSE_SIM=1` simulates the firmware only: without `TRUESENSE_SOCKET` a test instance talks to the real root service at `/run/truesense/truesense.sock` (world-writable), so a scripted `power set` or `fan max` changes the real laptop. `tools/qtprofile` (all modes) and `glitch.py` now point `TRUESENSE_SOCKET`, `TRUESENSE_RUN`, `TRUESENSE_STATE` and `TRUESENSE_USERSTATE` at their private directory.
+
+Measure again:
+
+```
+make qt-release
+tools/qtprofile/qtprofile.py respond --runs 3                       # real display, all phases
+tools/qtprofile/qtprofile.py respond --platform offscreen --old OLD-BINARY --phases pages,actions
+```
 
 ## How to measure again
 

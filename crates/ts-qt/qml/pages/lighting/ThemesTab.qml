@@ -186,6 +186,7 @@ ColumnLayout {
             return
         }
         Api.call("theme", "save", { theme: theme }, function () {
+            LightingVm.forgetPreview(theme.id)
             //% "Saved theme '%1'"
             Toasts.show(qsTrId("light_theme_keep_saved").arg(theme.name), "ok")
             if (done) done()
@@ -626,7 +627,7 @@ ColumnLayout {
                                 confirmText: qsTrId("light_theme_delete"),
                                 danger: true
                             }, function () {
-                                Api.call("theme", "delete", { name: id }, function () { tab.close(); tab.reload() })
+                                Api.call("theme", "delete", { name: id }, function () { LightingVm.forgetPreview(id); tab.close(); tab.reload() })
                             })
                         }
                     }
