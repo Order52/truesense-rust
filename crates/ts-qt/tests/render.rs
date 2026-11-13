@@ -132,3 +132,25 @@ fn what_a_page_shows_is_never_fixed_to_a_constant() {
         .collect();
     assert!(found.is_empty(), "a shown value is a constant:\n{}", found.join("\n"));
 }
+
+#[test]
+fn the_tray_icon_has_no_child_objects() {
+    // `SystemTrayIcon` has no default property: an object declared inside it ("Cannot assign to
+    // non-existent default property") is never created. This once silently dropped the tray's live
+    // refresh; the tray cannot be loaded in a test (it waits for a StatusNotifier host), so the
+    // source is checked: anything the icon owns is assigned to a property.
+    let found: Vec<String> = code_lines()
+        .into_iter()
+        .filter(|(file, _, _)| file == "Tray.qml")
+        .filter(|(_, _, line)| {
+            let indent = line.len() - line.trim_start().len();
+            let t = line.trim();
+            indent == 4
+                && t.ends_with('{')
+                && t.chars().next().is_some_and(char::is_uppercase)
+                && !t.contains(':')
+        })
+        .map(|(file, n, line)| format!("{file}:{n}: {}", line.trim()))
+        .collect();
+    assert!(found.is_empty(), "a child object in the tray icon:\n{}", found.join("\n"));
+}

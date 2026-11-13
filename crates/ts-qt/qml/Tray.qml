@@ -73,7 +73,8 @@ Platform.SystemTrayIcon {
     // the machine afresh through `refresh()`, so nothing shown there is older than that.
     property bool liveFed: true
     Component.onCompleted: { status = Live.frame; rebuild() }
-    Connections {
+    // SystemTrayIcon has no default property, so the helper cannot be a child: it is assigned.
+    property QtObject liveWatch: Connections {
         target: Live
         function onFrameChanged() {
             if (tray.liveFed && Date.now() - tray.builtAt > 5000) {

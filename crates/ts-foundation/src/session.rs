@@ -37,9 +37,13 @@ const SESSION_VARS: &[&str] = &[
 /// Where X11 sockets live.
 const X11_DIR: &str = "/tmp/.X11-unix";
 
-/// Whether `name` is part of the graphical session's description.
+/// Whether `name` is part of the graphical session's description: the display, the desktop, the
+/// toolkit settings and the locale (a window started without `LANG` runs in the C locale).
 pub fn is_session_var(name: &str) -> bool {
-    SESSION_VARS.contains(&name) || name.starts_with("QT_") || name.starts_with("XCURSOR_")
+    SESSION_VARS.contains(&name)
+        || name == "LANG"
+        || name == "LANGUAGE"
+        || ["QT_", "XCURSOR_", "LC_"].iter().any(|prefix| name.starts_with(prefix))
 }
 
 /// Which environment is believed when the process's own and the user manager's differ.
@@ -288,7 +292,7 @@ mod tests {
         plan.set.iter().map(|(n, v)| (n.as_str(), v.as_str())).collect()
     }
 
-    const MANAGER: &str = "DISPLAY=:0\nHYPRLAND_CMD=$'Hyprland --watchdog-fd 4'\nHYPRLAND_INSTANCE_SIGNATURE=abc_1794544996_1\nPATH=/usr/bin\nQT_QPA_PLATFORMTHEME=qt6ct\nWAYLAND_DISPLAY=wayland-1\nXDG_CURRENT_DESKTOP=Hyprland\n";
+    const MANAGER: &str = "DISPLAY=:0\nLANG=en_US.UTF-8\nLC_TIME=en_US.UTF-8\nHYPRLAND_CMD=$'Hyprland --watchdog-fd 4'\nHYPRLAND_INSTANCE_SIGNATURE=abc_1794544996_1\nPATH=/usr/bin\nQT_QPA_PLATFORMTHEME=qt6ct\nWAYLAND_DISPLAY=wayland-1\nXDG_CURRENT_DESKTOP=Hyprland\n";
 
     #[test]
     fn a_service_started_before_the_session_gets_the_managers_variables() {
@@ -308,11 +312,13 @@ mod tests {
             [
                 ("DISPLAY", ":0"),
                 ("HYPRLAND_INSTANCE_SIGNATURE", "abc_1794544996_1"),
+                ("LANG", "en_US.UTF-8"),
+                ("LC_TIME", "en_US.UTF-8"),
                 ("QT_QPA_PLATFORMTHEME", "qt6ct"),
                 ("WAYLAND_DISPLAY", "wayland-1"),
                 ("XDG_CURRENT_DESKTOP", "Hyprland"),
             ],
-            "session variables only: not PATH, not the shell-quoted HYPRLAND_CMD"
+            "session variables and the locale only: not PATH, not the shell-quoted HYPRLAND_CMD"
         );
     }
 
@@ -395,7 +401,8 @@ mod tests {
         assert!(!parsed.iter().any(|(n, _)| n == "HYPRLAND_CMD"));
         assert!(parse_environment("garbage\n=x\nA B=c\n").is_empty());
         assert!(is_session_var("QT_QPA_PLATFORM") && is_session_var("XCURSOR_SIZE"));
-        assert!(!is_session_var("PATH") && !is_session_var("HOME"));
+        assert!(is_session_var("LANG") && is_session_var("LC_ALL") && is_session_var("LANGUAGE"));
+        assert!(!is_session_var("PATH") && !is_session_var("HOME") && !is_session_var("LANGUAGE_X"));
     }
 
     #[test]

@@ -587,7 +587,7 @@ PageFrame {
             onEdited: (v) => page.setTiming("multi_ms", v)
         }
         HelpText {
-            //% "A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap."
+            //% "A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up."
             text: qsTrId("keys_timing_help")
         }
     }

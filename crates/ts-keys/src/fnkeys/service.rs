@@ -623,9 +623,14 @@ fn normalise_timing(bindings: &mut Bindings, fallback: &Bindings) {
     }
 }
 
+/// The long-press time and the multi-tap window. With neither a double nor a triple tap bound
+/// there is nothing to wait for: the window is zero and a tap fires as the key comes up, which
+/// is what makes the PREDATOR key feel instant in the default setup.
 fn timing_of(bindings: &Bindings) -> (Duration, Duration) {
     let millis = |ms: i64| Duration::from_millis(u64::try_from(ms).unwrap_or(0));
-    (millis(bindings.long_ms), millis(bindings.multi_ms))
+    let waits_for_more = [Gesture::Double, Gesture::Triple].into_iter().any(|g| bindings.action(g) != "none");
+    let window = if waits_for_more { millis(bindings.multi_ms) } else { Duration::ZERO };
+    (millis(bindings.long_ms), window)
 }
 
 fn hex(bytes: &[u8]) -> String {

@@ -381,6 +381,24 @@ mod machine {
     }
 
     #[test]
+    fn a_zero_window_makes_every_tap_final_at_its_release() {
+        let mut g = Gestures::new(ms(800), Duration::ZERO);
+        g.press(ms(0));
+        assert!(g.advance(ms(100)).is_empty(), "nothing before the key comes up");
+        assert_eq!(g.release(ms(120)), [Gesture::Tap], "the tap is answered by the release itself");
+        assert_eq!(g.deadline(), None, "and nothing is left waiting");
+        // Two quick presses are two taps, not a double.
+        g.press(ms(200));
+        assert_eq!(g.release(ms(230)), [Gesture::Tap]);
+        g.press(ms(260));
+        assert_eq!(g.release(ms(290)), [Gesture::Tap]);
+        // A long press is still a long press and its release is silent.
+        g.press(ms(1000));
+        assert_eq!(g.advance(ms(1800)), [Gesture::Long]);
+        assert!(g.release(ms(2000)).is_empty());
+    }
+
+    #[test]
     fn deadlines_are_exact() {
         let mut g = Gestures::new(ms(800), ms(450));
         assert_eq!(g.deadline(), None, "an idle machine has none");
@@ -608,6 +626,32 @@ fn every_gesture_runs_its_own_binding_at_the_right_time() {
             (2250, "A_long".to_owned()),
         ]
     );
+}
+
+#[test]
+fn with_no_double_or_triple_tap_bound_a_tap_runs_as_the_key_comes_up() {
+    // The default setup: only the tap does anything. Waiting the multi-tap window (450 ms by
+    // default) for a second press that can mean nothing was most of the delay of the PREDATOR key.
+    let none = || Bindings { double: "none".into(), triple: "none".into(), multi_ms: 450, ..bindings() };
+    let rig = Rig { world: World::new(3000, none()), screen: Arc::new(RecordingNotifier::default()) };
+    rig.world.report(0, &PRESS).report(30, &RELEASE);
+    rig.world.report(500, &PRESS).report(520, &RELEASE).report(560, &PRESS).report(580, &RELEASE);
+    rig.world.report(2000, &PRESS).report(2600, &RELEASE);
+    assert_eq!(
+        rig.run(),
+        [
+            (30, "A_tap".to_owned()),
+            (520, "A_tap".to_owned()),
+            (580, "A_tap".to_owned()),
+            (2250, "A_long".to_owned()),
+        ]
+    );
+    // Binding a double tap brings the window back, without a restart.
+    let rig = Rig { world: World::new(8000, none()), screen: Arc::new(RecordingNotifier::default()) };
+    rig.world
+        .at(100, Ev::Config(Some(2), Ok(Bindings { double: "B_double".into(), multi_ms: 450, ..none() })));
+    rig.world.report(5000, &PRESS).report(5030, &RELEASE);
+    assert_eq!(rig.run(), [(5480, "A_tap".to_owned())], "a tap waits 450 ms again once a double tap exists");
 }
 
 #[test]

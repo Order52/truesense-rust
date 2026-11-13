@@ -5360,8 +5360,9 @@
         <translation>Taps count together within</translation>
     </message>
     <message id="keys_timing_help">
-        <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</source>
-        <translation>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</translation>
+        <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</source>
+        <oldsource>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</oldsource>
+        <translation>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</translation>
     </message>
 </context>
 </TS>

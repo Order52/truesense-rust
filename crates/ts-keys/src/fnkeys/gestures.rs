@@ -12,7 +12,8 @@
 //! * a long press fires while the key is still held, `long_after` after the press, so it feels
 //!   instant; the release that follows is not also a tap;
 //! * taps are counted; the third resolves at once, otherwise the count resolves `multi_window`
-//!   after the last release unless another press comes first;
+//!   after the last release unless another press comes first; a zero window resolves every tap at
+//!   its release (the service uses it when no double or triple tap is bound);
 //! * a press cancels the pending resolution but keeps the count, and a long press discards the
 //!   taps that came before it.
 #![forbid(unsafe_code)]
@@ -87,7 +88,9 @@ impl Gestures {
             return out;
         }
         self.taps += 1;
-        if self.taps >= 3 {
+        // With no window nothing can follow: the tap is final as the key comes up (a key that has
+        // no double or triple action bound answers at once instead of waiting for a second press).
+        if self.taps >= 3 || self.multi_window.is_zero() {
             out.extend(self.flush());
         } else {
             self.multi_at = Some(now.saturating_add(self.multi_window));
