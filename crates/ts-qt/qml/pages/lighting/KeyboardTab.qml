@@ -3,6 +3,7 @@
 // (colour, speed, direction) comes from the view-model's catalogue; the controls it does not use
 // stay visible and greyed, with a line saying why.
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import org.truesense.app
 

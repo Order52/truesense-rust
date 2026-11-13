@@ -14,6 +14,10 @@ platforms plugins never differs by more than a few per cent of the pixels.
 A step is a *transient* glitch when the picture is wrong shortly after the step (0.35 s) and
 right a second later, *persistent* when it is still wrong then (what a person has to fix by
 resizing again, "zooming"). Failing screenshots are kept in --out.
+
+Limits: only the static regions are compared, and grim's capture may make the compositor repaint
+the whole output first, which would hide a stale compositor frame. stale.py compares every pixel
+of the window and asks for a capture without a repaint (copy_with_damage).
 """
 import json
 import os

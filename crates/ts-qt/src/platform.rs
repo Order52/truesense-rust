@@ -64,6 +64,11 @@ pub fn choose_renderer(file_value: Option<&str>) -> String {
     qobject::choose_renderer(&wanted).to_string()
 }
 
+/// Silences Qt's text-input focus warning (see `cpp/shim.h`); `QT_LOGGING_RULES` still wins.
+pub fn quiet_platform_noise() {
+    qobject::quiet_platform_noise();
+}
+
 /// Lets QML read its own bundled icon files (see `Icon.qml`).
 pub fn allow_resource_reads() {
     qobject::allow_resource_reads();

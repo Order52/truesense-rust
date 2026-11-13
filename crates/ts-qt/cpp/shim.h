@@ -30,6 +30,12 @@ bool tray_host_registered();
 // forbids it unless QML_XHR_ALLOW_FILE_READ is set). Our QML is the only QML that runs.
 void allow_resource_reads();
 
+// Turns off one Qt warning that is noise on a desktop without an input method (Hyprland): Qt's
+// Wayland text-input logs "QWaylandTextInputv3::disableSurface ... Trying to disable" whenever the
+// keyboard focus moves between controls, dozens of lines a minute in the journal. Only that
+// category's warnings; QT_LOGGING_RULES still overrides it.
+void quiet_platform_noise();
+
 // Chooses the Qt Quick scene-graph backend before the first window exists and returns what it
 // chose: "software", "opengl", "vulkan", "software-fallback" (a GPU backend was wanted but no
 // context could be created) or "qt:..." (Qt's own QT_QUICK_BACKEND / QMLSCENE_DEVICE decided).

@@ -4,6 +4,7 @@
 // at once through Api.write, which keeps only the newest picture while the keyboard (about 50 ms
 // per upload) is busy, so a drag never floods it.
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import org.truesense.app
 
@@ -193,20 +194,23 @@ ColumnLayout {
         }, function () {})
     }
 
-    /// Asks for the colours of a template once; its card draws them.
-    function pictureOf(name) {
-        if (templatePictures[name] !== undefined) return templatePictures[name]
-        var p = {}
-        for (var k in templatePictures) p[k] = templatePictures[k]
-        p[name] = []
-        templatePictures = p
+    /// Template name -> true once its colours were asked for. Changed in place on purpose: it is
+    /// not a binding source, so asking never re-runs a card's binding.
+    property var _picturesAsked: ({})
+
+    /// Asks for the colours of a template once (from a card's Component.onCompleted, never from a
+    /// binding: a binding that wrote `templatePictures` read it too, a binding loop that rebuilt
+    /// every card's picture each time one answer arrived). The card shows them through
+    /// `templatePictures[name]`.
+    function askPicture(name) {
+        if (_picturesAsked[name] === true) return
+        _picturesAsked[name] = true
         Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
             var q = {}
-            for (var k2 in templatePictures) q[k2] = templatePictures[k2]
+            for (var k in templatePictures) q[k] = templatePictures[k]
             q[name] = d.cells
             templatePictures = q
-        }, function () {})
-        return []
+        }, function () { delete tab._picturesAsked[name] })
     }
 
     /// Puts a template on the keyboard and into the editor, as one step that Undo takes back.
@@ -551,7 +555,8 @@ ColumnLayout {
                     title: modelData
                     subtitle: entry ? entry.mood : ""
                     layout: LightingVm.layout
-                    cells: tab.pictureOf(modelData)
+                    cells: tab.templatePictures[modelData] || []
+                    Component.onCompleted: tab.askPicture(modelData)
                     onActivated: tab.applyTemplate(modelData)
                     RowLayout {
                         Layout.fillWidth: true

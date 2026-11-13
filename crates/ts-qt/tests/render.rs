@@ -154,3 +154,23 @@ fn the_tray_icon_has_no_child_objects() {
         .collect();
     assert!(found.is_empty(), "a child object in the tray icon:\n{}", found.join("\n"));
 }
+
+#[test]
+fn a_popup_placed_in_the_overlay_has_the_controls_import() {
+    // `Overlay` is an attached type of QtQuick.Controls: in a file without that import,
+    // `parent: Overlay.overlay` throws "Overlay is not defined" and the popup stays a child of the
+    // item that declares it. The Lighting colour picker then opened at the top-left corner of the
+    // scrolled tab (often off screen) instead of in the middle of the window.
+    let mut files = Vec::new();
+    qml_files(&root(), &mut files);
+    let found: Vec<String> = files
+        .iter()
+        .filter_map(|f| {
+            let text = fs::read_to_string(f).unwrap();
+            let uses = text.lines().any(|l| !l.trim_start().starts_with("//") && l.contains("Overlay."));
+            let imports = text.lines().any(|l| l.trim_start().starts_with("import QtQuick.Controls"));
+            (uses && !imports).then(|| f.strip_prefix(root()).unwrap().to_string_lossy().into_owned())
+        })
+        .collect();
+    assert!(found.is_empty(), "Overlay used without `import QtQuick.Controls...`:\n{}", found.join("\n"));
+}

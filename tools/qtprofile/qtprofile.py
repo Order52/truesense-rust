@@ -10,6 +10,8 @@
 switches of every thread), frames per second (the window's own `frameSwapped` count, printed by
 `TRUESENSE_QT_FPS=1`), resident memory, per backend. `glitch` (see glitch.py) drives resizes and page
 switches and compares screenshots of the window with a fresh offscreen render of the same size.
+`stale.py` (its own program) compares the whole window on the screen with the app's own picture
+after page switches, scrolling, popups, resizes, workspace moves, and can watch the real window.
 
 Safety (the machine belongs to somebody who is working on it):
   * the program is started as its OWN instance: window class `tstest` (TRUESENSE_APP_ID), a private

@@ -127,6 +127,56 @@ fn page_argument_selects_the_start_page_and_aliases_work() {
 }
 
 #[test]
+fn every_page_loads_without_a_qml_error() {
+    // A script error in a page is invisible offscreen but real on the desktop: a popup whose
+    // `parent: Overlay.overlay` threw (a file without the QtQuick.Controls import) opened inside
+    // the scrolled tab instead of over the window, and a binding loop rebuilt a gallery's pictures
+    // over and over. Every page, in parallel, must load without one.
+    const PAGES: &[&str] = &[
+        "home",
+        "monitor",
+        "performance",
+        "cooling",
+        "lighting",
+        "keys",
+        "battery",
+        "audio",
+        "profiles",
+        "health",
+        "settings",
+    ];
+    let runs: Vec<_> = PAGES
+        .iter()
+        .map(|page| {
+            let home = Home::new(Some(r#"{"onboarded": true}"#));
+            let child = home
+                .command(1500, &["--page", page])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap();
+            (page, home, child)
+        })
+        .collect();
+    let mut problems = Vec::new();
+    for (page, _home, child) in runs {
+        let out = child.wait_with_output().unwrap();
+        assert!(out.status.success(), "{page}: {}", String::from_utf8_lossy(&out.stderr));
+        for line in String::from_utf8_lossy(&out.stderr).lines() {
+            let qml = line.contains(".qml:");
+            if qml
+                && ["Error", "Binding loop", "is not defined", "Cannot assign", "Unable to assign"]
+                    .iter()
+                    .any(|w| line.contains(w))
+            {
+                problems.push(format!("{page}: {line}"));
+            }
+        }
+    }
+    assert!(problems.is_empty(), "QML errors:\n{}", problems.join("\n"));
+}
+
+#[test]
 fn window_size_and_light_theme_come_from_ui_json() {
     let home = Home::new(Some(r#"{"width": 700, "height": 560, "theme": "light"}"#));
     let r = run_once(&home, 300, &[]);
