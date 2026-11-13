@@ -274,10 +274,6 @@ PageFrame {
             onToggled: (on) => Ui.set("minimise_to_tray", on)
         }
         HelpText {
-            //% "Messages from the service (errors, refusals) are shown in English; the rest of the window is translated."
-            text: qsTrId("settings_english_note")
-        }
-        HelpText {
             visible: Ui.problem !== ""
             text: Ui.problem
             color: Theme.warn
@@ -607,7 +603,7 @@ PageFrame {
             //% "Back to how a fresh install behaves: the firmware's own fan curve and mode control, power limits left to the firmware, lighting stock, undervolt off, the PREDATOR key at its default. Your saved profiles are kept."
             sub: qsTrId("settings_reset_sub")
             AppButton {
-                kind: "danger"
+                kind: "danger-quiet"
                 //% "Reset all…"
                 text: qsTrId("settings_reset_button")
                 busy: page.resetBusy

@@ -260,7 +260,7 @@ ColumnLayout {
         AppButton {
             //% "Test"
             text: qsTrId("keys_test")
-            iconName: "refresh"
+            iconName: "play"
             busy: root.testing
             enabled: root.error === ""
             //% "Run %1 now"

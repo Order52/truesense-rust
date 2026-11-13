@@ -220,7 +220,7 @@ ColumnLayout {
 
         AppButton {
             visible: root.model.count > 1
-            kind: "danger"
+            kind: "danger-quiet"
             iconName: "trash"
             //% "Remove all rules"
             text: qsTrId("perf_rules_clear")

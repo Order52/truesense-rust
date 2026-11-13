@@ -554,7 +554,7 @@ PageFrame {
         RowLayout {
             Layout.fillWidth: true
             AppButton {
-                kind: "danger"
+                kind: "danger-quiet"
                 enabled: Caps.usable("fans")
                 //% "Stop both fans…"
                 text: qsTrId("cooling_stop_both")
@@ -786,7 +786,7 @@ PageFrame {
             }
             AppButton {
                 visible: !page.locked
-                kind: "danger"
+                kind: "danger-quiet"
                 iconName: "trash"
                 //% "Delete"
                 text: qsTrId("cooling_delete")

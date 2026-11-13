@@ -465,6 +465,54 @@ Budget (targets, to be measured with a script in CI on the real laptop):
 | Stream payload | < 2 KB per tick, heavier data on request | subscription flags per page |
 | GPU polling | never wakes a suspended discrete GPU | his issue 79 (see 5.2, R6): NVML or `nvidia-smi` calls while the dGPU sleeps cost SMIs that stall every core. Verify that our daemon's `nvidia-smi` stream respects runtime suspend before shipping `monitor gpu` [U] |
 
+### 4.11 UX principles (the polish pass, 0.5.x)
+
+The rules every page follows, with the sources they come from. They are checked by eye with offscreen
+screenshots (`TRUESENSE_QT_SHOT`, plus `TRUESENSE_QT_SET` to open a tab or an editor, see
+`crates/ts-qt/qml/TestHook.qml`) at 1268x1551, 900x700 and 600x480.
+
+1. **One strong action per card.** Only the action a card exists for is a filled `PrimaryButton`; the
+   rest are quiet. A gallery of 32 cards has 32 quiet Apply buttons, the editor has the one filled Apply.
+   (Microsoft Fluent, "Buttons": one accent button per view; Material 3, "Buttons": emphasis by
+   importance.)
+2. **Destructive actions are quiet until confirmed.** A button that deletes or stops something on a page
+   is `kind: "danger-quiet"` (red text, outline); the red fill is for the confirming button of the
+   `ConfirmDialog`, which focuses Cancel first. Confirm only what is destructive or risky, never a
+   harmless change. (NN/g, "Confirmation dialogs"; GNOME HIG, "Destructive actions".)
+3. **Show only the controls that do something.** An effect that makes its own colours shows no colour
+   row; a rear-bar effect without a speed or direction shows neither; a built-in profile shows no Delete.
+   A disabled control is kept only when the reason is shown next to it (a capability the laptop lacks).
+   (NN/g heuristic 8, "Aesthetic and minimalist design"; KDE HIG, "Disabled controls".)
+4. **Edit where you picked.** Clicking a theme card opens its editor right under the card's row
+   (`GalleryGrid` `detailAfter`), with a live picture of the theme as edited, and the page scrolls once to
+   it. "Save changes" for your own theme, "Save as a new theme" for any. (NN/g heuristic 6, "Recognition
+   rather than recall"; heuristic 1, "Visibility of system status".)
+5. **Empty and error states say what to do.** A filter with no result says why and how to fill it (no
+   starred themes, no themes of your own); a select box with nothing chosen shows "Choose…" (or "Nothing to
+   choose"), never a blank box. (NN/g, "Designing empty states"; GNOME HIG, "Placeholders".)
+6. **Feedback for every action.** Busy buttons show "…" and cannot be pressed twice; every command answers
+   with a toast or a visible state; a running theme's edits show on the keyboard at once and the editor
+   says so. (NN/g heuristic 1.)
+7. **Consistent names and words.** What ships with TrueSense is "Built in", what the person made is
+   "Yours" (both as `Badge`s); built-in ids are shown as titles ("battery-saver" is "Battery saver",
+   the look `native` is "Default", the theme `vision` is "Predator Vision"); sentences in plain words, no
+   plural slips ("Problems: 1"). (NN/g heuristic 4, "Consistency and standards"; KDE HIG, "Wording".)
+8. **A steady grid.** Cards of a gallery share one width and every card of a row is as tall as the
+   tallest, so their buttons line up; the value column of every slider is one width, so the sliders of a
+   card line up whatever their unit; units get exactly one space. Spacing comes from `Theme.spacing`/`pad`
+   (4/8 px multiples). (Material 3, "Layout: spacing"; Fluent, "Spacing and alignment".)
+9. **Icon-only buttons have a tooltip and an accessible name** (`ListIconButton`), hit targets are at
+   least 30 px (WCAG 2.2 SC 2.5.8 asks 24), focus is always drawn (SC 2.4.7, 2.4.11), text contrast is at
+   least 4.5:1 in both themes (SC 1.4.3), state is never shown by colour alone (SC 1.4.1).
+10. **No layout jumps, no idle work.** Values that update keep their width; nothing animates by itself
+    (`tests/render.rs`); a picture is asked for once after an edit pauses, not per slider step.
+
+Sources: Nielsen Norman Group, "10 Usability Heuristics for User Interface Design"
+(nngroup.com/articles/ten-usability-heuristics); W3C, "Web Content Accessibility Guidelines (WCAG) 2.2"
+(w3.org/TR/WCAG22); KDE Human Interface Guidelines (develop.kde.org/hig); GNOME Human Interface
+Guidelines (developer.gnome.org/hig); Microsoft Fluent 2 design system (fluent2.microsoft.design); Material
+Design 3 (m3.material.io).
+
 ---
 
 ## 5. Reuse map

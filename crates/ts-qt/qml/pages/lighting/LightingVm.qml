@@ -66,6 +66,19 @@ QtObject {
         })
     }
 
+    /// How a look is called on screen: the built-in `native` is "Default", the person's own looks
+    /// keep the name they typed.
+    function lookName(name) {
+        //% "Default"
+        return name === "native" ? qsTrId("light_look_native") : String(name)
+    }
+
+    /// A shipped name ("rainbow-rows") as a title ("Rainbow rows").
+    function prettyName(name) {
+        var s = String(name).replace(/[-_]+/g, " ")
+        return s.charAt(0).toUpperCase() + s.slice(1)
+    }
+
     /// "#rrggbb" for a colour of the view-model ("rrggbb").
     function css(hex) { return "#" + hex }
 

@@ -1,5 +1,6 @@
 // Lighting > Rear bar: the light bar on the back of the lid. Static colours three parts (left,
-// middle, right); the other effects use one colour. Brightness 0 is "off" for the bar, so the
+// middle, right); the other effects use one colour. Speed and direction show only for the effects
+// that have them. Brightness 0 is "off" for the bar, so the
 // switch is the way to turn it off and an effect picked while it is off turns it back on.
 import QtQuick
 import QtQuick.Controls.Basic
@@ -8,6 +9,7 @@ import org.truesense.app
 
 ColumnLayout {
     id: tab
+    objectName: "rearTab"
 
     spacing: Theme.spacing + 2
 
@@ -167,9 +169,10 @@ ColumnLayout {
             onActivated: (c) => { tab.zonePicking = -1; tab.setColour(c.substring(1)) }
             onCustomRequested: { tab.zonePicking = -1; picker.start(tab.colour); picker.open() }
         }
+        // Speed and direction show only for the effects that have them.
         SliderRow {
             Layout.fillWidth: true
-            enabled: tab.rule !== null && tab.rule.speed
+            visible: tab.rule !== null && tab.rule.speed
             //% "Speed"
             label: qsTrId("light_rear_speed")
             from: 1
@@ -195,7 +198,7 @@ ColumnLayout {
         }
         SettingRow {
             Layout.fillWidth: true
-            enabled: tab.rule !== null && tab.rule.direction
+            visible: tab.rule !== null && tab.rule.direction
             //% "Direction"
             label: qsTrId("light_rear_direction")
             Segmented {

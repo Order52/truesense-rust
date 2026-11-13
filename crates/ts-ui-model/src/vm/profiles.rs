@@ -7,7 +7,8 @@
 //! * `favourites` `{list}`: the model of a favourite list (`favourite list` / `favourite move` answer):
 //!   kind icon, missing mark, which moves are possible;
 //! * `move` `{position, delta, count}`: the `favourite move` arguments for "one up" / "one down";
-//! * `profiles` `{list, current}`: the rows of the whole-setup profile list;
+//! * `profiles` `{list, current, starred?}`: the rows of the whole-setup profile list (`starred`: the
+//!   names of the starred profiles);
 //! * `parts` `{profile}`: what a profile changes, one entry per setting, as translatable ids;
 //! * `name_check` `{name}`: whether a name is acceptable for `profile save`.
 #![forbid(unsafe_code)]
@@ -45,6 +46,7 @@ fn kind(raw: &str) -> Option<(&'static str, &'static str)> {
         "fan_curve" | "curve" => Some(("fan_curve", "fan")),
         "smart_profile" | "smart" => Some(("smart_profile", "smart")),
         "profile" => Some(("profile", "profiles")),
+        "theme" => Some(("theme", "sparkle")),
         _ => None,
     }
 }
@@ -69,6 +71,9 @@ fn favourites(args: &Value) -> Value {
                 "kind": kind,
                 "icon": icon,
                 "name": name,
+                // A theme is shown by its name ("vision" is "Predator Vision"); the others by the name
+                // people typed.
+                "title": if kind == "theme" { theme_title(name) } else { name.to_owned() },
                 // A missing member is "exists": only the store's explicit false greys an item.
                 "exists": bool_at(entry, "exists").unwrap_or(true),
                 "can_up": Some(position) != first,
@@ -86,6 +91,21 @@ fn favourites(args: &Value) -> Value {
 
 /// The arguments of `favourite move` for a step of `delta` places from `position`, or `null` when
 /// it would leave the list (the buttons are disabled then, this is the guard behind them).
+/// A name made of lower-case words and dashes ("battery-saver") as a title ("Battery saver"): for
+/// the things that ship with TrueSense and the themes, whose ids are written that way. A person's
+/// own profile keeps the name they typed.
+pub(crate) fn title_of(id: &str) -> String {
+    let words = id.replace(['-', '_'], " ");
+    let mut chars = words.chars();
+    chars.next().map(|c| c.to_uppercase().chain(chars).collect()).unwrap_or_default()
+}
+
+/// What a theme is called: a built-in one by its catalogue name, the person's own one (whose id was
+/// made from the name they typed) by its id as a title.
+fn theme_title(id: &str) -> String {
+    ts_fx::themes::find(id).map_or_else(|| title_of(id), |t| t.name.clone())
+}
+
 fn move_args(args: &Value) -> Value {
     let (Some(position), Some(delta), Some(count)) =
         (i64_at(args, "position"), i64_at(args, "delta"), i64_at(args, "count"))
@@ -101,6 +121,7 @@ fn move_args(args: &Value) -> Value {
 
 fn profiles(args: &Value) -> Value {
     let current = str_at(args, "current");
+    let starred: Vec<&str> = list_at(args, "starred").unwrap_or_default().iter().filter_map(Value::as_str).collect();
     let rows: Vec<Value> = list_at(args, "list")
         .unwrap_or_default()
         .iter()
@@ -109,6 +130,8 @@ fn profiles(args: &Value) -> Value {
             let yours = str_at(p, "source") == Some("yours");
             Some(json!({
                 "name": name,
+                "title": if yours { name.to_owned() } else { title_of(name) },
+                "starred": starred.contains(&name),
                 "source": if yours { "yours" } else { "shipped" },
                 "description": str_at(p, "description").unwrap_or(""),
                 "current": current == Some(name),
@@ -294,6 +317,37 @@ mod tests {
         assert_eq!(rows[1]["deletable"], json!(true));
         assert_eq!(rows[1]["current"], json!(true));
         assert_eq!(rows[1]["description"], json!(""));
+    }
+
+    #[test]
+    fn shipped_profiles_get_a_title_and_the_starred_ones_are_marked() {
+        let v = run(
+            "profiles",
+            json!({"starred": ["gaming", 7], "list": [
+                {"name": "battery-saver", "source": "shipped"},
+                {"name": "my-gaming_2", "source": "yours"},
+                {"name": "gaming", "source": "shipped"},
+            ]}),
+        );
+        let rows = v["rows"].as_array().unwrap();
+        let titles: Vec<&str> = rows.iter().map(|r| r["title"].as_str().unwrap()).collect();
+        assert_eq!(titles, ["Battery saver", "my-gaming_2", "Gaming"], "a name the person typed is kept");
+        let stars: Vec<bool> = rows.iter().map(|r| r["starred"].as_bool().unwrap()).collect();
+        assert_eq!(stars, [false, false, true]);
+        assert_eq!(run("profiles", json!({"list": [{"name": "a"}]}))["rows"][0]["starred"], json!(false));
+    }
+
+    #[test]
+    fn starred_themes_are_favourites_too() {
+        // The theme gallery stars themes (`favourite toggle {kind: "theme"}`): they must show.
+        let v = run("favourites", json!({"list": [{"position": 1, "kind": "theme", "name": "vision"}, {"position": 3, "kind": "theme", "name": "night-sky"}, {"position": 2, "kind": "look", "name": "my-look"}]}));
+        let items = v["items"].as_array().unwrap();
+        assert_eq!(items.len(), 3);
+        assert_eq!((items[0]["kind"].as_str(), items[0]["icon"].as_str()), (Some("theme"), Some("sparkle")));
+        assert_eq!(items[0]["title"], json!("Predator Vision"), "a built-in theme by its catalogue name");
+        assert_eq!(items[1]["title"], json!("Night sky"), "a theme of the person's own by its id");
+        assert_eq!(items[2]["title"], json!("my-look"));
+        assert_eq!(title_of(""), "");
     }
 
     #[test]

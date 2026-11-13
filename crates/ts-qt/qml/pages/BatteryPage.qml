@@ -252,7 +252,7 @@ PageFrame {
         Layout.fillWidth: true
         //% "Charge during this session"
         title: qsTrId("battery_history")
-        icon: "bar"
+        icon: "wave"
         rightText: ChargeHistory.series.points >= 2 ? ChargeHistory.series.span_text : ""
 
         Sparkline {
@@ -331,7 +331,8 @@ PageFrame {
                 if (page.full === null || page.full.state === "unavailable")
                     //% "This needs the TrueSense service."
                     return qsTrId("battery_full_needs_service")
-                var cap = page.full.capacity === null ? "" : Fmt.percent(page.full.capacity) + ". "
+                //% "Battery at %1. "
+                var cap = page.full.capacity === null ? "" : qsTrId("battery_full_at").arg(Fmt.percent(page.full.capacity))
                 if (page.full.state === "active")
                     //% "Charging to full this time."
                     return cap + qsTrId("battery_full_active")

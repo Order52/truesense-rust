@@ -11,6 +11,8 @@ Button {
     property string iconName: ""
     property string tone: ""
     property int iconRotation: 0
+    /// A colour for the icon instead of the muted one (a filled star), or transparent.
+    property color tint: "transparent"
 
     implicitWidth: 34
     implicitHeight: 34
@@ -18,6 +20,10 @@ Button {
     focusPolicy: Qt.StrongFocus
     Accessible.role: Accessible.Button
     Accessible.name: text
+    // The name, shown on hover (there is no visible text).
+    ToolTip.visible: hovered && text !== ""
+    ToolTip.delay: 600
+    ToolTip.text: text
 
     contentItem: Item {
         Icon {
@@ -25,7 +31,8 @@ Button {
             name: root.iconName
             size: 18
             rotation: root.iconRotation
-            color: !root.enabled ? Theme.disabledText : (root.hovered && root.tone === "danger" ? Theme.bad : Theme.stat)
+            color: !root.enabled ? Theme.disabledText
+                : (root.hovered && root.tone === "danger" ? Theme.bad : (root.tint.a > 0 ? root.tint : Theme.stat))
         }
     }
     background: Rectangle {

@@ -114,8 +114,8 @@ PageFrame {
                 font.pixelSize: Theme.fontBody
                 wrapMode: Text.Wrap
                 text: page.doc
-                    //% "%1 problems, %2 warnings. Score %3 of 100. Kernel %4."
-                    ? qsTrId("health_doctor_counts").arg(page.doc.failures).arg(page.doc.warnings)
+                    //% "Problems: %1 · warnings: %2 · score %3 of 100 · kernel %4"
+                    ? qsTrId("health_doctor_counts2").arg(page.doc.failures).arg(page.doc.warnings)
                           .arg(page.doc.score === null ? "–" : page.doc.score).arg(page.doc.kernel)
                     : ""
             }

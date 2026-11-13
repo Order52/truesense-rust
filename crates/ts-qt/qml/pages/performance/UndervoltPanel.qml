@@ -333,7 +333,7 @@ ColumnLayout {
         //% "Profile"
         title: qsTrId("perf_profile_label")
         icon: "sliders"
-        rightText: root.locked ? qsTrId("perf_profile_builtin") : qsTrId("perf_profile_yours")
+        rightText: root.locked ? qsTrId("perf_profile_builtin2") : qsTrId("perf_profile_yours2")
 
         SelectRow {
             Layout.fillWidth: true
@@ -462,7 +462,7 @@ ColumnLayout {
                 onClicked: root.copyProfile()
             }
             AppButton {
-                kind: "danger"
+                kind: "danger-quiet"
                 iconName: "trash"
                 text: qsTrId("perf_delete")
                 enabled: root.usable && !root.locked
@@ -475,7 +475,7 @@ ColumnLayout {
             Layout.fillWidth: true
             label: qsTrId("perf_save_as")
             sub: qsTrId("perf_name_help")
-            placeholder: qsTrId("perf_name_placeholder")
+            placeholder: qsTrId("perf_name_placeholder2")
             maxLength: 40
             enabled: root.usable
             onAccepted: root.saveProfile()

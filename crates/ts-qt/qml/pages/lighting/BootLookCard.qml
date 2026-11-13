@@ -36,6 +36,15 @@ Card {
 
     Component.onCompleted: reload()
 
+    // What happens at boot now, first: the buttons below change it.
+    Text {
+        Layout.fillWidth: true
+        text: root.text
+        color: Theme.text
+        font.pixelSize: Theme.fontBody
+        wrapMode: Text.Wrap
+        Accessible.role: Accessible.StaticText
+    }
     HelpText {
         //% "Applied by the TrueSense service when the laptop starts, before you log in, and again after every resume from suspend."
         text: qsTrId("light_boot_help")
@@ -49,7 +58,7 @@ Card {
             //% "What is on the lights now"
             var out = [{ value: "__current__", text: qsTrId("light_boot_current") }]
             for (var i = 0; i < LightingVm.looks.length; ++i)
-                out.push({ value: LightingVm.looks[i], text: LightingVm.looks[i] })
+                out.push({ value: LightingVm.looks[i], text: LightingVm.lookName(LightingVm.looks[i]) })
             return out
         }
         current: root.picked
@@ -71,13 +80,5 @@ Card {
             text: qsTrId("light_boot_clear")
             onClicked: root._set("clear")
         }
-    }
-    Text {
-        Layout.fillWidth: true
-        text: root.text
-        color: Theme.muted
-        font.pixelSize: Theme.fontSmall + 1
-        wrapMode: Text.Wrap
-        Accessible.role: Accessible.StaticText
     }
 }

@@ -16,6 +16,9 @@ SettingRow {
     property var options: []
     property var current: undefined
     property int minimumControlWidth: 180
+    /// Shown (muted) while nothing is chosen, so the box never looks empty or broken; "" for the
+    /// default wording ("Choose…", or "Nothing to choose" without options).
+    property string placeholder: ""
     signal activated(var value)
 
     readonly property var _items: options.map(function (o) {
@@ -37,7 +40,12 @@ SettingRow {
         textRole: "text"
         valueRole: "value"
         currentIndex: root._indexOf(root.current)
-        displayText: currentIndex >= 0 ? currentText : ""
+        displayText: currentIndex >= 0 ? currentText
+            : root.placeholder !== "" ? root.placeholder
+            //% "Choose…"
+            : root._items.length > 0 ? qsTrId("select_choose")
+            //% "Nothing to choose"
+            : qsTrId("select_empty")
         hoverEnabled: true
         focusPolicy: Qt.StrongFocus
         Accessible.name: root.label
@@ -47,7 +55,7 @@ SettingRow {
             leftPadding: 12
             rightPadding: 28
             text: box.displayText
-            color: box.enabled ? Theme.text : Theme.disabledText
+            color: !box.enabled ? Theme.disabledText : (box.currentIndex >= 0 ? Theme.text : Theme.muted)
             font.pixelSize: Theme.fontBody
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight

@@ -1239,6 +1239,7 @@ dependencies = [
  "ts-decision",
  "ts-domain",
  "ts-foundation",
+ "ts-fx",
  "ts-gui",
  "ts-keys",
  "ts-system",

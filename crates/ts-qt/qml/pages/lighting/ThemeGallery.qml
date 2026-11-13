@@ -5,6 +5,8 @@
 // only asks and lays them out.
 //
 // The page owns what is chosen and what runs; this file reports the person's choices as signals.
+// The page's `detail` (the editor of the chosen theme) opens right under the row of the chosen
+// card, so a theme is changed where it was picked, not below the whole gallery.
 import QtQuick
 import QtQuick.Layouts
 import org.truesense.app
@@ -22,6 +24,10 @@ ColumnLayout {
     property string selected: ""
     property string query: ""
     property string chip: "all"
+    /// What opens under the row of the selected card (the page's editor); null for nothing.
+    property Component detail: null
+    /// The item the detail became (for the page to scroll to), or null.
+    readonly property var detailItem: detailLoader.item
 
     signal picked(string id)
     signal apply(string id, int colourway)
@@ -122,47 +128,67 @@ ColumnLayout {
     Text {
         Layout.fillWidth: true
         visible: gallery.shown.length > 0
-        //% "Apply puts a theme on the keyboard at once. Click a card to change its colours, speed and settings below the gallery."
-        text: qsTrId("light_gal_hint")
+        //% "Apply puts a theme on the keyboard. Click a picture to change its colours and settings, and to keep your version."
+        text: qsTrId("light_gal_hint2")
         color: Theme.muted
         font.pixelSize: Theme.fontSmall + 1
         wrapMode: Text.Wrap
     }
 
-    Text {
+    // Nothing to show: say why, and what to do, for the filter that is chosen.
+    ColumnLayout {
         Layout.fillWidth: true
+        Layout.topMargin: 8
+        Layout.bottomMargin: 8
         visible: gallery.shown.length === 0
-        text: gallery.themes.length === 0
-            //% "Loading the themes."
-            ? qsTrId("light_gal_loading")
-            //% "No theme matches. Clear the search or pick another filter."
-            : qsTrId("light_gal_none")
-        color: Theme.muted
-        font.pixelSize: Theme.fontBody
-        wrapMode: Text.Wrap
+        spacing: 6
+        Icon {
+            Layout.alignment: Qt.AlignHCenter
+            name: gallery.chip === "starred" ? "star" : (gallery.chip === "yours" ? "palette" : "search")
+            size: 28
+            color: Theme.muted
+        }
+        Text {
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            text: gallery.themes.length === 0
+                //% "Loading the themes."
+                ? qsTrId("light_gal_loading")
+                : gallery.query !== ""
+                    //% "No theme matches. Clear the search or pick another filter."
+                    ? qsTrId("light_gal_none")
+                    : gallery.chip === "starred"
+                        //% "No starred themes yet. Star a theme to keep it here, on Home and on the PREDATOR key."
+                        ? qsTrId("light_gal_none_starred")
+                        : gallery.chip === "yours"
+                            //% "No themes of your own yet. Open a theme, change its colours or settings, then save it as a new theme."
+                            ? qsTrId("light_gal_none_yours")
+                            : qsTrId("light_gal_none")
+            color: Theme.muted
+            font.pixelSize: Theme.fontBody
+            wrapMode: Text.Wrap
+        }
     }
 
-    GridLayout {
+    GalleryGrid {
         id: grid
-        Layout.fillWidth: true
-        columns: Math.max(1, Math.floor((width + columnSpacing) / (270 + columnSpacing)))
-        columnSpacing: 10
-        rowSpacing: 10
+        detailAfter: gallery.detail !== null ? gallery.shown.indexOf(gallery.selected) : -1
 
         Repeater {
             model: gallery.shown
             delegate: GalleryCard {
                 id: card
                 required property string modelData
+                required property int index
                 readonly property var theme: gallery.byId[modelData]
                 readonly property int way: gallery.wayOf(modelData)
                 readonly property bool live: gallery.active === modelData
                 readonly property var cellsNow: gallery.pictures[gallery.key(modelData, way)]
 
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.maximumWidth: 420
-                Layout.alignment: Qt.AlignTop
+                Layout.preferredWidth: grid.cardWidth
+                Layout.fillHeight: true
+                Layout.row: grid.rowOf(index)
+                Layout.column: grid.columnOf(index)
                 visible: theme !== undefined
                 title: theme ? theme.name : ""
                 subtitle: theme ? theme.mood : ""
@@ -183,7 +209,7 @@ ColumnLayout {
                         : (!theme.builtin
                             //% "Yours"
                             ? qsTrId("light_theme_yours") : ""))
-                badgeKind: live ? "ok" : (theme && theme.runnable === false ? "warn" : "neutral")
+                badgeKind: live ? "ok" : (theme && theme.runnable === false ? "warn" : (theme && !theme.builtin ? "accent" : "neutral"))
                 onActivated: gallery.picked(modelData)
                 onStarToggled: gallery.starToggled(modelData)
                 Component.onCompleted: gallery.ensure(modelData, way)
@@ -199,9 +225,13 @@ ColumnLayout {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
-                    PrimaryButton {
+                    // The running theme's card stops it; every other card starts its theme. One
+                    // quiet button per card: the editor's Apply is the strong one.
+                    SecondaryButton {
+                        visible: !card.live
                         //% "Apply"
                         text: qsTrId("light_theme_apply")
+                        iconName: "play"
                         enabled: card.theme !== undefined && card.theme.runnable !== false
                         onClicked: gallery.apply(card.modelData, card.way)
                     }
@@ -209,10 +239,32 @@ ColumnLayout {
                         visible: card.live
                         //% "Stop"
                         text: qsTrId("light_theme_stop2")
+                        iconName: "stop"
                         onClicked: gallery.stop()
+                    }
+                    Item { Layout.fillWidth: true }
+                    ListIconButton {
+                        iconName: "sliders"
+                        //% "Change colours and settings"
+                        text: qsTrId("light_gal_customise")
+                        onClicked: gallery.picked(card.modelData)
                     }
                 }
             }
+        }
+
+        // The editor of the chosen theme, under its row.
+        Loader {
+            id: detailLoader
+            Layout.row: Math.max(0, grid.detailRow)
+            Layout.column: 0
+            Layout.columnSpan: grid.columns
+            Layout.fillWidth: true
+            Layout.topMargin: 2
+            Layout.bottomMargin: 6
+            visible: grid.detailAfter >= 0
+            active: visible
+            sourceComponent: gallery.detail
         }
     }
 }
