@@ -10,7 +10,7 @@ Item {
     property var window: null
     /// The item to save as a PNG (the shell; a Window's own content item cannot be grabbed).
     property var target: null
-    property var config: ({ exit_after_ms: 0, shot: null })
+    property var config: ({ exit_after_ms: 0, shot: null, set: null })
     property var versionResult: null
     property string versionError: ""
     property var daemonRefusal: null
@@ -22,6 +22,36 @@ Item {
         Api.call("nope", "nothing", {}, null, function (e) { hook.daemonRefusal = e })
         timer.interval = Math.max(0, config.exit_after_ms)
         timer.start()
+        if (config.set) setter.start()
+    }
+
+    // TRUESENSE_QT_SET: {"objectName": {"property": value, "function()": [arguments]}} is set on (or
+    // called on) the items with that objectName.
+    // Tried a few times, because a Loader creates an item (a Lighting tab, say) only after the first
+    // assignment made it appear. Screenshots only: no page reads anything of this.
+    property var _done: ({})
+    function _visit(item) {
+        if (!item) return
+        var want = config.set[item.objectName]
+        if (item.objectName && want !== undefined && !_done[item.objectName]) {
+            for (var k in want) {
+                if (k.slice(-2) === "()") item[k.slice(0, -2)].apply(item, want[k])
+                else item[k] = want[k]
+            }
+            _done[item.objectName] = true
+        }
+        for (var i = 0; i < item.children.length; ++i) _visit(item.children[i])
+        if (item.contentItem && item.contentItem !== item) _visit(item.contentItem)
+    }
+    Timer {
+        id: setter
+        interval: 150
+        repeat: true
+        property int left: 12
+        onTriggered: {
+            hook._visit(hook.target)
+            if (--left <= 0) stop()
+        }
     }
 
     function describe() {
