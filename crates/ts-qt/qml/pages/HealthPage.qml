@@ -437,7 +437,7 @@ PageFrame {
             border.color: Theme.cardLine
             LayoutMirroring.enabled: false
 
-            Flickable {
+            InnerScroll {
                 id: logScroll
                 anchors.fill: parent
                 anchors.margins: 8

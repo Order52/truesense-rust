@@ -80,7 +80,7 @@ fn state_out(b: &Bindings) -> Value {
 }
 
 /// The verbs of the page:
-/// `effects`, `rear_effects`, `fx_modes`, `palette`, `stock_cells`, `norm_hex`, `hsv_to_hex`,
+/// `effects`, `rear_effects`, `fx_modes`, `fx_own_colours`, `palette`, `stock_cells`, `norm_hex`, `hsv_to_hex`,
 /// `hex_to_hsv`, `wants_dark_text`, `inks`, `neighbour`, `layout`, `hit`, `select`, `stroke`, `paint`, `tool`,
 /// `pick_effect`, `rear_request`, `preview`, `look_summary`, `valid_name`, `theme_settings`, `theme_request`, `theme_for_save`, `clock_text`, and for the strip
 /// `bindings_load`, `bindings_select`, `bindings_choose`, `bindings_undo`, `bindings_discard`,
@@ -98,6 +98,7 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
                 .collect::<Vec<_>>()
         )),
         "fx_modes" => Ok(json!(FX_MODES)),
+        "fx_own_colours" => Ok(json!(FX_OWN_COLOURS)),
         "palette" => Ok(json!(PALETTE)),
         "stock_cells" => Ok(json!(stock_cells())),
         "norm_hex" => Ok(json!(norm_hex(str_at(args, "s").unwrap_or("")))),
@@ -560,6 +561,25 @@ mod tests {
     }
 
     // ---- effects ----
+
+    #[test]
+    fn the_animations_that_make_their_own_colours_are_real_animations_and_ignore_the_base() {
+        let own = call("fx_own_colours", &json!({})).unwrap();
+        let own: Vec<&str> = own.as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+        for m in &own {
+            assert!(FX_MODES.contains(m), "{m} is an animation");
+        }
+        // Drawn over two very different bases, these modes give the same frame: the base is ignored.
+        // The base-coloured ones (pulse, breathing, scanner...) do not.
+        let red = vec![[255u8, 0, 0]; 128];
+        let blue = vec![[0u8, 0, 255]; 128];
+        for m in FX_MODES {
+            // (Only the animated keys: cells past the lit ones keep their base by design.)
+            let a = ts_domain::perkeyfx::render(m, 1.3, &red, &[], 5)[..120].to_vec();
+            let b = ts_domain::perkeyfx::render(m, 1.3, &blue, &[], 5)[..120].to_vec();
+            assert_eq!(a == b, own.contains(&m), "{m}: own colours = {}", a == b);
+        }
+    }
 
     #[test]
     fn the_catalogue_has_thirteen_effects_with_the_hardware_rules() {

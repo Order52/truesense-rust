@@ -346,3 +346,48 @@ fn the_socket_is_removed_when_the_window_ends_and_a_stale_one_is_replaced() {
         "the socket must be removed on exit"
     );
 }
+
+/// Runs the Lighting page with test-hook steps (`TRUESENSE_QT_SET`) and returns the probed values.
+fn lighting_probe(set: &str, probe: &str, exit_after_ms: u32) -> Value {
+    let home = Home::new(Some(r#"{"onboarded": true, "width": 1268, "height": 1551}"#));
+    let out = home
+        .command(exit_after_ms, &["--page", "lighting"])
+        .env("TRUESENSE_QT_SET", set)
+        .env("TRUESENSE_QT_PROBE", probe)
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", String::from_utf8_lossy(&out.stderr));
+    report_of(&out)["probe"].clone()
+}
+
+#[test]
+fn applying_a_theme_keeps_the_page_where_it_was() {
+    // The owner pressed Apply far down the gallery and the page jumped: the reload after Apply
+    // handed the gallery a new list (all cards rebuilt, the grid collapsed for a frame) and moved
+    // the running theme to the front. Now the scroll position must be exactly what it was.
+    let set = r#"{"lightingPage": {"tab": "themes"},
+                  "@2500": {"lightingPage": {"flick.contentY": 1500}},
+                  "@3000": {"themesTab": {"applyCard()": ["hearth", 0]}}}"#;
+    let probe = r#"["lightingPage.flick.contentY", "themesTab.active.name", "themeGallery.rebuilds"]"#;
+    let after = lighting_probe(set, probe, 5000);
+    assert_eq!(after["themesTab.active.name"], "hearth", "the theme was applied: {after}");
+    assert_eq!(after["lightingPage.flick.contentY"], 1500.0, "the page did not move: {after}");
+    let without = lighting_probe(
+        r#"{"lightingPage": {"tab": "themes"}, "@2500": {"lightingPage": {"flick.contentY": 1500}}}"#,
+        probe,
+        5000,
+    );
+    assert_eq!(after["themeGallery.rebuilds"], without["themeGallery.rebuilds"], "Apply rebuilt the cards");
+}
+
+#[test]
+fn an_effect_that_makes_its_own_colours_shows_no_colour_row() {
+    for (effect, shown) in [("wave", false), ("neon", false), ("static", true), ("breathing", true)] {
+        let set = format!(
+            r#"{{"lightingPage": {{"tab": "keyboard"}}, "@1500": {{"keyboardTab": {{"kind": "effect", "effectId": "{effect}"}}}}}}"#
+        );
+        let p = lighting_probe(&set, r#"["kbColourRow.visible", "keyboardTab.effectId"]"#, 2500);
+        assert_eq!(p["keyboardTab.effectId"], effect, "{p}");
+        assert_eq!(p["kbColourRow.visible"], shown, "{effect}: {p}");
+    }
+}

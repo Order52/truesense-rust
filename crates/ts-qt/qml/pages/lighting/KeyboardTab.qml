@@ -213,6 +213,7 @@ ColumnLayout {
             font.pixelSize: Theme.fontBody
         }
         SwatchRow {
+            objectName: "kbColourRow"
             Layout.fillWidth: true
             visible: tab.effectActive && tab.rule.colour
             colors: LightingVm.call("palette").map(LightingVm.css)

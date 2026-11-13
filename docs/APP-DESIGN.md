@@ -509,7 +509,13 @@ screenshots (`TRUESENSE_QT_SHOT`, plus `TRUESENSE_QT_SET` to open a tab or an ed
    pixels" [W]), focus is always drawn (SC 2.4.7, 2.4.11), text contrast is at least 4.5:1 in both themes
    and every accent (SC 1.4.3; the accent table in `Theme.qml` was chosen for it), controls' edges 3:1
    (SC 1.4.11), state is never shown by colour alone (SC 1.4.1).
-10. **No layout jumps, no idle work.** Values that update keep their width; nothing animates by itself
+10. **Scrolling stays where you are.** Applying, starring or a live update never rebuilds a gallery
+    (its model is only replaced when the list of cards really changes) and nothing above the viewport
+    changes height (the Themes "In use" bar has one fixed height and stays pinned at the top while the
+    gallery scrolls); `tests/app.rs` `applying_a_theme_keeps_the_page_where_it_was`. A wheel notch is
+    one step, a touchpad follows the fingers, inner boxes hand the wheel back at their ends, Page
+    Up/Down and Home/End work (KDE HIG "Layout and navigation" [KH]).
+11. **No layout jumps, no idle work.** Values that update keep their width; nothing animates by itself
     (`tests/render.rs`); a picture is asked for once after an edit pauses, not per slider step.
 
 Sources (fetched 2026-11-13):

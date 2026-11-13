@@ -30,6 +30,12 @@ ColumnLayout {
     property string gradTo: "5856d6"
     property string pickTarget: "colour"   // colour | from | to
     property string fxMode: "off"
+    /// The animation draws its own colours (a rainbow, fire...): painted colours do not show on the
+    /// keys it animates, so no colour is offered while it animates every key.
+    readonly property bool fxOwnColours: (LightingVm.call("fx_own_colours") || []).indexOf(fxMode) >= 0
+    readonly property bool colourHidden: fxOwnColours && selection.length === 0
+    /// The person's own designs (the built-in ones are the Templates).
+    property var yourDesigns: []
     property int fxSpeed: 5
     property int brightness: 25
     property var designs: []
@@ -189,6 +195,7 @@ ColumnLayout {
         Api.call("keyboard", "design", { action: "list" }, function (d) {
             var names = Object.keys(d || {}).sort()
             designs = names.map(function (n) { return { value: n, text: d[n].source ? n + "  (" + d[n].source + ")" : n } })
+            yourDesigns = Object.keys(d || {}).filter(function (n) { return d[n].source === "yours" }).sort()
             templates = Object.keys(d || {}).filter(function (n) { return d[n].source === "built-in" })
                 .map(function (n) { return { id: n, name: n, mood: d[n].info || "", builtin: true, top: 0, suits: [] } })
             selectedDesign = pick !== undefined ? pick : (names.indexOf(selectedDesign) >= 0 ? selectedDesign : (names.length ? names[0] : ""))
@@ -214,6 +221,36 @@ ColumnLayout {
         }, function () { delete tab._picturesAsked[name] })
     }
 
+    /// Puts one of the person's designs on the keyboard and into the editor (Undo takes it back).
+    function applyDesign(name) {
+        Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
+            commit(d.cells)
+            //% "Design '%1' applied"
+            Toasts.show(qsTrId("light_pk_design_applied").arg(name), "ok")
+        })
+    }
+
+    /// Saves the keys as they are as design `name` (new, or over one of the person's own).
+    function saveDesign(name, done) {
+        if (!LightingVm.call("valid_name", { name: name })) {
+            //% "Names use letters, digits, . _ - (up to 40)."
+            Toasts.show(qsTrId("light_pk_bad_name"), "error")
+            return
+        }
+        Api.call("keyboard", "design", { action: "save", name: name, cells: cells }, function () {
+            //% "Saved design '%1'"
+            Toasts.show(qsTrId("light_pk_design_saved").arg(name), "ok")
+            // Its picture is drawn again from what was saved.
+            delete tab._picturesAsked[name]
+            var q = {}
+            for (var k in templatePictures) if (k !== name) q[k] = templatePictures[k]
+            templatePictures = q
+            tab.askPicture(name)
+            if (done) done()
+            loadDesigns()
+        })
+    }
+
     /// Puts a template on the keyboard and into the editor, as one step that Undo takes back.
     function applyTemplate(name) {
         Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
@@ -232,8 +269,8 @@ ColumnLayout {
         var target = copy
         Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
             Api.call("keyboard", "design", { action: "save", name: target, cells: d.cells }, function () {
-                //% "Saved a copy as '%1'. Apply it under Designs, then change it on the board."
-                Toasts.show(qsTrId("light_pk_template_copied").arg(target), "ok")
+                //% "Saved a copy as '%1' under Your designs: apply it, change it on the board, then update it."
+                Toasts.show(qsTrId("light_pk_template_copied2").arg(target), "ok")
                 loadDesigns(target)
             })
         })
@@ -273,6 +310,7 @@ ColumnLayout {
             }
             Item { Layout.fillWidth: true }
             Rectangle {
+                visible: !tab.colourHidden
                 Layout.preferredWidth: 28; Layout.preferredHeight: 28
                 radius: 6
                 color: LightingVm.css(tab.colour)
@@ -358,8 +396,10 @@ ColumnLayout {
     }
 
     Card {
+        objectName: "pkColourCard"
         Layout.fillWidth: true
         enabled: tab.usable
+        visible: !tab.colourHidden
         //% "Colour"
         title: qsTrId("light_pk_colour")
         icon: "palette"
@@ -411,6 +451,7 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: 8
             SecondaryButton {
+                visible: !tab.colourHidden
                 //% "Fill with the colour"
                 text: qsTrId("light_pk_fill")
                 onClicked: tab.applyTool("fill", { colour: tab.colour })
@@ -441,6 +482,7 @@ ColumnLayout {
         }
         SettingRow {
             Layout.fillWidth: true
+            visible: !tab.colourHidden
             //% "Gradient from left to right"
             label: qsTrId("light_pk_gradient")
             Repeater {
@@ -498,9 +540,14 @@ ColumnLayout {
             current: tab.fxMode
             onActivated: (m) => { tab.fxMode = m; tab.pushFx() }
         }
+        HelpText {
+            visible: tab.fxOwnColours
+            //% "%1 makes its own colours, so there is no colour to paint while it animates every key. Select keys to keep the others in your colours."
+            text: qsTrId("light_pk_anim_own").arg(LightingVm.animationName(tab.fxMode))
+        }
         SliderRow {
             Layout.fillWidth: true
-            enabled: tab.fxMode !== "off"
+            visible: tab.fxMode !== "off"
             //% "Speed"
             label: qsTrId("light_pk_anim_speed")
             from: 1
@@ -535,7 +582,7 @@ ColumnLayout {
         }
         GalleryGrid {
             id: templateGrid
-            minCardWidth: 250
+            minCardWidth: 200
             Repeater {
                 model: LightingVm.gallery("filter", { themes: tab.templates, query: tab.templateQuery, chip: "all" }) || []
                 delegate: GalleryCard {
@@ -549,7 +596,7 @@ ColumnLayout {
                     Layout.preferredWidth: templateGrid.cardWidth
                     Layout.fillHeight: true
                     title: LightingVm.prettyName(modelData)
-                    subtitle: entry ? entry.mood : ""
+                    subtitle: entry ? Fmt.capitalize(entry.mood) : ""
                     layout: LightingVm.layout
                     cells: tab.templatePictures[modelData] || []
                     Component.onCompleted: tab.askPicture(modelData)
@@ -563,9 +610,10 @@ ColumnLayout {
                             iconName: "play"
                             onClicked: tab.applyTemplate(tcard.modelData)
                         }
-                        SecondaryButton {
-                            //% "Save a copy"
-                            text: qsTrId("light_pk_template_copy")
+                        Item { Layout.fillWidth: true }
+                        ListIconButton {
+                            //% "Save a copy under Your designs"
+                            text: qsTrId("light_pk_template_copy2")
                             iconName: "copy"
                             onClicked: tab.copyTemplate(tcard.modelData)
                         }
@@ -586,37 +634,66 @@ ColumnLayout {
     Card {
         Layout.fillWidth: true
         enabled: tab.usable
-        //% "Designs"
-        title: qsTrId("light_pk_designs")
+        //% "Your designs"
+        title: qsTrId("light_pk_your_designs")
         icon: "star"
 
         HelpText {
-            //% "A design is a still picture of colours. Yours are kept in ~/.config/truesense/designs."
-            text: qsTrId("light_pk_designs_help")
+            //% "A design is a still picture of key colours. Yours are kept in ~/.config/truesense/designs."
+            text: qsTrId("light_pk_designs_help2")
         }
-        SelectRow {
+        // Nothing saved yet: say how to make one.
+        ColumnLayout {
             Layout.fillWidth: true
-            enabled: tab.designs.length > 0
-            //% "Design"
-            label: qsTrId("light_pk_design")
-            options: tab.designs
-            current: tab.selectedDesign
-            onActivated: (n) => tab.selectedDesign = n
+            visible: tab.yourDesigns.length === 0
+            spacing: 6
+            Icon { Layout.alignment: Qt.AlignHCenter; name: "palette"; size: 28; color: Theme.muted }
+            Text {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                //% "No designs of your own yet. Paint the keyboard above (or start from a template), then save it here."
+                text: qsTrId("light_pk_designs_empty")
+                color: Theme.muted
+                font.pixelSize: Theme.fontBody
+                wrapMode: Text.Wrap
+            }
         }
-        Flow {
-            Layout.fillWidth: true
-            spacing: 8
-            PrimaryButton {
-                //% "Apply design"
-                text: qsTrId("light_pk_design_apply")
-                enabled: tab.selectedDesign !== ""
-                onClicked: {
-                    var name = tab.selectedDesign
-                    Api.call("keyboard", "design", { action: "show", name: name }, function (d) {
-                        tab.commit(d.cells)
-                        //% "Design '%1' applied"
-                        Toasts.show(qsTrId("light_pk_design_applied").arg(name), "ok")
-                    })
+        GalleryGrid {
+            id: designGrid
+            minCardWidth: 200
+            visible: tab.yourDesigns.length > 0
+            Repeater {
+                model: tab.yourDesigns
+                delegate: GalleryCard {
+                    id: dcard
+                    required property string modelData
+                    Layout.preferredWidth: designGrid.cardWidth
+                    Layout.fillHeight: true
+                    title: modelData
+                    //% "Yours"
+                    badge: qsTrId("light_pk_design_yours")
+                    badgeKind: "accent"
+                    layout: LightingVm.layout
+                    cells: tab.templatePictures[modelData] || []
+                    Component.onCompleted: tab.askPicture(modelData)
+                    onActivated: tab.applyDesign(modelData)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+                        SecondaryButton {
+                            //% "Apply"
+                            text: qsTrId("light_pk_design_apply2")
+                            iconName: "play"
+                            onClicked: tab.applyDesign(dcard.modelData)
+                        }
+                        Item { Layout.fillWidth: true }
+                        ListIconButton {
+                            iconName: "save"
+                            //% "Update with the keys as they are now"
+                            text: qsTrId("light_pk_design_update")
+                            onClicked: tab.saveDesign(dcard.modelData)
+                        }
+                    }
                 }
             }
         }
@@ -626,9 +703,9 @@ ColumnLayout {
             label: qsTrId("light_pk_design_save")
             LightNameField {
                 id: designName
-                Layout.preferredWidth: 180
-                //% "Name"
-                placeholderText: qsTrId("light_pk_design_name")
+                Layout.preferredWidth: 200
+                //% "Name of the design"
+                placeholderText: qsTrId("light_pk_design_name2")
                 onAccepted: designSave.clicked()
             }
             SecondaryButton {
@@ -636,20 +713,8 @@ ColumnLayout {
                 //% "Save"
                 text: qsTrId("light_pk_design_save_button")
                 iconName: "save"
-                onClicked: {
-                    var name = designName.text.trim()
-                    if (!LightingVm.call("valid_name", { name: name })) {
-                        //% "Names use letters, digits, . _ - (up to 40)."
-                        Toasts.show(qsTrId("light_pk_bad_name"), "error")
-                        return
-                    }
-                    Api.call("keyboard", "design", { action: "save", name: name, cells: tab.cells }, function () {
-                        //% "Saved design '%1'"
-                        Toasts.show(qsTrId("light_pk_design_saved").arg(name), "ok")
-                        designName.text = ""
-                        tab.loadDesigns(name)
-                    })
-                }
+                enabled: designName.text.trim() !== ""
+                onClicked: tab.saveDesign(designName.text.trim(), function () { designName.text = "" })
             }
         }
     }

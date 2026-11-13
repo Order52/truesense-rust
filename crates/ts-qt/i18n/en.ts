@@ -3607,10 +3607,6 @@
         <source>Template &apos;%1&apos; applied</source>
         <translation>Template &apos;%1&apos; applied</translation>
     </message>
-    <message id="light_pk_template_copied">
-        <source>Saved a copy as &apos;%1&apos;. Apply it under Designs, then change it on the board.</source>
-        <translation>Saved a copy as &apos;%1&apos;. Apply it under Designs, then change it on the board.</translation>
-    </message>
     <message id="light_pk_none">
         <source>This laptop has no keyboard backlight control.</source>
         <translation>This laptop has no keyboard backlight control.</translation>
@@ -3759,6 +3755,10 @@
         <source>Animation</source>
         <translation>Animation</translation>
     </message>
+    <message id="light_pk_anim_own">
+        <source>%1 makes its own colours, so there is no colour to paint while it animates every key. Select keys to keep the others in your colours.</source>
+        <translation>%1 makes its own colours, so there is no colour to paint while it animates every key. Select keys to keep the others in your colours.</translation>
+    </message>
     <message id="light_pk_anim_speed">
         <source>Speed</source>
         <translation>Speed</translation>
@@ -3779,29 +3779,9 @@
         <source>Apply</source>
         <translation>Apply</translation>
     </message>
-    <message id="light_pk_template_copy">
-        <source>Save a copy</source>
-        <translation>Save a copy</translation>
-    </message>
     <message id="light_pk_templates_none">
         <source>No template matches the search.</source>
         <translation>No template matches the search.</translation>
-    </message>
-    <message id="light_pk_designs">
-        <source>Designs</source>
-        <translation>Designs</translation>
-    </message>
-    <message id="light_pk_designs_help">
-        <source>A design is a still picture of colours. Yours are kept in ~/.config/truesense/designs.</source>
-        <translation>A design is a still picture of colours. Yours are kept in ~/.config/truesense/designs.</translation>
-    </message>
-    <message id="light_pk_design">
-        <source>Design</source>
-        <translation>Design</translation>
-    </message>
-    <message id="light_pk_design_apply">
-        <source>Apply design</source>
-        <translation>Apply design</translation>
     </message>
     <message id="light_pk_design_applied">
         <source>Design &apos;%1&apos; applied</source>
@@ -3810,10 +3790,6 @@
     <message id="light_pk_design_save">
         <source>Save the keys as a design</source>
         <translation>Save the keys as a design</translation>
-    </message>
-    <message id="light_pk_design_name">
-        <source>Name</source>
-        <translation>Name</translation>
     </message>
     <message id="light_pk_design_save_button">
         <source>Save</source>
@@ -3826,6 +3802,42 @@
     <message id="light_pk_design_saved">
         <source>Saved design &apos;%1&apos;</source>
         <translation>Saved design &apos;%1&apos;</translation>
+    </message>
+    <message id="light_pk_template_copied2">
+        <source>Saved a copy as &apos;%1&apos; under Your designs: apply it, change it on the board, then update it.</source>
+        <translation>Saved a copy as &apos;%1&apos; under Your designs: apply it, change it on the board, then update it.</translation>
+    </message>
+    <message id="light_pk_template_copy2">
+        <source>Save a copy under Your designs</source>
+        <translation>Save a copy under Your designs</translation>
+    </message>
+    <message id="light_pk_your_designs">
+        <source>Your designs</source>
+        <translation>Your designs</translation>
+    </message>
+    <message id="light_pk_designs_help2">
+        <source>A design is a still picture of key colours. Yours are kept in ~/.config/truesense/designs.</source>
+        <translation>A design is a still picture of key colours. Yours are kept in ~/.config/truesense/designs.</translation>
+    </message>
+    <message id="light_pk_designs_empty">
+        <source>No designs of your own yet. Paint the keyboard above (or start from a template), then save it here.</source>
+        <translation>No designs of your own yet. Paint the keyboard above (or start from a template), then save it here.</translation>
+    </message>
+    <message id="light_pk_design_yours">
+        <source>Yours</source>
+        <translation>Yours</translation>
+    </message>
+    <message id="light_pk_design_apply2">
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message id="light_pk_design_update">
+        <source>Update with the keys as they are now</source>
+        <translation>Update with the keys as they are now</translation>
+    </message>
+    <message id="light_pk_design_name2">
+        <source>Name of the design</source>
+        <translation>Name of the design</translation>
     </message>
     <message id="light_pk_whole">
         <source>Whole keyboard</source>
@@ -3931,18 +3943,6 @@
         <source>Rear light back to the stock look</source>
         <translation>Rear light back to the stock look</translation>
     </message>
-    <message id="light_theme_running">
-        <source>Running theme</source>
-        <translation>Running theme</translation>
-    </message>
-    <message id="light_theme_running_is">
-        <source>Running: %1</source>
-        <translation>Running: %1</translation>
-    </message>
-    <message id="light_theme_none">
-        <source>No theme is running. The lights show the look you set last.</source>
-        <translation>No theme is running. The lights show the look you set last.</translation>
-    </message>
     <message id="light_theme_edit_running">
         <source>Change it</source>
         <translation>Change it</translation>
@@ -4039,6 +4039,10 @@
         <source>Apply puts a theme on the keyboard. Click a picture to change its colours and settings, and to keep your version.</source>
         <translation>Apply puts a theme on the keyboard. Click a picture to change its colours and settings, and to keep your version.</translation>
     </message>
+    <message id="light_gal_in_use">
+        <source>In use</source>
+        <translation>In use</translation>
+    </message>
     <message id="light_gal_customise">
         <source>Change colours and settings</source>
         <translation>Change colours and settings</translation>
@@ -4062,10 +4066,6 @@
     <message id="light_gal_star">
         <source>Star this theme</source>
         <translation>Star this theme</translation>
-    </message>
-    <message id="light_gal_running">
-        <source>Running</source>
-        <translation>Running</translation>
     </message>
     <message id="light_gal_unavailable">
         <source>Not available</source>
@@ -4098,6 +4098,18 @@
     <message id="light_theme_keep_saved">
         <source>Saved theme &apos;%1&apos;</source>
         <translation>Saved theme &apos;%1&apos;</translation>
+    </message>
+    <message id="light_theme_in_use">
+        <source>In use: %1</source>
+        <translation>In use: %1</translation>
+    </message>
+    <message id="light_theme_none2">
+        <source>No theme in use: the lights show the look you set last.</source>
+        <translation>No theme in use: the lights show the look you set last.</translation>
+    </message>
+    <message id="light_theme_show">
+        <source>Show</source>
+        <translation>Show</translation>
     </message>
     <message id="light_theme_preview_a11y">
         <source>Picture of the theme with the colours and settings chosen here</source>

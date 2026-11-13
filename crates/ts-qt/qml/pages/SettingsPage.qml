@@ -839,7 +839,7 @@ PageFrame {
             color: Theme.field
             border.color: Theme.cardLine
 
-            Flickable {
+            InnerScroll {
                 id: licenceScroll
                 anchors.fill: parent
                 anchors.margins: 10

@@ -39,9 +39,35 @@ ColumnLayout {
     property var pictures: ({})
     property var asked: ({})
 
-    readonly property var shown: LightingVm.gallery("filter", {
+    // Which cards show, in which order. The Repeater's model is only replaced when that list really
+    // changes: a new array with the same ids (every reload after Apply, a star, a stop) would destroy
+    // and rebuild all 32 cards, the grid would collapse for a frame and the page would lose its
+    // scroll position. The running theme is not moved to the front either (it has the bar above).
+    readonly property var computedShown: LightingVm.gallery("filter", {
         themes: themes, query: query, chip: chip, starred: starred, active: active,
-        pin_active: chip === "all" && query === "" }) || []
+        pin_active: false }) || []
+    property var shown: []
+    property string _listKey: ""
+    onComputedShownChanged: {
+        var k = JSON.stringify(computedShown)
+        if (k === _listKey) return
+        _listKey = k
+        shown = computedShown
+    }
+    /// How many times the cards were rebuilt (a test reads it: Apply must not rebuild them).
+    property int rebuilds: 0
+    onShownChanged: rebuilds++
+    Component.onCompleted: { _listKey = JSON.stringify(computedShown); shown = computedShown }
+
+    /// The card of theme `id`, or null when it is not shown.
+    function cardFor(id) {
+        for (var i = 0; i < cards.count; ++i) {
+            var c = cards.itemAt(i)
+            if (c && c.modelData === id) return c
+        }
+        return null
+    }
+
     readonly property var chips: LightingVm.gallery("chips", { themes: themes, query: query, starred: starred }) || []
     readonly property var byId: {
         var o = {}
@@ -175,6 +201,7 @@ ColumnLayout {
         detailAfter: gallery.detail !== null ? gallery.shown.indexOf(gallery.selected) : -1
 
         Repeater {
+            id: cards
             model: gallery.shown
             delegate: GalleryCard {
                 id: card
@@ -201,8 +228,8 @@ ColumnLayout {
                 selected: gallery.selected === modelData
                 highlighted: live
                 badge: !theme ? "" : live
-                    //% "Running"
-                    ? qsTrId("light_gal_running")
+                    //% "In use"
+                    ? qsTrId("light_gal_in_use")
                     : (theme.runnable === false
                         //% "Not available"
                         ? qsTrId("light_gal_unavailable")

@@ -42,7 +42,8 @@ Rectangle {
     implicitHeight: column.implicitHeight + 20
     radius: Theme.radius
     color: selected ? Theme.selBg : (pick.containsMouse ? Theme.tileHover : Theme.tile)
-    border.width: highlighted || selected || pick.activeFocus ? 1 : 0
+    // The card in use has a stronger outline than the selected one.
+    border.width: highlighted ? 2 : (selected || pick.activeFocus ? 1 : 0)
     border.color: pick.activeFocus ? Theme.focusRing : Theme.accent
     Accessible.role: Accessible.ListItem
     Accessible.name: title

@@ -51,6 +51,8 @@ pub struct TestConfig {
     /// `TRUESENSE_QT_SET='{"objectName": {"property": value}}'`: the test hook sets these properties on
     /// the items with that `objectName` (to show a Lighting tab or a dialog in a screenshot).
     pub set: Option<Value>,
+    /// `TRUESENSE_QT_PROBE='["objectName.property", ...]'`: values the report carries (`probe`).
+    pub probe: Option<Value>,
 }
 
 impl TestConfig {
@@ -64,6 +66,7 @@ impl TestConfig {
             fps: get("TRUESENSE_QT_FPS").is_some(),
             scroll: get("TRUESENSE_QT_SCROLL").is_some(),
             set: get("TRUESENSE_QT_SET").and_then(|v| serde_json::from_str(&v).ok()),
+            probe: get("TRUESENSE_QT_PROBE").and_then(|v| serde_json::from_str(&v).ok()),
         }
     }
 }
@@ -198,7 +201,7 @@ pub mod qobject {
         #[cxx_name = "trayHostRegistered"]
         fn tray_host_registered(self: &Bus) -> bool;
 
-        /// Test switches as JSON: `{"enabled", "exit_after_ms", "shot", "fps", "scroll", "set"}`.
+        /// Test switches as JSON: `{"enabled", "exit_after_ms", "shot", "fps", "scroll", "set", "probe"}`.
         #[qinvokable]
         #[cxx_name = "testConfig"]
         fn test_config(self: &Bus) -> QString;
@@ -417,7 +420,7 @@ impl qobject::Bus {
     pub fn test_config(&self) -> QString {
         let t = self.shared().map(|s| s.test.clone()).unwrap_or_default();
         QString::from(
-            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot, "fps": t.fps, "scroll": t.scroll, "set": t.set})
+            json!({"enabled": t.enabled, "exit_after_ms": t.exit_after_ms, "shot": t.shot, "fps": t.fps, "scroll": t.scroll, "set": t.set, "probe": t.probe})
                 .to_string()
                 .as_str(),
         )

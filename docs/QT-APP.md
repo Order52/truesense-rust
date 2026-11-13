@@ -22,9 +22,11 @@ at nothing, so nothing touches the real desktop). Never run the GUI without
 `QT_QPA_PLATFORM=offscreen` on a machine where somebody works.
 
 To picture a state that needs clicks (a Lighting tab, an open theme editor), the test hook also takes
-`TRUESENSE_QT_SET='{"objectName": {"property": value, "function()": [arguments]}}'`: it sets the
-properties on (or calls the functions of) the items with that `objectName`, retrying for two seconds
-while Loaders create them. Example: `{"lightingPage": {"tab": "themes"}, "themesTab": {"choose()":
+`TRUESENSE_QT_SET='{"objectName": {"property": value, "a.b": value, "function()": [arguments]}}'`: it
+sets the properties on (or calls the functions of) the items with that `objectName`, retrying for two
+seconds while Loaders create them; a member `"@1500": {...}` is applied 1500 ms after the first frame
+(steps: scroll, then press Apply). `TRUESENSE_QT_PROBE='["objectName.a.b"]'` adds those values to the
+`REPORT` line (`probe`); `tests/app.rs` uses both for the scroll and colour-row regressions. Example: `{"lightingPage": {"tab": "themes"}, "themesTab": {"choose()":
 ["hearth"]}}`. Test-only: it runs only with `TRUESENSE_QT_TEST=1`, and no page reads it.
 
 ## Installing and releasing
@@ -112,7 +114,8 @@ plain bypasses `qsTrId`.
 
 | Component | Use |
 |---|---|
-| `PageFrame { title }` | scrolling, centred column (max 920 px); children are its content |
+| `PageFrame { title }` | scrolling, centred column (max 920 px); children are its content. Wheel: `wheelStep` (120 px) per notch, eased briefly; touchpad: exactly the finger distance; Page Up/Down, Home/End; `scrollBy(dy, smooth)`, `scrollTo(y)` |
+| `InnerScroll { contentHeight }` | a scrolling box inside a page (log, licence) that hands the wheel back to the page at its ends |
 | `Card { title; icon; rightText }` | rounded panel with header |
 | `SectionHeader { icon; title; rightText }` | heading row |
 | `TileRow { model: [{value,label,icon,enabled?}]; current; variant: "filled"\|"outlined"; onActivated }` | exclusive icon tiles, wrap when narrow |

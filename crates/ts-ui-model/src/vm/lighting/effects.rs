@@ -139,6 +139,12 @@ pub(crate) const FX_MODES: [&str; 20] = [
     "plasma", "aurora", "lightning", "confetti", "starlight", "mood", "wave-clockwise", "wave-counter-clockwise",
 ];
 
+/// The software animations that draw their own colours on the keys they animate (a rainbow, fire,
+/// plasma...): the base colours under them do not show, so the page offers no colour to paint while
+/// one of them animates every key. Checked against `ts_domain::perkeyfx::frames::cell_fx`: these
+/// are the modes whose colour does not depend on `base`.
+pub(crate) const FX_OWN_COLOURS: [&str; 9] = ["wave", "rainbow", "cycle", "mood", "matrix", "fire", "plasma", "aurora", "lightning"];
+
 /// The rear bar's effects: id, icon, whether it has a speed and whether it travels. The bar's
 /// modes are the kernel module's (2 neon, 3 wave); the reference project measured on the same
 /// laptop that its modes 3 and 4 follow a direction and its ripple does not, and its mode 2

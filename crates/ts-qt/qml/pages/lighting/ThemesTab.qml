@@ -65,9 +65,17 @@ ColumnLayout {
     /// One-click Apply on a card: that theme in the colourway of the card, everything else as designed.
     function applyCard(id, way) {
         Api.call("theme", "apply", { name: id, colourway: way }, function () {
-            // An open editor of this theme shows what now runs.
-            tab.reload(function () { if (tab.selected === id) tab.choose(id) })
+            // An open editor of this theme shows what now runs (refreshed in place: the editor stays
+            // open and nothing above the viewport changes size, so the page does not move).
+            tab.reload(function () { if (tab.selected === id && tab.detail !== null) tab.choose(id) })
         })
+    }
+
+    /// A click on a card's picture or its settings button: opens that theme's editor, or closes it
+    /// when it is the one open.
+    function toggle(id) {
+        if (selected === id && detail !== null) close()
+        else choose(id)
     }
 
     /// Closes the editor.
@@ -99,8 +107,8 @@ ColumnLayout {
         })
     }
 
+    /// Opens (or refreshes, when it is open) the editor of theme `id`.
     function choose(id) {
-        if (selected === id && detail !== null) { close(); return }
         if (selected !== id) detail = null
         selected = id
         Api.call("theme", "show", { name: id }, function (d) {
@@ -189,65 +197,115 @@ ColumnLayout {
     Component.onCompleted: {
         LightingVm.loadLayout()
         reload()
+        findFlick()
     }
 
-    // ---- what runs now ------------------------------------------------------------------------
-    Card {
-        Layout.fillWidth: true
-        //% "Running theme"
-        title: qsTrId("light_theme_running")
-        icon: "sparkle"
+    // ---- what is in use: a bar of one fixed height that stays at the top of the viewport while the
+    // gallery scrolls under it. Its height never changes (a theme starting or stopping changes its
+    // words, not its size), so nothing below it moves when the state changes.
+    /// The page's scrolling area (found once), for the pinned bar and "Show".
+    property var flick: null
+    function findFlick() {
+        var f = tab.parent
+        while (f && (f.contentY === undefined || f.contentItem === undefined)) f = f.parent
+        flick = f ? f : null
+    }
+    /// Scrolls so that the card of the theme in use shows under the bar.
+    function showActive() {
+        if (activeEntry === null || flick === null) return
+        var card = gallery.cardFor(activeEntry.id)
+        if (card === null) {
+            gallery.chip = "all"
+            gallery.query = ""
+            Qt.callLater(function () { var c = gallery.cardFor(tab.activeEntry.id); if (c) tab._scrollTo(c) })
+            return
+        }
+        _scrollTo(card)
+    }
+    function _scrollTo(item) {
+        var top = item.mapToItem(flick.contentItem, 0, 0).y
+        flick.contentY = Math.max(0, Math.min(top - inUse.height - 16, flick.contentHeight - flick.height))
+    }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 10
-            Rectangle {
-                Layout.preferredWidth: 10
-                Layout.preferredHeight: 10
-                Layout.alignment: Qt.AlignVCenter
-                radius: 5
-                color: tab.active !== null ? Theme.ok : Theme.switchOff
-            }
-            Text {
-                Layout.fillWidth: true
-                text: tab.active !== null
-                    //% "Running: %1"
-                    ? qsTrId("light_theme_running_is").arg(tab.activeEntry !== null ? tab.activeEntry.name : tab.active.name)
-                    //% "No theme is running. The lights show the look you set last."
-                    : qsTrId("light_theme_none")
-                color: Theme.text
-                font.pixelSize: Theme.fontBody
-                font.bold: tab.active !== null
-                wrapMode: Text.Wrap
-            }
-            SecondaryButton {
-                visible: tab.activeEntry !== null && tab.selected !== tab.activeEntry.id
-                //% "Change it"
-                text: qsTrId("light_theme_edit_running")
-                iconName: "sliders"
-                onClicked: tab.choose(tab.activeEntry.id)
-            }
-            SecondaryButton {
-                visible: tab.active !== null
-                //% "Stop"
-                text: qsTrId("light_theme_stop")
-                iconName: "stop"
-                onClicked: Api.call("theme", "stop", {}, function () { tab.reload() })
+    Item {
+        id: inUse
+        objectName: "themesInUse"
+        Layout.fillWidth: true
+        Layout.preferredHeight: Theme.controlHeight + 20
+        z: 5
+        // How far the bar is pushed down to stay at the top of the viewport (0 while it is in view).
+        readonly property real pinned: {
+            if (tab.flick === null) return 0
+            var scrolled = tab.flick.contentY          // re-evaluated on every scroll step
+            var at = inUse.mapToItem(tab.flick.contentItem, 0, 0).y
+            return Math.max(0, Math.min(scrolled - at + 8, tab.height - inUse.height))
+        }
+
+        Rectangle {
+            id: bar
+            width: parent.width
+            height: parent.height
+            y: inUse.pinned
+            radius: Theme.radius
+            color: Theme.card
+            border.width: 1
+            border.color: tab.active !== null ? Theme.accentLine : Theme.cardLine
+            Accessible.role: Accessible.StatusBar
+            Accessible.name: status.text
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: Theme.pad
+                anchors.rightMargin: 10
+                spacing: 10
+                Rectangle {
+                    Layout.preferredWidth: 10
+                    Layout.preferredHeight: 10
+                    radius: 5
+                    color: tab.active !== null ? Theme.ok : (tab.halted !== "" ? Theme.warn : Theme.switchOff)
+                }
+                Text {
+                    id: status
+                    Layout.fillWidth: true
+                    text: tab.active !== null
+                        //% "In use: %1"
+                        ? qsTrId("light_theme_in_use").arg(tab.activeEntry !== null ? tab.activeEntry.name : tab.active.name)
+                        : tab.halted !== ""
+                            //% "Stopped: %1"
+                            ? qsTrId("light_theme_halted").arg(tab.halted)
+                            //% "No theme in use: the lights show the look you set last."
+                            : qsTrId("light_theme_none2")
+                    color: tab.active !== null ? Theme.text : (tab.halted !== "" ? Theme.warn : Theme.muted)
+                    font.pixelSize: Theme.fontBody
+                    font.bold: tab.active !== null
+                    elide: Text.ElideRight
+                }
+                SecondaryButton {
+                    visible: tab.activeEntry !== null
+                    //% "Show"
+                    text: qsTrId("light_theme_show")
+                    onClicked: tab.showActive()
+                }
+                SecondaryButton {
+                    visible: tab.activeEntry !== null && tab.selected !== tab.activeEntry.id
+                    //% "Change it"
+                    text: qsTrId("light_theme_edit_running")
+                    iconName: "sliders"
+                    onClicked: tab.choose(tab.activeEntry.id)
+                }
+                SecondaryButton {
+                    visible: tab.active !== null
+                    //% "Stop"
+                    text: qsTrId("light_theme_stop")
+                    iconName: "stop"
+                    onClicked: Api.call("theme", "stop", {}, function () { tab.reload() })
+                }
             }
         }
-        Text {
-            Layout.fillWidth: true
-            visible: tab.halted !== ""
-            //% "Stopped: %1"
-            text: qsTrId("light_theme_halted").arg(tab.halted)
-            color: Theme.warn
-            font.pixelSize: Theme.fontSmall + 1
-            wrapMode: Text.Wrap
-        }
-        HelpText {
-            //% "A theme is drawn by the key service while it runs. It stops when you set the keyboard another way."
-            text: qsTrId("light_theme_help")
-        }
+    }
+    HelpText {
+        //% "A theme is drawn by the key service while it runs. It stops when you set the keyboard another way."
+        text: qsTrId("light_theme_help")
     }
 
     // ---- the gallery, with the editor under the chosen card ------------------------------------
@@ -266,7 +324,7 @@ ColumnLayout {
             active: tab.active !== null ? tab.active.name : ""
             selected: tab.detail !== null ? tab.selected : ""
             detail: editor
-            onPicked: (id) => tab.choose(id)
+            onPicked: (id) => tab.toggle(id)
             onApply: (id, way) => tab.applyCard(id, way)
             onStop: Api.call("theme", "stop", {}, function () { tab.reload() })
             onStarToggled: (id) => tab.toggleStar(id)
