@@ -30,6 +30,9 @@ use crate::sync::locked;
 pub mod keys {
     /// The keyboard's current look: `{"mode": "off" | "effect" | "perkey" | "operating", ...}`.
     pub const KEYBOARD: &str = "keyboard";
+    /// When the keyboard's look was last set on purpose (seconds since the epoch): setting the
+    /// same look again is still a choice, which the value alone cannot show.
+    pub const KEYBOARD_SET_AT: &str = "keyboard_set_at";
     /// The keyboard look to return to when the backlight is switched back on.
     pub const KB_RESTORE: &str = "kb_restore";
     /// Whether the keyboard backlight is on (boolean, default true).

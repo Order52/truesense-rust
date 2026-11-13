@@ -163,9 +163,11 @@ struct Run {
     fixed_brightness: Option<i64>,
     bright: i64,
     bright_at: f64,
-    /// What the keyboard remembered when the theme started; a different value later means that
-    /// something else set the keyboard.
+    /// What the keyboard remembered when the theme started, and when it was set; a different value
+    /// or a later time means that something else set the keyboard (the same look chosen again is
+    /// a choice too).
     baseline: KeyboardState,
+    baseline_at: Option<f64>,
     last_frame: Option<(Vec<Color>, i64)>,
     /// When the keyboard first could not be reached in the current wait (see `KEYBOARD_GRACE_S`).
     waiting_since: Option<f64>,
@@ -249,7 +251,9 @@ impl Renderer {
             (State::Run(_), None) => Next::Restore,
             (State::Halted(started), Some(a)) if *started == a.started => Next::Stay,
             (State::Run(run), Some(a)) if run.active == a => {
-                if self.env.keyboard.last() != run.baseline {
+                if self.env.keyboard.last() != run.baseline
+                    || self.env.keyboard.last_set_at() != run.baseline_at
+                {
                     Next::GiveWay(a)
                 } else {
                     Next::Stay
@@ -287,6 +291,7 @@ impl Renderer {
         (self.env.log)(&format!("theme {}: started", active.spec.name));
         self.state = State::Run(Box::new(Run {
             baseline: self.env.keyboard.last(),
+            baseline_at: self.env.keyboard.last_set_at(),
             active,
             effect,
             t: 0.0,

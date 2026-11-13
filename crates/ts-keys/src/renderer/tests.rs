@@ -34,6 +34,8 @@ struct World {
     brightness_reads: AtomicUsize,
     /// The keyboard's own lighting keys pressed so far (what `hwkeys::generation` is for real).
     hw_keys: std::sync::atomic::AtomicU64,
+    /// When the look was last set (what `keyboard_set_at` is for real).
+    set_at: Mutex<Option<f64>>,
     sleeps: AtomicUsize,
     attempts: AtomicUsize,
 }
@@ -78,6 +80,7 @@ fn world() -> Arc<World> {
         brightness: Mutex::new(30),
         brightness_reads: AtomicUsize::new(0),
         hw_keys: std::sync::atomic::AtomicU64::new(0),
+        set_at: Mutex::new(Some(1.0)),
         sleeps: AtomicUsize::new(0),
         attempts: AtomicUsize::new(0),
     })
@@ -126,6 +129,10 @@ struct Kb(Arc<World>);
 impl KeyboardControl for Kb {
     fn last(&self) -> keyboard::State {
         lock(&self.0.last).clone()
+    }
+
+    fn last_set_at(&self) -> Option<f64> {
+        *lock(&self.0.set_at)
     }
 
     fn replay(&self, _: &keyboard::State) -> Result<Option<String>, KeyboardError> {
@@ -550,6 +557,20 @@ fn a_theme_that_gave_way_to_another_look_is_over_and_does_not_come_back_on_the_n
     run_for(&mut again, &w, 5.0);
     assert_eq!(lock(&w.uploads).len(), drawn);
     assert_eq!(w.replays.load(Ordering::SeqCst), 0, "and the chosen look is not replaced by the old one");
+}
+
+#[test]
+fn choosing_the_same_look_again_still_ends_the_theme() {
+    // Found on the laptop: setting the very look the keyboard had before the theme (wave, same
+    // speed and brightness) did not count as a change, so the theme went on painting over it.
+    let w = world();
+    let mut r = renderer(&w, 15);
+    start(&w, animated());
+    run_for(&mut r, &w, 1.0);
+    *lock(&w.set_at) = Some(2.0);
+    run_for(&mut r, &w, 1.0);
+    assert!(lock(&w.active).is_none(), "the theme gave way");
+    assert!(logs(&w).iter().any(|l| l.contains("changed by another command")), "{:?}", logs(&w));
 }
 
 #[test]

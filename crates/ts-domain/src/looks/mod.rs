@@ -247,6 +247,10 @@ fn builtin(name: &str) -> Option<Look> {
 pub trait KeyboardControl: Send + Sync {
     /// What was last put on the keyboard.
     fn last(&self) -> keyboard::State;
+    /// When the look was last set on purpose, if known (moves on even for the same look again).
+    fn last_set_at(&self) -> Option<f64> {
+        None
+    }
     /// Puts a remembered look back; returns what was done, or `None` if there was nothing to restore.
     fn replay(&self, state: &keyboard::State) -> Result<Option<String>, KeyboardError>;
     /// Backlight off, keeping the look.
@@ -256,6 +260,10 @@ pub trait KeyboardControl: Send + Sync {
 impl KeyboardControl for Keyboard {
     fn last(&self) -> keyboard::State {
         Keyboard::last(self)
+    }
+
+    fn last_set_at(&self) -> Option<f64> {
+        Keyboard::last_set_at(self)
     }
 
     fn replay(&self, state: &keyboard::State) -> Result<Option<String>, KeyboardError> {

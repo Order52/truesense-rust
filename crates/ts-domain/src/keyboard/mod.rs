@@ -343,11 +343,23 @@ impl Keyboard {
     fn remember(&self, key: &str, state: &State) {
         // A convenience file: failing to write it never fails the light.
         let _ = self.state.set_as(key, state);
+        if key == userstate::keys::KEYBOARD {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0.0, |d| d.as_secs_f64());
+            let _ = self.state.set_as(userstate::keys::KEYBOARD_SET_AT, &now);
+        }
     }
 
     /// What this tool last put on the keyboard (empty if unknown).
     pub fn last(&self) -> State {
         self.state.get_as(userstate::keys::KEYBOARD).unwrap_or_default()
+    }
+
+    /// When the look was last set (seconds since the epoch), if known. It moves on even when the
+    /// same look is set again, which [`Keyboard::last`] cannot show.
+    pub fn last_set_at(&self) -> Option<f64> {
+        self.state.get_as(userstate::keys::KEYBOARD_SET_AT)
     }
 
     /// Puts a hardware effect on the keyboard. The pseudo effect `operatingmode` hands over to
