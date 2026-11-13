@@ -24,7 +24,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 use ts_api::api::{Api, ConfigFiles, NodeFinder, Notifier as Screen};
 use ts_domain::actions::ActionRunner;
 use ts_domain::keybinds::{self, ActionCheck, Bindings, Gesture, KeyEvent};
-use ts_domain::perkeyfx::{FrameSink, FxStore, Runner as AnimationRunner, epoch_seconds};
+use ts_domain::perkeyfx::{FrameSink, FxStore, Runner as AnimationRunner, epoch_seconds, hwkeys};
 use ts_foundation::sdnotify::{self, Notifier as Systemd};
 use ts_foundation::wake;
 
@@ -483,10 +483,18 @@ impl Service {
                 self.fire(&fired);
             }
             KeyEvent::Release => {
+                if !self.gestures.is_down() {
+                    // The end of a key the keyboard handled by itself (Fn+F11/F12 send only this):
+                    // the lighting loops must follow its brightness, not paint over it.
+                    hwkeys::pressed();
+                }
                 let fired = self.gestures.release(now);
                 self.fire(&fired);
             }
-            KeyEvent::Unknown => self.log(&format!("ignored vendor report {}", hex(report))),
+            KeyEvent::Unknown => {
+                hwkeys::pressed();
+                self.log(&format!("keyboard key {} (handled by the keyboard itself)", hex(report)));
+            }
             KeyEvent::FnEsc | KeyEvent::FnF10 => {
                 if let Some((label, spec)) = self.bindings.action_for_event(event) {
                     self.dispatch(label, spec.to_owned());

@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 
 mod frames;
+pub mod hwkeys;
 mod runner;
 mod settings;
 mod sweep;

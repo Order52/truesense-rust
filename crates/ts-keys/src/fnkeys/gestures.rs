@@ -113,6 +113,11 @@ impl Gestures {
         out
     }
 
+    /// Whether a PREDATOR press is in progress (a release now belongs to it).
+    pub fn is_down(&self) -> bool {
+        self.down
+    }
+
     /// The next time [`Gestures::advance`] has something to do, if any.
     pub fn deadline(&self) -> Option<Duration> {
         match (self.long_at, self.multi_at) {

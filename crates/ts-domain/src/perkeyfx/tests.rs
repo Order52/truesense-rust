@@ -585,3 +585,45 @@ fn the_errors_say_what_failed() {
     assert_eq!(BRIGHTNESS_REFRESH_S, 5.0);
     assert_eq!((SPEED_MIN, SPEED_MAX, DEFAULT_SPEED), (1, 10, 5));
 }
+
+#[test]
+fn an_animation_follows_the_keyboards_own_brightness_keys_at_once() {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    let sink = FakeSink::new();
+    let now = Arc::new(Mutex::new(1000.0));
+    let keys = Arc::new(AtomicU64::new(0));
+    let (n2, k2) = (Arc::clone(&now), Arc::clone(&keys));
+    let mut runner = Runner::new(
+        || Settings { base: base_hex([0x11, 0x22, 0x33]), keys: None, ..on("wave") },
+        Arc::clone(&sink) as Arc<dyn FrameSink>,
+        move || *n2.lock().unwrap(),
+        |_| {},
+    )
+    .with_hardware_keys(move || k2.load(Ordering::SeqCst));
+    let tick = |runner: &mut Runner| {
+        runner.step();
+        *now.lock().unwrap() += 0.2;
+    };
+    tick(&mut runner);
+    assert_eq!(sink.frames.lock().unwrap().last().map(|f| f.1), Some(Some(25)));
+    // Fn+F12 on the keyboard: 40 now. Without the signal the frame would send 25 back.
+    *sink.brightness.lock().unwrap() = Ok(40);
+    keys.fetch_add(1, Ordering::SeqCst);
+    tick(&mut runner);
+    assert_eq!(sink.frames.lock().unwrap().last().map(|f| f.1), Some(Some(40)));
+    // Dark with the keys: dark.
+    *sink.brightness.lock().unwrap() = Ok(0);
+    keys.fetch_add(1, Ordering::SeqCst);
+    tick(&mut runner);
+    assert_eq!(sink.frames.lock().unwrap().last().map(|f| f.1), Some(Some(0)));
+    // With nothing pressed, a dark reading from the periodic look is not followed.
+    let mut quiet = Runner::new(
+        || Settings { base: base_hex([0x11, 0x22, 0x33]), keys: None, ..on("wave") },
+        Arc::clone(&sink) as Arc<dyn FrameSink>,
+        || 5000.0,
+        |_| {},
+    )
+    .with_hardware_keys(|| 7);
+    quiet.step();
+    assert_eq!(sink.frames.lock().unwrap().last().map(|f| f.1), Some(Some(25)), "the default, not darkness");
+}

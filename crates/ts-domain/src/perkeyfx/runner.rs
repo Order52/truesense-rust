@@ -15,6 +15,7 @@ use std::time::Duration;
 
 use super::FrameSink;
 use super::frames::{is_mode, render};
+use super::hwkeys;
 use super::settings::Settings;
 use crate::keymap::Color;
 
@@ -24,8 +25,8 @@ pub const FRAME_INTERVAL: Duration = Duration::from_millis(200);
 pub const IDLE_INTERVAL: Duration = Duration::from_millis(500);
 /// The extra pause after a failed upload (the keyboard may be re-enumerating after suspend).
 pub const ERROR_BACKOFF: Duration = Duration::from_secs(1);
-/// How often the keyboard's brightness is read again, so that Fn+F11/F12 changes are followed
-/// without a transfer per frame.
+/// How often the keyboard's brightness is read again when nothing happened (a key the keyboard
+/// handles itself makes the loop read it at once, see [`super::hwkeys`]).
 pub const BRIGHTNESS_REFRESH_S: f64 = 5.0;
 /// The brightness used until the keyboard has been asked.
 const DEFAULT_BRIGHTNESS: i64 = 25;
@@ -40,6 +41,11 @@ pub struct Runner {
     bright: i64,
     bright_at: f64,
     last: Option<(Vec<Color>, i64)>,
+    /// The count of the keyboard's own lighting keys ([`hwkeys`]), and the one seen last.
+    hw_keys: Box<dyn Fn() -> u64 + Send>,
+    seen_keys: u64,
+    /// Until when the keyboard's brightness is read before every frame (after such a key).
+    follow_until: f64,
 }
 
 impl Runner {
@@ -60,7 +66,18 @@ impl Runner {
             bright: DEFAULT_BRIGHTNESS,
             bright_at: 0.0,
             last: None,
+            hw_keys: Box::new(hwkeys::generation),
+            seen_keys: hwkeys::generation(),
+            follow_until: f64::NEG_INFINITY,
         }
+    }
+
+    /// Takes the count of the keyboard's own lighting keys from `source` instead of the key
+    /// service's ([`hwkeys::generation`]): for tests.
+    pub fn with_hardware_keys(mut self, source: impl Fn() -> u64 + Send + 'static) -> Self {
+        self.seen_keys = source();
+        self.hw_keys = Box::new(source);
+        self
     }
 
     /// Runs until `stop` is set. The base colours are handed back if it stops in the middle of an
@@ -93,10 +110,18 @@ impl Runner {
 
     fn frame(&mut self, settings: &Settings, base: &[Color]) -> Duration {
         let now = (self.now)();
-        if now - self.bright_at > BRIGHTNESS_REFRESH_S {
-            // An unreadable or dark keyboard keeps the last level: never animate into darkness.
+        let keys = (self.hw_keys)();
+        if keys != self.seen_keys {
+            self.seen_keys = keys;
+            self.follow_until = now + hwkeys::FOLLOW_S;
+        }
+        let following = now < self.follow_until;
+        if following || now - self.bright_at > BRIGHTNESS_REFRESH_S {
+            // An unreadable keyboard keeps the last level, and so does a dark one found by the
+            // periodic look (never animate into darkness), unless the person just turned the
+            // light down to dark with the keyboard's own keys.
             if let Ok(b) = self.sink.brightness()
-                && b > 0
+                && (b > 0 || following)
             {
                 self.bright = i64::from(b);
             }

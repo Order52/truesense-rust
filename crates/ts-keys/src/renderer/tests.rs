@@ -32,6 +32,8 @@ struct World {
     fail_kind: Mutex<Fail>,
     brightness: Mutex<u8>,
     brightness_reads: AtomicUsize,
+    /// The keyboard's own lighting keys pressed so far (what `hwkeys::generation` is for real).
+    hw_keys: std::sync::atomic::AtomicU64,
     sleeps: AtomicUsize,
     attempts: AtomicUsize,
 }
@@ -75,6 +77,7 @@ fn world() -> Arc<World> {
         fail_kind: Mutex::new(Fail::Fault),
         brightness: Mutex::new(30),
         brightness_reads: AtomicUsize::new(0),
+        hw_keys: std::sync::atomic::AtomicU64::new(0),
         sleeps: AtomicUsize::new(0),
         attempts: AtomicUsize::new(0),
     })
@@ -155,10 +158,18 @@ impl Themes for FakeThemes {
         lock(&self.world.events).push("halt".into());
         lock(&self.world.halts).push((started, reason.to_owned()));
     }
+
+    fn end(&self, started: f64) {
+        lock(&self.world.events).push("end".into());
+        let mut active = lock(&self.world.active);
+        if active.as_ref().is_some_and(|a| a.started == started) {
+            *active = None;
+        }
+    }
 }
 
 fn renderer(w: &Arc<World>, fps: u32) -> Renderer {
-    let (a, b, c, d) = (Arc::clone(w), Arc::clone(w), Arc::clone(w), Arc::clone(w));
+    let (a, b, c, d, e) = (Arc::clone(w), Arc::clone(w), Arc::clone(w), Arc::clone(w), Arc::clone(w));
     Renderer::new(Env {
         themes: Box::new(FakeThemes {
             world: Arc::clone(w),
@@ -178,6 +189,7 @@ fn renderer(w: &Arc<World>, fps: u32) -> Renderer {
         }),
         log: Box::new(move |line| lock(&d.events).push(format!("log: {line}"))),
         fps,
+        hw_keys: Box::new(move || e.hw_keys.load(Ordering::SeqCst)),
     })
 }
 
@@ -330,6 +342,46 @@ fn a_long_stall_does_not_make_the_theme_jump() {
 // ---- brightness ------------------------------------------------------------------------------
 
 #[test]
+fn the_keyboards_own_brightness_keys_are_followed_at_once_not_painted_over() {
+    // The reason the light looked stuck: Fn+F11/F12 change the level inside the keyboard, and
+    // every frame sent the old level straight back.
+    let w = world();
+    let mut r = renderer(&w, 15);
+    start(&w, animated());
+    run_for(&mut r, &w, 1.0);
+    assert!(lock(&w.uploads).iter().all(|u| u.brightness == Some(30)));
+    // Fn+F12: the keyboard is at 45 now, and the key service saw the report.
+    *lock(&w.brightness) = 45;
+    w.hw_keys.fetch_add(1, Ordering::SeqCst);
+    let from = lock(&w.uploads).len();
+    run_for(&mut r, &w, 0.2);
+    let after: Vec<Option<i64>> = lock(&w.uploads)[from..].iter().map(|u| u.brightness).collect();
+    assert_eq!(after.first(), Some(&Some(45)), "the very next frame has the new level: {after:?}");
+    // Turned down to dark with the keys: dark it is (a periodic look alone never goes dark).
+    *lock(&w.brightness) = 0;
+    w.hw_keys.fetch_add(1, Ordering::SeqCst);
+    run_for(&mut r, &w, 0.2);
+    assert_eq!(lock(&w.uploads).last().map(|u| u.brightness), Some(Some(0)));
+    // After the follow window the keyboard is asked only every few seconds again.
+    run_for(&mut r, &w, 3.0);
+    let reads = w.brightness_reads.load(Ordering::SeqCst);
+    run_for(&mut r, &w, 2.0);
+    assert!(w.brightness_reads.load(Ordering::SeqCst) - reads <= 1, "no read per frame when nothing happens");
+}
+
+#[test]
+fn the_keyboards_own_keys_win_over_a_brightness_the_theme_named() {
+    let w = world();
+    let mut r = renderer(&w, 15);
+    start(&w, ThemeSpec { brightness: Some(40), ..animated() });
+    run_for(&mut r, &w, 1.0);
+    *lock(&w.brightness) = 12;
+    w.hw_keys.fetch_add(1, Ordering::SeqCst);
+    run_for(&mut r, &w, 0.3);
+    assert_eq!(lock(&w.uploads).last().map(|u| u.brightness), Some(Some(12)));
+}
+
+#[test]
 fn a_brightness_in_the_theme_wins_and_the_keyboard_is_not_asked() {
     let w = world();
     let mut r = renderer(&w, 15);
@@ -479,6 +531,39 @@ fn a_keyboard_that_never_comes_back_ends_the_wait_after_a_minute() {
     assert_eq!(w.replays.load(Ordering::SeqCst), 1);
     let attempts = w.attempts.load(Ordering::SeqCst);
     assert!((58..=64).contains(&attempts), "about one try a second for a minute, not {attempts}");
+}
+
+#[test]
+fn a_theme_that_gave_way_to_another_look_is_over_and_does_not_come_back_on_the_next_start() {
+    // The other half of "stuck": the record stayed "running", so every start of the key service
+    // (every login) drew the theme again over the look the person had chosen.
+    let w = world();
+    let mut r = renderer(&w, 15);
+    start(&w, animated());
+    run_for(&mut r, &w, 1.0);
+    lock(&w.last).name = "breathing".into();
+    run_for(&mut r, &w, 1.0);
+    assert!(lock(&w.active).is_none(), "the record is ended");
+    let drawn = lock(&w.uploads).len();
+    // The key service starts again (login, reboot, upgrade): nothing is drawn.
+    let mut again = renderer(&w, 15);
+    run_for(&mut again, &w, 5.0);
+    assert_eq!(lock(&w.uploads).len(), drawn);
+    assert_eq!(w.replays.load(Ordering::SeqCst), 0, "and the chosen look is not replaced by the old one");
+}
+
+#[test]
+fn a_theme_halted_by_a_fault_keeps_its_record_and_is_tried_again_on_the_next_start() {
+    let w = world();
+    *lock(&w.fail_from) = Some(1);
+    let mut r = renderer(&w, 15);
+    start(&w, animated());
+    run_for(&mut r, &w, 2.0);
+    assert!(lock(&w.active).is_some(), "a fault is not the person's choice");
+    *lock(&w.fail_from) = None;
+    let mut again = renderer(&w, 15);
+    run_for(&mut again, &w, 1.0);
+    assert!(!lock(&w.uploads).is_empty(), "drawn after the restart");
 }
 
 #[test]

@@ -39,7 +39,7 @@ use ts_api::api::Api;
 use ts_domain::keyboard::{KeyboardError, State as KeyboardState};
 use ts_domain::keymap::Color;
 use ts_domain::looks::KeyboardControl;
-use ts_domain::perkeyfx::{BRIGHTNESS_REFRESH_S, FrameSink, epoch_seconds};
+use ts_domain::perkeyfx::{BRIGHTNESS_REFRESH_S, FrameSink, epoch_seconds, hwkeys};
 use ts_domain::themes::{Active, Resolved, ThemeSpec, ThemeStore};
 use ts_fx::cells::CellPainter;
 use ts_fx::engine::{Effect, Input};
@@ -79,6 +79,9 @@ pub trait Themes: Send {
     fn resolve(&self, spec: &ThemeSpec) -> Result<Resolved, String>;
     /// Records that the theme started at `started` stopped by itself, and why.
     fn halt(&self, started: f64, reason: &str);
+    /// Ends the theme started at `started` for good (the person replaced it), unless another one
+    /// has been started since.
+    fn end(&self, started: f64);
 }
 
 impl Themes for ThemeStore {
@@ -92,6 +95,10 @@ impl Themes for ThemeStore {
 
     fn halt(&self, started: f64, reason: &str) {
         ThemeStore::halt(self, started, reason);
+    }
+
+    fn end(&self, started: f64) {
+        ThemeStore::end(self, started);
     }
 }
 
@@ -116,6 +123,8 @@ pub struct Env {
     pub log: Box<dyn Fn(&str) + Send>,
     /// The frame rate cap, `DEFAULT_FPS` normally.
     pub fps: u32,
+    /// How many keys the keyboard handled by itself so far ([`hwkeys::generation`]).
+    pub hw_keys: Box<dyn Fn() -> u64 + Send>,
 }
 
 impl Renderer {
@@ -135,6 +144,7 @@ impl Renderer {
             sleep,
             log: Box::new(|line| println!("{line}")),
             fps: DEFAULT_FPS,
+            hw_keys: Box::new(hwkeys::generation),
         })
     }
 }
@@ -159,6 +169,10 @@ struct Run {
     last_frame: Option<(Vec<Color>, i64)>,
     /// When the keyboard first could not be reached in the current wait (see `KEYBOARD_GRACE_S`).
     waiting_since: Option<f64>,
+    /// The count of the keyboard's own lighting keys seen last, and until when the keyboard's
+    /// brightness is followed before every frame after one.
+    seen_keys: u64,
+    follow_until: f64,
 }
 
 /// What a look at the record decided.
@@ -284,6 +298,8 @@ impl Renderer {
             bright_at: f64::NEG_INFINITY,
             last_frame: None,
             waiting_since: None,
+            seen_keys: (self.env.hw_keys)(),
+            follow_until: f64::NEG_INFINITY,
         }));
     }
 
@@ -297,6 +313,10 @@ impl Renderer {
     fn give_way(&mut self, active: &Active, why: &str) {
         (self.env.log)(&format!("theme {}: stopped: {why}", active.spec.name));
         self.env.themes.halt(active.started, why);
+        // The person chose another look: the theme is over, not paused. Without this the record
+        // stayed "running" and the next start of the key service (every login) drew it again over
+        // the look they had chosen.
+        self.env.themes.end(active.started);
         // The look that changed it is the keyboard's now: it is not replaced by the old one.
         self.state = State::Halted(active.started);
     }
@@ -319,10 +339,21 @@ impl Renderer {
         let dt = (now - run.last).clamp(0.0, MAX_STEP);
         run.last = now;
         run.t += dt * run.speed;
-        if run.fixed_brightness.is_none() && now - run.bright_at > BRIGHTNESS_REFRESH_S {
-            // An unreadable or dark keyboard keeps the last level: never draw into darkness.
+        let keys = (self.env.hw_keys)();
+        if keys != run.seen_keys {
+            // The person used the keyboard's own brightness keys: from now on the level is theirs,
+            // even when the theme named one.
+            run.seen_keys = keys;
+            run.follow_until = now + hwkeys::FOLLOW_S;
+            run.fixed_brightness = None;
+        }
+        let following = now < run.follow_until;
+        if run.fixed_brightness.is_none() && (following || now - run.bright_at > BRIGHTNESS_REFRESH_S) {
+            // An unreadable keyboard keeps the last level, and so does a dark one found by the
+            // periodic look (never draw into darkness), unless the person just turned the light
+            // down to dark with the keyboard's own keys.
             if let Ok(b) = self.env.sink.brightness()
-                && b > 0
+                && (b > 0 || following)
             {
                 run.bright = i64::from(b);
             }

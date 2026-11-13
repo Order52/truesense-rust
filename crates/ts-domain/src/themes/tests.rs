@@ -294,6 +294,21 @@ fn a_theme_that_cannot_be_resolved_does_not_start_and_leaves_the_running_one_alo
 }
 
 #[test]
+fn ending_a_theme_ends_only_that_start() {
+    let r = rig();
+    r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();
+    r.store.end(1.0);
+    assert!(r.store.active().is_none(), "the person replaced it: it is over");
+    // An end for a start that is gone cannot end the theme started since.
+    r.store.start(&ThemeSpec::new("hearth"), 2.0).unwrap();
+    r.store.end(1.0);
+    assert_eq!(r.store.active().map(|a| a.started), Some(2.0));
+    r.store.end(2.0);
+    r.store.end(2.0);
+    assert!(r.store.active().is_none(), "twice is harmless");
+}
+
+#[test]
 fn a_halt_is_about_one_start_and_a_new_start_runs_again() {
     let r = rig();
     r.store.start(&ThemeSpec::new("hearth"), 1.0).unwrap();

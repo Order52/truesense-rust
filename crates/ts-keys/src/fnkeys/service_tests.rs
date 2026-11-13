@@ -680,8 +680,21 @@ fn reports_that_are_not_ours_are_ignored_and_unknown_vendor_codes_are_logged() {
     rig.world.report(40, &[0x05, 0x81, 0xff]); // another report id
     rig.world.report(50, &[0x01, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a]);
     assert!(rig.run().is_empty());
-    assert!(rig.log_has("ignored vendor report 0482ff"), "{:?}", rig.log());
-    assert_eq!(rig.log().iter().filter(|l| l.contains("ignored vendor report")).count(), 1);
+    assert!(rig.log_has("keyboard key 0482ff (handled by the keyboard itself)"), "{:?}", rig.log());
+    assert_eq!(rig.log().iter().filter(|l| l.contains("handled by the keyboard itself")).count(), 1);
+}
+
+#[test]
+fn a_key_the_keyboard_handles_itself_tells_the_lighting_loops() {
+    // Fn+F11/F12 and the other keyboard-side keys: a vendor code we do not bind, or a release with
+    // no PREDATOR press before it. Either makes the loops follow the keyboard's brightness.
+    let rig = Rig::new(1000);
+    let before = ts_domain::perkeyfx::hwkeys::generation();
+    rig.world.report(10, &[0x04, 0x7d, 0xff]).report(40, &RELEASE);
+    rig.world.report(100, &PRESS).report(130, &RELEASE); // the PREDATOR key itself is not one
+    assert_eq!(specs(&rig.run()), ["A_tap"]);
+    // Other tests may press too (the count is per process): at least these two were counted.
+    assert!(ts_domain::perkeyfx::hwkeys::generation() >= before + 2);
 }
 
 #[test]

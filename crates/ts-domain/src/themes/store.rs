@@ -377,6 +377,15 @@ impl ThemeStore {
         let _ = self.state.set_as(HALT_KEY, &Halt { started, reason: reason.to_owned() });
     }
 
+    /// Ends the theme that started at `started`: the person set the keyboard another way, so it
+    /// must not come back when the key service starts again. A theme started since (another
+    /// `started`) is left alone.
+    pub fn end(&self, started: f64) {
+        if self.active().is_some_and(|a| a.started == started) {
+            let _ = self.state.set(ACTIVE_KEY, serde_json::Value::Null);
+        }
+    }
+
     /// Why the running theme is not being drawn, if the key service stopped it.
     pub fn halt_reason(&self) -> Option<String> {
         let active = self.active()?;
