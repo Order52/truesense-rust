@@ -38,6 +38,9 @@ CORNER = 26  # the compositor rounds the window's corners (Hyprland `rounding`):
 def reference_env(home, rundir):
     return {
         "HOME": home, "XDG_RUNTIME_DIR": rundir, "PATH": "/nonexistent", "TRUESENSE_SIM": "1",
+        # never the real root service (TRUESENSE_SIM simulates the firmware only)
+        "TRUESENSE_SOCKET": os.path.join(rundir, "no-daemon.sock"), "TRUESENSE_RUN": os.path.join(rundir, "ts-run"),
+        "TRUESENSE_STATE": os.path.join(rundir, "state.json"), "TRUESENSE_USERSTATE": os.path.join(home, "userstate.json"),
         "DBUS_SESSION_BUS_ADDRESS": "unix:path=/nonexistent", "TRUESENSE_APP_ID": "tstestshot",
         "QT_QPA_PLATFORM": "offscreen", "QT_QPA_PLATFORMTHEME": "qt6ct", "QT_QUICK_BACKEND": "software",
         "LANG": os.environ.get("LANG", "C.UTF-8"), "XDG_CONFIG_HOME": os.path.join(home, ".config"),

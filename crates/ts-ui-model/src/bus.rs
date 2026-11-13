@@ -51,7 +51,36 @@ pub struct Request {
     pub args: Value,
 }
 
+/// Verbs that only read (`COMMANDS.md`), whatever their area.
+const READ_VERBS: &[&str] = &[
+    "get", "status", "list", "show", "info", "preview", "layout", "cells", "current", "bindings", "check",
+    "logs", "validate", "ping", "sound", "overview", "cpu", "gpu", "memory", "network", "disks",
+];
+/// `action` arguments that only read (`power smart {"action": "list"}`, `fan smart {"action": "status"}`).
+const READ_ACTIONS: &[&str] = &["get", "status", "list", "show", "current"];
+
 impl Request {
+    /// Whether the command may change the machine (so the live values are worth reading again at
+    /// once when it finishes). Errs on the side of yes: an unknown verb counts as a change. The
+    /// `monitor` area only reads, except `reset`; `gpu` and `cpu` are areas of their own, so their
+    /// names only count as read verbs under `monitor`.
+    pub fn mutates(&self) -> bool {
+        let verb = self.verb.as_str();
+        if self.area == "monitor" {
+            return verb == "reset";
+        }
+        if matches!(verb, "cpu" | "gpu" | "memory" | "network" | "disks" | "overview") {
+            return true;
+        }
+        if READ_VERBS.contains(&verb) {
+            return false;
+        }
+        match self.args.get("action").and_then(Value::as_str) {
+            Some(action) => !READ_ACTIONS.contains(&action),
+            None => true,
+        }
+    }
+
     /// A request from the three texts QML passes.
     ///
     /// # Errors
@@ -416,6 +445,25 @@ mod tests {
         assert_eq!(bus.live(), Some(json!({"t": 1})));
         let bad = Bus::new(Arc::new(Bad)).expect("bus");
         assert_eq!(bad.live(), None);
+    }
+
+    #[test]
+    fn reads_and_changes_are_told_apart() {
+        let r = |area: &str, verb: &str, args: Value| req(area, verb, args).mutates();
+        assert!(r("power", "set", json!({"mode": "turbo"})));
+        assert!(r("fan", "max", json!({})));
+        assert!(r("keyboard", "brightness", json!({"level": 3})));
+        assert!(r("theme", "apply", json!({"name": "hearth"})));
+        assert!(r("monitor", "reset", json!({})));
+        assert!(r("fan", "smart", json!({"action": "on"})));
+        assert!(r("cpu", "undervolt", json!({"action": "apply"})));
+        assert!(!r("cpu", "undervolt", json!({"action": "get"})));
+        assert!(!r("power", "smart", json!({"action": "list"})));
+        assert!(!r("status", "get", json!({})));
+        assert!(!r("theme", "preview", json!({"name": "hearth"})));
+        assert!(!r("monitor", "cpu", json!({"top": 8})));
+        assert!(!r("keyboard", "cells", json!({})));
+        assert!(!r("battery", "info", json!({})));
     }
 
     #[test]

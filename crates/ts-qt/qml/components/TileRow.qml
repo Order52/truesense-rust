@@ -11,6 +11,13 @@
 // `activated` fires only when the person picks a tile (click, Space or Enter), never when `current`
 // is changed by code, so a refresh from the hardware cannot send a command (APP-DESIGN finding 27).
 // A tile with `enabled: false` stays visible and greyed.
+//
+// `optimistic: true` selects the picked tile AT ONCE, before the command has answered and the
+// live values confirm it (`current` then changes and takes over). The page calls `settle()` when
+// the command failed, so the tile goes back to what `current` says; without a change of `current`
+// the pick also falls back after `holdMs`. Never use it for a choice that asks a question first
+// (a fan stop): the tile would show a state the person has not agreed to; a model entry with
+// `asks: true` is never shown early.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -30,6 +37,20 @@ Item {
     property int minTileWidth: 92
     /// Long labels wrap onto a second line instead of being cut.
     property bool wrapLabels: false
+    /// Show the picked tile as selected before `current` follows (see above).
+    property bool optimistic: false
+    /// How long an optimistic pick is shown without `current` following it.
+    property int holdMs: 2500
+    /// The optimistic pick, undefined when none is pending.
+    property var picked: undefined
+    readonly property var shown: picked !== undefined ? picked : current
+
+    /// Drops a pending optimistic pick (the command failed): `current` is shown again.
+    function settle() { picked = undefined; holdTimer.stop() }
+
+    onCurrentChanged: settle()
+
+    Timer { id: holdTimer; interval: root.holdMs; onTriggered: root.picked = undefined }
     readonly property int columns: Math.max(1, Math.min(model.length, Math.floor((width + 8) / (minTileWidth + 8))))
 
     signal activated(var value)
@@ -55,7 +76,7 @@ Item {
                 HoverHandler { cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor }
                 required property int index
                 readonly property var modelData: root.model[index]
-                readonly property bool selected: root.current !== undefined && modelData.value === root.current
+                readonly property bool selected: root.shown !== undefined && modelData.value === root.shown
                 readonly property bool off: modelData.enabled === false
 
                 Layout.fillWidth: true
@@ -68,7 +89,10 @@ Item {
                 Accessible.name: modelData.label
                 Accessible.checkable: true
                 Accessible.checked: selected
-                onClicked: root.activated(modelData.value)
+                onClicked: {
+                    if (root.optimistic && modelData.asks !== true && !tile.selected) { root.picked = modelData.value; holdTimer.restart() }
+                    root.activated(modelData.value)
+                }
 
                 readonly property color ink: off ? Theme.disabledText
                     : selected ? (root.variant === "filled" ? Theme.accentInk : Theme.accent) : Theme.stat

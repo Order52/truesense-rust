@@ -206,7 +206,9 @@ pub fn run(args: &[String]) -> i32 {
         test: TestConfig::from_env(),
         started,
         primary: Mutex::new(Some(primary)),
+        marks: Mutex::new(Vec::new()),
     });
+    bus_object::mark(&shared, "model");
     if !install(shared.clone()) {
         eprintln!("truesense-qt: already started in this process");
         return 1;

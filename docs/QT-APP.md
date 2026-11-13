@@ -172,4 +172,12 @@ Two rules keep an idle window idle, and `crates/ts-qt/tests/render.rs` pins them
   store refreshes every second (that was ~50 to 140 frames per second at 165 Hz).
 
 `tools/qtprofile/` measures a page (`profile`), compares two routes (`compare`), looks for flicker
-(`glitch`) and counts wakeups (`bench`).
+(`glitch`) and counts wakeups (`bench`); `respond` times start, page and tab switches and actions
+(the script is `qml/BenchHook.qml`).
+
+Responsiveness rules: the GUI thread never waits for the machine (`Api.call`/`Api.write` run on
+worker threads; `Vm.call` is pure computation). A command that changes the machine gets a fresh
+live reading as soon as it finishes (the bus pokes the poller), so a control bound to `Live` follows
+within milliseconds. A tile row whose pick is safe to show early sets `optimistic: true` and calls
+`settle()` in its fail callback; anything that asks first (a fan stop, GPU mode, undervolt) does not.
+Data a gallery draws once per run (theme pictures) lives in a singleton, not in the page.

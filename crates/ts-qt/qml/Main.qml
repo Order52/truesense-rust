@@ -87,6 +87,7 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        Bus.shellCompleted()
         Nav.load(Bus.routesJson)
         Ui.load(Bus.uiJson)
         Nav.go(Bus.startPage)
@@ -165,6 +166,14 @@ ApplicationWindow {
         }
     }
     TestHook { id: testHook }
+    // TRUESENSE_QT_BENCH (tools/qtprofile `respond`): the responsiveness script; never loaded otherwise.
+    Loader {
+        id: benchHook
+        active: JSON.parse(Bus.testConfig()).bench !== null
+        source: active ? "BenchHook.qml" : ""
+        onLoaded: { item.window = win; item.loader = pageLoader; item.phases = JSON.parse(Bus.testConfig()).bench }
+    }
+    onFirstFrameChanged: if (firstFrame && benchHook.item) benchHook.item.begin()
     Timer {
         interval: 1000
         repeat: true

@@ -5,6 +5,8 @@
                                          [--settle 2] [--seconds 6] [--bin PATH] [--json out.json]
     tools/qtprofile/qtprofile.py glitch  [--backends ...] [--iterations 20] [--bin PATH]
     tools/qtprofile/qtprofile.py compare --old BIN [--new BIN] [--platform offscreen|wayland]
+    tools/qtprofile/qtprofile.py respond [--bin PATH] [--old BIN] [--runs 3] [--platform wayland|offscreen]
+                                         [--phases start,pages,tabs,actions] [--json out.json]
 
 `profile` prints the per-page idle table: CPU % of one core, wakeups per second (voluntary context
 switches of every thread), frames per second (the window's own `frameSwapped` count, printed by
@@ -14,12 +16,19 @@ switches and compares screenshots of the window with a fresh offscreen render of
 Safety (the machine belongs to somebody who is working on it):
   * the program is started as its OWN instance: window class `tstest` (TRUESENSE_APP_ID), a private
     runtime directory (so the single-instance socket never reaches a real window), a temporary HOME,
-    TRUESENSE_SIM=1 (simulated hardware), no D-Bus (no tray icon) and an EMPTY PATH (a program that
+    TRUESENSE_SIM=1 (simulated hardware), TRUESENSE_SOCKET pointing at a socket that does not exist
+    (TRUESENSE_SIM simulates the firmware only: without it the program would talk to the REAL root
+    service at /run/truesense/truesense.sock, and a `power set` or `fan max` would change the real
+    machine), no D-Bus (no tray icon) and an EMPTY PATH (a program that
     looked for pactl, systemctl, ... would find nothing);
   * a Hyprland window rule is installed for class `tstest` only: floating, fixed size, bottom-right
     corner, never takes the focus;
   * it closes only the window whose pid it started, and ends only that pid after checking
     /proc/PID/exe.
+`respond` measures responsiveness: cold start (process start to window mapped, first frame,
+interactive), every page switch (first visit and revisit), the Lighting tabs and a set of actions
+(power mode, fan mode, keyboard colour, slider drags, theme apply), by running the program's own
+script (qml/BenchHook.qml, `TRUESENSE_QT_BENCH`); medians of --runs runs, and the same for --old.
 `--platform offscreen` needs no display at all (frame counts and CPU of the paint path only).
 """
 import argparse
@@ -127,6 +136,9 @@ class Instance:
         e = {
             "HOME": self.home, "XDG_RUNTIME_DIR": self.rundir, "PATH": os.path.join(os.path.dirname(self.rundir), "stubbin"),
             "DBUS_SESSION_BUS_ADDRESS": "unix:path=/nonexistent", "TRUESENSE_SIM": "1",
+            "TRUESENSE_SOCKET": os.path.join(self.rundir, "no-daemon.sock"),
+            "TRUESENSE_RUN": os.path.join(self.rundir, "ts-run"), "TRUESENSE_STATE": os.path.join(self.rundir, "state.json"),
+            "TRUESENSE_USERSTATE": os.path.join(self.home, "userstate.json"),
             "TRUESENSE_APP_ID": self.app_id, "TRUESENSE_QT_FPS": "1", "LANG": os.environ.get("LANG", "C.UTF-8"),
             "XDG_DATA_DIRS": "/usr/share", "XDG_CONFIG_HOME": os.path.join(self.home, ".config"),
             "XDG_CONFIG_DIRS": "/etc/xdg", "QT_QPA_PLATFORMTHEME": "qt6ct",
@@ -308,6 +320,88 @@ def cmd_compare(a):
         sys.exit("a test window is still open")
 
 
+def bench_run(binary, platform, rundir, size, phases, env=None, app_id=APP_ID):
+    """One scripted run; returns (mapped_ms or None, [BENCH dicts])."""
+    inst = Instance(binary, "software", platform, rundir, size, dict(env or {}, TRUESENSE_QT_BENCH=phases), app_id)
+    inst._prepare()
+    log = open(inst.log_path, "w")
+    t0 = time.monotonic()
+    inst.proc = subprocess.Popen([inst.binary, "--page", "home"], env=inst.env(), stdout=log, stderr=subprocess.STDOUT,
+                                 cwd=os.path.dirname(inst.rundir))
+    mapped = None
+    deadline = t0 + 240
+    while inst.proc.poll() is None and time.monotonic() < deadline:
+        if platform == "wayland" and mapped is None and inst.find_window():
+            mapped = (time.monotonic() - t0) * 1000
+        time.sleep(0.005 if mapped is None and platform == "wayland" else 0.1)
+    if inst.proc.poll() is None:
+        inst.stop()
+    lines = []
+    for line in inst.log_text().splitlines():
+        if line.startswith("BENCH {"):
+            try:
+                lines.append(json.loads(line[6:]))
+            except ValueError:
+                pass
+    inst.proc = None
+    return mapped, lines
+
+
+def median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return None
+    n = len(xs)
+    return xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2
+
+
+def cmd_respond(a):
+    size = tuple(map(int, a.size.split("x")))
+    if a.platform == "wayland":
+        install_rule(*size)
+    builds = [("new", a.bin)] + ([("old", a.old)] if a.old else [])
+    table = {}   # (build, phase, name) -> {metric: [values]}
+    order = []
+    for run in range(a.runs):
+        for label, binary in builds:
+            mapped, lines = bench_run(binary, a.platform, a.rundir, size, a.phases)
+            if not lines:
+                print(f"{label}: no BENCH lines (see the log in {a.rundir})", file=sys.stderr)
+            for d in lines:
+                key = (d.get("phase"), d.get("name"))
+                if d.get("phase") == "start" and d.get("name") == "start":
+                    d = {"model_ms": d.get("model_ms"), "qml_ms": d.get("qml_ms"), "first_frame_ms": d.get("first_frame_ms"),
+                         "mapped_ms": mapped, "rss_mb": (d.get("rss_kb") or 0) / 1024}
+                if key not in order:
+                    order.append(key)
+                slot = table.setdefault((label,) + key, {})
+                for m, v in d.items():
+                    if isinstance(v, (int, float)) and not isinstance(v, bool):
+                        slot.setdefault(m, []).append(v)
+                    elif isinstance(v, dict):
+                        for m2, v2 in v.items():
+                            if isinstance(v2, (int, float)):
+                                slot.setdefault(m2, []).append(v2)
+    metrics = ["model_ms", "qml_ms", "first_frame_ms", "mapped_ms", "sync_ms", "frame_ms", "data_ms", "shown_ms", "live_ms", "stall_ms",
+               "vm_calls", "vm_ms", "ticks", "tick_ms", "sent", "ran", "superseded"]
+    out = []
+    print(f"platform {a.platform}, {a.runs} run(s), medians in ms" + (f"; old {a.old}" if a.old else ""))
+    for key in order:
+        for label, _ in builds:
+            slot = table.get((label,) + key)
+            if not slot:
+                continue
+            row = {m: median(slot[m]) for m in metrics if m in slot}
+            out.append(dict(build=label, phase=key[0], name=key[1], **row))
+            cells = "  ".join(f"{m.replace('_ms', '')}={row[m]:.1f}" for m in metrics if row.get(m) is not None)
+            print(f"{label:<4} {key[0]:<11} {key[1]:<26} {cells}", flush=True)
+    if a.json:
+        with open(a.json, "w") as f:
+            json.dump(out, f, indent=1)
+    if a.platform == "wayland" and any(c["class"] == APP_ID for c in hypr_clients()):
+        sys.exit("a window of class %s is still open" % APP_ID)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -341,8 +435,19 @@ def main():
     p.add_argument("--settle", type=float, default=2.0)
     p.add_argument("--seconds", type=float, default=6.0)
     p.add_argument("--env", action="append", default=[], metavar="KEY=VALUE")
+    p = sub.add_parser("respond", help="responsiveness: start, page switches, tabs, actions")
+    p.add_argument("--bin", default=DEFAULT_BIN)
+    p.add_argument("--old", help="a second build measured the same way (alternating runs)")
+    p.add_argument("--platform", choices=["wayland", "offscreen"], default="wayland")
+    p.add_argument("--size", default="760x520")
+    p.add_argument("--rundir", default="/tmp/tsqt")
+    p.add_argument("--runs", type=int, default=3)
+    p.add_argument("--phases", default="1", help="start,pages,tabs,actions (1 = all)")
+    p.add_argument("--json")
     a = ap.parse_args()
-    if a.cmd == "profile":
+    if a.cmd == "respond":
+        cmd_respond(a)
+    elif a.cmd == "profile":
         cmd_profile(a)
     elif a.cmd == "compare":
         cmd_compare(a)

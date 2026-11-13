@@ -21,7 +21,23 @@ TestCase {
     }
     SignalSpy { id: spy; target: row; signalName: "activated" }
 
-    function init() { spy.clear(); row.current = "eco" }
+    // The same row, picking optimistically (the power mode and fan mode tiles).
+    TileRow {
+        id: fast
+        y: 80
+        width: 480
+        optimistic: true
+        holdMs: 150
+        model: [
+            { value: "eco", label: "Eco", icon: "eco" },
+            { value: "quiet", label: "Quiet", icon: "quiet" },
+            { value: "stop", label: "Stop", icon: "max", asks: true }
+        ]
+        current: "eco"
+    }
+    SignalSpy { id: fastSpy; target: fast; signalName: "activated" }
+
+    function init() { spy.clear(); fastSpy.clear(); row.current = "eco"; fast.settle(); fast.current = "eco" }
 
     function test_a_click_activates_the_tile_but_does_not_move_the_selection() {
         mouseClick(row, 240, 20)
@@ -68,5 +84,40 @@ TestCase {
         ]
         verify(row.children[0].children[0] === first)
         compare(row.children[0].children[0].modelData.label, "Eco!")
+    }
+
+    function test_an_optimistic_pick_shows_at_once_and_the_machine_takes_over() {
+        mouseClick(fast, 240, 20)
+        compare(fastSpy.count, 1)
+        compare(fast.shown, "quiet", "selected before any answer")
+        compare(fast.current, "eco")
+        fast.current = "quiet"          // the live values confirm it
+        compare(fast.picked, undefined)
+        compare(fast.shown, "quiet")
+    }
+
+    function test_a_failed_optimistic_pick_goes_back() {
+        mouseClick(fast, 240, 20)
+        compare(fast.shown, "quiet")
+        fast.settle()                   // the page's fail callback
+        compare(fast.shown, "eco")
+    }
+
+    function test_an_unconfirmed_pick_falls_back_after_the_hold() {
+        mouseClick(fast, 240, 20)
+        compare(fast.shown, "quiet")
+        tryCompare(fast, "shown", "eco", 2000)
+    }
+
+    function test_a_tile_that_asks_first_is_never_shown_early() {
+        mouseClick(fast, 400, 20)
+        compare(fastSpy.count, 1)
+        compare(fastSpy.signalArguments[0][0], "stop")
+        compare(fast.shown, "eco")
+    }
+
+    function test_a_plain_row_is_not_optimistic() {
+        mouseClick(row, 240, 20)
+        compare(row.shown, "eco")
     }
 }

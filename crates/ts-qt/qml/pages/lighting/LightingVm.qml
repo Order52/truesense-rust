@@ -15,6 +15,38 @@ QtObject {
     /// The names of the looks, built-in first.
     property var looks: ["native"]
 
+    // ---- theme pictures ------------------------------------------------------------------------
+    // The gallery's pictures ("id#colourway" -> 128 cells), kept for the whole run: a theme's
+    // picture never changes (user themes are drawn again after a save: see forgetPreview), and the
+    // gallery is built again on every visit of the Themes tab. The object is changed in place and
+    // `previewSerial` says when, once per batch of answers (32 answers are one update, not 32).
+    property var previews: ({})
+    property int previewSerial: 0
+    property var _asked: ({})
+    property bool _flushQueued: false
+
+    function previewKey(id, way) { return id + "#" + way }
+
+    /// Asks for the picture of a theme in a colourway once per run; the answer lands in `previews`.
+    function ensurePreview(id, way) {
+        var k = previewKey(id, way)
+        if (_asked[k] === true) return
+        _asked[k] = true
+        Api.call("theme", "preview", { name: id, colourway: way }, function (r) {
+            previews[k] = r.cells
+            if (!_flushQueued) { _flushQueued = true; Qt.callLater(_flushPreviews) }
+        }, function () { delete _asked[k] })
+    }
+
+    function _flushPreviews() { _flushQueued = false; previewSerial++ }
+
+    /// Draws a theme again next time (it was saved or deleted).
+    function forgetPreview(id) {
+        for (var k in _asked)
+            if (k.indexOf(id + "#") === 0) { delete _asked[k]; delete previews[k] }
+        previewSerial++
+    }
+
     // ---- the view-model --------------------------------------------------------------------
 
     function _decode(text, verb) {
