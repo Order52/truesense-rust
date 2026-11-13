@@ -549,14 +549,20 @@ fn a_theme_that_gave_way_to_another_look_is_over_and_does_not_come_back_on_the_n
     start(&w, animated());
     run_for(&mut r, &w, 1.0);
     lock(&w.last).name = "breathing".into();
+    let at = *lock(&w.now);
+    *lock(&w.set_at) = Some(at);
     run_for(&mut r, &w, 1.0);
     assert!(lock(&w.active).is_none(), "the record is ended");
     let drawn = lock(&w.uploads).len();
+    // The chosen look was sent again once over the theme's last frames; nothing else.
+    let replays = w.replays.load(Ordering::SeqCst);
+    assert_eq!(replays, 1);
+    assert_eq!(lock(&w.last).name, "breathing");
     // The key service starts again (login, reboot, upgrade): nothing is drawn.
     let mut again = renderer(&w, 15);
     run_for(&mut again, &w, 5.0);
     assert_eq!(lock(&w.uploads).len(), drawn);
-    assert_eq!(w.replays.load(Ordering::SeqCst), 0, "and the chosen look is not replaced by the old one");
+    assert_eq!(w.replays.load(Ordering::SeqCst), replays, "and nothing is put back on the next start");
 }
 
 #[test]
@@ -651,11 +657,20 @@ fn a_look_set_by_another_command_ends_the_theme_without_being_overwritten() {
     run_for(&mut r, &w, 2.0);
     let drawn = lock(&w.uploads).len();
     lock(&w.last).color = "ff0000".into();
+    let changed_at = *lock(&w.now);
+    *lock(&w.set_at) = Some(changed_at);
     run_for(&mut r, &w, 5.0);
     let after = lock(&w.uploads).len();
     // Noticed at the next look at the record (within half a second): a handful of frames at most.
     assert!(after - drawn <= 8, "{} frames after the change", after - drawn);
-    assert_eq!(w.replays.load(Ordering::SeqCst), 0, "the user's look is not replaced by the old one");
+    // Those frames covered the new look, so the new look (still the remembered one: the theme's
+    // own look before is not brought back) is sent once more over them.
+    assert_eq!(
+        w.replays.load(Ordering::SeqCst),
+        1,
+        "the new look is sent again over the theme's last frames"
+    );
+    assert_eq!(lock(&w.last).color, "ff0000");
     let halts = lock(&w.halts).clone();
     assert_eq!(halts.len(), 1);
     assert!(halts[0].1.contains("changed by another command"));
@@ -663,6 +678,31 @@ fn a_look_set_by_another_command_ends_the_theme_without_being_overwritten() {
     let settled = lock(&w.uploads).len();
     run_for(&mut r, &w, 10.0);
     assert_eq!(lock(&w.uploads).len(), settled);
+}
+
+#[test]
+fn a_look_set_long_after_the_last_frame_is_not_sent_again() {
+    // A still theme uploads once; Wave picked much later is not covered by any frame.
+    let still = ts_fx::themes::catalogue()
+        .iter()
+        .filter(|t| t.id != "storm")
+        .find(|t| {
+            let Some(mut fx) = t.keyboard_effect(&Default::default()) else { return false };
+            let a = fx.frame(0.0, 0.0, &Input::default()).to_vec();
+            (1..40).all(|i| fx.frame(f64::from(i) * 0.25, 0.25, &Input::default()) == a.as_slice())
+        })
+        .map(|t| t.id.clone())
+        .expect("a still theme");
+    let w = world();
+    let mut r = renderer(&w, 15);
+    start(&w, ThemeSpec::new(still));
+    run_for(&mut r, &w, 5.0);
+    lock(&w.last).color = "ff0000".into();
+    let at = *lock(&w.now);
+    *lock(&w.set_at) = Some(at);
+    run_for(&mut r, &w, 2.0);
+    assert!(lock(&w.active).is_none(), "the theme gave way");
+    assert_eq!(w.replays.load(Ordering::SeqCst), 0);
 }
 
 // ---- identical frames ------------------------------------------------------------------------

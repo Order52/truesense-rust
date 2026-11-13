@@ -30,6 +30,22 @@ pub const ERROR_BACKOFF: Duration = Duration::from_secs(1);
 pub const BRIGHTNESS_REFRESH_S: f64 = 5.0;
 /// The brightness used until the keyboard has been asked.
 const DEFAULT_BRIGHTNESS: i64 = 25;
+/// How long one frame upload may still be on its way: a frame started this long before another
+/// look was set may land after it, so that look is sent again.
+const UPLOAD_S: f64 = 0.5;
+
+/// How the loop sees that another look took the keyboard while an animation ran (a hardware
+/// effect such as Wave, the power-mode colour, off): the animation then gives way instead of
+/// drawing over it, and that look is sent again if one of the animation's frames went out after it.
+pub struct LookWatch {
+    /// The mode of the look last put on the keyboard (`keyboard::mode`) and when, in seconds since
+    /// the epoch.
+    pub look: Box<dyn Fn() -> (String, Option<f64>) + Send>,
+    /// Sends that look again.
+    pub replay: Box<dyn Fn() + Send>,
+    /// Switches off the animation started at this time (and nothing newer).
+    pub end: Box<dyn Fn(f64) + Send>,
+}
 
 /// Draws the animation described by the settings.
 pub struct Runner {
@@ -46,6 +62,11 @@ pub struct Runner {
     seen_keys: u64,
     /// Until when the keyboard's brightness is read before every frame (after such a key).
     follow_until: f64,
+    /// Another look taking the keyboard (none: the animation only stops when switched off).
+    watch: Option<LookWatch>,
+    /// When the animation being drawn was started, and when its last frame upload began.
+    started: f64,
+    sent_at: f64,
 }
 
 impl Runner {
@@ -69,7 +90,16 @@ impl Runner {
             hw_keys: Box::new(hwkeys::generation),
             seen_keys: hwkeys::generation(),
             follow_until: f64::NEG_INFINITY,
+            watch: None,
+            started: f64::NEG_INFINITY,
+            sent_at: f64::NEG_INFINITY,
         }
+    }
+
+    /// Gives way to another look that takes the keyboard (see [`LookWatch`]).
+    pub fn with_look_watch(mut self, watch: LookWatch) -> Self {
+        self.watch = Some(watch);
+        self
     }
 
     /// Takes the count of the keyboard's own lighting keys from `source` instead of the key
@@ -97,8 +127,12 @@ impl Runner {
     /// One iteration of the loop; returns how long to wait before the next.
     pub fn step(&mut self) -> Duration {
         let settings = (self.settings)();
+        let animating = is_mode(&settings.mode) && settings.base_colors().is_some_and(|b| !b.is_empty());
+        if (animating || self.running) && self.given_way(&settings, animating) {
+            return IDLE_INTERVAL;
+        }
         match settings.base_colors() {
-            Some(base) if is_mode(&settings.mode) && !base.is_empty() => self.frame(&settings, &base),
+            Some(base) if animating => self.frame(&settings, &base),
             _ => {
                 if self.running {
                     self.hand_back(&settings);
@@ -131,7 +165,9 @@ impl Runner {
         let frame = render(&settings.mode, t, base, &settings.cells(), settings.speed);
         // An identical frame is not sent again (less USB traffic).
         let current = (frame, self.bright);
+        self.started = settings.t0.unwrap_or(f64::NEG_INFINITY);
         if self.last.as_ref() != Some(&current) {
+            self.sent_at = now;
             match self.sink.per_key_frame(&current.0, Some(current.1)) {
                 Ok(()) => {
                     self.running = true;
@@ -144,6 +180,28 @@ impl Runner {
             }
         }
         FRAME_INTERVAL
+    }
+
+    /// Whether another look took the keyboard after this animation started; if so the animation is
+    /// switched off without putting its colours back (they would cover that look), and that look is
+    /// sent again if a frame of the animation may have landed after it.
+    fn given_way(&mut self, settings: &Settings, animating: bool) -> bool {
+        let Some(watch) = self.watch.as_ref() else { return false };
+        let since = if animating { settings.t0.unwrap_or(f64::NEG_INFINITY) } else { self.started };
+        let (mode, at) = (watch.look)();
+        let Some(at) = at.filter(|at| mode != crate::keyboard::mode::PERKEY && *at > since) else {
+            return false;
+        };
+        if animating && let Some(t0) = settings.t0 {
+            (watch.end)(t0);
+        }
+        if self.sent_at + UPLOAD_S >= at {
+            (watch.replay)();
+        }
+        self.running = false;
+        self.last = None;
+        self.sent_at = f64::NEG_INFINITY;
+        true
     }
 
     /// Puts the base colours back (or what is on the keyboard now, if there are none).

@@ -318,13 +318,22 @@ impl Api {
                 None => DEFAULT_EFFECT_BRIGHT,
             },
         };
-        Ok(self.s.keyboard.set_effect(
+        self.s.keyboard.set_effect(
             &request.name,
             &request.color,
             request.speed,
             brightness,
             request.direction,
-        )?)
+        )?;
+        // A per-key animation would draw over the effect: it ends here, after the effect is set,
+        // so the key service sees a newer look and does not put the animation's colours back.
+        let fx = self.s.fx.get();
+        if fx.mode != "off"
+            && let Some(t0) = fx.t0
+        {
+            self.s.fx.end(t0);
+        }
+        Ok(())
     }
 
     /// Changes the colour of the current look without changing the effect.

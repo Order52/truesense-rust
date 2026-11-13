@@ -386,3 +386,14 @@ fn the_wave_directions_are_listed_and_parsed_and_reach_the_keyboard() {
         .unwrap_err();
     assert!(err.to_string().starts_with("wave direction 6"), "{err}");
 }
+
+#[test]
+fn a_hardware_effect_switches_a_running_per_key_animation_off() {
+    // The bug: a per-key animation kept drawing over Wave picked on the Keyboard tab.
+    let fx = no_daemon();
+    fx.api.set_keyboard_fx(&AnimationRequest { mode: "pulse".into(), speed: 5, keys: None }).unwrap();
+    assert_eq!(fx.api.services().fx.get().mode, "pulse");
+    fx.api.set_keyboard_effect(&EffectRequest::new("wave")).unwrap();
+    assert_eq!(fx.api.services().fx.get().mode, "off");
+    assert_eq!(fx.api.keyboard_last().name, "wave");
+}

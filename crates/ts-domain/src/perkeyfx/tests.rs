@@ -627,3 +627,103 @@ fn an_animation_follows_the_keyboards_own_brightness_keys_at_once() {
     quiet.step();
     assert_eq!(sink.frames.lock().unwrap().last().map(|f| f.1), Some(Some(25)), "the default, not darkness");
 }
+
+/// A look watch over shared cells: the look (mode, set at), how often it was replayed, which
+/// animation start was ended.
+struct Watched {
+    look: Arc<Mutex<(String, Option<f64>)>>,
+    replays: Arc<AtomicUsize>,
+    ended: Arc<Mutex<Vec<f64>>>,
+}
+
+fn watched(rig: Rig) -> (Rig, Watched) {
+    let w = Watched {
+        look: Arc::new(Mutex::new(("perkey".to_owned(), Some(999.0)))),
+        replays: Arc::new(AtomicUsize::new(0)),
+        ended: Arc::new(Mutex::new(Vec::new())),
+    };
+    let (l, r, e) = (Arc::clone(&w.look), Arc::clone(&w.replays), Arc::clone(&w.ended));
+    let Rig { runner, sink, settings, now, sleeps } = rig;
+    let runner = runner.with_look_watch(LookWatch {
+        look: Box::new(move || l.lock().unwrap().clone()),
+        replay: Box::new(move || {
+            r.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }),
+        end: Box::new(move |t0| e.lock().unwrap().push(t0)),
+    });
+    (Rig { runner, sink, settings, now, sleeps }, w)
+}
+
+#[test]
+fn a_hardware_effect_set_while_an_animation_runs_ends_it_without_painting_over_it() {
+    let (mut rig, w) = watched(runner_rig());
+    rig.set(on("pulse"));
+    rig.runner.step();
+    rig.advance(0.2);
+    rig.runner.step();
+    let drawn = rig.frames();
+    assert!(drawn >= 1);
+    // Wave is picked on the Keyboard tab long after the last frame went out.
+    rig.advance(5.0);
+    *w.look.lock().unwrap() = ("effect".to_owned(), Some(1005.2));
+    assert_eq!(rig.runner.step(), IDLE_INTERVAL);
+    assert_eq!(*w.ended.lock().unwrap(), vec![1000.0], "the animation that was started is switched off");
+    assert_eq!(rig.frames(), drawn, "no frame and no hand-back over the new look");
+    assert_eq!(w.replays.load(std::sync::atomic::Ordering::SeqCst), 0, "nothing landed after it");
+    // The store says off now (as `end` would leave it): the loop stays quiet.
+    rig.set(Settings { mode: "off".to_owned(), ..on("pulse") });
+    rig.runner.step();
+    assert_eq!(rig.frames(), drawn);
+}
+
+#[test]
+fn a_frame_that_may_land_after_the_new_look_makes_the_look_be_sent_again() {
+    let (mut rig, w) = watched(runner_rig());
+    rig.set(on("pulse"));
+    rig.runner.step();
+    // The look is set 0.1 s after a frame upload began: that frame may arrive after it.
+    *w.look.lock().unwrap() = ("effect".to_owned(), Some(1000.1));
+    rig.advance(0.2);
+    rig.runner.step();
+    assert_eq!(w.replays.load(std::sync::atomic::Ordering::SeqCst), 1);
+}
+
+#[test]
+fn a_new_per_key_picture_or_an_older_look_does_not_stop_the_animation() {
+    let (mut rig, w) = watched(runner_rig());
+    rig.set(on("pulse"));
+    rig.runner.step();
+    // Painting keys under the animation stores a per-key look: it goes on.
+    *w.look.lock().unwrap() = ("perkey".to_owned(), Some(1003.0));
+    rig.advance(3.0);
+    assert_eq!(rig.runner.step(), FRAME_INTERVAL);
+    // A hardware effect set before the animation started is the old look it replaced.
+    *w.look.lock().unwrap() = ("effect".to_owned(), Some(990.0));
+    rig.advance(0.2);
+    assert_eq!(rig.runner.step(), FRAME_INTERVAL);
+    assert!(w.ended.lock().unwrap().is_empty());
+}
+
+#[test]
+fn switching_off_after_another_look_took_the_keyboard_does_not_hand_the_colours_back() {
+    let (mut rig, w) = watched(runner_rig());
+    rig.set(on("pulse"));
+    rig.runner.step();
+    let drawn = rig.frames();
+    // The window stores off and sets Wave; the loop sees both at once.
+    rig.advance(3.0);
+    *w.look.lock().unwrap() = ("effect".to_owned(), Some(1003.0));
+    rig.set(Settings { mode: "off".to_owned(), ..on("pulse") });
+    rig.runner.step();
+    assert_eq!(rig.frames(), drawn, "the base colours would cover Wave");
+}
+
+#[test]
+fn ending_switches_off_only_the_animation_that_was_started_then() {
+    let (_dir, fx, _sink, _state) = store_rig(1000.0);
+    fx.set("pulse", 5, &[], &[[1, 2, 3]]).unwrap();
+    fx.end(999.0);
+    assert_eq!(fx.get().mode, "pulse", "a newer animation is left alone");
+    fx.end(1000.0);
+    assert_eq!(fx.get().mode, "off");
+}

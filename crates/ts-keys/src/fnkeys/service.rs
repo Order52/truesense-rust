@@ -24,7 +24,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 use ts_api::api::{Api, ConfigFiles, NodeFinder, Notifier as Screen};
 use ts_domain::actions::ActionRunner;
 use ts_domain::keybinds::{self, ActionCheck, Bindings, Gesture, KeyEvent};
-use ts_domain::perkeyfx::{FrameSink, FxStore, Runner as AnimationRunner, epoch_seconds, hwkeys};
+use ts_domain::perkeyfx::{FrameSink, FxStore, LookWatch, Runner as AnimationRunner, epoch_seconds, hwkeys};
 use ts_foundation::sdnotify::{self, Notifier as Systemd};
 use ts_foundation::wake;
 
@@ -218,7 +218,8 @@ impl Env {
     pub fn from_api(api: &Api) -> Env {
         let services = api.services();
         let sink: Arc<dyn FrameSink> = services.keyboard.clone();
-        let fx = FxStore::new(Arc::clone(&services.user), Arc::clone(&sink), Arc::new(epoch_seconds));
+        let fx =
+            Arc::new(FxStore::new(Arc::clone(&services.user), Arc::clone(&sink), Arc::new(epoch_seconds)));
         // One inotify thread for the files the loops read: the configuration (the key loop) and the
         // user state (the lighting loops). Without it (no inotify) everything polls as before.
         let watch = Watcher::start(&[
@@ -228,8 +229,19 @@ impl Env {
         .ok()
         .map(Arc::new);
         let watching = watch.as_ref().is_some_and(|w| w.complete());
+        // Another look (Wave, the power-mode colour, off...) set while an animation runs ends it.
+        let (shown, replayer, ender) =
+            (Arc::clone(&services.keyboard), Arc::clone(&services.keyboard), Arc::clone(&fx));
+        let gives_way = LookWatch {
+            look: Box::new(move || (shown.last().mode, shown.last_set_at())),
+            replay: Box::new(move || {
+                let _ = replayer.replay_last();
+            }),
+            end: Box::new(move |t0| ender.end(t0)),
+        };
         let mut animation =
-            AnimationRunner::new(move || fx.get(), sink, epoch_seconds, lighting_sleep(watching));
+            AnimationRunner::new(move || fx.get(), sink, epoch_seconds, lighting_sleep(watching))
+                .with_look_watch(gives_way);
         // The themes: drawn while one is the current look, asleep (until the user state changes)
         // otherwise.
         let mut themes = Renderer::from_api(api, Box::new(lighting_sleep(watching)));

@@ -18,7 +18,7 @@ use std::fmt;
 use ts_foundation::fsx::FsError;
 
 pub use frames::{MODES, SPEED_MAX, SPEED_MIN, hash, is_mode, mode_names, render};
-pub use runner::{BRIGHTNESS_REFRESH_S, ERROR_BACKOFF, FRAME_INTERVAL, IDLE_INTERVAL, Runner};
+pub use runner::{BRIGHTNESS_REFRESH_S, ERROR_BACKOFF, FRAME_INTERVAL, IDLE_INTERVAL, LookWatch, Runner};
 pub use settings::{DEFAULT_SPEED, FxStore, Settings, epoch_seconds};
 pub use sweep::{cell_angle, phase as sweep_phase};
 

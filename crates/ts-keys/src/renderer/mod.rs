@@ -56,6 +56,9 @@ pub(crate) const IDLE: Duration = Duration::from_millis(500);
 /// The longest step of a theme's own clock: after a suspend or a stall the theme resumes where it
 /// was instead of jumping.
 const MAX_STEP: f64 = 0.5;
+/// How long a frame upload may still be on its way (about 180 ms, with room): a frame begun this
+/// long before another look was set may land after it.
+const UPLOAD_S: f64 = 0.5;
 /// The brightness used until the keyboard has been asked.
 const DEFAULT_BRIGHTNESS: i64 = 25;
 /// The shortest pause between two turns of the loop, so a sink that returns at once can never
@@ -169,6 +172,8 @@ struct Run {
     baseline: KeyboardState,
     baseline_at: Option<f64>,
     last_frame: Option<(Vec<Color>, i64)>,
+    /// When the last frame upload began (wall clock), to know whether it may cover a newer look.
+    sent_at: f64,
     /// When the keyboard first could not be reached in the current wait (see `KEYBOARD_GRACE_S`).
     waiting_since: Option<f64>,
     /// The count of the keyboard's own lighting keys seen last, and until when the keyboard's
@@ -182,7 +187,8 @@ enum Next {
     Stay,
     Forget,
     Restore,
-    GiveWay(Active),
+    /// Another look took the keyboard; `true` when a frame of the theme may have landed after it.
+    GiveWay(Active, bool),
     Start(Active),
 }
 
@@ -251,10 +257,12 @@ impl Renderer {
             (State::Run(_), None) => Next::Restore,
             (State::Halted(started), Some(a)) if *started == a.started => Next::Stay,
             (State::Run(run), Some(a)) if run.active == a => {
-                if self.env.keyboard.last() != run.baseline
-                    || self.env.keyboard.last_set_at() != run.baseline_at
-                {
-                    Next::GiveWay(a)
+                let set_at = self.env.keyboard.last_set_at();
+                if self.env.keyboard.last() != run.baseline || set_at != run.baseline_at {
+                    // The theme keeps drawing until this look (twice a second): frames uploaded
+                    // after the new look was set cover it, so then it is sent again.
+                    let covered = set_at.is_none_or(|at| run.sent_at + UPLOAD_S >= at);
+                    Next::GiveWay(a, covered)
                 } else {
                     Next::Stay
                 }
@@ -268,7 +276,12 @@ impl Renderer {
                 self.state = State::Idle;
                 self.restore("the theme was stopped");
             }
-            Next::GiveWay(a) => self.give_way(&a, "the keyboard look was changed by another command"),
+            Next::GiveWay(a, covered) => {
+                self.give_way(&a, "the keyboard look was changed by another command");
+                if covered {
+                    self.put_back_the_new_look();
+                }
+            }
             Next::Start(a) => self.start(a, now),
         }
     }
@@ -302,6 +315,7 @@ impl Renderer {
             // Read the keyboard's own level on the first frame when the theme names none.
             bright_at: f64::NEG_INFINITY,
             last_frame: None,
+            sent_at: f64::NEG_INFINITY,
             waiting_since: None,
             seen_keys: (self.env.hw_keys)(),
             follow_until: f64::NEG_INFINITY,
@@ -324,6 +338,14 @@ impl Renderer {
         self.env.themes.end(active.started);
         // The look that changed it is the keyboard's now: it is not replaced by the old one.
         self.state = State::Halted(active.started);
+    }
+
+    /// Sends the look that made the theme give way again, over the theme's last frames.
+    fn put_back_the_new_look(&mut self) {
+        let last = self.env.keyboard.last();
+        if let Err(e) = self.env.keyboard.replay(&last) {
+            (self.env.log)(&format!("the new keyboard look could not be sent again: {e}"));
+        }
     }
 
     /// Hands the keyboard back to the static look it held before the theme. Best effort: the
@@ -370,6 +392,7 @@ impl Renderer {
         let mut failure = None;
         // An identical picture is not sent again (a still theme costs no USB traffic).
         if run.last_frame.as_ref() != Some(&current) {
+            run.sent_at = now;
             match self.env.sink.per_key_frame(&current.0, Some(current.1)) {
                 Ok(()) => {
                     if run.waiting_since.take().is_some() {

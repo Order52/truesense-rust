@@ -142,4 +142,14 @@ impl FxStore {
         self.state.set_as(userstate::keys::PERKEY_FX, &stored).map_err(FxError::Save)?;
         Ok(self.get())
     }
+
+    /// Switches the animation that was started at `t0` off, and nothing newer: what the drawing
+    /// loop does when another look took the keyboard (a later animation is left alone).
+    pub fn end(&self, t0: f64) {
+        let now = self.get();
+        if now.mode != "off" && now.t0 == Some(t0) {
+            let stored = Settings { mode: "off".to_owned(), ..now };
+            let _ = self.state.set_as(userstate::keys::PERKEY_FX, &stored);
+        }
+    }
 }

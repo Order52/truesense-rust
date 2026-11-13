@@ -4,6 +4,7 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
+- Keyboard: picking Wave (or any effect, the power-mode colour, or off) after a per-key animation or a theme now sticks. A per-key animation kept drawing over the new look, because nothing switched it off; and a theme drew for up to half a second more after the new look was set, and its last frame stayed on the keyboard. Both now give way, and the new look is sent again if one of their frames landed after it.
 - Messages: one small message at the top right of the window instead of a stack of cards at the bottom; a new message replaces the one showing, confirmations go after 2.5 s and errors after 6 s, a click dismisses.
 - Lighting > Rear bar: a picture of the back of the laptop shows the light bar as it is set (the seven light panels of the glass strip with HELIOS, the edge line, the vents and ports): the three parts in their colours, the colour ramp of neon, the fade of wave, the bar dark when off. In the static effect a click on a part picks its colour. Neon makes its own colours, so it no longer offers a colour.
 - Safety: a simulated run (`TRUESENSE_SIM`) without `TRUESENSE_SOCKET` now uses its own socket in its throwaway directory, instead of reaching the real daemon and changing the real fans and power mode.
