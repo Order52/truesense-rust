@@ -180,4 +180,52 @@ Two rules keep an idle window idle, and `crates/ts-qt/tests/render.rs` pins them
   store refreshes every second (that was ~50 to 140 frames per second at 165 Hz).
 
 `tools/qtprofile/` measures a page (`profile`), compares two routes (`compare`), looks for flicker
-(`glitch`) and counts wakeups (`bench`).
+(`glitch`) and counts wakeups (`bench`); `tools/qtprofile/stale.py` compares the whole window on the
+screen with the app's own picture (`run`) or watches the real window for a stale frame (`watch`).
+
+### On Wayland (Hyprland): what was checked, what is known
+
+Reported: the window "sometimes glitches", the mouse "draws" the right picture back where it moves,
+and zooming in and out (Hyprland's cursor zoom) fixes all of it. Zooming sends the program nothing
+(checked with `WAYLAND_DEBUG`: no event, no repaint), it only makes the compositor recomposite the
+output from the buffers it already has. On this NVIDIA-only laptop Hyprland draws the pointer itself
+(`cursor:no_hardware_cursors` = auto; the pointer shows up in screen captures), so a moving pointer
+also recomposites the strip it crosses. A picture fixed by either points to a stale *compositor
+frame*, not to a wrong picture in the app's buffer.
+
+How it was looked for (November 2026, Qt 6.12, Hyprland 0.57, 165 Hz with VRR):
+
+- `stale.py run`: an own test window (simulated hardware) driven from inside: page switches, flings
+  and jumps in long pages, drop-downs, the colour picker and confirmation dialogs (open and close),
+  tooltips, toasts, hide and show, resize bursts, moves to another workspace and back, live values
+  running; floating and tiled next to other windows; software and OpenGL routes. After each step
+  the whole window on the screen is compared, pixel by pixel, with the app's own `grabToImage` of the
+  scene. About 180 steps: no stale or wrong region.
+- The screen capture is wlr-screencopy `copy_with_damage` (`tools/qtprofile/scap/`), which is meant
+  to hand over the frame as it is instead of a repainted one. Whether Hyprland repaints the output
+  for a capture anyway could not be settled (a new capture comes back at once, marked fully
+  damaged); if it does, no screenshot can show a stale compositor frame, and the earlier
+  grim-based glitch detector could not have either. What the comparison does show for certain is
+  any wrong picture the app itself sends: none was found.
+- `stale.py watch` looked at the real, tiled window every 20 s for half an hour (58 looks) while
+  the owner had it open, damage capture against grim: identical every time except while the window
+  was scrolling or a test window passed over it.
+- The software route is sound on its own: the program sends the damage it paints (`damage_buffer`
+  rectangles), waits for each frame callback and uses XRGB buffers (opaque, nothing blurred behind);
+  the last frame of a colour animation reaches the screen. `QSG_RENDER_LOOP=threaded`,
+  `QSG_SOFTWARE_RENDERER_FORCE_PARTIAL_UPDATES=1` and the OpenGL route looked the same.
+
+So nothing in the app was found to cause it, and it did not happen while it was watched. If it comes
+back: run `tools/qtprofile/stale.py watch` while using the app (it keeps both pictures of a stale
+frame), and try `"renderer": "opengl"` in `ui.json` (GPU buffers instead of shared memory; costs
+about 180 MB more and 1 % CPU) to see whether the route matters.
+
+Found on the way and fixed: the Lighting colour picker opened at the corner of the scrolled tab
+(a file using `Overlay.overlay` without the QtQuick.Controls import; `tests/render.rs` now refuses
+that), a binding loop in the Per-key template gallery, and Qt's text-input warning on every focus
+change (`qt.qpa.wayland.textinput`, silenced in `shim.cpp`; Hyprland offers no input method). An app
+test loads every page and fails on any QML error or binding loop.
+
+Two Hyprland settings make test pictures differ from the app's without any fault:
+`decoration:dim_inactive` darkens an unfocused window by 10 % (the test rule sets `no_dim`), and
+the compositor rounds the corners and draws a border over the outermost pixels.

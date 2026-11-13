@@ -101,6 +101,7 @@ pub fn rss_kb() -> u64 {
 
 fn start_qt(shared: &Shared) -> i32 {
     let mut app = QGuiApplication::new();
+    platform::quiet_platform_noise();
     QQuickStyle::set_style(&QString::from("Basic"));
     let app_id =
         std::env::var("TRUESENSE_APP_ID").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| APP_ID.to_owned());

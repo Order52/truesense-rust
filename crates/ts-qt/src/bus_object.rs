@@ -129,6 +129,8 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn allow_resource_reads();
         #[namespace = "truesense"]
+        fn quiet_platform_noise();
+        #[namespace = "truesense"]
         fn choose_renderer(requested: &QString) -> QString;
         #[namespace = "truesense"]
         fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);

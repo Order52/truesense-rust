@@ -3,6 +3,7 @@
 // (colour, speed, direction) comes from the view-model's catalogue; only those are shown, and a
 // line says so when an effect makes its own colours.
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import org.truesense.app
 

@@ -3,6 +3,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QLibrary>
 #include <QtCore/QLocale>
+#include <QtCore/QLoggingCategory>
 #include <QtCore/QTranslator>
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusConnectionInterface>
@@ -86,6 +87,10 @@ bool tray_host_registered() {
 }
 
 void allow_resource_reads() { qputenv("QML_XHR_ALLOW_FILE_READ", QByteArray("1")); }
+
+void quiet_platform_noise() {
+    QLoggingCategory::setFilterRules(QStringLiteral("qt.qpa.wayland.textinput.warning=false"));
+}
 
 namespace {
 // Can this process get a GL context at all (the driver is installed, the session allows it)? Qt Quick
