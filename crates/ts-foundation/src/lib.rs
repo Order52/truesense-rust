@@ -6,6 +6,7 @@ pub mod config;
 pub mod fsx;
 pub mod names;
 pub mod sdnotify;
+pub mod session;
 pub mod state;
 pub mod sync;
 pub mod userstate;

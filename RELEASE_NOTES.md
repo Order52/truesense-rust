@@ -4,6 +4,8 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
+- The PREDATOR key opens the app again on a desktop that starts its session after the key service (Hyprland, and any compositor that is not a systemd-aware login manager): the service has run since boot with no display in its environment, so the window aborted inside Qt and left a core dump. `exec:` actions and `truesense gui` now find the live session (the user manager's environment, then the sockets in `$XDG_RUNTIME_DIR`), `truesense gui` says so plainly when there is no display at all, and an open window is brought to the front by asking the compositor (Hyprland, Sway) instead of relying on its activation settings. A command that a key started and that then fails is logged by the key service.
+- A lighting theme started at login no longer dies when the keyboard's access rights arrive a few seconds after the key service: "no permission" and "interface not found" are waited for (one try a second, up to a minute) before the theme gives way; every other error still stops it at once.
 - Home: the Fans card always highlighted "Manual" whatever the fans were doing (the Cooling page was right); it now shows what the machine reports (Smart, Auto, Max or Manual). Found by opening the app on Hyprland; a source test now refuses any `shown...` value that is a constant.
 - The update check no longer trusts an answer cached for another repository: after moving from the Go or Python edition, `truesense update check` could say "newest 0.4.0" for a day from the old repository's cache.
 

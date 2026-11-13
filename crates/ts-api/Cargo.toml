@@ -16,6 +16,8 @@ ts-ipc = { path = "../ts-ipc" }
 ts-decision = { path = "../ts-decision" }
 ts-domain = { path = "../ts-domain" }
 ts-system = { path = "../ts-system" }
-ts-daemon = { path = "../ts-daemon" }
 serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+ts-daemon = { path = "../ts-daemon" }

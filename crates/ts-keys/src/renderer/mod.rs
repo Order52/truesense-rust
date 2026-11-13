@@ -36,7 +36,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use ts_api::api::Api;
-use ts_domain::keyboard::State as KeyboardState;
+use ts_domain::keyboard::{KeyboardError, State as KeyboardState};
 use ts_domain::keymap::Color;
 use ts_domain::looks::KeyboardControl;
 use ts_domain::perkeyfx::{BRIGHTNESS_REFRESH_S, FrameSink, epoch_seconds};
@@ -61,6 +61,15 @@ const DEFAULT_BRIGHTNESS: i64 = 25;
 /// The shortest pause between two turns of the loop, so a sink that returns at once can never
 /// make it spin.
 const MIN_PAUSE: Duration = Duration::from_millis(1);
+
+/// How long a keyboard that is not reachable yet (no permission on its node, the interface not
+/// listed) is waited for before the theme gives way. At login the service can start a few seconds
+/// before the session's access to the keyboard is in place; a theme that stopped for that would
+/// never be there after a restart.
+const KEYBOARD_GRACE_S: f64 = 60.0;
+
+/// The pause between two attempts while the keyboard is not reachable.
+const KEYBOARD_RETRY: Duration = Duration::from_secs(1);
 
 /// What the renderer needs from the theme store.
 pub trait Themes: Send {
@@ -148,6 +157,8 @@ struct Run {
     /// something else set the keyboard.
     baseline: KeyboardState,
     last_frame: Option<(Vec<Color>, i64)>,
+    /// When the keyboard first could not be reached in the current wait (see `KEYBOARD_GRACE_S`).
+    waiting_since: Option<f64>,
 }
 
 /// What a look at the record decided.
@@ -272,6 +283,7 @@ impl Renderer {
             // Read the keyboard's own level on the first frame when the theme names none.
             bright_at: f64::NEG_INFINITY,
             last_frame: None,
+            waiting_since: None,
         }));
     }
 
@@ -323,7 +335,25 @@ impl Renderer {
         // An identical picture is not sent again (a still theme costs no USB traffic).
         if run.last_frame.as_ref() != Some(&current) {
             match self.env.sink.per_key_frame(&current.0, Some(current.1)) {
-                Ok(()) => run.last_frame = Some(current),
+                Ok(()) => {
+                    if run.waiting_since.take().is_some() {
+                        (self.env.log)(&format!("theme {}: the keyboard is reachable", run.active.spec.name));
+                    }
+                    run.last_frame = Some(current);
+                }
+                Err(e @ (KeyboardError::Permission { .. } | KeyboardError::NotFound))
+                    if run.waiting_since.is_none_or(|since| now - since < KEYBOARD_GRACE_S) =>
+                {
+                    if run.waiting_since.is_none() {
+                        run.waiting_since = Some(now);
+                        (self.env.log)(&format!(
+                            "theme {}: waiting for the keyboard: {e}",
+                            run.active.spec.name
+                        ));
+                    }
+                    // Nothing was drawn: the same picture is tried again after the pause.
+                    return KEYBOARD_RETRY;
+                }
                 Err(e) => failure = Some((run.active.clone(), e.to_string())),
             }
         }

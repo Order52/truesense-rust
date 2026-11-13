@@ -23,6 +23,7 @@ use ts_domain::actions::{
     LightingFacade, LocalTouchpad, PowerFacade, RearState, RearWrite, Spawner, TouchpadAction,
 };
 use ts_domain::audio::{DtsScope, Output, VoiceDevice, VoiceMode};
+use ts_foundation::session;
 use ts_platform::hw::{Coded, PowerMode, RearMode, RearSettings, Rgb};
 use ts_system::touchpad::Touchpad;
 
@@ -298,7 +299,11 @@ pub struct ShellSpawner;
 
 impl Spawner for ShellSpawner {
     fn spawn(&self, command: &str) -> HostResult<()> {
-        let mut child = Command::new("/bin/sh")
+        // The key service has run since before the desktop session existed, so its own
+        // environment has no display: the command gets the live session's (see `session`).
+        let mut shell = Command::new("/bin/sh");
+        session::Plan::system(session::Prefer::Manager).apply(&mut shell);
+        let mut child = shell
             .arg("-c")
             .arg(command)
             .stdin(Stdio::null())
@@ -309,10 +314,17 @@ impl Spawner for ShellSpawner {
             .process_group(0)
             .spawn()
             .map_err(|e| HostError::new(format!("cannot run '{command}': {e}")))?;
+        let described = command.to_owned();
         thread::Builder::new()
             .name("exec-reaper".to_owned())
             .spawn(move || {
-                let _ = child.wait();
+                // The key press already got its answer ("started"); a command that then fails is
+                // only visible here, in the service's journal.
+                if let Ok(status) = child.wait()
+                    && !status.success()
+                {
+                    eprintln!("exec '{described}' failed: {status}");
+                }
             })
             .map(drop)
             .map_err(|e| HostError::new(format!("cannot watch '{command}': {e}")))

@@ -24,12 +24,28 @@ struct World {
     replays: AtomicUsize,
     /// What an upload costs in fake time (the real keyboard blocks about 180 ms).
     cost: Mutex<f64>,
-    /// The 1-based upload that fails and every one after it.
+    /// The 1-based upload that fails and every one after it (up to `fail_to`, when that is set).
     fail_from: Mutex<Option<usize>>,
+    /// The last attempt that still fails: the keyboard is reachable again after it.
+    fail_to: Mutex<Option<usize>>,
+    /// How a failing upload fails.
+    fail_kind: Mutex<Fail>,
     brightness: Mutex<u8>,
     brightness_reads: AtomicUsize,
     sleeps: AtomicUsize,
     attempts: AtomicUsize,
+}
+
+/// How an upload fails.
+#[derive(Clone, Copy, Default)]
+enum Fail {
+    /// A real fault (the device answered with an error): the theme must stop.
+    #[default]
+    Fault,
+    /// The interface is not listed yet.
+    Missing,
+    /// The session has no access to the node yet.
+    Denied,
 }
 
 #[derive(Clone)]
@@ -55,6 +71,8 @@ fn world() -> Arc<World> {
         replays: AtomicUsize::new(0),
         cost: Mutex::new(0.001),
         fail_from: Mutex::new(None),
+        fail_to: Mutex::new(None),
+        fail_kind: Mutex::new(Fail::Fault),
         brightness: Mutex::new(30),
         brightness_reads: AtomicUsize::new(0),
         sleeps: AtomicUsize::new(0),
@@ -76,9 +94,16 @@ impl FrameSink for Sink {
 
     fn per_key_frame(&self, cells: &[Color], brightness: Option<i64>) -> Result<(), KeyboardError> {
         let n = self.0.attempts.fetch_add(1, Ordering::SeqCst) + 1;
-        if lock(&self.0.fail_from).is_some_and(|from| n >= from) {
+        let to = *lock(&self.0.fail_to);
+        if lock(&self.0.fail_from).is_some_and(|from| n >= from) && to.is_none_or(|to| n <= to) {
             lock(&self.0.events).push("upload-failed".into());
-            return Err(KeyboardError::NotFound);
+            return Err(match *lock(&self.0.fail_kind) {
+                Fail::Fault => {
+                    KeyboardError::Io { op: "write", source: std::io::Error::other("device error") }
+                }
+                Fail::Missing => KeyboardError::NotFound,
+                Fail::Denied => KeyboardError::Permission { node: "/dev/hidraw8".into() },
+            });
         }
         let at = *lock(&self.0.now);
         lock(&self.0.uploads).push(Upload { at, cells: cells.to_vec(), brightness });
@@ -413,6 +438,47 @@ fn a_refused_frame_stops_the_theme_restores_the_look_and_never_retries() {
     assert!(halts[0].1.contains("refused a frame"), "{}", halts[0].1);
     // It did not spin: a minute of fake time took about two turns a second.
     assert!(w.sleeps.load(Ordering::SeqCst) <= 125, "{}", w.sleeps.load(Ordering::SeqCst));
+}
+
+#[test]
+fn a_keyboard_that_is_not_reachable_yet_is_waited_for_and_the_theme_then_runs() {
+    // The login race: the key service starts before the session's access to the keyboard is in
+    // place, so the first uploads are refused for a few seconds.
+    for kind in [Fail::Denied, Fail::Missing] {
+        let w = world();
+        *lock(&w.fail_from) = Some(1);
+        *lock(&w.fail_to) = Some(5);
+        *lock(&w.fail_kind) = kind;
+        let mut r = renderer(&w, 15);
+        start(&w, animated());
+        run_for(&mut r, &w, 10.0);
+        assert!(lock(&w.halts).is_empty(), "the theme was not given up");
+        assert_eq!(w.replays.load(Ordering::SeqCst), 0, "the static look was not put back over it");
+        assert!(matches!(r.state, State::Run(_)));
+        assert!(lock(&w.uploads).len() > 20, "it is drawing now");
+        let log = logs(&w);
+        assert_eq!(log.iter().filter(|l| l.contains("waiting for the keyboard")).count(), 1, "{log:?}");
+        assert_eq!(log.iter().filter(|l| l.contains("the keyboard is reachable")).count(), 1, "{log:?}");
+        // It waited about a second a time, it did not spin.
+        assert_eq!(w.attempts.load(Ordering::SeqCst) - lock(&w.uploads).len(), 5);
+    }
+}
+
+#[test]
+fn a_keyboard_that_never_comes_back_ends_the_wait_after_a_minute() {
+    let w = world();
+    *lock(&w.fail_from) = Some(1);
+    *lock(&w.fail_kind) = Fail::Denied;
+    let mut r = renderer(&w, 15);
+    let active = start(&w, animated());
+    run_for(&mut r, &w, 120.0);
+    let halts = lock(&w.halts).clone();
+    assert_eq!(halts.len(), 1);
+    assert_eq!(halts[0].0, active.started);
+    assert!(halts[0].1.contains("refused a frame") && halts[0].1.contains("no permission"), "{}", halts[0].1);
+    assert_eq!(w.replays.load(Ordering::SeqCst), 1);
+    let attempts = w.attempts.load(Ordering::SeqCst);
+    assert!((58..=64).contains(&attempts), "about one try a second for a minute, not {attempts}");
 }
 
 #[test]
