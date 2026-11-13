@@ -381,7 +381,13 @@ impl Audio {
     pub fn apply_mic_policy(&self, notify: bool) -> MicPolicy {
         let device = self.jack_use(None);
         let mode = self.voice_modes().get(device);
-        let want = if mode != Some(VoiceMode::Off) && self.node_exists(&device.node()) {
+        let names = self.source_names();
+        let want = if let Some(external) = external_mic(&names, &self.default_source()) {
+            // A USB or Bluetooth headset is plugged in: that is the microphone in use, not the
+            // laptop's (the 3.5 mm jack's filter recorded an empty jack while the person talked
+            // into a USB headset).
+            external
+        } else if mode != Some(VoiceMode::Off) && names.iter().any(|n| *n == device.node()) {
             device.node()
         } else {
             device.source()
@@ -428,6 +434,39 @@ impl Audio {
     pub fn speaker_filter_on(&self) -> bool {
         self.speaker_conf_path().exists()
     }
+}
+
+/// The node of a Purified Voice made for a USB headset microphone (written by hand for now).
+pub(crate) const USB_VOICE_NODE: &str = "truesense_pv_usb";
+
+/// Whether a source is a microphone that is not the laptop's own: USB or Bluetooth.
+fn is_external_mic(name: &str) -> bool {
+    name.starts_with("alsa_input.usb-") || name.starts_with("bluez_input.")
+}
+
+/// A game controller's microphone (a DualSense has one) is not where a person talks.
+fn is_controller(name: &str) -> bool {
+    let n = name.to_ascii_lowercase();
+    ["controller", "dualsense", "dualshock", "xbox", "gamepad"].iter().any(|w| n.contains(w))
+}
+
+/// The microphone to use while a USB or Bluetooth one is connected, if one is: the one already the
+/// default stays (the person chose it); else the Purified Voice for USB headsets if it exists; else
+/// the first headset microphone (controllers last). `None`: only the laptop's own microphones.
+fn external_mic(sources: &[String], current: &str) -> Option<String> {
+    let mut externals: Vec<&String> = sources.iter().filter(|n| is_external_mic(n)).collect();
+    if externals.is_empty() {
+        return None;
+    }
+    externals.sort_by_key(|n| is_controller(n));
+    if is_external_mic(current) && sources.iter().any(|n| n == current) {
+        return Some(current.to_owned());
+    }
+    let has_voice = sources.iter().any(|n| n == USB_VOICE_NODE);
+    if has_voice && externals.iter().any(|n| n.starts_with("alsa_input.usb-") && !is_controller(n)) {
+        return Some(USB_VOICE_NODE.to_owned());
+    }
+    externals.first().map(|n| (*n).clone())
 }
 
 #[cfg(test)]
@@ -688,5 +727,44 @@ mod tests {
             "mode: conference | personal"
         );
         assert!(!rig.audio.speaker_filter_on(), "an invalid mode writes nothing");
+    }
+
+    #[test]
+    fn a_usb_headset_microphone_wins_over_the_laptops_own() {
+        let s = |v: &[&str]| v.iter().map(|x| (*x).to_owned()).collect::<Vec<_>>();
+        let laptop = [
+            "alsa_input.pci-0.HiFi__Mic1__source",
+            "alsa_input.pci-0.HiFi__Mic2__source",
+            "truesense_pv_headset",
+        ];
+        assert_eq!(
+            external_mic(&s(&laptop), "truesense_pv_headset"),
+            None,
+            "no external mic: the laptop's rules"
+        );
+        let usb = "alsa_input.usb-GeneralPlus_USB_Audio_Device-00.mono-fallback";
+        let pad =
+            "alsa_input.usb-Sony_Interactive_Entertainment_DualSense_Wireless_Controller-00.Direct__source";
+        let mut with = s(&laptop);
+        with.extend(s(&[pad, usb]));
+        assert_eq!(
+            external_mic(&with, "truesense_pv_headset").as_deref(),
+            Some(usb),
+            "the headset, not the controller"
+        );
+        with.push(USB_VOICE_NODE.to_owned());
+        assert_eq!(
+            external_mic(&with, "truesense_pv_headset").as_deref(),
+            Some(USB_VOICE_NODE),
+            "purified when it exists"
+        );
+        assert_eq!(external_mic(&with, USB_VOICE_NODE).as_deref(), Some(USB_VOICE_NODE));
+        assert_eq!(external_mic(&with, pad).as_deref(), Some(pad), "a microphone the person picked stays");
+        // The USB headset unplugged: its filter alone is no reason to leave the laptop's rules.
+        let mut gone = s(&laptop);
+        gone.push(USB_VOICE_NODE.to_owned());
+        assert_eq!(external_mic(&gone, USB_VOICE_NODE), None);
+        let bt = "bluez_input.AA_BB.0";
+        assert_eq!(external_mic(&s(&[laptop[0], bt]), "x").as_deref(), Some(bt));
     }
 }
