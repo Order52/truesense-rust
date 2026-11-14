@@ -32,7 +32,7 @@ jobs:
           - { language: c-cpp, build-mode: manual }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -42,5 +42,5 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq "linux-headers-$(uname -r)"
           (cd kernel/truesense-wmi && make KVER="$(uname -r)")
           gcc -O2 -Wall -o /tmp/truesense-nvml tools/nvml/truesense-nvml.c -ldl
-      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with: { category: "/language:${{ matrix.language }}" }
