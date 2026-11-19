@@ -272,6 +272,16 @@ ColumnLayout {
             //% "The keyboard shows your own key colours. Pick an effect to replace them."
             text: qsTrId("light_kb_perkey_note")
         }
+        // The effect as one terminal command (the key colours while they show, `keyboard off`
+        // while the light is off).
+        CliCopyRow {
+            args: !tab.backlightOn ? { what: "keyboard_off" }
+                : tab.effectActive ? { what: "keyboard", effect: tab.effectId, colour: tab.colour,
+                    speed: tab.speed, brightness: tab.brightness, direction: tab.direction }
+                : tab.kind === "perkey" && tab.perKeyCells && tab.perKeyCells.length === 128 && LightingVm.layout.keys.length > 0
+                    ? { what: "perkey", cells: tab.perKeyCells, keys: LightingVm.layout.keys, brightness: tab.brightness }
+                : null
+        }
     }
 
     Card {

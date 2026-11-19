@@ -18,3 +18,7 @@ ts-system = { path = "../ts-system" }
 ts-api = { path = "../ts-api" }
 serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+# The Lighting page's "Copy as TrueSense CLI" commands are run through this command line in the tests.
+ts-ui-model = { path = "../ts-ui-model" }

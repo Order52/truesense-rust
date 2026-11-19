@@ -120,6 +120,10 @@ ColumnLayout {
             //% "A moving effect is drawn as one still frame."
             text: qsTrId("light_looks_still_note")
         }
+        // The chosen look as one terminal command.
+        CliCopyRow {
+            args: tab.applied !== "" ? { what: "look", name: tab.applied } : null
+        }
     }
 
     Card {

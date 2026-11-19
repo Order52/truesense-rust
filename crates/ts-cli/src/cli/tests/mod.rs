@@ -4,6 +4,7 @@
 
 mod alerts;
 mod commands;
+mod copy_as_cli;
 mod directions;
 mod favourite;
 mod golden;

@@ -5855,5 +5855,21 @@
         <source>Colour</source>
         <translation>Colour</translation>
     </message>
+    <message id="cli_copy_a11y">
+        <source>Terminal command: %1</source>
+        <translation>Terminal command: %1</translation>
+    </message>
+    <message id="cli_copy">
+        <source>Copy as TrueSense CLI</source>
+        <translation>Copy as TrueSense CLI</translation>
+    </message>
+    <message id="cli_copy_help">
+        <source>Paste it in a terminal to apply exactly this with one command (in scripts, keybinds or autostart too).</source>
+        <translation>Paste it in a terminal to apply exactly this with one command (in scripts, keybinds or autostart too).</translation>
+    </message>
+    <message id="cli_copied">
+        <source>Copied: %1</source>
+        <translation>Copied: %1</translation>
+    </message>
 </context>
 </TS>

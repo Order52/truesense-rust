@@ -268,6 +268,10 @@ ColumnLayout {
                 })
             }
         }
+        CliCopyRow {
+            args: ({ what: "rear", on: tab.lightOn, effect: tab.effectId, colour: tab.colour, zones: tab.zones,
+                     speed: tab.speed, brightness: tab.brightness, direction: tab.direction })
+        }
     }
 
     ColorPickerPopup {

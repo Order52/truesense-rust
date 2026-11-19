@@ -1087,6 +1087,7 @@ dependencies = [
  "ts-ipc",
  "ts-platform",
  "ts-system",
+ "ts-ui-model",
 ]
 
 [[package]]

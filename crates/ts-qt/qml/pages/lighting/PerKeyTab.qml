@@ -404,6 +404,11 @@ ColumnLayout {
                 onClicked: tab.select("none", {})
             }
         }
+        // The picture as one terminal command (`keyboard keys NAME=COLOUR ... --base COLOUR`).
+        CliCopyRow {
+            args: tab.cells.length === 128 && LightingVm.layout.keys.length > 0
+                ? { what: "perkey", cells: tab.cells, keys: LightingVm.layout.keys, brightness: tab.brightness } : null
+        }
     }
 
     Card {

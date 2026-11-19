@@ -585,6 +585,16 @@ ColumnLayout {
                     }
                 }
 
+                // The theme as the editor has it, as one terminal command.
+                CliCopyRow {
+                    args: {
+                        var r = tab.entry !== null ? tab.request() : undefined
+                        if (r === undefined || r === null) return null
+                        r.what = "theme"
+                        return r
+                    }
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.topMargin: 4

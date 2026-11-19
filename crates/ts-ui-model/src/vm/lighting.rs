@@ -45,6 +45,8 @@ mod looks;
 mod bindings;
 #[path = "lighting/themes.rs"]
 mod themes;
+#[path = "lighting/cli.rs"]
+mod cli;
 
 pub use self::colour::*;
 pub use self::picture::*;
@@ -52,6 +54,7 @@ pub use self::effects::*;
 pub use self::looks::*;
 pub use self::bindings::*;
 pub use self::themes::*;
+pub use self::cli::*;
 
 // ---- the verbs ----------------------------------------------------------------------------------
 
@@ -82,7 +85,7 @@ fn state_out(b: &Bindings) -> Value {
 /// The verbs of the page:
 /// `effects`, `rear_effects`, `fx_modes`, `fx_own_colours`, `palette`, `stock_cells`, `norm_hex`, `hsv_to_hex`,
 /// `hex_to_hsv`, `wants_dark_text`, `inks`, `neighbour`, `layout`, `hit`, `select`, `stroke`, `paint`, `tool`,
-/// `pick_effect`, `rear_request`, `preview`, `look_summary`, `valid_name`, `theme_settings`, `theme_request`, `theme_for_save`, `clock_text`, and for the strip
+/// `pick_effect`, `rear_request`, `cli` (the "Copy as TrueSense CLI" command), `preview`, `look_summary`, `valid_name`, `theme_settings`, `theme_request`, `theme_for_save`, `clock_text`, and for the strip
 /// `bindings_load`, `bindings_select`, `bindings_choose`, `bindings_undo`, `bindings_discard`,
 /// `bindings_plan`.
 ///
@@ -170,6 +173,7 @@ pub fn call(verb: &str, args: &Value) -> Result<Value, String> {
         }
         "pick_effect" => pick_effect(str_at(args, "name").unwrap_or(""), at(args, "current").unwrap_or(&Value::Null)),
         "rear_request" => rear_request(args),
+        "cli" => cli_command(args),
         "preview" => Ok(preview(at(args, "look").unwrap_or(&Value::Null), at(args, "cells"))),
         "theme_settings" => Ok(theme_settings(at(args, "theme").unwrap_or(&Value::Null))),
         "theme_request" => theme_request(args),
