@@ -8,7 +8,7 @@ use super::args::{Args, SWITCH_NO_TOGGLE, on_off, parse_word};
 use super::{CommandError, Ctx, Outcome, lift, names, val, with_builtin};
 
 /// The gestures a key profile binds, as the `[keys]` section and the page name them.
-const GESTURES: [&str; 5] = ["tap", "double", "triple", "long", "fn_esc"];
+const GESTURES: [&str; 4] = ["tap", "double", "triple", "long"];
 
 /// The handler of one command of this area; `None` when it is not one of ours.
 pub(super) fn dispatch(c: &Ctx<'_>, key: &str, a: &Args) -> Option<Outcome> {

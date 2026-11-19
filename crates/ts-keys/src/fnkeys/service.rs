@@ -507,7 +507,7 @@ impl Service {
                 hwkeys::pressed();
                 self.log(&format!("keyboard key {} (handled by the keyboard itself)", hex(report)));
             }
-            KeyEvent::FnEsc | KeyEvent::FnF10 => {
+            KeyEvent::FnF10 => {
                 if let Some((label, spec)) = self.bindings.action_for_event(event) {
                     self.dispatch(label, spec.to_owned());
                 }

@@ -193,7 +193,7 @@ All paths below are under `predator-sense-gui/src` and [V] unless marked.
   below 15 %). Finding 29 is the useful part: an earlier continuous rule fought the user and a third writer (power-profiles-daemon)
   raced both; the fix is "only the plug event moves the mode, once, to the nearest allowed mode".
 - `predator_key_action`: `app | command | none` plus one command string. One action for the PREDATOR key. TrueSense has four gestures,
-  Fn+Esc and a 30-action vocabulary (`ts-domain/src/actions/parse.rs`).
+  a 30-action vocabulary (`ts-domain/src/actions/parse.rs`).
 
 ### 2.8 Favourites
 
@@ -226,7 +226,7 @@ All [V] from the files named.
 | **Game rules** with process-name, file-name and Wine `.exe` matching, Turbo backs off when hot, Eco forced when the battery is low | `ts-decision/src/gamerules.rs` | GameSync, 15 s restore delay, `/proc/exe` only |
 | **Fan curves**: full point curves per fan with hysteresis, down-rate, predict, couple, battery shift; built-in and user libraries; stop only with confirmation, cool machine and watchdog | `ts-decision/src/curves.rs`, `fanctl.rs`, `docs/SAFETY.md` | six temperature bars; Automatic/Curve/Fixed/Max |
 | **Undervolt** CPU (core, cache) and GPU (offset, cap) with crash guard, boot profile, read-back | `ts-domain/src/undervolt`, `gpuundervolt`, `ts-decision/src/crashguard.rs` | none |
-| **PREDATOR key and Fn keys**: tap, double, triple, long, Fn+Esc, binding profiles, ~30 actions including `exec:` and `look:` | `ts-keys`, `ts-domain/src/actions` | one action |
+| **PREDATOR key and Fn keys**: tap, double, triple, long, binding profiles (Fn+Esc was dropped after 0.5.0), ~30 actions including `exec:` and `look:` | `ts-keys`, `ts-domain/src/actions` | one action |
 | **Whole-setup profiles** (power, fans, lighting, battery, audio, display, boot) in TOML, applied through the action runner | `ts-domain/src/profiles/bundle.rs` | lighting presets only |
 | **Looks** (keyboard plus rear light, boot look applied by the daemon before login and after resume), designs, per-key painting from images, software per-key animations | `ts-domain/src/looks`, `designs`, `perkeyfx` | presets and themes (richer visually, section 5) |
 | **Power-manager takeover** (stops competing managers and keeps them stopped) | `ts-domain/src/powermgr` | opt-in write to the desktop daemon, which his finding 29 shows still races |
@@ -294,7 +294,7 @@ System     Health | Settings
 | **Performance** (tabs Mode and Smart, Game rules, Power limits, Tuning) | Smart profile editor (all `SMART_SETTING_KEYS`), game rule list with live "running now", CPU PL1/PL2 with lock bit, GPU power limit read-out, CPU temperature ceiling, CPU and GPU undervolt (existing safety dialogs), managers takeover | `power smart/game/managers`, `cpu info/limits/undervolt`, `gpu undervolt` | `cpu ceiling get/set` (4.4), GPU limit write only if verified safe on this model [U] |
 | **Cooling** | two live fan dials (RPM, duty register, temperature), plan selector per mode (Native, Smart curve, Fixed, Max) with the curve editor, behaviour sliders, curve library with stars | `fan *`, `fan curve list/current/show/use/copy/save/delete` | `mode bind` for "Fans for" (4.3) |
 | **Lighting** (tabs Keyboard, Per-key, Rear bar, Themes, Looks) | strip "Lighting for [mode]" with the Changed badge; live keyboard preview; effect grid with icons; colour row with kept colours; brightness for each light; idle off; boot look; gallery of themes with colourway chips | `keyboard *`, `rear *`, `look *`, `startup *` | `theme list/show/apply` (4.5), `mode bind` |
-| **Keys** | gestures table (tap, double, triple, long, Fn+Esc) with action pickers, test button, timing, binding profiles; favourite actions | `keys profile`, `keys test` | action names `favourite:N`, `favourite-next` |
+| **Keys** | presets as one-click buttons, then press / twice / three times / hold with action pickers and a test button (a change applies at once; editing a preset saves "My keys"), timing and named setups under Advanced; favourite actions | `keys profile`, `keys test` | action names `favourite:N`, `favourite-next` |
 | **Battery and screen** | gauge, status, voltage, current, power, cycles, health %, design vs full, temperature, 80 % limit, charge to 100 once, USB charge stop, calibration, overdrive, boot sound, keyboard timeout, charge history chart (kept in memory for the session; persisted history is out of scope) | `battery *`, `display overdrive`, `boot sound`, `keyboard timeout` | `battery info` |
 | **Audio** | existing page (output, speaker filter, DTS, jack, mic, voice, repair) | `audio *` | EQ later (7.14) |
 | **Profiles and favourites** | whole-setup profiles with description and Apply, save current, delete; the Favourites list with reorder, kind icons | `profile list/show/apply/next/save/delete/current` | `favourite *` |
@@ -389,7 +389,7 @@ flag), because the one-second tick must stay cheap on idle (see 4.10).
 - UI: a star toggle in every library list (Lighting > Looks, Cooling curves, Performance > Smart, Profiles); Home shows the
   list as chips (name, kind icon, one-click apply, toast with Undo for the thing it replaced when we can compute it); the Profiles and
   favourites page reorders them.
-- PREDATOR key and Fn+Esc: two new actions, `favourite:N` (1-based) and `favourite-next` (cycles all favourites, notification shows
+- PREDATOR key: two new actions, `favourite:N` (1-based) and `favourite-next` (cycles all favourites, notification shows
   the name). Add them to `FIXED_NAMES`/`ARG_NAMES` and `CATALOGUE` in `ts-domain/src/actions/parse.rs`; the existing test that every
   action appears in the catalogue enforces the documentation. Keys run as the user so they can read `user.json` directly.
 - Storage: user state `favourites`; migration none; unknown kinds are skipped, not an error (so a newer file works in an older build).

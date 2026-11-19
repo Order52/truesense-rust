@@ -205,7 +205,6 @@ fn bindings() -> Bindings {
         double: "A_double".into(),
         triple: "A_triple".into(),
         long: "A_long".into(),
-        fn_esc: "A_esc".into(),
         long_ms: 250,
         multi_ms: 100,
     }
@@ -655,11 +654,12 @@ fn with_no_double_or_triple_tap_bound_a_tap_runs_as_the_key_comes_up() {
 }
 
 #[test]
-fn fn_f10_toggles_the_touchpad_and_fn_esc_runs_its_binding() {
+fn fn_f10_toggles_the_touchpad_and_fn_esc_is_left_to_the_keyboard() {
     let rig = Rig::new(2000);
     rig.world.report(100, &FN_F10).report(130, &RELEASE).report(500, &FN_ESC).report(530, &RELEASE);
     let actions = rig.run();
-    assert_eq!(actions, [(100, "touchpad-toggle".to_owned()), (500, "A_esc".to_owned())]);
+    assert_eq!(actions, [(100, "touchpad-toggle".to_owned())], "Fn+Esc runs nothing");
+    assert!(rig.log_has("keyboard key 048aff (handled by the keyboard itself)"));
     // the releases that end Fn+F10 and Fn+Esc are not PREDATOR taps
 }
 
@@ -730,10 +730,11 @@ fn a_message_is_shown_and_a_failure_is_shown_too() {
 #[test]
 fn a_panicking_action_does_not_end_the_service() {
     let rig = Rig::new(2000);
-    *poison_free(&rig.world.config) = (Some(1), Ok(Bindings { fn_esc: "panic".into(), ..bindings() }));
-    rig.world.report(100, &FN_ESC).report(200, &FN_ESC).report(300, &FN_F10);
+    *poison_free(&rig.world.config) = (Some(1), Ok(Bindings { tap: "panic".into(), ..bindings() }));
+    rig.world.report(100, &PRESS).report(130, &RELEASE).report(600, &PRESS).report(630, &RELEASE);
+    rig.world.report(1100, &FN_F10);
     assert_eq!(specs(&rig.run()), ["panic", "panic", "touchpad-toggle"]);
-    assert!(rig.log_has("fn_esc -> panic FAILED: the action panicked"));
+    assert!(rig.log_has("tap -> panic FAILED: the action panicked"));
 }
 
 #[test]
@@ -775,22 +776,12 @@ fn an_unreadable_config_at_start_means_the_defaults_until_it_is_fixed() {
 fn a_changed_config_is_picked_up_without_a_restart() {
     let rig = Rig::new(10_000);
     rig.world.report(0, &PRESS).report(30, &RELEASE);
-    let changed =
-        Bindings { tap: "B_tap".into(), fn_esc: "B_esc".into(), long_ms: 400, multi_ms: 150, ..bindings() };
+    let changed = Bindings { tap: "B_tap".into(), long_ms: 400, multi_ms: 150, ..bindings() };
     rig.world.at(1000, Ev::Config(Some(2), Ok(changed)));
     rig.world.report(5000, &PRESS).report(5030, &RELEASE); // tap with the new binding and window
-    rig.world.report(6000, &FN_ESC);
     rig.world.report(7000, &PRESS).report(7350, &RELEASE); // 350 ms: long before, a tap now (threshold 400)
     let actions = rig.run();
-    assert_eq!(
-        actions,
-        [
-            (130, "A_tap".to_owned()),
-            (5180, "B_tap".to_owned()),
-            (6000, "B_esc".to_owned()),
-            (7500, "B_tap".to_owned()),
-        ]
-    );
+    assert_eq!(actions, [(130, "A_tap".to_owned()), (5180, "B_tap".to_owned()), (7500, "B_tap".to_owned()),]);
     assert!(rig.log_has("key bindings reloaded: tap='B_tap'"));
 }
 
@@ -938,7 +929,7 @@ fn hostile_report_streams_never_panic_and_only_bound_actions_run() {
     }
     let actions = rig.run();
     assert!(!actions.is_empty());
-    let allowed = ["A_tap", "A_double", "A_triple", "A_long", "A_esc", "touchpad-toggle"];
+    let allowed = ["A_tap", "A_double", "A_triple", "A_long", "touchpad-toggle"];
     assert!(actions.iter().all(|(_, spec)| allowed.contains(&spec.as_str())), "{:?}", specs(&actions));
 }
 
@@ -953,14 +944,14 @@ fn actions_are_started_on_their_own_so_a_slow_one_never_stalls_the_key() {
         poison_free(&sink).push(job);
         Ok(())
     });
-    rig.world.report(0, &PRESS).report(30, &RELEASE).report(1000, &FN_ESC).report(1100, &FN_F10);
+    rig.world.report(0, &PRESS).report(30, &RELEASE).report(1000, &FN_F10).report(1100, &FN_F10);
     let ran = rig.run_with(env);
     assert!(ran.is_empty(), "nothing ran yet, but the loop did not wait for it");
     assert_eq!(poison_free(&parked).len(), 3);
     for job in poison_free(&parked).drain(..) {
         job();
     }
-    assert_eq!(specs(&poison_free(&rig.world.actions)), ["A_tap", "A_esc", "touchpad-toggle"]);
+    assert_eq!(specs(&poison_free(&rig.world.actions)), ["A_tap", "touchpad-toggle", "touchpad-toggle"]);
 }
 
 #[test]
@@ -975,7 +966,7 @@ fn hung_actions_cannot_pile_up_threads() {
     });
     env.timing.max_actions = 3;
     for i in 0..6 {
-        rig.world.report(100 + i * 10, &FN_ESC);
+        rig.world.report(100 + i * 10, &FN_F10);
     }
     rig.run_with(env);
     assert_eq!(poison_free(&parked).len(), 3, "only three are running");
@@ -995,7 +986,7 @@ fn an_action_that_cannot_be_started_is_logged_and_frees_its_slot() {
     env.spawn = Arc::new(|_job| Err("no threads left".to_owned()));
     env.timing.max_actions = 2;
     for i in 0..6 {
-        rig.world.report(100 + i * 10, &FN_ESC);
+        rig.world.report(100 + i * 10, &FN_F10);
     }
     rig.run_with(env);
     let failed =

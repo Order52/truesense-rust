@@ -15,7 +15,7 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 - **area / verb** are the names of the Python command line (`truesense <area> <verb>`); where the
   CLI has no verb for a command it takes the verb given here (`status get`, `touchpad set`, ...).
 - **args** are JSON members named like the CLI's long options, dashes as underscores
-  (`--long-ms` -> `long_ms`, `--fn-esc` -> `fn_esc`). Numbers are JSON numbers, flags are booleans.
+  (`--long-ms` -> `long_ms`). Numbers are JSON numbers, flags are booleans.
   `action` is the CLI's positional action (`on|off|toggle|status`, `list|show|use|...`).
   A command ignores members it does not know and fails with a message for a missing or bad one.
 - **result** is what `truesense --json <area> <verb>` prints where such a command exists; "new" marks
@@ -127,7 +127,7 @@ that the simulated laptop (`internal/gui/guitest`) does not know.
 | `startup` | `set` | `{"target": "keyboard"\|"rear"\|"profile", "value"}` (values as `startup set`; `none` clears the profile) | the value | `startup.set_option` |
 | `startup` | `apply` | none | list of what was done | `startup.apply` |
 | `startup` | `boot` | `{"what"?: "current"\|"clear"\|NAME}`; none = read | the boot look (or null); `current` = the lights now, `clear` = nothing at boot | `ipc boot_look` |
-| `keys` | `profile` | `{"action": "list"\|"current"\|"show"\|"use"\|"copy"\|"save"\|"delete", "name"?, "new"?, "tap"?, "double"?, "triple"?, "long"?, "fn_esc"?, "long_ms"?, "multi_ms"?}` | list: names; current: `{"profile", "tap", "double", "triple", "long", "fn_esc", "long_ms", "multi_ms", ...}`; show: the profile + `description` + `builtin`; save: the saved profile (members not given keep the old or default value); use: the name | `keybinds.*` |
+| `keys` | `profile` | `{"action": "list"\|"current"\|"show"\|"use"\|"copy"\|"save"\|"delete", "name"?, "new"?, "tap"?, "double"?, "triple"?, "long"?, "long_ms"?, "multi_ms"?}` | list: names; current: `{"profile", "tap", "double", "triple", "long", "long_ms", "multi_ms", ...}`; show: the profile + `description` + `builtin`; save: the saved profile (members not given keep the old or default value); use: the name | `keybinds.*` |
 | `keys` | `test` | `{"action": "power:turbo"}` | message string | `actions.run` |
 | `profile` | `list` | none | `[{"name", "source": "shipped"\|"yours", "description"}]` | `profiles.names` |
 | `profile` | `show` | `{"name"}` | the profile as a JSON object (`power`, `fan`, `keyboard`, `rear`, `battery`, `display`, `boot`, `audio`, `description`) | `profiles.load` |

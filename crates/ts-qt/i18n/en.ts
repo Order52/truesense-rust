@@ -5455,97 +5455,9 @@
         <source>Continue</source>
         <translation>Continue</translation>
     </message>
-    <message id="keys_g_tap">
-        <source>Tap</source>
-        <translation>Tap</translation>
-    </message>
-    <message id="keys_g_double">
-        <source>Double tap</source>
-        <translation>Double tap</translation>
-    </message>
-    <message id="keys_g_triple">
-        <source>Triple tap</source>
-        <translation>Triple tap</translation>
-    </message>
-    <message id="keys_g_long">
-        <source>Long press</source>
-        <translation>Long press</translation>
-    </message>
-    <message id="keys_g_fn_esc">
-        <source>Fn + Esc</source>
-        <translation>Fn + Esc</translation>
-    </message>
-    <message id="keys_gh_tap">
-        <source>One press of the PREDATOR key.</source>
-        <translation>One press of the PREDATOR key.</translation>
-    </message>
-    <message id="keys_gh_double">
-        <source>Two presses in quick succession.</source>
-        <translation>Two presses in quick succession.</translation>
-    </message>
-    <message id="keys_gh_triple">
-        <source>Three presses in quick succession.</source>
-        <translation>Three presses in quick succession.</translation>
-    </message>
-    <message id="keys_gh_long">
-        <source>Hold the PREDATOR key.</source>
-        <translation>Hold the PREDATOR key.</translation>
-    </message>
-    <message id="keys_gh_fn_esc">
-        <source>The Fn key and Esc together.</source>
-        <translation>The Fn key and Esc together.</translation>
-    </message>
     <message id="keys_service_started">
         <source>The key service was started.</source>
         <translation>The key service was started.</translation>
-    </message>
-    <message id="keys_saved">
-        <source>Saved the key profile “%1”.</source>
-        <translation>Saved the key profile “%1”.</translation>
-    </message>
-    <message id="keys_using">
-        <source>The PREDATOR key now uses “%1”. The key service reloads by itself.</source>
-        <translation>The PREDATOR key now uses “%1”. The key service reloads by itself.</translation>
-    </message>
-    <message id="keys_copied">
-        <source>Copied to “%1”. Change what you like, then save and use it.</source>
-        <translation>Copied to “%1”. Change what you like, then save and use it.</translation>
-    </message>
-    <message id="keys_deleted">
-        <source>Deleted the key profile “%1”.</source>
-        <translation>Deleted the key profile “%1”.</translation>
-    </message>
-    <message id="keys_discard_title">
-        <source>Discard your changes?</source>
-        <translation>Discard your changes?</translation>
-    </message>
-    <message id="keys_discard_text">
-        <source>The changes to this profile are not saved yet.</source>
-        <translation>The changes to this profile are not saved yet.</translation>
-    </message>
-    <message id="keys_discard_go">
-        <source>Discard</source>
-        <translation>Discard</translation>
-    </message>
-    <message id="keys_service_title">
-        <source>Key service</source>
-        <translation>Key service</translation>
-    </message>
-    <message id="keys_service_running">
-        <source>The key service is running: the PREDATOR key and Fn+Esc are active.</source>
-        <translation>The key service is running: the PREDATOR key and Fn+Esc are active.</translation>
-    </message>
-    <message id="keys_service_stopped">
-        <source>The key service is not running, so the PREDATOR key does nothing.</source>
-        <translation>The key service is not running, so the PREDATOR key does nothing.</translation>
-    </message>
-    <message id="keys_service_unknown">
-        <source>The state of the key service could not be read.</source>
-        <translation>The state of the key service could not be read.</translation>
-    </message>
-    <message id="keys_service_refresh">
-        <source>Check again</source>
-        <translation>Check again</translation>
     </message>
     <message id="keys_service_start">
         <source>Start it</source>
@@ -5559,65 +5471,185 @@
         <source>The TrueSense system service is not running: actions that change the hardware will fail until it is.</source>
         <translation>The TrueSense system service is not running: actions that change the hardware will fail until it is.</translation>
     </message>
-    <message id="keys_profile_title">
-        <source>Binding profile</source>
-        <translation>Binding profile</translation>
-    </message>
-    <message id="keys_in_use">
-        <source>In use: %1</source>
-        <translation>In use: %1</translation>
-    </message>
-    <message id="keys_profile_help">
-        <source>A profile is a saved set of what each press does. Built-in profiles cannot be changed: copy one, then edit the copy.</source>
-        <translation>A profile is a saved set of what each press does. Built-in profiles cannot be changed: copy one, then edit the copy.</translation>
-    </message>
-    <message id="keys_profile_pick">
-        <source>Profile</source>
-        <translation>Profile</translation>
-    </message>
-    <message id="keys_yours">
-        <source>%1 (yours)</source>
-        <translation>%1 (yours)</translation>
-    </message>
-    <message id="keys_unsaved">
-        <source>These are the bindings in force now. They are not saved as a profile: save them under a name to keep them.</source>
-        <translation>These are the bindings in force now. They are not saved as a profile: save them under a name to keep them.</translation>
-    </message>
-    <message id="keys_use">
-        <source>Use these keys</source>
-        <translation>Use these keys</translation>
-    </message>
-    <message id="keys_save">
-        <source>Save changes</source>
-        <translation>Save changes</translation>
-    </message>
-    <message id="keys_copy">
-        <source>Copy to edit</source>
-        <translation>Copy to edit</translation>
-    </message>
     <message id="keys_delete">
         <source>Delete</source>
         <translation>Delete</translation>
     </message>
-    <message id="keys_delete_title">
-        <source>Delete this key profile?</source>
-        <translation>Delete this key profile?</translation>
+    <message id="keys_g2_tap">
+        <source>Press</source>
+        <translation>Press</translation>
     </message>
-    <message id="keys_delete_text">
-        <source>“%1” will be removed. The built-in profiles stay.</source>
-        <translation>“%1” will be removed. The built-in profiles stay.</translation>
+    <message id="keys_g2_double">
+        <source>Press twice</source>
+        <translation>Press twice</translation>
     </message>
-    <message id="keys_name_placeholder">
-        <source>Name to save as</source>
-        <translation>Name to save as</translation>
+    <message id="keys_g2_triple">
+        <source>Press three times</source>
+        <translation>Press three times</translation>
     </message>
-    <message id="keys_save_as">
-        <source>Save as</source>
-        <translation>Save as</translation>
+    <message id="keys_g2_long">
+        <source>Hold</source>
+        <translation>Hold</translation>
     </message>
-    <message id="keys_replace_title">
-        <source>Replace this profile?</source>
-        <translation>Replace this profile?</translation>
+    <message id="keys_gh2_tap">
+        <source>One short press</source>
+        <translation>One short press</translation>
+    </message>
+    <message id="keys_gh2_double">
+        <source>Two quick presses</source>
+        <translation>Two quick presses</translation>
+    </message>
+    <message id="keys_gh2_triple">
+        <source>Three quick presses</source>
+        <translation>Three quick presses</translation>
+    </message>
+    <message id="keys_gh2_long">
+        <source>Keep it pressed for %1 s</source>
+        <translation>Keep it pressed for %1 s</translation>
+    </message>
+    <message id="keys_p_native">
+        <source>Open TrueSense</source>
+        <translation>Open TrueSense</translation>
+    </message>
+    <message id="keys_p_default">
+        <source>Standard</source>
+        <translation>Standard</translation>
+    </message>
+    <message id="keys_p_gaming">
+        <source>Gaming</source>
+        <translation>Gaming</translation>
+    </message>
+    <message id="keys_p_work">
+        <source>Work</source>
+        <translation>Work</translation>
+    </message>
+    <message id="keys_p_lights">
+        <source>Lighting</source>
+        <translation>Lighting</translation>
+    </message>
+    <message id="keys_p_mine">
+        <source>My keys</source>
+        <translation>My keys</translation>
+    </message>
+    <message id="keys_ps_native">
+        <source>Press opens TrueSense. Nothing else is bound.</source>
+        <translation>Press opens TrueSense. Nothing else is bound.</translation>
+    </message>
+    <message id="keys_ps_default">
+        <source>Press: next power mode · Twice: speakers/headphones · Hold: max fans</source>
+        <translation>Press: next power mode · Twice: speakers/headphones · Hold: max fans</translation>
+    </message>
+    <message id="keys_ps_gaming">
+        <source>Press: Performance ⇄ Turbo · Twice: max fans · 3×: next lighting · Hold: Smart auto</source>
+        <translation>Press: Performance ⇄ Turbo · Twice: max fans · 3×: next lighting · Hold: Smart auto</translation>
+    </message>
+    <message id="keys_ps_work">
+        <source>Press: Eco, Quiet, Balanced · Twice: switch audio · 3×: mute mic · Hold: touchpad</source>
+        <translation>Press: Eco, Quiet, Balanced · Twice: switch audio · 3×: mute mic · Hold: touchpad</translation>
+    </message>
+    <message id="keys_ps_lights">
+        <source>Press: next keyboard effect · Twice: next rear effect · 3×: keyboard light · Hold: rear light</source>
+        <translation>Press: next keyboard effect · Twice: next rear effect · 3×: keyboard light · Hold: rear light</translation>
+    </message>
+    <message id="keys_using2">
+        <source>The PREDATOR key now uses “%1”.</source>
+        <translation>The PREDATOR key now uses “%1”.</translation>
+    </message>
+    <message id="keys_mine_desc">
+        <source>Your own setup</source>
+        <translation>Your own setup</translation>
+    </message>
+    <message id="keys_saved_mine">
+        <source>Saved as “%1” and in use. The preset itself is unchanged.</source>
+        <translation>Saved as “%1” and in use. The preset itself is unchanged.</translation>
+    </message>
+    <message id="keys_saved_as2">
+        <source>Saved as “%1” and in use.</source>
+        <translation>Saved as “%1” and in use.</translation>
+    </message>
+    <message id="keys_deleted2">
+        <source>Deleted “%1”. The key uses Standard again.</source>
+        <translation>Deleted “%1”. The key uses Standard again.</translation>
+    </message>
+    <message id="keys_head_title">
+        <source>The PREDATOR key</source>
+        <translation>The PREDATOR key</translation>
+    </message>
+    <message id="keys_head_help">
+        <source>The key at the top left of the number pad. Press it once, twice, three times, or hold it: pick a preset below, or choose what each press does.</source>
+        <translation>The key at the top left of the number pad. Press it once, twice, three times, or hold it: pick a preset below, or choose what each press does.</translation>
+    </message>
+    <message id="keys_state_on">
+        <source>Working</source>
+        <translation>Working</translation>
+    </message>
+    <message id="keys_state_off">
+        <source>Not working: the key service is stopped</source>
+        <translation>Not working: the key service is stopped</translation>
+    </message>
+    <message id="keys_state_unknown">
+        <source>Checking…</source>
+        <translation>Checking…</translation>
+    </message>
+    <message id="keys_presets_title">
+        <source>Presets</source>
+        <translation>Presets</translation>
+    </message>
+    <message id="keys_presets_hint">
+        <source>One click puts a preset in use</source>
+        <translation>One click puts a preset in use</translation>
+    </message>
+    <message id="keys_in_use_badge">
+        <source>In use</source>
+        <translation>In use</translation>
+    </message>
+    <message id="keys_saving">
+        <source>Saving…</source>
+        <translation>Saving…</translation>
+    </message>
+    <message id="keys_applied">
+        <source>Saved and in use</source>
+        <translation>Saved and in use</translation>
+    </message>
+    <message id="keys_edit_help">
+        <source>Change anything below and it is used at once. Changing a preset saves your version as “My keys”; the preset stays as it was.</source>
+        <translation>Change anything below and it is used at once. Changing a preset saves your version as “My keys”; the preset stays as it was.</translation>
+    </message>
+    <message id="keys_advanced_title">
+        <source>Advanced</source>
+        <translation>Advanced</translation>
+    </message>
+    <message id="keys_adv_hide">
+        <source>Hide timing and saved setups</source>
+        <translation>Hide timing and saved setups</translation>
+    </message>
+    <message id="keys_adv_show">
+        <source>Show timing and saved setups</source>
+        <translation>Show timing and saved setups</translation>
+    </message>
+    <message id="keys_long_ms2">
+        <source>A hold is a press longer than</source>
+        <translation>A hold is a press longer than</translation>
+    </message>
+    <message id="keys_multi_ms2">
+        <source>Quick presses count together within</source>
+        <translation>Quick presses count together within</translation>
+    </message>
+    <message id="keys_timing_help2">
+        <source>A shorter time to count presses together makes a single press act sooner; a longer one makes double and triple presses easier.</source>
+        <translation>A shorter time to count presses together makes a single press act sooner; a longer one makes double and triple presses easier.</translation>
+    </message>
+    <message id="keys_name_placeholder2">
+        <source>Save this setup as… (a name)</source>
+        <translation>Save this setup as… (a name)</translation>
+    </message>
+    <message id="keys_save_as2">
+        <source>Save as preset</source>
+        <translation>Save as preset</translation>
+    </message>
+    <message id="keys_replace_title2">
+        <source>Replace this preset?</source>
+        <translation>Replace this preset?</translation>
     </message>
     <message id="keys_replace_text">
         <source>“%1” already exists and will be overwritten.</source>
@@ -5635,42 +5667,25 @@
         <source>That name is too long (up to 40).</source>
         <translation>That name is too long (up to 40).</translation>
     </message>
-    <message id="keys_name_builtin">
-        <source>That is the name of a built-in profile. Pick another.</source>
-        <translation>That is the name of a built-in profile. Pick another.</translation>
+    <message id="keys_name_builtin2">
+        <source>That is the name of a built-in preset. Pick another.</source>
+        <translation>That is the name of a built-in preset. Pick another.</translation>
+    </message>
+    <message id="keys_delete2">
+        <source>Delete “%1”</source>
+        <translation>Delete “%1”</translation>
+    </message>
+    <message id="keys_delete_title2">
+        <source>Delete this preset?</source>
+        <translation>Delete this preset?</translation>
+    </message>
+    <message id="keys_delete_text2">
+        <source>“%1” will be removed and the key goes back to Standard. The built-in presets stay.</source>
+        <translation>“%1” will be removed and the key goes back to Standard. The built-in presets stay.</translation>
     </message>
     <message id="keys_gestures_title">
         <source>What each press does</source>
         <translation>What each press does</translation>
-    </message>
-    <message id="keys_readonly">
-        <source>Read-only: copy the profile to edit</source>
-        <translation>Read-only: copy the profile to edit</translation>
-    </message>
-    <message id="keys_changed">
-        <source>Changed</source>
-        <translation>Changed</translation>
-    </message>
-    <message id="keys_favourites_help2">
-        <source>Favourites are the looks, lighting themes, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</source>
-        <translation>Favourites are the looks, lighting themes, fan curves, Smart profiles and profiles you starred. “Favourite: apply number N” applies the Nth star, counted as the Profiles and favourites page lists them; “Favourite: next” steps through all of them and shows each name. Undervolt and power limits can never be starred, so a key never changes them.</translation>
-    </message>
-    <message id="keys_timing_title">
-        <source>Timing</source>
-        <translation>Timing</translation>
-    </message>
-    <message id="keys_long_ms">
-        <source>Long press after</source>
-        <translation>Long press after</translation>
-    </message>
-    <message id="keys_multi_ms">
-        <source>Taps count together within</source>
-        <translation>Taps count together within</translation>
-    </message>
-    <message id="keys_timing_help">
-        <source>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</source>
-        <oldsource>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap.</oldsource>
-        <translation>A press held longer than the first time is a long press. Taps closer together than the second time count as a double or triple tap. While neither is set, a tap acts the moment the key comes up.</translation>
     </message>
     <message id="select_choose">
         <source>Choose…</source>

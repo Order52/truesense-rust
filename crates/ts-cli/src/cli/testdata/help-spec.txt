@@ -23,7 +23,7 @@ positional arguments:
     startup      what the lights and profile do at login
     keyboard     keyboard lighting
     audio        output, microphone, headset jack, Purified Voice, DTS
-    keys         PREDATOR key and Fn+Esc: what each gesture does
+    keys         PREDATOR key: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
     favourite    starred looks, fan curves, Smart profiles, profiles and
@@ -1128,10 +1128,10 @@ options:
 
 --------------------------------------------------
 VERB keys set
-usage: truesense keys set [-h] {tap,double,triple,long,fn_esc} action
+usage: truesense keys set [-h] {tap,double,triple,long} action
 
 positional arguments:
-  {tap,double,triple,long,fn_esc}
+  {tap,double,triple,long}
   action                see: truesense keys actions
 
 options:
@@ -1139,10 +1139,10 @@ options:
 
 --------------------------------------------------
 VERB keys reset
-usage: truesense keys reset [-h] [{tap,double,triple,long,fn_esc}]
+usage: truesense keys reset [-h] [{tap,double,triple,long}]
 
 positional arguments:
-  {tap,double,triple,long,fn_esc}
+  {tap,double,triple,long}
 
 options:
   -h, --help            show this help message and exit

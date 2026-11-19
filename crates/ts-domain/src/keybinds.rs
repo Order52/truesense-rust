@@ -1,5 +1,5 @@
 //! PREDATOR key binding profiles: a named set of what each gesture does (tap, double tap,
-//! triple tap, long press, Fn+Esc) and the press timing, plus the mapping from key events to
+//! triple tap, long press) and the press timing, plus the mapping from key events to
 //! those actions.
 //!
 //! Built-in profiles are read-only (copy one to make your own); yours live in
@@ -36,14 +36,11 @@ pub enum Gesture {
     Triple,
     /// A press held for [`Bindings::long_ms`]; it fires while still held, so it feels instant.
     Long,
-    /// Fn+Esc.
-    FnEsc,
 }
 
 impl Gesture {
     /// Every gesture, in menu order.
-    pub const ALL: [Gesture; 5] =
-        [Gesture::Tap, Gesture::Double, Gesture::Triple, Gesture::Long, Gesture::FnEsc];
+    pub const ALL: [Gesture; 4] = [Gesture::Tap, Gesture::Double, Gesture::Triple, Gesture::Long];
 
     /// The key of the gesture in profile files and the `[keys]` config section.
     pub fn key(self) -> &'static str {
@@ -52,7 +49,6 @@ impl Gesture {
             Gesture::Double => "double",
             Gesture::Triple => "triple",
             Gesture::Long => "long",
-            Gesture::FnEsc => "fn_esc",
         }
     }
 
@@ -63,7 +59,6 @@ impl Gesture {
             Gesture::Double => "Double tap",
             Gesture::Triple => "Triple tap",
             Gesture::Long => "Long press",
-            Gesture::FnEsc => "Fn + Esc",
         }
     }
 
@@ -100,8 +95,6 @@ pub struct Bindings {
     pub triple: String,
     /// Action of a long press.
     pub long: String,
-    /// Action of Fn+Esc.
-    pub fn_esc: String,
     /// Milliseconds that make a press long.
     pub long_ms: i64,
     /// Milliseconds within which further taps join the same gesture.
@@ -116,7 +109,6 @@ impl Default for Bindings {
             double: "output-toggle".into(),
             triple: "none".into(),
             long: "fan-max-toggle".into(),
-            fn_esc: "none".into(),
             long_ms: 800,
             multi_ms: 450,
         }
@@ -131,7 +123,6 @@ impl Bindings {
             Gesture::Double => &self.double,
             Gesture::Triple => &self.triple,
             Gesture::Long => &self.long,
-            Gesture::FnEsc => &self.fn_esc,
         }
     }
 
@@ -142,7 +133,6 @@ impl Bindings {
             Gesture::Double => &mut self.double,
             Gesture::Triple => &mut self.triple,
             Gesture::Long => &mut self.long,
-            Gesture::FnEsc => &mut self.fn_esc,
         };
         *slot = spec.into();
     }
@@ -177,12 +167,11 @@ impl Bindings {
     }
 
     /// What a key event runs: the label to log and the action, for the events that run an
-    /// action directly (Fn+Esc is bound; Fn+F10 is always the touchpad toggle). `None` for
+    /// action directly (Fn+F10 is always the touchpad toggle). `None` for
     /// presses and releases of the PREDATOR key, which go through the gesture timing, and for
     /// events nothing is bound to.
     pub fn action_for_event(&self, event: KeyEvent) -> Option<(&'static str, &str)> {
         match event {
-            KeyEvent::FnEsc => Some(("fn_esc", self.action(Gesture::FnEsc))),
             KeyEvent::FnF10 => Some(("fn_f10", FN_F10_ACTION)),
             KeyEvent::PredatorDown | KeyEvent::Release | KeyEvent::Unknown => None,
         }
@@ -212,12 +201,10 @@ pub enum KeyEvent {
     /// A key was released. It ends *every* vendor press (`04 00 00`), PREDATOR or not; the
     /// gesture logic must ignore a release that does not belong to a PREDATOR press.
     Release,
-    /// Fn+Esc.
-    FnEsc,
     /// Fn+F10.
     FnF10,
-    /// A vendor report we do not know (Fn+F11 and Fn+F12: the keyboard changes brightness by
-    /// itself and TrueSense deliberately ignores them).
+    /// A vendor report we do not act on (Fn+F11 and Fn+F12: the keyboard changes brightness by
+    /// itself; Fn+Esc: TrueSense no longer binds it).
     Unknown,
 }
 
@@ -228,7 +215,6 @@ pub fn decode_report(report: &[u8]) -> Option<KeyEvent> {
     Some(match (a, b) {
         (0x81, 0xff) => KeyEvent::PredatorDown,
         (0x00, 0x00) => KeyEvent::Release,
-        (0x8a, 0xff) => KeyEvent::FnEsc,
         (0x80, 0xff) => KeyEvent::FnF10,
         _ => KeyEvent::Unknown,
     })
@@ -270,8 +256,7 @@ pub fn builtin(name: &str) -> Option<KeyProfile> {
             b.double = "fan-max-toggle".into();
             b.triple = "keyboard-effect-next".into();
             b.long = "auto-next".into();
-            b.fn_esc = "mic-toggle".into();
-            "Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto, Fn+Esc mutes the microphone"
+            "Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto"
         }
         "work" => {
             b.tap = "power-cycle:eco,quiet,balanced".into();
@@ -311,7 +296,7 @@ pub fn check_with(validator: actions::Validator) -> ActionCheck {
 /// the Python edition's.
 pub fn validate(value: &Value, check: &ActionCheck) -> Result<KeyProfile, String> {
     let Value::Object(m) = value else {
-        return Err("a key profile is an object with tap, double, triple, long and fn_esc".into());
+        return Err("a key profile is an object with tap, double, triple and long".into());
     };
     let mut b = Bindings::default();
     let description = m.get("description").and_then(Value::as_str).unwrap_or("").to_owned();
@@ -385,7 +370,7 @@ pub const KIND: Kind = Kind {
     copy_hint: Some("keys profile copy"),
     rule: NameRule::Standard,
     aliases: &[],
-    key_order: &["description", "tap", "double", "triple", "long", "fn_esc", "long_ms", "multi_ms"],
+    key_order: &["description", "tap", "double", "triple", "long", "long_ms", "multi_ms"],
 };
 
 /// The active bindings: what the key service uses, and the profile they came from.
@@ -406,7 +391,6 @@ pub fn from_config(cfg: &Config) -> Active {
             double: k.double.clone(),
             triple: k.triple.clone(),
             long: k.long.clone(),
-            fn_esc: k.fn_esc.clone(),
             long_ms: k.long_ms,
             multi_ms: k.multi_ms,
         },

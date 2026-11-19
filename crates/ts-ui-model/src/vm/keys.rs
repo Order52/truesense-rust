@@ -1,4 +1,4 @@
-//! The Keys page: what the PREDATOR key and Fn+Esc do, as the editor needs to see it.
+//! The Keys page: what the PREDATOR key does, as the editor needs to see it.
 //!
 //! The daemon-side truth is the action grammar of `ts_domain::actions::parse` (`name` or
 //! `name:argument`, checked when a binding is configured, never at key-press time). The page must
@@ -39,7 +39,7 @@ use crate::json::{at, f64_at, list_at, str_at};
 pub(crate) use crate::limits::POWER_MODES;
 
 /// The gestures of the table, in the order the page shows them (the JSON names of `[keys]`).
-pub const GESTURES: [&str; 5] = ["tap", "double", "triple", "long", "fn_esc"];
+pub const GESTURES: [&str; 4] = ["tap", "double", "triple", "long"];
 
 /// The lowest manual fan duty a key may set: a key can never stop a fan.
 pub(crate) const FAN_MIN: u64 = 20;

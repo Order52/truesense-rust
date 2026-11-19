@@ -34,24 +34,13 @@ fn parse(kp: &KeyProfiles, text: &str) -> Result<KeyProfile, String> {
 fn builtins_are_valid_and_match_the_python_sets() {
     let tmp = Tmp::new("kb-builtin");
     let kp = fixture(&tmp);
-    let want: [(&str, [&str; 5]); 5] = [
-        ("native", ["exec:truesense gui", "none", "none", "none", "none"]),
-        ("default", ["power-next", "output-toggle", "none", "fan-max-toggle", "none"]),
-        (
-            "gaming",
-            [
-                "power-cycle:performance,turbo",
-                "fan-max-toggle",
-                "keyboard-effect-next",
-                "auto-next",
-                "mic-toggle",
-            ],
-        ),
-        (
-            "work",
-            ["power-cycle:eco,quiet,balanced", "output-toggle", "mic-toggle", "touchpad-toggle", "none"],
-        ),
-        ("lights", ["keyboard-effect-next", "rear-effect-next", "keyboard:toggle", "rear:toggle", "none"]),
+    // As the Python edition's sets, without Fn+Esc (no longer bindable).
+    let want: [(&str, [&str; 4]); 5] = [
+        ("native", ["exec:truesense gui", "none", "none", "none"]),
+        ("default", ["power-next", "output-toggle", "none", "fan-max-toggle"]),
+        ("gaming", ["power-cycle:performance,turbo", "fan-max-toggle", "keyboard-effect-next", "auto-next"]),
+        ("work", ["power-cycle:eco,quiet,balanced", "output-toggle", "mic-toggle", "touchpad-toggle"]),
+        ("lights", ["keyboard-effect-next", "rear-effect-next", "keyboard:toggle", "rear:toggle"]),
     ];
     assert_eq!(kp.names(), BUILTIN_NAMES);
     for (name, w) in want {
@@ -113,7 +102,7 @@ fn use_keeps_the_rest_of_the_user_config() {
     assert!(!cfg.audio.notify);
     assert_eq!(cfg.keys.power_cycle, ["eco", "turbo"]);
     assert_eq!(cfg.keys.tap, "power-cycle:performance,turbo");
-    assert_eq!(cfg.keys.fn_esc, "mic-toggle");
+    assert_eq!(cfg.keys.long, "auto-next");
     assert_eq!(cfg.keys.profile, "gaming");
     // A broken config file is an error and is left alone.
     std::fs::write(tmp.0.join("config.toml"), "[keys\n").unwrap();
@@ -135,10 +124,11 @@ fn loads_files_written_by_python() {
     assert_eq!(p.description, "my set");
     assert_eq!(p.bindings.tap, "power:turbo");
     assert_eq!(p.bindings.double, "exec:echo \u{e9} > /tmp/x");
-    // What is written has the same names in the same order and the same indent.
+    // What is written has the same names in the same order and the same indent; the retired
+    // fn_esc of an old file is dropped.
     kp.save("new", &p).unwrap();
     let written = std::fs::read_to_string(tmp.0.join("keys").join("new.json")).unwrap();
-    let want = "{\n \"description\": \"my set\",\n \"tap\": \"power:turbo\",\n \"double\": \"exec:echo \u{e9} > /tmp/x\",\n \"triple\": \"none\",\n \"long\": \"fan-max-toggle\",\n \"fn_esc\": \"none\",\n \"long_ms\": 800,\n \"multi_ms\": 450\n}";
+    let want = "{\n \"description\": \"my set\",\n \"tap\": \"power:turbo\",\n \"double\": \"exec:echo \u{e9} > /tmp/x\",\n \"triple\": \"none\",\n \"long\": \"fan-max-toggle\",\n \"long_ms\": 800,\n \"multi_ms\": 450\n}";
     assert_eq!(written, want);
     assert_eq!(kp.load("new").unwrap(), p);
 }
@@ -168,7 +158,6 @@ fn validation_refusals() {
         (r#"{"double":"bogus"}"#, "Double tap: unknown action 'bogus'"),
         (r#"{"triple":"power:warp"}"#, "Triple tap: power mode must be one of"),
         (r#"{"long":""}"#, "Long press: unknown action ''"),
-        (r#"{"fn_esc":"fan:5"}"#, "Fn + Esc: fan:"),
         (r#"{"long_ms":299}"#, "long_ms: 300..2000"),
         (r#"{"long_ms":2001}"#, "long_ms: 300..2000"),
         (r#"{"multi_ms":199}"#, "multi_ms: 200..1000"),
@@ -320,9 +309,9 @@ fn bindings_accessors_and_gestures() {
         assert_eq!(Gesture::from_key(g.key()), Some(g));
     }
     assert_eq!(Gesture::from_key("nope"), None);
-    assert_eq!(Gesture::FnEsc.label(), "Fn + Esc");
+    assert_eq!(Gesture::from_key("fn_esc"), None, "Fn+Esc is not a gesture any more");
     assert_eq!(Gesture::Long.label(), "Long press");
-    assert_eq!(Gesture::ALL.map(Gesture::key), ["tap", "double", "triple", "long", "fn_esc"]);
+    assert_eq!(Gesture::ALL.map(Gesture::key), ["tap", "double", "triple", "long"]);
     assert_eq!(Gesture::from_taps(0), None);
     assert_eq!(Gesture::from_taps(1), Some(Gesture::Tap));
     assert_eq!(Gesture::from_taps(2), Some(Gesture::Double));
@@ -335,16 +324,16 @@ fn an_invalid_configured_action_becomes_none_with_a_warning() {
     let check = syntax_check();
     let mut b = Bindings::default();
     b.tap = "frobnicate".into();
-    b.fn_esc = "fan:5".into();
+    b.long = "fan:5".into();
     let (clean, warnings) = b.sanitised(&check);
     assert_eq!(clean.tap, "none");
-    assert_eq!(clean.fn_esc, "none");
+    assert_eq!(clean.long, "none");
     assert_eq!(clean.double, "output-toggle");
     assert_eq!(
         warnings,
         [
             "keys.tap = 'frobnicate' is invalid (unknown action 'frobnicate'); using 'none'",
-            "keys.fn_esc = 'fan:5' is invalid (fan: smart | auto | max | 20..100); using 'none'"
+            "keys.long = 'fan:5' is invalid (fan: smart | auto | max | 20..100); using 'none'"
         ]
     );
     let (same, none) = Bindings::default().sanitised(&check);
@@ -372,7 +361,7 @@ fn hid_reports_decode_to_events() {
     let table: [(&[u8], Option<KeyEvent>); 12] = [
         (&[0x04, 0x81, 0xff, 0, 0, 0, 0, 0], Some(KeyEvent::PredatorDown)),
         (&[0x04, 0x00, 0x00, 0, 0, 0, 0, 0], Some(KeyEvent::Release)),
-        (&[0x04, 0x8a, 0xff, 0, 0, 0, 0, 0], Some(KeyEvent::FnEsc)),
+        (&[0x04, 0x8a, 0xff, 0, 0, 0, 0, 0], Some(KeyEvent::Unknown)),
         (&[0x04, 0x80, 0xff, 0, 0, 0, 0, 0], Some(KeyEvent::FnF10)),
         (&[0x04, 0x81, 0xff], Some(KeyEvent::PredatorDown)),
         (&[0x04, 0x82, 0xff, 0, 0, 0, 0, 0], Some(KeyEvent::Unknown)),
@@ -390,9 +379,7 @@ fn hid_reports_decode_to_events() {
 
 #[test]
 fn events_map_to_actions() {
-    let mut b = Bindings::default();
-    b.fn_esc = "mic-toggle".into();
-    assert_eq!(b.action_for_event(KeyEvent::FnEsc), Some(("fn_esc", "mic-toggle")));
+    let b = Bindings::default();
     assert_eq!(b.action_for_event(KeyEvent::FnF10), Some(("fn_f10", "touchpad-toggle")));
     for e in [KeyEvent::PredatorDown, KeyEvent::Release, KeyEvent::Unknown] {
         assert_eq!(b.action_for_event(e), None);

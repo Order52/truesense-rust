@@ -1,6 +1,6 @@
 //! Finding the keyboard's Fn-key interface.
 //!
-//! The PREDATOR key and Fn+Esc/Fn+F10 arrive on a second HID interface of the keyboard controller
+//! The PREDATOR key and Fn+F10 arrive on a second HID interface of the keyboard controller
 //! (the vendor usage page `0x88`, report id 4), separate from the lighting interface. The health
 //! check wants to know whether that node can be opened, and the key service opens it; both find it
 //! with [`find_fn_key_node`], which lives here because the application layer sits below the key

@@ -291,8 +291,6 @@ pub struct KeysConfig {
     pub triple: String,
     /// Long press.
     pub long: String,
-    /// Fn+Esc.
-    pub fn_esc: String,
     /// Milliseconds that make a press "long".
     pub long_ms: i64,
     /// Milliseconds within which further taps join the same gesture.
@@ -505,7 +503,6 @@ impl Default for KeysConfig {
             double: "output-toggle".into(),
             triple: "none".into(),
             long: "fan-max-toggle".into(),
-            fn_esc: "none".into(),
             long_ms: 800,
             multi_ms: 450,
             power_cycle: strings(&MODES),
@@ -824,8 +821,15 @@ pub fn unknown_keys(path: &Path) -> Vec<String> {
     out
 }
 
+/// Keys earlier versions wrote that this one no longer uses: read and ignored, not reported as
+/// unknown (a file written by 0.5.0 still has them).
+const RETIRED: [&str; 1] = ["keys.fn_esc"];
+
 fn walk_unknown(prefix: &str, found: &Table, known: &Table, out: &mut Vec<String>) {
     for (key, value) in found {
+        if RETIRED.contains(&format!("{prefix}{key}").as_str()) {
+            continue;
+        }
         match (known.get(key), value) {
             (None, _) => out.push(format!("{prefix}{key}")),
             // keyboard.operating_colors is a free-form table: its keys are not checked.
@@ -910,6 +914,8 @@ mod tests {
         // The one deliberate difference: releases of this edition come from its own repository.
         let mut golden = golden;
         golden["update"]["repo"] = serde_json::Value::from("Order52/truesense-rust");
+        // Retired since: Fn+Esc is not bindable (RETIRED keys are read and ignored).
+        golden["keys"].as_object_mut().expect("keys").remove("fn_esc");
         assert_eq!(ours, golden);
         assert_eq!(
             alerts,

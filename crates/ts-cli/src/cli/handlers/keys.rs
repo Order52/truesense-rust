@@ -1,4 +1,4 @@
-//! `keys`: what the PREDATOR key and Fn+Esc do, and the key binding profiles.
+//! `keys`: what the PREDATOR key does, and the key binding profiles.
 #![forbid(unsafe_code)]
 
 use serde_json::{Value, json};
@@ -8,14 +8,13 @@ use ts_domain::keybinds::Gesture;
 use super::{Cx, Fail, Obj, Outcome, fail};
 use crate::cli::argparse::Matches;
 
-/// The five gestures and two timings of a binding set as the Python dictionary listed them.
+/// The four gestures and two timings of a binding set as the Python dictionary listed them.
 fn binding_rows(b: &KeyBindings) -> Vec<(&'static str, Value)> {
     vec![
         ("tap", json!(b.tap)),
         ("double", json!(b.double)),
         ("triple", json!(b.triple)),
         ("long", json!(b.long)),
-        ("fn_esc", json!(b.fn_esc)),
         ("long_ms", json!(b.long_ms)),
         ("multi_ms", json!(b.multi_ms)),
     ]
@@ -149,7 +148,6 @@ fn profile(cx: &mut Cx<'_, '_>, m: &Matches) -> Result<(), Fail> {
                 ("double", Gesture::Double),
                 ("triple", Gesture::Triple),
                 ("long", Gesture::Long),
-                ("fn_esc", Gesture::FnEsc),
             ] {
                 if let Some(a) = m.str(flag) {
                     actions.push((gesture, a.to_owned()));

@@ -31,7 +31,7 @@ Encodings seen on the laptop:
 - **Per-key colours**: feature `88 00 00 00 00 00 00 77` (then a GET), feature `12 00 00 08 00 00 00 E5`, then 8 output reports of 64 bytes (written as 65 bytes with a leading report id of 0, paced about 16 ms apart) carrying 128 cells of `00 R G B`, then `08 02 33 05 <brightness> 08 01 chk`. Cell number is `column * 6 + row`.
 - **Brightness read-back**: send `88 ...` and read the feature report; byte 4 is the brightness.
 - **Backlight timeout**: set `30 01 <0|1> 00 00 00 00 chk`; get by sending `B0 00 00 00 00 00 00 4F` and reading byte 2. The factory state is on.
-- **Fn and PREDATOR keys**: usage page `0x88`, report id 4: `04 80 FF` Fn+F10, `04 8A FF` Fn+Esc, `04 81 FF` PREDATOR press, `04 00 00` release (also sent after the other Fn keys). Fn+F11 and Fn+F12 change brightness inside the keyboard.
+- **Fn and PREDATOR keys**: usage page `0x88`, report id 4: `04 80 FF` Fn+F10, `04 8A FF` Fn+Esc (TrueSense binds nothing to it), `04 81 FF` PREDATOR press, `04 00 00` release (also sent after the other Fn keys). Fn+F11 and Fn+F12 change brightness inside the keyboard.
 
 ## Audio (Realtek ALC245)
 

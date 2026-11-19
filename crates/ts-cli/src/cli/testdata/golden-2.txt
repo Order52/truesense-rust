@@ -1229,7 +1229,6 @@ tap      power-next
 double   output-toggle
 triple   none
 long     fan-max-toggle
-fn_esc   none
 (long press after 800 ms; taps within 450 ms count together)
 --- err
 === end
@@ -1242,7 +1241,6 @@ rc 0
   "double": "output-toggle",
   "triple": "none",
   "long": "fan-max-toggle",
-  "fn_esc": "none",
   "long_ms": 800,
   "multi_ms": 450,
   "power_cycle": [
@@ -1294,7 +1292,6 @@ tap      power-next
 double   output-toggle
 triple   none
 long     fan-max-toggle
-fn_esc   none
 (long press after 800 ms; taps within 450 ms count together)
 --- err
 === end
@@ -1307,7 +1304,7 @@ reset: tap
 $ keys reset
 rc 0
 --- out
-reset: tap, double, triple, long, fn_esc
+reset: tap, double, triple, long
 --- err
 === end
 $ keys timing
@@ -1332,7 +1329,6 @@ tap      power-next
 double   output-toggle
 triple   none
 long     fan-max-toggle
-fn_esc   none
 (long press after 900 ms; taps within 450 ms count together)
 --- err
 === end
@@ -1341,7 +1337,7 @@ rc 0
 --- out
   native  - PredatorSense default: the PREDATOR key opens the app, nothing else is bound
   default  - The standard behaviour: tap steps the power mode, double tap switches speakers/headphones, long press toggles Max fans
-  gaming  - Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto, Fn+Esc mutes the microphone
+  gaming  - Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto
   work  - Work: tap steps Eco, Quiet and Balanced, double tap switches audio, triple tap mutes the microphone, long press toggles the touchpad
   lights  - Lighting: tap the next keyboard effect, double tap the next rear effect, triple tap the keyboard light, long press the rear light
 --- err
@@ -1354,7 +1350,6 @@ key profile in use: custom
   Double tap  output-toggle
   Triple tap  none
   Long press  fan-max-toggle
-  Fn + Esc    none
   long press after 900 ms; taps within 450 ms count together
 --- err
 === end
@@ -1366,7 +1361,6 @@ default
   Double tap  output-toggle
   Triple tap  none
   Long press  fan-max-toggle
-  Fn + Esc    none
   long press after 800 ms; taps within 450 ms count together
 --- err
 === end
@@ -1378,7 +1372,6 @@ gaming
   Double tap  fan-max-toggle
   Triple tap  keyboard-effect-next
   Long press  auto-next
-  Fn + Esc    mic-toggle
   long press after 800 ms; taps within 450 ms count together
 --- err
 === end
@@ -1386,12 +1379,11 @@ $ --json keys profile show gaming
 rc 0
 --- out
 {
-  "description": "Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto, Fn+Esc mutes the microphone",
+  "description": "Gaming: tap toggles Performance and Turbo, double tap Max fans, triple tap the next lighting effect, long press Smart auto",
   "tap": "power-cycle:performance,turbo",
   "double": "fan-max-toggle",
   "triple": "keyboard-effect-next",
   "long": "auto-next",
-  "fn_esc": "mic-toggle",
   "long_ms": 800,
   "multi_ms": 450
 }
@@ -1417,7 +1409,6 @@ mykeys
   Double tap  fan-max-toggle
   Triple tap  keyboard-effect-next
   Long press  auto-next
-  Fn + Esc    mic-toggle
   long press after 700 ms; taps within 450 ms count together
 --- err
 === end
@@ -1435,7 +1426,6 @@ key profile in use: mykeys
   Double tap  fan-max-toggle
   Triple tap  keyboard-effect-next
   Long press  auto-next
-  Fn + Esc    mic-toggle
   long press after 700 ms; taps within 450 ms count together
 --- err
 === end
@@ -1447,7 +1437,6 @@ rc 0
   "double": "fan-max-toggle",
   "triple": "keyboard-effect-next",
   "long": "auto-next",
-  "fn_esc": "mic-toggle",
   "long_ms": 700,
   "multi_ms": 450,
   "profile": "mykeys"
@@ -1802,8 +1791,8 @@ _truesense() {
         show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
-        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
         test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
         timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;
@@ -2006,8 +1995,8 @@ _truesense() {
         show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
-        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
         test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
         timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;

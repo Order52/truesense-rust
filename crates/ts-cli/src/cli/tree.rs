@@ -18,7 +18,7 @@ pub const TUI_PAGES: [&str; 7] = ["dashboard", "fans", "power", "lighting", "aud
 
 const TRI: [&str; 4] = ["on", "off", "toggle", "status"];
 const PROFILE_VERBS: [&str; 7] = ["list", "current", "show", "use", "copy", "save", "delete"];
-const GESTURES: [&str; 5] = ["tap", "double", "triple", "long", "fn_esc"];
+const GESTURES: [&str; 4] = ["tap", "double", "triple", "long"];
 
 fn names<T: Coded>() -> Vec<String> {
     T::ALL.iter().map(|m| m.name().to_owned()).collect()
@@ -404,7 +404,7 @@ fn keys() -> Command {
         profile = profile.arg(Arg::opt(&format!("--{g}")));
     }
     profile = profile.arg(Arg::opt("--long-ms").int()).arg(Arg::opt("--multi-ms").int());
-    verb("keys").help("PREDATOR key and Fn+Esc: what each gesture does").subs(
+    verb("keys").help("PREDATOR key: what each gesture does").subs(
         "verb",
         vec![
             verb("show"),

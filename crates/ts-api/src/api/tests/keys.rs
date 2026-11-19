@@ -15,7 +15,7 @@ fn the_bindings_are_the_defaults_until_you_change_them() {
     assert!(text.starts_with("tap      power-next\n"), "{text}");
     assert!(text.ends_with("(long press after 800 ms; taps within 450 ms count together)"), "{text}");
     let json = serde_json::to_value(&k).unwrap();
-    assert_eq!(json["fn_esc"], serde_json::json!("none"));
+    assert!(json.get("fn_esc").is_none(), "Fn+Esc is not bindable any more");
     assert!(json.get("power_cycle").is_some() && json.get("profile").is_some());
 }
 
@@ -34,7 +34,7 @@ fn an_action_is_checked_when_it_is_bound_and_the_profile_becomes_custom() {
         "a refused action changes nothing"
     );
     assert!(Api::key_actions().starts_with("An action is `name` or `name:argument`."));
-    assert_eq!(Api::parse_gesture("fn_esc").unwrap(), Gesture::FnEsc);
+    assert!(Api::parse_gesture("fn_esc").is_err());
     assert!(Api::parse_gesture("shout").is_err());
 }
 
@@ -46,7 +46,7 @@ fn reset_puts_the_defaults_back_on_one_gesture_or_all() {
     assert_eq!(fx.api.reset_keys(Some(Gesture::Tap)).unwrap(), [Gesture::Tap]);
     let k = fx.api.key_settings().unwrap();
     assert_eq!((k.bindings.tap.as_str(), k.bindings.long.as_str()), ("power-next", "none"));
-    assert_eq!(fx.api.reset_keys(None).unwrap().len(), 5);
+    assert_eq!(fx.api.reset_keys(None).unwrap().len(), 4);
     assert_eq!(fx.api.key_settings().unwrap().bindings.long, "fan-max-toggle");
 }
 

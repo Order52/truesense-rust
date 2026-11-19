@@ -323,7 +323,7 @@ fn what_this_edition_writes_keeps_the_key_sets_and_shapes_the_older_editions_rea
     assert_eq!(copy, "mine2");
     let v = json_of(&t.p("home/.config/truesense/keys/mine2.json"));
     let keys: Vec<&str> = v.as_object().unwrap().keys().map(String::as_str).collect();
-    assert_eq!(keys, ["description", "tap", "double", "triple", "long", "fn_esc", "long_ms", "multi_ms"]);
+    assert_eq!(keys, ["description", "tap", "double", "triple", "long", "long_ms", "multi_ms"]);
 }
 
 // ---- F12: a laptop with no files at all (fresh install) and with garbage everywhere ---------------

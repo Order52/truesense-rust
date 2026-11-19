@@ -1,4 +1,4 @@
-//! The PREDATOR key and Fn+Esc: what each gesture does, the press timing, and the saved binding
+//! The PREDATOR key: what each gesture does, the press timing, and the saved binding
 //! profiles.
 //!
 //! An action is checked when it is bound, never at key-press time, and the key service reloads the
@@ -25,8 +25,6 @@ pub struct KeyBindings {
     pub triple: String,
     /// A long press.
     pub long: String,
-    /// Fn+Esc.
-    pub fn_esc: String,
     /// Milliseconds that make a press long.
     pub long_ms: i64,
     /// Milliseconds within which further taps join the same gesture.
@@ -40,7 +38,6 @@ impl From<&Bindings> for KeyBindings {
             double: b.double.clone(),
             triple: b.triple.clone(),
             long: b.long.clone(),
-            fn_esc: b.fn_esc.clone(),
             long_ms: b.long_ms,
             multi_ms: b.multi_ms,
         }
@@ -55,7 +52,6 @@ impl KeyBindings {
             Gesture::Double => &self.double,
             Gesture::Triple => &self.triple,
             Gesture::Long => &self.long,
-            Gesture::FnEsc => &self.fn_esc,
         }
     }
 
@@ -155,11 +151,10 @@ impl Api {
         actions::CATALOGUE
     }
 
-    /// The gesture named by text (`tap`, `double`, `triple`, `long`, `fn_esc`).
+    /// The gesture named by text (`tap`, `double`, `triple`, `long`).
     pub fn parse_gesture(text: &str) -> ApiResult<Gesture> {
-        Gesture::from_key(text).ok_or_else(|| {
-            ApiError::invalid(format!("gesture: tap | double | triple | long | fn_esc (got '{text}')"))
-        })
+        Gesture::from_key(text)
+            .ok_or_else(|| ApiError::invalid(format!("gesture: tap | double | triple | long (got '{text}')")))
     }
 
     /// Binds an action to a gesture. The action is checked now; the key service reloads by itself.

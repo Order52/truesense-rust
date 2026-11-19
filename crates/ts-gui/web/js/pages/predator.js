@@ -5,7 +5,7 @@ import { h, card, row, hint, button, select, slider, field, run, toast, confirmD
 import { ACTION_TYPES, FAN_CHOICES, AUTO_CHOICES, FAVOURITE_CHOICES, POWER_MODES, typeOf, parseSpec, buildSpec, defaultsFor } from "../actions.js";
 import { capitalize, validName, NAME_HELP } from "../format.js";
 
-const GESTURES = [["tap", "Tap"], ["double", "Double tap"], ["triple", "Triple tap"], ["long", "Long press"], ["fn_esc", "Fn + Esc"]];
+const GESTURES = [["tap", "Tap"], ["double", "Double tap"], ["triple", "Triple tap"], ["long", "Long press"]];
 
 /** One gesture: pick WHAT it does, then its detail. */
 function actionEditor(gestureLabel, lists) {

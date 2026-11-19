@@ -303,7 +303,7 @@ positional arguments:
     startup      what the lights and profile do at login
     keyboard     keyboard lighting
     audio        output, microphone, headset jack, Purified Voice, DTS
-    keys         PREDATOR key and Fn+Esc: what each gesture does
+    keys         PREDATOR key: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
     favourite    starred looks, fan curves, Smart profiles, profiles and
@@ -370,7 +370,7 @@ positional arguments:
     startup      what the lights and profile do at login
     keyboard     keyboard lighting
     audio        output, microphone, headset jack, Purified Voice, DTS
-    keys         PREDATOR key and Fn+Esc: what each gesture does
+    keys         PREDATOR key: what each gesture does
     profile      named bundles of settings (gaming, quiet, battery-saver,
                  yours)
     favourite    starred looks, fan curves, Smart profiles, profiles and
@@ -609,7 +609,7 @@ $ keys set tap
 rc 2
 --- out
 --- err
-usage: truesense keys set [-h] {tap,double,triple,long,fn_esc} action
+usage: truesense keys set [-h] {tap,double,triple,long} action
 truesense keys set: error: the following arguments are required: action
 === end
 $ keys set tap a b
@@ -623,8 +623,8 @@ $ keys reset foo
 rc 2
 --- out
 --- err
-usage: truesense keys reset [-h] [{tap,double,triple,long,fn_esc}]
-truesense keys reset: error: argument gesture: invalid choice: 'foo' (choose from 'tap', 'double', 'triple', 'long', 'fn_esc')
+usage: truesense keys reset [-h] [{tap,double,triple,long}]
+truesense keys reset: error: argument gesture: invalid choice: 'foo' (choose from 'tap', 'double', 'triple', 'long')
 === end
 $ keys test
 rc 2
@@ -941,8 +941,8 @@ _truesense() {
         show) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         actions) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         run) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
-        set) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
-        reset) COMPREPLY=( $(compgen -W "tap double triple long fn_esc --help" -- "$cur") ); return;;
+        set) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
+        reset) COMPREPLY=( $(compgen -W "tap double triple long --help" -- "$cur") ); return;;
         test) COMPREPLY=( $(compgen -W "--help" -- "$cur") ); return;;
         profile) COMPREPLY=( $(compgen -W "list current show use copy save delete --help --from --tap --double --triple --long --fn-esc --long-ms --multi-ms" -- "$cur") ); return;;
         timing) COMPREPLY=( $(compgen -W "--help --long-ms --multi-ms" -- "$cur") ); return;;

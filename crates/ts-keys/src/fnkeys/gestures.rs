@@ -24,8 +24,7 @@ use ts_domain::keybinds::Gesture;
 
 /// Turns PREDATOR key presses and releases into gestures. Times are any monotonic offsets (the
 /// service uses the time since it started); only their differences matter. It answers only
-/// [`Gesture::Tap`], [`Gesture::Double`], [`Gesture::Triple`] and [`Gesture::Long`]: Fn+Esc is a
-/// key combination of its own, not a gesture of this key.
+/// [`Gesture::Tap`], [`Gesture::Double`], [`Gesture::Triple`] and [`Gesture::Long`].
 #[derive(Debug, Clone)]
 pub struct Gestures {
     long_after: Duration,

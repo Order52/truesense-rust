@@ -385,20 +385,20 @@ fn rows_read_every_gesture_and_keep_unreadable_text_visible() {
     let rows = call("rows", &json!({"bindings": bindings})).unwrap();
     let rows = rows.as_array().unwrap();
     let gestures: Vec<&str> = rows.iter().map(|r| r["gesture"].as_str().unwrap()).collect();
-    assert_eq!(gestures, ["tap", "double", "triple", "long", "fn_esc"]);
+    assert_eq!(gestures, ["tap", "double", "triple", "long"]);
     assert_eq!(rows[0]["state"]["kind"], json!("power-next"));
     assert_eq!(rows[3]["valid"], json!(false));
     assert_eq!(rows[3]["spec"], json!("fan:nope"));
-    // fn_esc is absent from the bindings: an unbound key, not an error.
-    assert_eq!(rows[4]["spec"], json!("none"));
-    assert_eq!(rows[4]["valid"], json!(true));
-    assert_eq!(call("rows", &json!({})).unwrap().as_array().unwrap().len(), 5);
+    // Absent from the bindings: an unbound gesture, not an error.
+    let empty = call("rows", &json!({})).unwrap();
+    assert_eq!(empty.as_array().unwrap().len(), 4);
+    assert_eq!((empty[0]["spec"].clone(), empty[0]["valid"].clone()), (json!("none"), json!(true)));
 }
 
 #[test]
 fn status_tells_when_the_draft_changed_and_what_cannot_be_saved() {
     let loaded = json!({"tap": "power-next", "double": "output-toggle", "triple": "none", "long": "fan-max-toggle",
-        "fn_esc": "none", "long_ms": 800, "multi_ms": 450});
+        "long_ms": 800, "multi_ms": 450});
     let same = call("status", &json!({"loaded": loaded, "draft": loaded})).unwrap();
     assert_eq!(same["changed"], json!(false));
     assert_eq!(same["can_save"], json!(true));
@@ -449,10 +449,11 @@ fn save_args_carry_every_gesture_and_the_timing_and_refuse_unreadable_actions() 
     let draft = json!({"tap": " power-next ", "double": "none", "triple": "none", "long": "fan:60",
         "fn_esc": "mic-toggle", "long_ms": 900, "multi_ms": 7});
     let a = call("save_args", &json!({"name": "mine", "draft": draft})).unwrap();
+    // A retired fn_esc in a draft (an old profile) is not carried over.
     assert_eq!(
         a,
         json!({"action": "save", "name": "mine", "tap": "power-next", "double": "none", "triple": "none",
-            "long": "fan:60", "fn_esc": "mic-toggle", "long_ms": 900, "multi_ms": 200})
+            "long": "fan:60", "long_ms": 900, "multi_ms": 200})
     );
     let bad = json!({"tap": "power", "long_ms": 800, "multi_ms": 450});
     let e = call("save_args", &json!({"name": "mine", "draft": bad})).unwrap_err();
@@ -505,7 +506,7 @@ fn the_builtin_profiles_are_the_ones_the_library_ships_and_read_cleanly_here() {
     assert_eq!(MULTI_MS.default, m.api.key_profile("default").unwrap().bindings.multi_ms);
     // The page saves through `save_args`: the library takes exactly what it makes.
     let draft = json!({"tap": "power-cycle:eco,turbo", "double": "none", "triple": "none", "long": "none",
-        "fn_esc": "none", "long_ms": 1000, "multi_ms": 300});
+        "long_ms": 1000, "multi_ms": 300});
     let a = call("save_args", &json!({"name": "round", "draft": draft})).unwrap();
     let mut edit = KeyProfileEdit::default();
     for g in GESTURES {

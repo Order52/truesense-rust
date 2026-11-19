@@ -230,8 +230,6 @@ Item {
             readonly property real legendW: width
             readonly property real legendY: 0
             readonly property real legendH: height
-            /// The PREDATOR emblem's size: its 26 x 32 drawing, a little under half a key tall.
-            readonly property real logoScale: u * 0.46 / 32
             /// The media keys print small symbols.
             readonly property bool media: ["backward", "playpause", "forward"].indexOf(modelData.name) >= 0
 
@@ -302,23 +300,11 @@ Item {
                     color: key.ink
                 }
             }
-            // The PREDATOR key: Acer's emblem (the outline of PredatorSense's header logo,
-            // 26 x 32), lit like a legend.
+            // The PREDATOR key: Acer's emblem, lit like a legend.
             Loader {
                 active: key.modelData.icon === "predator"
                 anchors.centerIn: parent
-                sourceComponent: Shape {
-                    width: 26 * key.logoScale
-                    height: 32 * key.logoScale
-                    ShapePath {
-                        strokeWidth: -1
-                        fillColor: key.ink
-                        scale: Qt.size(key.logoScale, key.logoScale)
-                        PathSvg {
-                            path: "M26 0V18.221l-5.557 5.25V18.8l1.788 -1.69V12.59l-2.919 4.271V32l-2.627 -6.252L13.7 22.929V3.781l3.411 8.891 5.651 -5.341ZM0 0V18.221l5.556 5.25V18.8l-1.787 -1.69V12.59l2.918 4.271V32l2.627 -6.252L12.3 22.929V3.781l-3.41 8.891 -5.652 -5.341Z"
-                        }
-                    }
-                }
+                sourceComponent: PredatorEmblem { height: key.u * 0.46; color: key.ink }
             }
 
             // Selection lifts the key; focus and selection draw a ring.

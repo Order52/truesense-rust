@@ -14,7 +14,7 @@ const KEYBOARD_ID: &str = "000004F2:00000117";
 const READ_LIMIT: u64 = 64 * 1024;
 
 /// The hidraw node of the Fn-key interface: the node of the keyboard controller whose report
-/// descriptor declares usage page 0x88 (the vendor page of the PREDATOR key and Fn+Esc). The
+/// descriptor declares usage page 0x88 (the vendor page of the PREDATOR key and Fn+F10). The
 /// keyboard exposes several nodes with the same id; only this one carries those reports.
 ///
 /// `sys_root` and `dev_root` stand for `/sys` and `/dev` (tests pass temporary trees). Nodes are
