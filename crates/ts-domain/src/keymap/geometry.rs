@@ -7,9 +7,9 @@
 //!
 //! The positions are measured from a top-down photo of a PH16-71 and checked against the cell
 //! capture of the owner's machine: low function keys in four groups, Print Screen, Insert and
-//! Delete at the end of that row and the media keys and Power above the numpad; a short left Shift
-//! with `\` beside it; an Enter two rows tall, wider in its lower row; full-size arrows with the
-//! right arrow under the numpad's first column; the PREDATOR key at the numpad's top left.
+//! Delete at the end of that row and the media keys and Power above the numpad; `\` above a
+//! one-row Enter (the US keyboard; the owner confirmed it); full-size arrows with the right arrow
+//! under the numpad's first column; the PREDATOR key at the numpad's top left.
 #![forbid(unsafe_code)]
 
 /// Where the numpad starts, in key units (a small gap after the main block).
@@ -38,9 +38,6 @@ pub struct KeyRect {
     pub w: f64,
     /// Height.
     pub h: f64,
-    /// How far the key's lowest row reaches further left than the rest (Enter); zero for a plain
-    /// rectangle.
-    pub foot: f64,
 }
 
 impl KeyRect {
@@ -103,8 +100,7 @@ const MAIN: [&[(&str, f64, f64)]; 6] = [
         ("p", 10.28, 1.0),
         ("[", 11.28, 1.0),
         ("]", 12.28, 1.0),
-        // Enter: two rows tall, see ENTER_FOOT.
-        ("return", 13.28, 0.97),
+        ("\\", 13.28, 0.97),
     ],
     &[
         ("caps", 0.0, 1.48),
@@ -119,10 +115,10 @@ const MAIN: [&[(&str, f64, f64)]; 6] = [
         ("l", 9.48, 1.0),
         (";", 10.48, 1.0),
         ("'", 11.48, 1.0),
+        ("return", 12.48, 1.77),
     ],
     &[
-        ("lshift", 0.0, 0.95),
-        ("\\", 0.95, 1.0),
+        ("lshift", 0.0, 1.95),
         ("z", 1.95, 1.0),
         ("x", 2.95, 1.0),
         ("c", 3.95, 1.0),
@@ -149,9 +145,6 @@ const MAIN: [&[(&str, f64, f64)]; 6] = [
         ("down", 13.3, 0.95),
     ],
 ];
-
-/// How far Enter's lower half reaches left of its upper half (to the right edge of `'`).
-const ENTER_FOOT: f64 = 0.8;
 
 /// The numpad block: name, row, column 0 to 3, height in rows. The media keys and Power sit above
 /// it in the function row; its bottom row starts with the right arrow.
@@ -191,21 +184,12 @@ pub fn key_rects() -> Vec<KeyRect> {
     let mut out = Vec::new();
     for (row, keys) in MAIN.iter().enumerate() {
         for (name, x, w) in *keys {
-            let tall = *name == "return";
-            let h = if tall { ROW_Y[row + 1] - ROW_Y[row] + 1.0 } else { row_h(row) };
-            out.push(KeyRect {
-                name,
-                x: *x,
-                y: ROW_Y[row],
-                w: *w,
-                h,
-                foot: if tall { ENTER_FOOT } else { 0.0 },
-            });
+            out.push(KeyRect { name, x: *x, y: ROW_Y[row], w: *w, h: row_h(row) });
         }
     }
     for (name, row, col, rows) in PAD {
         let h = ROW_Y[row + rows - 1] - ROW_Y[row] + row_h(row + rows - 1);
-        out.push(KeyRect { name, x: PAD_X + col * PAD_PITCH, y: ROW_Y[row], w: PAD_PITCH, h, foot: 0.0 });
+        out.push(KeyRect { name, x: PAD_X + col * PAD_PITCH, y: ROW_Y[row], w: PAD_PITCH, h });
     }
     out
 }

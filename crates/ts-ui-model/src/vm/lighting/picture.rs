@@ -24,10 +24,6 @@ pub struct Key {
     pub w: f64,
     /// Height.
     pub h: f64,
-    /// How far the lowest row of the key reaches further left (Enter, two rows tall and wider at
-    /// the bottom); zero for a plain rectangle.
-    #[serde(default)]
-    pub foot: f64,
     /// The main legend printed on the cap (empty for the space bar and the keys with a symbol).
     #[serde(default)]
     pub label: String,
@@ -44,7 +40,7 @@ pub struct Key {
 
 impl Key {
     /// A key of the picture with the legends printed on the PH16-71's cap (US layout).
-    fn new(name: &str, cells: Vec<usize>, (x, y, w, h): (f64, f64, f64, f64), foot: f64) -> Self {
+    fn new(name: &str, cells: Vec<usize>, (x, y, w, h): (f64, f64, f64, f64)) -> Self {
         let (shift, sub, icon) = legends(name);
         Key {
             name: name.to_owned(),
@@ -53,7 +49,6 @@ impl Key {
             y,
             w,
             h,
-            foot,
             label: key_label(name),
             shift: shift.to_owned(),
             sub: sub.to_owned(),
@@ -133,7 +128,7 @@ pub(super) fn key_label(name: &str) -> String {
         "right" => "\u{25b6}",
         "prtsc" => "PrtSc",
         "power" => "\u{23fb}",
-        "playpause" => "\u{25b6}\u{2759}\u{2759}",
+        "playpause" => "\u{23ef}",
         "backward" => "\u{23ee}",
         "forward" => "\u{23ed}",
         "numlock" => "NumLk",
@@ -189,16 +184,16 @@ pub(crate) fn name_cells(layout: &Value) -> BTreeMap<String, Vec<usize>> {
 pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
     let mut seen: BTreeSet<usize> = BTreeSet::new();
     let mut keys = Vec::new();
-    let mut add = |name: &str, (x, y, w, h): (f64, f64, f64, f64), foot: f64, keys: &mut Vec<Key>| {
+    let mut add = |name: &str, (x, y, w, h): (f64, f64, f64, f64), keys: &mut Vec<Key>| {
         if let Some(cells) = names.get(name)
             && !cells.iter().any(|c| seen.contains(c))
         {
             seen.extend(cells.iter().copied());
-            keys.push(Key::new(name, cells.clone(), (x, y, w, h), foot));
+            keys.push(Key::new(name, cells.clone(), (x, y, w, h)));
         }
     };
     for r in key_rects() {
-        add(r.name, (r.x, r.y, r.w, r.h), r.foot, &mut keys);
+        add(r.name, (r.x, r.y, r.w, r.h), &mut keys);
     }
     let extra: Vec<(&String, &Vec<usize>)> = names
         .iter()
@@ -210,7 +205,7 @@ pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
             continue;
         }
         seen.extend(cells.iter().copied());
-        keys.push(Key::new(name, cells.clone(), (i as f64, KEYBOARD_HEIGHT + 0.2, 1.0, 1.0), 0.0));
+        keys.push(Key::new(name, cells.clone(), (i as f64, KEYBOARD_HEIGHT + 0.2, 1.0, 1.0)));
         height = KEYBOARD_HEIGHT + 1.2;
     }
     Layout { keys, width: KEYBOARD_WIDTH, height }
@@ -220,21 +215,18 @@ pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
 pub(super) const INSET: f64 = 0.04;
 
 impl Key {
-    /// The key's area as one or two rectangles (min corner, max corner), inset by [`INSET`]: the
-    /// key itself and, for a key with a foot, the part of its lowest row left of it.
-    fn parts(&self) -> impl Iterator<Item = ((f64, f64), (f64, f64))> {
-        let main = ((self.x + INSET, self.y + INSET), (self.x + self.w - INSET, self.y + self.h - INSET));
-        let foot = (self.foot > 0.0).then_some((
-            (self.x - self.foot + INSET, self.y + self.h - 1.0 + INSET),
-            (self.x + INSET, self.y + self.h - INSET),
-        ));
-        std::iter::once(main).chain(foot)
+    /// The key's rectangle (min corner, max corner), inset by [`INSET`].
+    fn inset(&self) -> ((f64, f64), (f64, f64)) {
+        ((self.x + INSET, self.y + INSET), (self.x + self.w - INSET, self.y + self.h - INSET))
     }
 }
 
 /// The key under a point (layout units).
 pub(crate) fn key_at(keys: &[Key], x: f64, y: f64) -> Option<&Key> {
-    keys.iter().find(|k| k.parts().any(|(min, max)| x >= min.0 && x <= max.0 && y >= min.1 && y <= max.1))
+    keys.iter().find(|k| {
+        let (min, max) = k.inset();
+        x >= min.0 && x <= max.0 && y >= min.1 && y <= max.1
+    })
 }
 
 /// Cells of every key a box touches (any corner order).
@@ -242,7 +234,7 @@ pub(crate) fn cells_in_box(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<us
     let (x0, x1) = (a.0.min(b.0), a.0.max(b.0));
     let (y0, y1) = (a.1.min(b.1), a.1.max(b.1));
     keys.iter()
-        .filter(|k| k.parts().any(|(min, max)| max.0 + INSET > x0 && min.0 - INSET < x1 && max.1 + INSET > y0 && min.1 - INSET < y1))
+        .filter(|k| k.x + k.w > x0 && k.x < x1 && k.y + k.h > y0 && k.y < y1)
         .flat_map(|k| k.cells.iter().copied())
         .collect()
 }
@@ -282,8 +274,8 @@ pub(crate) fn keys_on_segment(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec
     let mut hits: Vec<(f64, &Key)> = keys
         .iter()
         .filter_map(|k| {
-            let t = k.parts().filter_map(|(min, max)| segment_entry(a, b, min, max)).reduce(f64::min)?;
-            Some((t, k))
+            let (min, max) = k.inset();
+            segment_entry(a, b, min, max).map(|t| (t, k))
         })
         .collect();
     hits.sort_by(|l, r| l.0.total_cmp(&r.0));

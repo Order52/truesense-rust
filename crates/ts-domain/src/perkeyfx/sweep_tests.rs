@@ -229,25 +229,25 @@ fn golden_frames_at_a_fixed_time() {
             "wave-clockwise",
             true,
             ["008193", "005a67", "00505b", "004e59", "007e90", "006573"],
-            0xeda4_310d_9408_12d2,
+            0x6343_111c_27f4_a0f6,
         ),
         (
             "wave-counter-clockwise",
             true,
             ["00606e", "00879b", "0092a7", "0093a9", "006372", "007c8e"],
-            0xdcc1_ddca_93c7_b8ac,
+            0x9107_ed48_3102_3060,
         ),
         (
             "wave-clockwise",
             false,
             ["c1ff00", "22ff00", "00ff0c", "0015ff", "b400ff", "5000ff"],
-            0xe3e6_43a8_6bc6_0350,
+            0x2ab2_4c59_3556_4d28,
         ),
         (
             "wave-counter-clockwise",
             false,
             ["3eff00", "ddff00", "fff300", "ff00ea", "4b00ff", "af00ff"],
-            0xac23_0cfe_007a_15f5,
+            0xb448_7c86_9223_3a35,
         ),
     ];
     for (mode, on_cyan, cells, sum) in golden {

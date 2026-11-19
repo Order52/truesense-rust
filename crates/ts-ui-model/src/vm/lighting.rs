@@ -378,24 +378,20 @@ mod tests {
         let l = real_layout();
         for (i, a) in l.keys.iter().enumerate() {
             for b in &l.keys[i + 1..] {
-                let foot = |k: &Key| (k.x - k.foot, k.y + k.h - 1.0, k.foot, 1.0);
-                let rects = |k: &Key| [(k.x, k.y, k.w, k.h), foot(k)];
-                let hit = |p: (f64, f64, f64, f64), q: (f64, f64, f64, f64)| {
-                    p.2 > 0.0 && q.2 > 0.0 && p.0 + p.2 - 1e-9 > q.0 && q.0 + q.2 - 1e-9 > p.0 && p.1 + p.3 - 1e-9 > q.1 && q.1 + q.3 - 1e-9 > p.1
-                };
-                let overlap = rects(a).iter().any(|p| rects(b).iter().any(|q| hit(*p, *q)));
+                let overlap = a.x + a.w - 1e-9 > b.x && b.x + b.w - 1e-9 > a.x && a.y + a.h - 1e-9 > b.y && b.y + b.h - 1e-9 > a.y;
                 assert!(!overlap, "{} overlaps {}", a.name, b.name);
             }
         }
         let right = |n: &str| l.keys.iter().find(|k| k.name == n).map(|k| k.x + k.w).unwrap();
-        for n in ["backspace", "return", "up", "del", "down"] {
+        for n in ["backspace", "\\", "return", "up", "del", "down"] {
             assert!((right(n) - 14.25).abs() < 1e-9, "{n} ends the main block");
         }
         assert!((right("power") - l.width).abs() < 1e-9 && (right("numenter") - l.width).abs() < 1e-9);
         let key = |n: &str| l.keys.iter().find(|k| k.name == n).unwrap();
         assert_eq!(key("right").x, key("num1").x, "the right arrow sits under the numpad's 1");
-        // Enter's lower half closes the home row after the apostrophe.
-        assert!((key("return").x - key("return").foot - right("'")).abs() < 1e-9);
+        // Enter closes the home row after the apostrophe; `\\` closes the row above it.
+        assert!((key("return").x - right("'")).abs() < 1e-9);
+        assert_eq!(key("\\").y, key("q").y);
         assert!(l.keys.iter().all(|k| k.x + k.w <= l.width + 1e-9));
     }
 
@@ -466,10 +462,9 @@ mod tests {
         let l = real_layout();
         let row = l.keys.iter().filter(|k| k.y == 2.65 && k.x < 14.25).collect::<Vec<_>>();
         let y = 2.65 + 0.5;
-        // From the left edge of the home row to the right edge in one jump: its keys and Enter's
-        // lower half.
+        // From the left edge of the home row to the right edge in one jump.
         let hits = keys_on_segment(&l.keys, (0.1, y), (14.2, y));
-        assert_eq!(hits.len(), row.len() + 1, "every home row key, none skipped");
+        assert_eq!(hits.len(), row.len(), "every home row key, none skipped");
         assert_eq!(hits.last().map(|k| k.name.as_str()), Some("return"));
         assert!(hits.windows(2).all(|w| w[0].x < w[1].x), "ordered along the drag");
         // The same, dragged right to left, reverses the order.

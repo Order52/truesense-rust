@@ -4,8 +4,9 @@
 // shines through the real keyboard. It is the live preview when `interactive` is false and the
 // per-key editor's board when true.
 //
-// Scene-graph items only (Rectangles, Text and one small Shape for the PREDATOR key), redrawn only
-// when the colours change: no Canvas, no running animation.
+// Scene-graph items only (Rectangles, Text and one small Shape for the PREDATOR key, whose emblem is
+// Acer's own artwork from PredatorSense), redrawn only when the colours change: no Canvas, no
+// running animation.
 //
 // Positions are reported in layout units (one unit = a normal key, origin at the first key), so the
 // page asks the view-model what is under them. The picture never mirrors in right-to-left layouts:
@@ -33,6 +34,8 @@ Item {
     property var inks: []
     /// An explanation for screen readers.
     property string description: ""
+    /// The box being dragged out to select keys, {x, y, w, h} in layout units, or null.
+    property var band: null
 
     /// The pointer went down at `point` (layout units); `button` is Qt.LeftButton or Qt.RightButton.
     signal pressedAt(var point, int button, bool extend)
@@ -176,7 +179,6 @@ Item {
                 && modelData.cells.indexOf(root.focusCell) >= 0
             readonly property real u: root._unit
             readonly property real gap: Math.max(1.5, u * 0.09)
-            readonly property real foot: modelData.foot || 0
 
             x: root._ox + modelData.x * u
             y: root._oy + modelData.y * u
@@ -194,18 +196,8 @@ Item {
                 color: key.light
                 opacity: 0.18 + 0.4 * key.level
             }
-            Rectangle {
-                visible: !key.dark && key.foot > 0
-                x: -key.foot * key.u + key.gap / 2 - key.u * 0.05
-                y: parent.height - key.u + key.gap / 2 - key.u * 0.04
-                width: key.foot * key.u + key.u * 0.1
-                height: key.u - key.gap + key.u * 0.1
-                radius: key.u * 0.2
-                color: key.light
-                opacity: 0.18 + 0.4 * key.level
-            }
 
-            // The cap: black plastic with a lighter top edge; Enter has its lower half too.
+            // The cap: black plastic with a lighter top edge.
             Rectangle {
                 id: cap
                 x: key.gap / 2
@@ -224,29 +216,24 @@ Item {
                     color: Qt.rgba(1, 1, 1, 0.09)
                 }
             }
-            Rectangle {
-                visible: key.foot > 0
-                x: -key.foot * key.u + key.gap / 2
-                y: parent.height - key.u + key.gap / 2
-                width: key.foot * key.u + cap.radius * 2
-                height: key.u - key.gap
-                radius: cap.radius
-                color: key.capColour
-            }
 
             // ---- legends ----
             readonly property bool twoLine: modelData.shift !== "" || modelData.sub !== ""
             // The main legend's size: as big as a letter key's, smaller on the low function row and
             // on twin-legend keys, and never wider than the cap.
             readonly property real fontMain: Math.max(6, Math.min(
-                u * (twoLine ? 0.25 : modelData.h < 0.7 ? 0.25 : 0.3),
+                u * (media ? 0.24 : twoLine ? 0.25 : modelData.h < 0.7 ? 0.25 : 0.3),
                 (legendW - 2 * gap) * 0.85 / (Math.max(1, modelData.label.length) * 0.6), 15))
             readonly property real fontSmall: Math.max(6, Math.min(u * 0.22, 12))
-            // Where the legends go: the cap, or Enter's lower half.
-            readonly property real legendX: foot > 0 ? -foot * u : 0
-            readonly property real legendW: foot > 0 ? width + foot * u : width
-            readonly property real legendY: foot > 0 ? height - u : 0
-            readonly property real legendH: foot > 0 ? u : height
+            // Where the legends go: the whole cap.
+            readonly property real legendX: 0
+            readonly property real legendW: width
+            readonly property real legendY: 0
+            readonly property real legendH: height
+            /// The PREDATOR emblem's size: its 26 x 32 drawing, a little under half a key tall.
+            readonly property real logoScale: u * 0.46 / 32
+            /// The media keys print small symbols.
+            readonly property bool media: ["backward", "playpause", "forward"].indexOf(modelData.name) >= 0
 
             Text {
                 visible: root._legible && key.modelData.shift !== ""
@@ -315,26 +302,21 @@ Item {
                     color: key.ink
                 }
             }
-            // The PREDATOR key's mask emblem.
+            // The PREDATOR key: Acer's emblem (the outline of PredatorSense's header logo,
+            // 26 x 32), lit like a legend.
             Loader {
                 active: key.modelData.icon === "predator"
                 anchors.centerIn: parent
                 sourceComponent: Shape {
-                    width: key.u * 0.42
-                    height: key.u * 0.42
+                    width: 26 * key.logoScale
+                    height: 32 * key.logoScale
                     ShapePath {
                         strokeWidth: -1
                         fillColor: key.ink
-                        scale: Qt.size(key.u * 0.042, key.u * 0.042)
-                        startX: 0; startY: 0
-                        PathLine { x: 4; y: 1.6 }
-                        PathLine { x: 5; y: 6 }
-                        PathLine { x: 6; y: 1.6 }
-                        PathLine { x: 10; y: 0 }
-                        PathLine { x: 8.2; y: 5.2 }
-                        PathLine { x: 5; y: 10 }
-                        PathLine { x: 1.8; y: 5.2 }
-                        PathLine { x: 0; y: 0 }
+                        scale: Qt.size(key.logoScale, key.logoScale)
+                        PathSvg {
+                            path: "M26 0V18.221l-5.557 5.25V18.8l1.788 -1.69V12.59l-2.919 4.271V32l-2.627 -6.252L13.7 22.929V3.781l3.411 8.891 5.651 -5.341ZM0 0V18.221l5.556 5.25V18.8l-1.787 -1.69V12.59l2.918 4.271V32l2.627 -6.252L12.3 22.929V3.781l-3.41 8.891 -5.652 -5.341Z"
+                        }
                     }
                 }
             }
@@ -358,10 +340,25 @@ Item {
         }
     }
 
+    // The box a selection drag draws.
+    Rectangle {
+        visible: root.band !== null
+        x: root.band === null ? 0 : root._ox + root.band.x * root._unit
+        y: root.band === null ? 0 : root._oy + root.band.y * root._unit
+        width: root.band === null ? 0 : root.band.w * root._unit
+        height: root.band === null ? 0 : root.band.h * root._unit
+        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14)
+        border.width: 1
+        border.color: Theme.accent
+        radius: 3
+    }
+
     MouseArea {
         id: pointer
         anchors.fill: parent
         enabled: root.interactive
+        // A drag on the board paints or selects keys; the page must not take it to scroll.
+        preventStealing: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         property var last: null
         function _at(m) { return { x: (m.x - root._ox) / root._unit, y: (m.y - root._oy) / root._unit } }

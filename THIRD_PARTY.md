@@ -49,3 +49,10 @@ the idea of a theme gallery with a thumbnail, colourway chips, search, filters a
 `keyboard::Direction`, `themes::preview`, `perkeyfx::sweep`, `designs::templates`, the `gallery` view-model and the QML components)
 is new, so none of those files carries the adaptation header.
 
+
+## Acer artwork: the PREDATOR emblem
+
+The emblem drawn on the PREDATOR key of the keyboard picture (`crates/ts-qt/qml/pages/lighting/KeyboardView.qml`) is the outline
+of `home_headerlogo.svg` from Acer's PredatorSense application, used to show the key as it is printed on the laptop. Predator and
+the Predator emblem are trademarks of Acer Inc.; they are not covered by this project's licence, and TrueSense is not made or
+endorsed by Acer.

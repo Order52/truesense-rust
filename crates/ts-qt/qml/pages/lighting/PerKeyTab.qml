@@ -22,6 +22,8 @@ ColumnLayout {
     property var selection: []
     property var baseSelection: []
     property var boxStart: null
+    /// Where a selection drag is now (layout units), for the box the board draws.
+    property var boxEnd: null
     property int focusCell: -1
     property var history: []
     property var redo: []
@@ -147,13 +149,17 @@ ColumnLayout {
         } else {
             baseSelection = extend ? selection : []
             boxStart = p
+            boxEnd = p
             select("box", { from: p, to: p, add: extend, selection: baseSelection })
         }
     }
 
     function dragged(from, to, extend) {
         if (tool === "paint") _paint(from, to)
-        else if (boxStart !== null) select("box", { from: boxStart, to: to, add: extend, selection: baseSelection })
+        else if (boxStart !== null) {
+            boxEnd = to
+            select("box", { from: boxStart, to: to, add: extend, selection: baseSelection })
+        }
     }
 
     function navigated(dir, extend) {
@@ -334,7 +340,12 @@ ColumnLayout {
             description: qsTrId("light_pk_board_a11y")
             onPressedAt: (p, button, extend) => tab.pressed(p, button, extend)
             onDragged: (from, to, extend) => tab.dragged(from, to, extend)
-            onReleased: { if (tab.tool === "paint") tab.strokeChanged = false; tab.boxStart = null }
+            onReleased: { if (tab.tool === "paint") tab.strokeChanged = false; tab.boxStart = null; tab.boxEnd = null }
+            // The selection box, once the drag is more than a click.
+            band: tab.boxStart === null || tab.boxEnd === null
+                || Math.abs(tab.boxEnd.x - tab.boxStart.x) + Math.abs(tab.boxEnd.y - tab.boxStart.y) < 0.1 ? null
+                : { x: Math.min(tab.boxStart.x, tab.boxEnd.x), y: Math.min(tab.boxStart.y, tab.boxEnd.y),
+                    w: Math.abs(tab.boxEnd.x - tab.boxStart.x), h: Math.abs(tab.boxEnd.y - tab.boxStart.y) }
             onNavigated: (dir, extend) => tab.navigated(dir, extend)
         }
         HelpText {
