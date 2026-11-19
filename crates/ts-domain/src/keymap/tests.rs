@@ -216,5 +216,20 @@ fn every_key_of_the_map_has_one_rectangle_and_none_overlap() {
         }
     }
     let space = rects.iter().find(|r| r.name == "space").unwrap();
-    assert_eq!((space.w, space.centre().0), (4.75, space.x + 2.375));
+    assert_eq!((space.w, space.centre().0), (4.9, space.x + 2.45));
+    // As on the PH16-71: low function keys, a short left Shift with `\` beside it, Enter two rows
+    // tall whose lower half ends at `'`, the right arrow under the numpad's first column and the
+    // PREDATOR key at the numpad's top left.
+    let at = |n: &str| *rects.iter().find(|r| r.name == n).unwrap();
+    assert!(at("f1").h < 0.7 && at("esc").h == at("f1").h && at("a").h == 1.0);
+    assert!(at("lshift").w < 1.0 && (at("\\").x - (at("lshift").x + at("lshift").w)).abs() < 1e-9);
+    let enter = at("return");
+    assert_eq!((enter.y, enter.h), (at("]").y, at("a").y + 1.0 - at("]").y));
+    assert!((enter.x - enter.foot - (at("'").x + at("'").w)).abs() < 1e-9);
+    assert!(enter.x >= at("]").x + at("]").w - 1e-9, "the upper half starts after ]");
+    assert_eq!((at("right").x, at("right").y), (at("num1").x, at("num0").y));
+    assert_eq!((at("predator").x, at("predator").y), (at("num7").x, at("numlock").y));
+    assert!((at("power").x + at("power").w - WIDTH).abs() < 1e-9);
+    assert!((at("numenter").y + at("numenter").h - HEIGHT).abs() < 1e-9);
+    assert!(rects.iter().filter(|r| r.foot > 0.0).count() == 1);
 }

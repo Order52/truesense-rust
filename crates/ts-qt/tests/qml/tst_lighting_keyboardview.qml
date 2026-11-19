@@ -30,14 +30,17 @@ TestCase {
     }
 
     function test_the_picture_is_as_wide_as_the_layout_allows() {
-        // 400 px for 4 units: 100 px a unit, and the height follows the layout (2 units).
-        compare(board._unit, 70, "a unit never grows beyond 70 px")
-        compare(board.implicitHeight, 2 * 70 + 2)
+        // 400 px for 4 units and the deck's sides: about 83 px a unit, held at 64; the height is
+        // the layout's 2 units and the deck above and below the keys.
+        compare(board._unit, 64, "a unit never grows beyond 64 px")
+        compare(board.implicitHeight, Math.ceil((2 + board._top + board._bottom) * 64))
+        compare(board._ox, (400 - 4 * 64) / 2, "the keys are centred")
+        verify(board._oy > 0, "the grille band is above the keys")
     }
 
     function test_a_click_reports_the_position_in_layout_units() {
-        // The layout is centred: unit 70, offset (400 - 4 * 70) / 2 = 60.
-        mouseClick(board, 60 + 35, 35)
+        // The middle of the first key, whatever the deck around the keys.
+        mouseClick(board, board._ox + 32, board._oy + 32)
         compare(pressedSpy.count, 1)
         var p = pressedSpy.signalArguments[0][0]
         verify(Math.abs(p.x - 0.5) < 0.01 && Math.abs(p.y - 0.5) < 0.01, JSON.stringify(p))
@@ -46,10 +49,10 @@ TestCase {
     }
 
     function test_a_drag_reports_each_step_from_where_the_last_one_ended() {
-        mousePress(board, 60 + 10, 30)
-        mouseMove(board, 60 + 150, 30)
-        mouseMove(board, 60 + 200, 30)
-        mouseRelease(board, 60 + 200, 30)
+        mousePress(board, board._ox + 10, board._oy + 30)
+        mouseMove(board, board._ox + 150, board._oy + 30)
+        mouseMove(board, board._ox + 200, board._oy + 30)
+        mouseRelease(board, board._ox + 200, board._oy + 30)
         compare(dragSpy.count, 2)
         var first = dragSpy.signalArguments[0]
         var second = dragSpy.signalArguments[1]
@@ -58,13 +61,13 @@ TestCase {
     }
 
     function test_right_button_is_reported_for_the_eyedropper() {
-        mouseClick(board, 60 + 35, 35, Qt.RightButton)
+        mouseClick(board, board._ox + 32, board._oy + 32, Qt.RightButton)
         compare(pressedSpy.signalArguments[0][1], Qt.RightButton)
     }
 
     function test_a_picture_that_is_not_interactive_ignores_the_pointer() {
         board.interactive = false
-        mouseClick(board, 60 + 35, 35)
+        mouseClick(board, board._ox + 32, board._oy + 32)
         compare(pressedSpy.count, 0)
     }
 

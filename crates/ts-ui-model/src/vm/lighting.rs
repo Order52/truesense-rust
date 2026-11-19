@@ -263,6 +263,7 @@ fn select(args: &Value) -> Result<Value, String> {
 #[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod tests {
     use super::*;
+    use ts_api::api::{KEYBOARD_HEIGHT, KEYBOARD_WIDTH};
 
     fn real_layout() -> Layout {
         let v: Value = serde_json::from_str(include_str!("../../tests/lighting-keys.json")).unwrap();
@@ -364,7 +365,8 @@ mod tests {
             }
         }
         assert_eq!(seen.len(), 103, "105 names, two of them aliases: 103 distinct cells");
-        assert_eq!(l.height, 6.4, "no extra row: the picture knows every key");
+        assert_eq!(l.height, KEYBOARD_HEIGHT, "no extra row: the picture knows every key");
+        assert_eq!(l.width, KEYBOARD_WIDTH);
         for name in ["esc", "space", "return", "windows", "numenter", "predator", "up"] {
             assert!(l.keys.iter().any(|k| k.name == name), "{name}");
         }
@@ -376,16 +378,24 @@ mod tests {
         let l = real_layout();
         for (i, a) in l.keys.iter().enumerate() {
             for b in &l.keys[i + 1..] {
-                let overlap = a.x + a.w - 1e-9 > b.x && b.x + b.w - 1e-9 > a.x && a.y + a.h - 1e-9 > b.y && b.y + b.h - 1e-9 > a.y;
+                let foot = |k: &Key| (k.x - k.foot, k.y + k.h - 1.0, k.foot, 1.0);
+                let rects = |k: &Key| [(k.x, k.y, k.w, k.h), foot(k)];
+                let hit = |p: (f64, f64, f64, f64), q: (f64, f64, f64, f64)| {
+                    p.2 > 0.0 && q.2 > 0.0 && p.0 + p.2 - 1e-9 > q.0 && q.0 + q.2 - 1e-9 > p.0 && p.1 + p.3 - 1e-9 > q.1 && q.1 + q.3 - 1e-9 > p.1
+                };
+                let overlap = rects(a).iter().any(|p| rects(b).iter().any(|q| hit(*p, *q)));
                 assert!(!overlap, "{} overlaps {}", a.name, b.name);
             }
         }
         let right = |n: &str| l.keys.iter().find(|k| k.name == n).map(|k| k.x + k.w).unwrap();
-        assert!((right("backspace") - 15.0).abs() < 1e-9);
-        assert!((right("return") - 15.0).abs() < 1e-9);
-        assert!((right("up") - 15.0).abs() < 1e-9);
-        assert!((right("right") - 16.0).abs() < 1e-9);
-        assert!((right("num.") - 20.5 + 1.0).abs() < 1e-9 || right("numenter") <= l.width + 1e-9);
+        for n in ["backspace", "return", "up", "del", "down"] {
+            assert!((right(n) - 14.25).abs() < 1e-9, "{n} ends the main block");
+        }
+        assert!((right("power") - l.width).abs() < 1e-9 && (right("numenter") - l.width).abs() < 1e-9);
+        let key = |n: &str| l.keys.iter().find(|k| k.name == n).unwrap();
+        assert_eq!(key("right").x, key("num1").x, "the right arrow sits under the numpad's 1");
+        // Enter's lower half closes the home row after the apostrophe.
+        assert!((key("return").x - key("return").foot - right("'")).abs() < 1e-9);
         assert!(l.keys.iter().all(|k| k.x + k.w <= l.width + 1e-9));
     }
 
@@ -397,8 +407,8 @@ mod tests {
         assert!(!names.contains_key("bad") && !names.contains_key("far"));
         let l = build_layout(&names);
         let z = l.keys.iter().find(|k| k.name == "zzz").unwrap();
-        assert_eq!((z.y, l.height), (6.4, 7.5));
-        assert!(l.keys.iter().any(|k| k.name == "a" && k.y == 3.3));
+        assert_eq!((z.y, l.height), (KEYBOARD_HEIGHT + 0.2, KEYBOARD_HEIGHT + 1.2));
+        assert!(l.keys.iter().any(|k| k.name == "a" && k.y == 2.65));
         assert_eq!(build_layout(&BTreeMap::new()).keys.len(), 0);
     }
 
@@ -410,6 +420,23 @@ mod tests {
         assert_eq!(key_label("space"), "");
         assert_eq!(key_label("f5"), "F5");
         assert_eq!(key_label("zzzzz"), "Zzz");
+        assert_eq!(key_label("backspace"), "Backspace");
+        // The second legends of the PH16-71's caps (US layout) and the keys drawn as a symbol.
+        let l = real_layout();
+        let key = |n: &str| l.keys.iter().find(|k| k.name == n).unwrap();
+        assert_eq!((key("1").label.as_str(), key("1").shift.as_str()), ("1", "!"));
+        assert_eq!((key("/").label.as_str(), key("/").shift.as_str()), ("/", "?"));
+        assert_eq!((key("\\").label.as_str(), key("\\").shift.as_str()), ("\\", "|"));
+        assert_eq!((key("num7").label.as_str(), key("num7").sub.as_str()), ("7", "Home"));
+        assert_eq!((key("windows").label.as_str(), key("windows").icon.as_str()), ("", "windows"));
+        assert_eq!(key("predator").icon, "predator");
+        assert_eq!(key("options").icon, "menu");
+        assert!(key("q").shift.is_empty() && key("q").sub.is_empty() && key("q").icon.is_empty());
+        // Every key with neither a legend nor a symbol is the space bar.
+        let blank: Vec<&str> = l.keys.iter().filter(|k| k.label.is_empty() && k.icon.is_empty()).map(|k| k.name.as_str()).collect();
+        assert_eq!(blank, vec!["space"]);
+        let v = serde_json::to_value(key("2")).unwrap();
+        assert_eq!((v["shift"].as_str(), v["sub"].as_str(), v["icon"].as_str()), (Some("@"), Some(""), Some("")));
     }
 
     #[test]
@@ -427,7 +454,7 @@ mod tests {
     #[test]
     fn a_box_selects_every_key_it_touches_in_any_corner_order() {
         let l = real_layout();
-        let cells = cells_in_box(&l.keys, (2.0, 3.5), (0.2, 2.4));
+        let cells = cells_in_box(&l.keys, (2.0, 3.0), (0.2, 1.9));
         let names: BTreeSet<&str> = l.keys.iter().filter(|k| k.cells.iter().any(|c| cells.contains(c))).map(|k| k.name.as_str()).collect();
         assert!(["tab", "q", "caps", "a"].iter().all(|n| names.contains(n)), "{names:?}");
         assert!(!names.contains("w") || l.keys.iter().find(|k| k.name == "w").is_some_and(|w| w.x < 1.5));
@@ -437,21 +464,23 @@ mod tests {
     #[test]
     fn a_fast_drag_paints_every_key_on_the_line_in_order() {
         let l = real_layout();
-        let row = l.keys.iter().filter(|k| k.y == 3.3 && k.x < 15.0).collect::<Vec<_>>();
-        let y = 3.3 + 0.5;
-        // From the left edge of the home row to the right edge in one jump.
-        let hits = keys_on_segment(&l.keys, (0.1, y), (14.9, y));
-        assert_eq!(hits.len(), row.len(), "every home row key, none skipped");
+        let row = l.keys.iter().filter(|k| k.y == 2.65 && k.x < 14.25).collect::<Vec<_>>();
+        let y = 2.65 + 0.5;
+        // From the left edge of the home row to the right edge in one jump: its keys and Enter's
+        // lower half.
+        let hits = keys_on_segment(&l.keys, (0.1, y), (14.2, y));
+        assert_eq!(hits.len(), row.len() + 1, "every home row key, none skipped");
+        assert_eq!(hits.last().map(|k| k.name.as_str()), Some("return"));
         assert!(hits.windows(2).all(|w| w[0].x < w[1].x), "ordered along the drag");
         // The same, dragged right to left, reverses the order.
-        let back = keys_on_segment(&l.keys, (14.9, y), (0.1, y));
+        let back = keys_on_segment(&l.keys, (14.2, y), (0.1, y));
         assert!(back.windows(2).all(|w| w[0].x > w[1].x));
         // A click (no movement) is one key; a click in a gap is none.
         let a = l.keys.iter().find(|k| k.name == "a").unwrap();
         assert_eq!(keys_on_segment(&l.keys, (a.x + 0.5, y), (a.x + 0.5, y)).len(), 1);
         assert!(keys_on_segment(&l.keys, (a.x + 0.01, y), (a.x + 0.01, y)).is_empty());
         // A diagonal crossing three rows.
-        let diag = keys_on_segment(&l.keys, (3.8, 1.8), (3.8, 5.8));
+        let diag = keys_on_segment(&l.keys, (3.6, 1.0), (3.6, 5.3));
         assert_eq!(diag.len(), 5, "{:?}", diag.iter().map(|k| &k.name).collect::<Vec<_>>());
         assert!(keys_on_segment(&l.keys, (f64::NAN, 0.0), (1.0, 1.0)).is_empty());
     }
@@ -493,17 +522,17 @@ mod tests {
     #[test]
     fn stroke_paints_the_crossed_keys_and_reports_whether_anything_changed() {
         let layout = layout_json();
-        let args = json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.8}, "to": {"x": 14.9, "y": 3.8}, "colour": "FF0000", "cells": cells_all("000000")});
+        let args = json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.15}, "to": {"x": 14.2, "y": 3.15}, "colour": "FF0000", "cells": cells_all("000000")});
         let r = call("stroke", &args).unwrap();
         assert_eq!(r["touched"].as_array().unwrap().len(), 13, "caps a s d f g h j k l ; ' return");
         assert_eq!(r["changed"], true);
         let painted = r["cells"].as_array().unwrap().iter().filter(|c| *c == "ff0000").count();
         assert_eq!(painted, 13);
         // Painting the same colour again changes nothing: no upload needed.
-        let again = call("stroke", &json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.8}, "to": {"x": 14.9, "y": 3.8}, "colour": "ff0000", "cells": r["cells"]})).unwrap();
+        let again = call("stroke", &json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.15}, "to": {"x": 14.2, "y": 3.15}, "colour": "ff0000", "cells": r["cells"]})).unwrap();
         assert_eq!(again["changed"], false);
         // No colour: only the keys are reported (the eyedropper and hover).
-        let dry = call("stroke", &json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.8}, "to": {"x": 0.1, "y": 3.8}})).unwrap();
+        let dry = call("stroke", &json!({"keys": layout["keys"], "from": {"x": 0.1, "y": 3.15}, "to": {"x": 0.1, "y": 3.15}})).unwrap();
         assert_eq!((dry["changed"].clone(), dry["touched"].as_array().unwrap().len()), (json!(false), 1));
     }
 
@@ -553,9 +582,9 @@ mod tests {
         assert_eq!(sel(json!({"op": "toggle", "cell": 5, "selection": [1, 2]})), vec![1, 2, 5]);
         assert_eq!(sel(json!({"op": "toggle", "cell": 5, "selection": [1, 5]})), vec![1]);
         assert_eq!(sel(json!({"op": "toggle", "cell": 500})), Vec::<u64>::new(), "an out of range cell is no key");
-        let boxed = sel(json!({"op": "box", "from": {"x": 0.1, "y": 3.5}, "to": {"x": 0.4, "y": 3.9}}));
+        let boxed = sel(json!({"op": "box", "from": {"x": 0.1, "y": 2.9}, "to": {"x": 0.4, "y": 3.3}}));
         assert_eq!(boxed.len(), 1);
-        let added = sel(json!({"op": "box", "add": true, "selection": [100], "from": {"x": 0.1, "y": 3.5}, "to": {"x": 0.4, "y": 3.9}}));
+        let added = sel(json!({"op": "box", "add": true, "selection": [100], "from": {"x": 0.1, "y": 2.9}, "to": {"x": 0.4, "y": 3.3}}));
         assert_eq!(added.len(), 2);
         assert!(call("select", &json!({"op": "wat"})).is_err());
     }

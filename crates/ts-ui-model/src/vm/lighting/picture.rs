@@ -3,7 +3,7 @@
 //! A part of [`super`] (the Lighting page's view-model); it shares the parent's names.
 #![forbid(unsafe_code)]
 
-use ts_api::api::key_rects;
+use ts_api::api::{KEYBOARD_HEIGHT, KEYBOARD_WIDTH, key_rects};
 
 use super::*;
 
@@ -24,9 +24,84 @@ pub struct Key {
     pub w: f64,
     /// Height.
     pub h: f64,
-    /// The short text on the key (empty for a wide key like the space bar).
+    /// How far the lowest row of the key reaches further left (Enter, two rows tall and wider at
+    /// the bottom); zero for a plain rectangle.
+    #[serde(default)]
+    pub foot: f64,
+    /// The main legend printed on the cap (empty for the space bar and the keys with a symbol).
     #[serde(default)]
     pub label: String,
+    /// The legend above it, typed with Shift (`!` over `1`); empty for most keys.
+    #[serde(default)]
+    pub shift: String,
+    /// A small second legend under it (the numpad's `Home`, `PgUp`, ...); empty for most keys.
+    #[serde(default)]
+    pub sub: String,
+    /// A symbol the picture draws instead of text: `windows`, `menu` or `predator`; empty otherwise.
+    #[serde(default)]
+    pub icon: String,
+}
+
+impl Key {
+    /// A key of the picture with the legends printed on the PH16-71's cap (US layout).
+    fn new(name: &str, cells: Vec<usize>, (x, y, w, h): (f64, f64, f64, f64), foot: f64) -> Self {
+        let (shift, sub, icon) = legends(name);
+        Key {
+            name: name.to_owned(),
+            cells,
+            x,
+            y,
+            w,
+            h,
+            foot,
+            label: key_label(name),
+            shift: shift.to_owned(),
+            sub: sub.to_owned(),
+            icon: icon.to_owned(),
+        }
+    }
+}
+
+/// The legends of a key besides its main one: (above, under, symbol). The main legend is
+/// [`key_label`].
+pub(super) fn legends(name: &str) -> (&'static str, &'static str, &'static str) {
+    match name {
+        "`" => ("~", "", ""),
+        "1" => ("!", "", ""),
+        "2" => ("@", "", ""),
+        "3" => ("#", "", ""),
+        "4" => ("$", "", ""),
+        "5" => ("%", "", ""),
+        "6" => ("^", "", ""),
+        "7" => ("&", "", ""),
+        "8" => ("*", "", ""),
+        "9" => ("(", "", ""),
+        "0" => (")", "", ""),
+        "minus" => ("_", "", ""),
+        "=" => ("+", "", ""),
+        "[" => ("{", "", ""),
+        "]" => ("}", "", ""),
+        "\\" => ("|", "", ""),
+        ";" => (":", "", ""),
+        "'" => ("\"", "", ""),
+        "," => ("<", "", ""),
+        "." => (">", "", ""),
+        "/" => ("?", "", ""),
+        "num7" => ("", "Home", ""),
+        "num8" => ("", "\u{25b2}", ""),
+        "num9" => ("", "PgUp", ""),
+        "num4" => ("", "\u{25c0}", ""),
+        "num6" => ("", "\u{25b6}", ""),
+        "num1" => ("", "End", ""),
+        "num2" => ("", "\u{25bc}", ""),
+        "num3" => ("", "PgDn", ""),
+        "num0" => ("", "Ins", ""),
+        "num." => ("", "Del", ""),
+        "windows" => ("", "", "windows"),
+        "options" => ("", "", "menu"),
+        "predator" => ("", "", "predator"),
+        _ => ("", "", ""),
+    }
 }
 
 /// The picture: keys and its overall size.
@@ -40,32 +115,32 @@ pub struct Layout {
     pub height: f64,
 }
 
-/// Text on special keys; single characters show themselves in capitals.
+/// The main legend of a key, as printed on the PH16-71's caps (US layout); single characters show
+/// themselves in capitals. Keys with a symbol (`windows`, `options`, `predator`, see [`legends`])
+/// have none.
 pub(super) fn key_label(name: &str) -> String {
     let fixed = match name {
-        "backspace" => "⌫",
-        "return" | "numenter" => "↵",
+        "backspace" => "Backspace",
+        "return" | "numenter" => "Enter",
         "lshift" | "rshift" => "Shift",
-        "caps" => "Caps",
-        "windows" => "Win",
-        "options" => "Opt",
+        "caps" => "Caps Lock",
+        "windows" | "options" | "predator" | "space" => "",
         "lalt" | "ralt" => "Alt",
         "ctrl" | "rctrl" => "Ctrl",
-        "space" => "",
-        "up" => "↑",
-        "down" => "↓",
-        "left" => "←",
-        "right" => "→",
+        "up" => "\u{25b2}",
+        "down" => "\u{25bc}",
+        "left" => "\u{25c0}",
+        "right" => "\u{25b6}",
         "prtsc" => "PrtSc",
-        "predator" => "P",
-        "power" => "⏻",
-        "playpause" => "▶",
-        "backward" => "⏮",
-        "forward" => "⏭",
-        "numlock" => "Num",
+        "power" => "\u{23fb}",
+        "playpause" => "\u{25b6}\u{2759}\u{2759}",
+        "backward" => "\u{23ee}",
+        "forward" => "\u{23ed}",
+        "numlock" => "NumLk",
         "num/" => "/",
         "num." => ".",
         "minus" => "-",
+        "-" => "\u{2212}",
         "tab" => "Tab",
         "esc" => "Esc",
         "ins" => "Ins",
@@ -76,7 +151,7 @@ pub(super) fn key_label(name: &str) -> String {
         }
         _ => "",
     };
-    if !fixed.is_empty() || name == "space" {
+    if !fixed.is_empty() || matches!(name, "space" | "windows" | "options" | "predator") {
         return fixed.to_owned();
     }
     if name.chars().count() == 1 {
@@ -114,49 +189,52 @@ pub(crate) fn name_cells(layout: &Value) -> BTreeMap<String, Vec<usize>> {
 pub(crate) fn build_layout(names: &BTreeMap<String, Vec<usize>>) -> Layout {
     let mut seen: BTreeSet<usize> = BTreeSet::new();
     let mut keys = Vec::new();
-    let mut add = |name: &str, x: f64, y: f64, w: f64, h: f64, keys: &mut Vec<Key>| {
+    let mut add = |name: &str, (x, y, w, h): (f64, f64, f64, f64), foot: f64, keys: &mut Vec<Key>| {
         if let Some(cells) = names.get(name)
             && !cells.iter().any(|c| seen.contains(c))
         {
             seen.extend(cells.iter().copied());
-            keys.push(Key { name: name.to_owned(), cells: cells.clone(), x, y, w, h, label: key_label(name) });
+            keys.push(Key::new(name, cells.clone(), (x, y, w, h), foot));
         }
     };
     for r in key_rects() {
-        add(r.name, r.x, r.y, r.w, r.h, &mut keys);
+        add(r.name, (r.x, r.y, r.w, r.h), r.foot, &mut keys);
     }
     let extra: Vec<(&String, &Vec<usize>)> = names
         .iter()
         .filter(|(n, cs)| !cs.iter().any(|c| seen.contains(c)) && n.as_str() != "enter" && n.as_str() != "win")
         .collect();
-    let mut height = 6.4;
+    let mut height = KEYBOARD_HEIGHT;
     for (i, (name, cells)) in extra.into_iter().enumerate() {
         if cells.iter().any(|c| seen.contains(c)) {
             continue;
         }
         seen.extend(cells.iter().copied());
-        keys.push(Key {
-            name: name.clone(),
-            cells: cells.clone(),
-            x: i as f64,
-            y: 6.4,
-            w: 1.0,
-            h: 1.0,
-            label: key_label(name),
-        });
-        height = 7.5;
+        keys.push(Key::new(name, cells.clone(), (i as f64, KEYBOARD_HEIGHT + 0.2, 1.0, 1.0), 0.0));
+        height = KEYBOARD_HEIGHT + 1.2;
     }
-    Layout { keys, width: 20.5, height }
+    Layout { keys, width: KEYBOARD_WIDTH, height }
 }
 
 /// Keys are inset so that neighbours do not touch; a hit must land inside the inset rectangle.
 pub(super) const INSET: f64 = 0.04;
 
+impl Key {
+    /// The key's area as one or two rectangles (min corner, max corner), inset by [`INSET`]: the
+    /// key itself and, for a key with a foot, the part of its lowest row left of it.
+    fn parts(&self) -> impl Iterator<Item = ((f64, f64), (f64, f64))> {
+        let main = ((self.x + INSET, self.y + INSET), (self.x + self.w - INSET, self.y + self.h - INSET));
+        let foot = (self.foot > 0.0).then_some((
+            (self.x - self.foot + INSET, self.y + self.h - 1.0 + INSET),
+            (self.x + INSET, self.y + self.h - INSET),
+        ));
+        std::iter::once(main).chain(foot)
+    }
+}
+
 /// The key under a point (layout units).
 pub(crate) fn key_at(keys: &[Key], x: f64, y: f64) -> Option<&Key> {
-    keys.iter().find(|k| {
-        x >= k.x + INSET && x <= k.x + k.w - INSET && y >= k.y + INSET && y <= k.y + k.h - INSET
-    })
+    keys.iter().find(|k| k.parts().any(|(min, max)| x >= min.0 && x <= max.0 && y >= min.1 && y <= max.1))
 }
 
 /// Cells of every key a box touches (any corner order).
@@ -164,7 +242,7 @@ pub(crate) fn cells_in_box(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec<us
     let (x0, x1) = (a.0.min(b.0), a.0.max(b.0));
     let (y0, y1) = (a.1.min(b.1), a.1.max(b.1));
     keys.iter()
-        .filter(|k| k.x + k.w > x0 && k.x < x1 && k.y + k.h > y0 && k.y < y1)
+        .filter(|k| k.parts().any(|(min, max)| max.0 + INSET > x0 && min.0 - INSET < x1 && max.1 + INSET > y0 && min.1 - INSET < y1))
         .flat_map(|k| k.cells.iter().copied())
         .collect()
 }
@@ -204,9 +282,8 @@ pub(crate) fn keys_on_segment(keys: &[Key], a: (f64, f64), b: (f64, f64)) -> Vec
     let mut hits: Vec<(f64, &Key)> = keys
         .iter()
         .filter_map(|k| {
-            let min = (k.x + INSET, k.y + INSET);
-            let max = (k.x + k.w - INSET, k.y + k.h - INSET);
-            segment_entry(a, b, min, max).map(|t| (t, k))
+            let t = k.parts().filter_map(|(min, max)| segment_entry(a, b, min, max)).reduce(f64::min)?;
+            Some((t, k))
         })
         .collect();
     hits.sort_by(|l, r| l.0.total_cmp(&r.0));

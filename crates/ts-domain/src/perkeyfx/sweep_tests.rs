@@ -222,31 +222,32 @@ fn fingerprint(frame: &[Color]) -> (String, u64) {
 
 #[test]
 fn golden_frames_at_a_fixed_time() {
-    // Half a second at speed 10 is a quarter turn. Fixed once, checked against the properties above.
+    // Half a second at speed 10 is a quarter turn. Fixed once, checked against the properties above
+    // (fixed again when the key rectangles moved to the PH16-71's measured layout).
     let golden: [(&str, bool, [&str; 6], u64); 4] = [
         (
             "wave-clockwise",
             true,
-            ["008093", "005d6a", "005b68", "00434d", "007f91", "006877"],
-            0x84e0_a8d2_51ac_e802,
+            ["008193", "005a67", "00505b", "004e59", "007e90", "006573"],
+            0xeda4_310d_9408_12d2,
         ),
         (
             "wave-counter-clockwise",
             true,
-            ["00616f", "008497", "008699", "009eb5", "006371", "00798b"],
-            0xa440_5fd6_db6f_2164,
+            ["00606e", "00879b", "0092a7", "0093a9", "006372", "007c8e"],
+            0xdcc1_ddca_93c7_b8ac,
         ),
         (
             "wave-clockwise",
             false,
-            ["c0ff00", "2fff00", "28ff00", "004eff", "b800ff", "5d00ff"],
-            0xe87b_faae_8baf_8965,
+            ["c1ff00", "22ff00", "00ff0c", "0015ff", "b400ff", "5000ff"],
+            0xe3e6_43a8_6bc6_0350,
         ),
         (
             "wave-counter-clockwise",
             false,
-            ["3fff00", "d0ff00", "d7ff00", "ff00b1", "4700ff", "a200ff"],
-            0xbab3_08f1_59bf_a418,
+            ["3eff00", "ddff00", "fff300", "ff00ea", "4b00ff", "af00ff"],
+            0xac23_0cfe_007a_15f5,
         ),
     ];
     for (mode, on_cyan, cells, sum) in golden {

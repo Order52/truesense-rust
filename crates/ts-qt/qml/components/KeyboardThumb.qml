@@ -69,6 +69,9 @@ Canvas {
             ctx.fill()
             ctx.strokeStyle = edge
             ctx.stroke()
+            // Enter's lower half reaches further left: fill it and the joint, no seam between.
+            if (k.foot > 0)
+                ctx.fillRect((k.x - k.foot) * u + gap / 2, (k.y + k.h - 1) * u + gap / 2, k.foot * u + radius + 1, u - gap)
             ++n
         }
         painted = n
