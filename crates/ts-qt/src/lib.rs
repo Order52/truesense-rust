@@ -32,7 +32,7 @@ pub mod platform;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
+use cxx_qt_lib::{QQmlApplicationEngine, QQuickStyle, QString, QUrl};
 use ts_ui_model::app::AppModel;
 use ts_ui_model::single::{self, Acquired};
 
@@ -100,7 +100,7 @@ pub fn rss_kb() -> u64 {
 }
 
 fn start_qt(shared: &Shared) -> i32 {
-    let mut app = QGuiApplication::new();
+    platform::start_application();
     platform::quiet_platform_noise();
     QQuickStyle::set_style(&QString::from("Basic"));
     let app_id =
@@ -132,10 +132,7 @@ fn start_qt(shared: &Shared) -> i32 {
     // the program with status 1; nobody else sets it.
     let url = std::env::var("TRUESENSE_QT_QML_URL").ok().filter(|u| !u.is_empty());
     engine_ref.load(&QUrl::from(url.as_deref().unwrap_or(MAIN_QML)));
-    match app.as_mut() {
-        Some(app) => app.exec(),
-        None => 1,
-    }
+    platform::exec_application()
 }
 
 /// The program. `args` are the arguments after the program name; returns the exit status.
@@ -204,6 +201,7 @@ pub fn run(args: &[String]) -> i32 {
         model,
         start_page,
         start_hidden: args.background,
+        start_panel: args.page.is_none(),
         test: TestConfig::from_env(),
         started,
         primary: Mutex::new(Some(primary)),

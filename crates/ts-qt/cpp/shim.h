@@ -6,6 +6,15 @@
 
 namespace truesense {
 
+// Creates the application object: a QApplication (Qt Widgets) rather than a QGuiApplication, only
+// so that the tray icon's menu works on desktops whose platform theme has no native menus (qt6ct,
+// Hyprland): Qt Labs Platform then draws the menu with Qt Widgets and exports it to the tray over
+// D-Bus. No widget window is ever created. Call once, first.
+void start_application();
+
+// Runs the event loop of the application made by start_application(); returns its exit status.
+int exec_application();
+
 // Application identity: name, display name, desktop file name (the Wayland app id), window icon.
 void set_identity(const QString &app_id, const QString &display_name, const QString &icon_path);
 

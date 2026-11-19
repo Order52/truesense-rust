@@ -115,6 +115,7 @@ Item {
             title_current: Nav.currentPage ? Nav.titleOf(Nav.currentPage) : "",
             language: Ui.language,
             theme_dark: Theme.dark,
+            window: window.objectName === "panel" ? "panel" : "full",
             width: window.width,
             height: window.height,
             visibility: window.visibility,

@@ -85,6 +85,8 @@ pub struct Shared {
     pub start_page: String,
     /// Start without showing the window (autostart).
     pub start_hidden: bool,
+    /// No page was asked for: the compact panel is the window (the full window opens on demand).
+    pub start_panel: bool,
     /// Test switches.
     pub test: TestConfig,
     /// Process start, for the first-frame measurement.
@@ -162,6 +164,10 @@ pub mod qobject {
         #[namespace = "truesense"]
         fn quiet_platform_noise();
         #[namespace = "truesense"]
+        fn start_application();
+        #[namespace = "truesense"]
+        fn exec_application() -> i32;
+        #[namespace = "truesense"]
         fn choose_renderer(requested: &QString) -> QString;
         #[namespace = "truesense"]
         fn set_engine(engine: Pin<&mut QQmlApplicationEngine>);
@@ -178,6 +184,7 @@ pub mod qobject {
         #[qproperty(QString, routes_json, cxx_name = "routesJson")]
         #[qproperty(QString, start_page, cxx_name = "startPage")]
         #[qproperty(bool, start_hidden, cxx_name = "startHidden")]
+        #[qproperty(bool, start_panel, cxx_name = "startPanel")]
         type Bus = super::BusRust;
 
         /// Runs a command on a worker thread; the answer arrives as `commandFinished(id, ok, json)`.
@@ -284,6 +291,7 @@ pub struct BusRust {
     routes_json: QString,
     start_page: QString,
     start_hidden: bool,
+    start_panel: bool,
     poller: Option<Poller>,
     /// Asks the poller for a tick after a command that changed the machine.
     poke: Option<Poke>,
@@ -303,6 +311,7 @@ impl cxx_qt::Initialize for qobject::Bus {
         self.as_mut().set_routes_json(QString::from(shared.model.routes.to_json().to_string().as_str()));
         self.as_mut().set_start_page(QString::from(shared.start_page.as_str()));
         self.as_mut().set_start_hidden(shared.start_hidden);
+        self.as_mut().set_start_panel(shared.start_panel);
         self.as_mut().set_ui_json(QString::from(ui_json(&shared).as_str()));
 
         // The live ticker: idle until the window says it is visible.

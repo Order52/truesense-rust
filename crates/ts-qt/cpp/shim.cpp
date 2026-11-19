@@ -9,6 +9,7 @@
 #include <QtDBus/QDBusConnectionInterface>
 #include <QtDBus/QDBusInterface>
 #include <QtGui/QGuiApplication>
+#include <QtWidgets/QApplication>
 #include <QtGui/QIcon>
 #include <QtGui/QOffscreenSurface>
 #include <QtGui/QOpenGLContext>
@@ -16,6 +17,17 @@
 #include <QtQml/QQmlApplicationEngine>
 
 namespace truesense {
+
+void start_application() {
+    // Qt keeps references to argc and argv for the life of the application: static storage.
+    static int argc = 1;
+    static char name[] = "truesense-qt";
+    static char *argv[] = {name, nullptr};
+    static QApplication *app = new QApplication(argc, argv);
+    (void)app;
+}
+
+int exec_application() { return QApplication::exec(); }
 
 namespace {
 QQmlApplicationEngine *g_engine = nullptr;

@@ -92,7 +92,8 @@ fn run_once(home: &Home, exit_after_ms: u32, args: &[&str]) -> Value {
 #[test]
 fn the_real_main_qml_loads_and_the_bus_round_trip_works() {
     let home = Home::new(None);
-    let r = run_once(&home, 1800, &[]);
+    let r = run_once(&home, 1800, &["--page", "home"]);
+    assert_eq!(r["window"], "full", "a page asked for opens the full window");
     assert_eq!(r["page"], "home");
     assert_eq!(r["page_qml"], "HomePage");
     assert_eq!(r["pages"], 11);
@@ -177,9 +178,22 @@ fn every_page_loads_without_a_qml_error() {
 }
 
 #[test]
+fn a_start_without_a_page_opens_the_compact_panel() {
+    // Like G-Helper: one small fixed window; the full window is not built until it is asked for.
+    let home = Home::new(Some(r#"{"width": 700, "height": 560}"#));
+    let r = run_once(&home, 1500, &[]);
+    assert_eq!(r["window"], "panel", "{r}");
+    assert_eq!(r["width"], 456, "the panel's own width, not the saved full window's");
+    assert!(r["height"].as_u64().is_some_and(|h| (500..1000).contains(&h)), "{r}");
+    assert_eq!(r["live_ok"], true, "the live figures run while the panel shows");
+    assert_eq!(r["version_result"]["truesense"], ts_foundation::buildinfo::VERSION, "{r}");
+    assert!(r["first_frame_ms"].as_u64().unwrap() < 5000, "{r}");
+}
+
+#[test]
 fn window_size_and_light_theme_come_from_ui_json() {
     let home = Home::new(Some(r#"{"width": 700, "height": 560, "theme": "light"}"#));
-    let r = run_once(&home, 300, &[]);
+    let r = run_once(&home, 300, &["--page", "home"]);
     assert_eq!(r["width"], 700);
     assert_eq!(r["height"], 560);
     assert_eq!(r["theme_dark"], false);
@@ -215,17 +229,17 @@ fn the_software_renderer_is_the_default_and_a_gpu_one_falls_back_when_it_cannot_
 #[test]
 fn the_smallest_window_is_small_enough_for_a_tile() {
     let home = Home::new(Some(r#"{"width": 320, "height": 260}"#));
-    let r = run_once(&home, 300, &[]);
+    let r = run_once(&home, 300, &["--page", "home"]);
     assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(320), Some(260)));
     let home = Home::new(Some(r#"{"width": 100, "height": 100}"#));
-    let r = run_once(&home, 300, &[]);
+    let r = run_once(&home, 300, &["--page", "home"]);
     assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(320), Some(260)), "raised to the minimum");
 }
 
 #[test]
 fn a_narrow_window_still_loads_with_the_menu_layout() {
     let home = Home::new(Some(r#"{"width": 420, "height": 700}"#));
-    let r = run_once(&home, 300, &[]);
+    let r = run_once(&home, 300, &["--page", "home"]);
     assert_eq!(r["width"], 420);
     assert_eq!(r["page"], "home");
 }

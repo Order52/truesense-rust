@@ -64,6 +64,16 @@ pub fn choose_renderer(file_value: Option<&str>) -> String {
     qobject::choose_renderer(&wanted).to_string()
 }
 
+/// Creates the application object (a QApplication, for the tray menu; see `cpp/shim.h`). Once, first.
+pub fn start_application() {
+    qobject::start_application();
+}
+
+/// Runs the event loop; returns the exit status.
+pub fn exec_application() -> i32 {
+    qobject::exec_application()
+}
+
 /// Silences Qt's text-input focus warning (see `cpp/shim.h`); `QT_LOGGING_RULES` still wins.
 pub fn quiet_platform_noise() {
     qobject::quiet_platform_noise();

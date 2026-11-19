@@ -1,5 +1,8 @@
-// The shell: window, sidebar (full, icon rail or menu button depending on the width), page area,
-// status line, toasts. Pages are loaded from qml/pages by the registry and know nothing of this file.
+// The shell: the compact panel (Panel.qml, the window shown by default), and the full window:
+// sidebar (full, icon rail or menu button depending on the width), page area, status line, toasts.
+// The full window opens on a page asked for (--page, a panel button, the tray menu) and builds its
+// page only once it has been shown. Pages are loaded from qml/pages by the registry and know nothing
+// of this file.
 // Only this file talks to the Rust `Bus` object; it feeds the QML singletons (Ui, Live, Caps, Nav,
 // Api) that pages use.
 import QtQuick
@@ -15,8 +18,12 @@ ApplicationWindow {
     readonly property var saved: JSON.parse(Bus.uiJson)
     /// 2: sidebar with titles, 1: icon rail, 0: menu button.
     readonly property int layoutMode: width >= Theme.breakIcons ? 2 : (width >= Theme.breakMenu ? 1 : 0)
-    /// Visible on screen: the live values tick only then (nothing runs while hidden or minimised).
-    readonly property bool active: visible && visibility !== Window.Minimized && visibility !== Window.Hidden
+    /// A window is on screen: the live values tick only then (nothing runs while hidden or minimised).
+    readonly property bool active: (visible && visibility !== Window.Minimized && visibility !== Window.Hidden)
+        || (panel.visible && panel.visibility !== Window.Minimized)
+    /// The full window was shown at least once: its page is built from then on.
+    property bool everShown: visible
+    onVisibleChanged: if (visible) everShown = true
 
     width: saved.window_width
     height: saved.window_height
@@ -24,7 +31,7 @@ ApplicationWindow {
     // minimum larger than the tile makes it overlap its neighbours (a fight with the layout).
     minimumWidth: 320
     minimumHeight: 260
-    visible: !Bus.startHidden
+    visible: !Bus.startHidden && !Bus.startPanel
     title: "TrueSense"
     color: Theme.bg
     // The desktop's Qt platform theme (qt6ct, kde, gnome) hands every Basic control ITS palette and
@@ -65,7 +72,8 @@ ApplicationWindow {
         function onLiveOkChanged() { if (!Bus.liveOk) Live.markLost() }
         function onCapsJsonChanged() { Caps.load(Bus.capsJson) }
         function onUiJsonChanged() { Ui.load(Bus.uiJson) }
-        function onShowRequested(page) { win.showPage(page) }
+        // A start without a page (the PREDATOR key, `truesense gui`) shows the panel.
+        function onShowRequested(page) { if (page === "") panel.present(); else win.showPage(page) }
     }
 
     Connections {
@@ -137,6 +145,15 @@ ApplicationWindow {
 
     onClosing: (close) => {
         saveGeometry.stop()
+        // With the panel on screen the full window only hides: the panel is the program.
+        if (panel.visible) {
+            if (win.visibility === Window.Windowed)
+                Bus.saveWindow(win.width, win.height, win.x, win.y,
+                               Qt.platform.pluginName !== "wayland" && Qt.platform.pluginName !== "offscreen")
+            close.accepted = false
+            win.hide()
+            return
+        }
         if (win.visibility === Window.Windowed)
             Bus.saveWindow(win.width, win.height, win.x, win.y,
                            Qt.platform.pluginName !== "wayland" && Qt.platform.pluginName !== "offscreen")
@@ -156,11 +173,15 @@ ApplicationWindow {
     property int framesSince: 0
     onFrameSwapped: {
         framesSince++
+        presented(win, shell)
+    }
+    /// The first frame of either window: measured once, and the test hook starts on that window.
+    function presented(w, item) {
         if (firstFrame) return
         firstFrame = true
         if (Bus.framePresented()) {
-            testHook.window = win
-            testHook.target = shell
+            testHook.window = w
+            testHook.target = item
             testHook.config = JSON.parse(Bus.testConfig())
             testHook.begin()
         }
@@ -218,7 +239,7 @@ ApplicationWindow {
         source: Qt.platform.pluginName === "offscreen" ? "" : "Tray.qml"
         onLoaded: {
             Ui.trayAvailable = item.available
-            item.openRequested.connect(win.bringToFront)
+            item.openRequested.connect(panel.toggle)
             item.quitRequested.connect(Qt.quit)
         }
     }
@@ -283,7 +304,7 @@ ApplicationWindow {
                 id: pageLoader
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                source: Nav.currentQml !== "" ? "pages/" + Nav.currentQml + ".qml" : ""
+                source: win.everShown && Nav.currentQml !== "" ? "pages/" + Nav.currentQml + ".qml" : ""
                 onStatusChanged: {
                     if (status === Loader.Error)
                         //% "This page could not be loaded."
@@ -311,4 +332,22 @@ ApplicationWindow {
     }
 
     NarrowMenu { id: narrowMenu }
+
+    // ---- the compact panel ----------------------------------------------------------------------
+    Panel {
+        id: panel
+        visible: Bus.startPanel && !Bus.startHidden
+        onOpenPage: (page) => win.showPage(page)
+        onFrameSwapped: win.presented(panel, panel.content)
+        onClosing: (close) => {
+            // Like G-Helper: closing hides to the tray. Without a tray, the full window stays if it
+            // is open; otherwise closing ends the program (there would be no way back).
+            if ((Ui.trayAvailable && Bus.trayHostRegistered()) || win.visible) {
+                close.accepted = false
+                panel.hide()
+            } else {
+                Qt.quit()
+            }
+        }
+    }
 }

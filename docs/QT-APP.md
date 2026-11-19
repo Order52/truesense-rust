@@ -152,6 +152,19 @@ component tests run without Rust (`crates/ts-qt/tests/qml`, `tools/qml-tests.sh`
 
 ## Shell behaviour
 
+**The compact panel (`qml/Panel.qml`) is the window by default**, after G-Helper's principle: one
+small fixed-size window (456 px wide, min = max, so a tiling compositor floats it), no navigation,
+one section per thing the laptop can do (power mode, GPU mode, screen, keyboard, rear bar, battery
+limit), each with a title that says the state in force and big one-click choices; live CPU/GPU
+figures on the right. A start without `--page` (the PREDATOR key, `truesense gui`, a second start)
+shows it; the tray icon's click shows or hides it; closing it hides it to the tray (ends the program
+when there is no tray and no other window). "Fans + Power", "Lighting…", "Settings" and the version
+line open the full window below on that page; the full window builds its page only once it has been
+shown, so a panel-only run never loads a page. The application object is a `QApplication` (made in
+`cpp/shim.cpp`) only so that the tray menu works on desktops without native menus (qt6ct); no widget
+window exists.
+
+The full window:
 Sidebar with 5 groups and 11 pages (Now: Home, Monitor; Control: Performance, Cooling, Lighting,
 Keys; Hardware: Battery and screen, Audio; Library: Profiles and favourites; System: Health, Settings).
 Width >= 720 px: titles; 520 to 720: icon rail; below 520: a menu button and a header with the page

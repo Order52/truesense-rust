@@ -5700,5 +5700,145 @@
         <source>Applies the next time TrueSense starts: close it (Ctrl+Q) and open it again.</source>
         <translation>Applies the next time TrueSense starts: close it (Ctrl+Q) and open it again.</translation>
     </message>
+    <message id="panel_fan_off">
+        <source>fan off</source>
+        <translation>fan off</translation>
+    </message>
+    <message id="panel_mode_title">
+        <source>Performance Mode: %1</source>
+        <translation>Performance Mode: %1</translation>
+    </message>
+    <message id="panel_mode_auto_now">
+        <source>Auto (%1)</source>
+        <translation>Auto (%1)</translation>
+    </message>
+    <message id="panel_cpu_info">
+        <source>CPU %1 · %2</source>
+        <translation>CPU %1 · %2</translation>
+    </message>
+    <message id="panel_mode_auto">
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message id="panel_fans_power">
+        <source>Fans + Power</source>
+        <translation>Fans + Power</translation>
+    </message>
+    <message id="panel_gpu_title">
+        <source>GPU Mode: %1</source>
+        <translation>GPU Mode: %1</translation>
+    </message>
+    <message id="panel_gpu_restart">
+        <source> (after restart)</source>
+        <translation> (after restart)</translation>
+    </message>
+    <message id="panel_gpu_info">
+        <source>GPU %1 · %2</source>
+        <translation>GPU %1 · %2</translation>
+    </message>
+    <message id="panel_gpu_restart_toast">
+        <source>The GPU mode changes after a restart.</source>
+        <translation>The GPU mode changes after a restart.</translation>
+    </message>
+    <message id="panel_screen_title">
+        <source>Laptop Screen: %1</source>
+        <translation>Laptop Screen: %1</translation>
+    </message>
+    <message id="panel_screen_od">
+        <source>Overdrive</source>
+        <translation>Overdrive</translation>
+    </message>
+    <message id="panel_screen_normal">
+        <source>Normal</source>
+        <translation>Normal</translation>
+    </message>
+    <message id="panel_screen_od_long">
+        <source>Overdrive (faster pixels)</source>
+        <translation>Overdrive (faster pixels)</translation>
+    </message>
+    <message id="panel_kb_title">
+        <source>Laptop Keyboard: %1</source>
+        <translation>Laptop Keyboard: %1</translation>
+    </message>
+    <message id="panel_kb_perkey">
+        <source>Per-key colours</source>
+        <translation>Per-key colours</translation>
+    </message>
+    <message id="panel_off">
+        <source>Off</source>
+        <translation>Off</translation>
+    </message>
+    <message id="panel_kb_effect">
+        <source>Keyboard effect</source>
+        <translation>Keyboard effect</translation>
+    </message>
+    <message id="panel_custom">
+        <source>Custom</source>
+        <translation>Custom</translation>
+    </message>
+    <message id="panel_lighting">
+        <source>Lighting…</source>
+        <translation>Lighting…</translation>
+    </message>
+    <message id="panel_rear_title">
+        <source>Rear Light Bar: %1</source>
+        <translation>Rear Light Bar: %1</translation>
+    </message>
+    <message id="panel_rear_effect">
+        <source>Rear light effect</source>
+        <translation>Rear light effect</translation>
+    </message>
+    <message id="panel_turn_off">
+        <source>Turn off</source>
+        <translation>Turn off</translation>
+    </message>
+    <message id="panel_turn_on">
+        <source>Turn on</source>
+        <translation>Turn on</translation>
+    </message>
+    <message id="panel_batt_title">
+        <source>Battery Charge Limit: %1</source>
+        <translation>Battery Charge Limit: %1</translation>
+    </message>
+    <message id="panel_batt_80">
+        <source>80% (longer battery life)</source>
+        <translation>80% (longer battery life)</translation>
+    </message>
+    <message id="panel_batt_100">
+        <source>100% (full)</source>
+        <translation>100% (full)</translation>
+    </message>
+    <message id="panel_startup">
+        <source>Run on Startup</source>
+        <translation>Run on Startup</translation>
+    </message>
+    <message id="panel_settings">
+        <source>Settings</source>
+        <translation>Settings</translation>
+    </message>
+    <message id="panel_quit">
+        <source>Quit</source>
+        <translation>Quit</translation>
+    </message>
+    <message id="panel_version">
+        <source>Version: %1</source>
+        <translation>Version: %1</translation>
+    </message>
+    <message id="panel_gpu_hybrid">
+        <source>Hybrid</source>
+        <translation>Hybrid</translation>
+    </message>
+    <message id="panel_gpu_dgpu">
+        <source>dGPU only</source>
+        <translation>dGPU only</translation>
+    </message>
+    <message id="panel_gpu_auto">
+        <source>Auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message id="panel_colour">
+        <source>Colour</source>
+        <translation>Colour</translation>
+    </message>
 </context>
 </TS>

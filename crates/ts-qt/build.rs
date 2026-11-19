@@ -175,5 +175,6 @@ fn main() {
         .cpp_files(["cpp/shim.cpp", "cpp/shim.h"])
         .qt_module("Quick")
         .qt_module("DBus")
+        .qt_module("Widgets")
         .build();
 }
