@@ -31,6 +31,7 @@ struct Fake {
     fail_profile: bool,
     fail_device_times: RefCell<u32>,
     pauses: RefCell<Vec<Duration>>,
+    timeout: Option<bool>,
 }
 
 impl Fake {
@@ -126,6 +127,14 @@ impl Lights for Fake {
 
     fn rear_state(&self) -> Option<Value> {
         self.rear_state.clone()
+    }
+
+    fn keyboard_timeout_saved(&self) -> Option<bool> {
+        self.timeout
+    }
+
+    fn set_keyboard_timeout(&self, on: bool) -> Result<(), String> {
+        self.device(format!("timeout {on}"))
     }
 
     fn pause(&self, how_long: Duration) {
@@ -573,4 +582,21 @@ fn apply_with_a_broken_configuration_is_an_error() {
     let w = world();
     write_user_config(&w, "[startup\n");
     assert!(apply(&w.api).is_err());
+}
+
+#[test]
+fn the_chosen_backlight_timeout_is_sent_again_at_login() {
+    let fake = Fake { timeout: Some(true), fail_device_times: RefCell::new(1), ..Fake::default() };
+    let lines = Login::new(&fake, ApplyOptions { retries: 2, delay: Duration::from_millis(1) })
+        .run(&settings("", "none", "none"));
+    assert_eq!(lines.last().unwrap(), "backlight timeout: off after 30 s");
+    assert_eq!(fake.calls().iter().filter(|c| *c == "timeout true").count(), 2);
+}
+
+#[test]
+fn a_timeout_never_chosen_is_left_to_the_keyboard() {
+    let fake = Fake::default();
+    let lines = run(&fake, &settings("", "none", "none"));
+    assert!(lines.iter().all(|l| !l.starts_with("backlight timeout")));
+    assert!(fake.calls().iter().all(|c| !c.starts_with("timeout")));
 }

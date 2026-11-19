@@ -169,9 +169,13 @@ impl Api {
         Ok(self.s.hw.get_kb_timeout()?)
     }
 
-    /// Sets that timeout (verified by read-back).
+    /// Sets that timeout (verified by read-back) and remembers it: the controller forgets it at
+    /// power-up, and the login service puts it back.
     pub fn set_keyboard_timeout(&self, on: bool) -> ApiResult<bool> {
-        Ok(self.s.hw.set_kb_timeout(on)?)
+        let now = self.s.hw.set_kb_timeout(on)?;
+        // The flag is set; a state file that cannot be written only costs the restore at login.
+        let _ = self.s.user.set(ts_foundation::userstate::keys::KB_TIMEOUT, serde_json::Value::Bool(now));
+        Ok(now)
     }
 
     /// Whether the touchpad is on; `None` when it cannot be told.

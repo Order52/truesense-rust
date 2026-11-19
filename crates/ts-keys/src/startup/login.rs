@@ -35,6 +35,10 @@ pub trait Lights {
     fn rear_set(&self, settings: &RearSettings) -> Result<(), String>;
     /// What the rear light was last set to (`rear_state` of the user state), as stored.
     fn rear_state(&self) -> Option<Value>;
+    /// The backlight timeout the user chose last (`kb_timeout`); `None` when never chosen.
+    fn keyboard_timeout_saved(&self) -> Option<bool>;
+    /// Sets the keyboard's backlight timeout (verified by read-back).
+    fn set_keyboard_timeout(&self, on: bool) -> Result<(), String>;
     /// Waits between two attempts of a step.
     fn pause(&self, how_long: Duration);
 }
@@ -107,6 +111,15 @@ impl<'a> Login<'a> {
         }
         self.keyboard(keyboard);
         self.rear(rear);
+        // The controller forgets the timeout at power-up: put back the user's choice, if any.
+        if let Some(on) = self.lights.keyboard_timeout_saved() {
+            let lights = self.lights;
+            self.step("backlight timeout", true, || {
+                lights
+                    .set_keyboard_timeout(on)
+                    .map(|()| if on { "off after 30 s" } else { "stays on" }.to_owned())
+            });
+        }
         self.done
     }
 
@@ -259,6 +272,14 @@ impl Lights for MachineLights<'_> {
 
     fn rear_state(&self) -> Option<Value> {
         self.0.user.get("rear_state")
+    }
+
+    fn keyboard_timeout_saved(&self) -> Option<bool> {
+        self.0.user.get_as(ts_foundation::userstate::keys::KB_TIMEOUT)
+    }
+
+    fn set_keyboard_timeout(&self, on: bool) -> Result<(), String> {
+        self.0.hw.set_kb_timeout(on).map(drop).map_err(|e| e.to_string())
     }
 
     fn pause(&self, how_long: Duration) {

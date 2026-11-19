@@ -37,6 +37,9 @@ pub mod keys {
     pub const KB_RESTORE: &str = "kb_restore";
     /// Whether the keyboard backlight is on (boolean, default true).
     pub const KEYBOARD_ON: &str = "keyboard_on";
+    /// The keyboard's "backlight off after 30 s of no typing" choice (boolean). The controller
+    /// forgets it at power-up, so the login service sends it again.
+    pub const KB_TIMEOUT: &str = "kb_timeout";
     /// Name of the last keyboard lighting profile applied.
     pub const KEYBOARD_PROFILE: &str = "keyboard_profile";
     /// Index of the last effect chosen by the effect-cycling key.

@@ -4,6 +4,7 @@ Newest first. Write what changed under "## Unreleased" as you merge changes; `to
 
 ## Unreleased
 
+- Keyboard: the "backlight off after 30 s of no typing" choice now survives a restart. The keyboard forgets it at power-up, so TrueSense remembers it (`kb_timeout`) and the login service sends it again.
 - Microphone: while a USB or Bluetooth headset is connected, the default microphone is that headset (or its Purified Voice, `truesense_pv_usb`, when there is one), not the laptop's own: the audio watcher made the 3.5 mm jack's Purified Voice the default while the person talked into a USB headset, so calls heard silence. A controller's microphone comes last, and a microphone the person picked stays.
 - Keyboard: picking Wave (or any effect, the power-mode colour, or off) after a per-key animation or a theme now sticks. A per-key animation kept drawing over the new look, because nothing switched it off; and a theme drew for up to half a second more after the new look was set, and its last frame stayed on the keyboard. Both now give way, and the new look is sent again if one of their frames landed after it.
 - Messages: one small message at the top right of the window instead of a stack of cards at the bottom; a new message replaces the one showing, confirmations go after 2.5 s and errors after 6 s, a click dismisses.

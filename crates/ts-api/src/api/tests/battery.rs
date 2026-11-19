@@ -57,6 +57,8 @@ fn the_backlight_timeout_is_the_controllers_flag() {
     assert!(!fx.rig.hid.timeout());
     assert!(fx.api.set_keyboard_timeout(true).unwrap());
     assert!(fx.rig.hid.timeout());
+    // Remembered for the login service: the controller forgets it at power-up.
+    assert_eq!(fx.api.services().user.get("kb_timeout"), Some(serde_json::Value::Bool(true)));
 }
 
 #[test]
