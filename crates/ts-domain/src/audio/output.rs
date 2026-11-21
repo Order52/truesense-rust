@@ -10,7 +10,7 @@ use std::time::Duration;
 use serde::Serialize;
 use ts_foundation::fsx::FileLock;
 
-use super::parse::{active_profile, card_block, card_name, first_fields, short_column, sink_description};
+use super::parse::{active_profile, card_block, card_name, short_column, sink_description};
 use super::{Audio, AudioError, CARD_MATCH, FRONT_SINK};
 
 /// How long to wait for the new sink after a profile flip: 100 polls of 30 ms (measured: the sink
@@ -118,7 +118,10 @@ impl Audio {
     }
 
     /// Switches between the speakers and the headphones and returns the output it ends on. It
-    /// waits until the new sink exists instead of a fixed sleep, and verifies the result.
+    /// waits until the new sink exists instead of a fixed sleep, verifies the result, and makes
+    /// that sink the default output: flipping only the card's profile left the sound where the
+    /// default was (a Purified Voice filter, a USB or Bluetooth device), so "Headphones" was
+    /// chosen and nothing changed. AcerUltraX, when it runs, follows the default and routes to it.
     pub fn set_output(&self, which: Output) -> Result<Output, AudioError> {
         let card = self.card_name().ok_or(AudioError::NoCard)?;
         let _quiet = self.quiet();
@@ -133,6 +136,9 @@ impl Audio {
         let got = self.output_status()?.active;
         if got != which.as_str() {
             return Err(AudioError::ProfileNotSwitched { got, wanted: which.as_str() });
+        }
+        if let Some(sink) = self.sinks().into_iter().find(|n| n.contains(CARD_MATCH) && n.ends_with(&want)) {
+            self.run("pactl", &["set-default-sink", &sink]);
         }
         Ok(which)
     }
@@ -173,23 +179,21 @@ impl Audio {
     }
 
     fn cycle(&self) -> Result<String, AudioError> {
-        let sinks: Vec<String> =
-            self.sinks().into_iter().filter(|n| !n.to_lowercase().contains("hdmi")).collect();
-        let front = sinks.iter().any(|n| n == FRONT_SINK).then_some(FRONT_SINK);
-        let others = sinks.iter().filter(|n| !n.contains(CARD_MATCH) && n.as_str() != FRONT_SINK).cloned();
+        let sinks = self.sinks();
+        let dts = sinks.iter().any(|n| n == FRONT_SINK);
+        // Where sound can really end up: the laptop's own two, then USB and Bluetooth outputs.
+        // Not HDMI, not a game controller's speaker, and never a filter in front of a device (the
+        // Purified Voice speaker filter, the AcerUltraX sink): those are not a place to switch to.
+        let others: Vec<String> =
+            sinks.iter().filter(|n| is_real_output(n) && !n.contains(CARD_MATCH)).cloned().collect();
         let mut stops = vec!["int:speakers".to_owned()];
         if self.jack_status().headphones {
             stops.push("int:headphones".into());
         }
-        stops.extend(others);
+        stops.extend(others.iter().cloned());
 
-        let mut current = self.default_sink();
-        if current == FRONT_SINK || current.contains(CARD_MATCH) {
-            let active = self.output_status()?.active;
-            let known = [Output::Speakers, Output::Headphones].iter().any(|o| o.as_str() == active);
-            current = format!("int:{}", if known { active.as_str() } else { "speakers" });
-        }
-        let next = match stops.iter().position(|s| *s == current) {
+        let current = self.current_stop(&others);
+        let next = match current.and_then(|c| stops.iter().position(|s| *s == c)) {
             Some(i) => &stops[(i + 1) % stops.len()],
             None => &stops[0],
         };
@@ -202,25 +206,100 @@ impl Audio {
         if !noctalia {
             self.say(&format!("Audio output: {label}"), icon);
         }
+        // The real device becomes the default. AcerUltraX takes that as the person's pick, routes
+        // its output there and puts its own sink back as the default (setting its sink ourselves
+        // left it on the device picked before).
         let target = match internal {
             Some(o) => {
                 self.set_output(o)?;
-                front.map(str::to_owned).or_else(|| {
-                    self.sinks().into_iter().find(|n| n.contains(CARD_MATCH) && n.contains(o.sink_part()))
-                })
+                self.sinks().into_iter().find(|n| n.contains(CARD_MATCH) && n.contains(o.sink_part()))
             }
             None => Some(next.clone()),
         };
         let target = target.ok_or(AudioError::NoSink)?;
         self.run("pactl", &["set-default-sink", &target]);
-        for id in first_fields(&self.out("pactl", &["list", "short", "sink-inputs"])) {
-            self.run("pactl", &["move-sink-input", &id, &target]);
+        // The playing apps (never AcerUltraX's own streams or a filter's output). Without
+        // AcerUltraX they are moved over. With it they are unpinned instead: an app moved by hand
+        // once stays pinned to that device (PipeWire remembers it), and AcerUltraX takes a pinned
+        // app as the person's pick and went back to it every second, whatever F5 chose.
+        for (input, node) in app_streams(&self.out("pactl", &["list", "sink-inputs"])) {
+            if dts {
+                self.run("pw-metadata", &["-d", &node, "target.object"]);
+                self.run("pw-metadata", &["-d", &node, "target.node"]);
+            } else {
+                self.run("pactl", &["move-sink-input", &input, &target]);
+            }
         }
         if noctalia {
             self.say(&label, icon);
         }
         Ok(label)
     }
+
+    /// The stop sound goes to now: the default when it is a real device; through AcerUltraX or a
+    /// filter, the device AcerUltraX's output is linked to; the laptop's card as its active output.
+    /// `None` when it cannot be told (the cycle then starts from the speakers).
+    fn current_stop(&self, others: &[String]) -> Option<String> {
+        let mut device = self.default_sink();
+        if !is_real_output(&device) {
+            device = linked_device(&self.out("pw-link", &["-l"]), "acerultrax_output:output_FL")
+                .unwrap_or_default();
+        }
+        if device.contains(CARD_MATCH) {
+            let active = self.output_status().ok()?.active;
+            return [Output::Speakers, Output::Headphones]
+                .iter()
+                .any(|o| o.as_str() == active)
+                .then(|| format!("int:{active}"));
+        }
+        others.contains(&device).then_some(device)
+    }
+}
+
+/// A sink that is a device sound ends up on (ALSA or Bluetooth), other than HDMI and a game
+/// controller's speaker. Filters and the AcerUltraX sink are not.
+pub(crate) fn is_real_output(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    (lower.starts_with("alsa_output.") || lower.starts_with("bluez_output."))
+        && !["hdmi", "dualsense", "dualshock", "controller", "gamepad", "xbox"]
+            .iter()
+            .any(|w| lower.contains(w))
+}
+
+/// The playing apps in `pactl list sink-inputs`: (sink input number, node id). A stream with no
+/// application name, a filter's output and AcerUltraX's own streams are left out.
+pub(crate) fn app_streams(text: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for block in text.split("Sink Input #").skip(1) {
+        let input: String = block.chars().take_while(char::is_ascii_digit).collect();
+        let prop = |key: &str| {
+            block.lines().find_map(|l| {
+                let (k, v) = l.trim().split_once(" = ")?;
+                (k == key).then(|| v.trim_matches('"').to_owned())
+            })
+        };
+        let (Some(app), Some(node)) = (prop("application.name"), prop("object.id")) else { continue };
+        let name = prop("node.name").unwrap_or_default();
+        let ours = name.starts_with("output.filter-chain")
+            || format!("{app} {name}").to_lowercase().contains("acerultrax");
+        if !input.is_empty() && !ours {
+            out.push((input, node));
+        }
+    }
+    out
+}
+
+/// The sink a port's link goes to, from `pw-link -l` (`port` then `  |-> sink:playback_FL`).
+pub(crate) fn linked_device(links: &str, port: &str) -> Option<String> {
+    let mut lines = links.lines();
+    while let Some(line) = lines.next() {
+        if line.trim() == port {
+            let next = lines.next()?;
+            let target = next.trim().strip_prefix("|->")?.trim();
+            return target.rsplit_once(':').map(|(sink, _)| sink.to_owned());
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -277,7 +356,12 @@ mod tests {
         assert_eq!(rig.audio.set_output(Output::Headphones).unwrap(), Output::Headphones);
         assert!(rig.sys.did(&["pactl", "set-card-profile", CARD, HIFI_HEADPHONES]));
         assert_eq!(rig.sys.state().profile, HIFI_HEADPHONES);
+        // The jack is also the default output, whatever was the default before (here a filter).
+        rig.sys.state().default_sink = "truesense_pv_speaker".into();
+        rig.audio.set_output(Output::Headphones).unwrap();
+        assert_eq!(rig.sys.state().default_sink, HW_HEADPHONES);
         assert_eq!(rig.audio.set_output(Output::Speakers).unwrap(), Output::Speakers);
+        assert_eq!(rig.sys.state().default_sink, HW_SPEAKER);
         assert_eq!(rig.osd.quiet_depth(), 0, "the popups are enabled again");
         assert_eq!(rig.osd.max_depth.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
@@ -325,30 +409,100 @@ mod tests {
     #[test]
     fn cycle_goes_speakers_headphones_others_and_back() {
         let rig = Rig::new(false);
-        rig.sys.state().extra_sinks =
-            vec!["bluez_output.AA.1".into(), "alsa_output.pci-0000_00_03.0.hdmi-stereo".into()];
+        rig.sys.state().extra_sinks = vec![
+            "bluez_output.AA.1".into(),
+            "alsa_output.pci-0000_00_03.0.hdmi-stereo".into(),
+            "truesense_pv_speaker".into(),
+            DUALSENSE.into(),
+        ];
         rig.sys.state().sink_descs.insert("bluez_output.AA.1".into(), "Some Speaker".into());
         rig.sys.state().headphone_jack = "on".into();
-        rig.sys.state().sink_inputs = vec!["12\t77\tPipeWire".into(), "34\t5\tPipeWire".into()];
+        rig.sys.state().default_sink = HW_SPEAKER.into();
+        rig.sys.state().sink_inputs_long = APPS.into();
 
-        // speakers -> headphones
+        // speakers -> headphones: the jack's own sink is the default (AcerUltraX takes it from
+        // there); the music app is unpinned, not moved, and the filter's output is left alone.
         assert_eq!(rig.audio.output_cycle().unwrap(), "Headphones (3.5 mm jack)");
         assert_eq!(rig.sys.state().profile, HIFI_HEADPHONES);
-        assert_eq!(rig.sys.state().default_sink, "acerultrax_sink", "the DTS sink stays the default");
+        assert_eq!(rig.sys.state().default_sink, HW_HEADPHONES);
+        let sent = rig.sys.sent();
+        assert!(!sent.iter().any(|c| c.contains("move-sink-input")), "{sent:?}");
+        assert!(sent.contains(&"pw-metadata -d 146 target.object".to_owned()), "{sent:?}");
         assert!(
-            rig.sys.did(&["pactl", "move-sink-input", "12", "acerultrax_sink"])
-                && rig.sys.did(&["pactl", "move-sink-input", "34", "acerultrax_sink"])
+            !sent.iter().any(|c| c.contains("pw-metadata -d 49 ")),
+            "the filter's output stays: {sent:?}"
         );
-        // headphones -> the Bluetooth speaker (HDMI is skipped)
-        rig.sys.state().default_sink = "acerultrax_sink".into();
+        // headphones -> the Bluetooth speaker (HDMI, the filter and the controller are skipped)
         assert_eq!(rig.audio.output_cycle().unwrap(), "Some Speaker");
         assert_eq!(rig.sys.state().default_sink, "bluez_output.AA.1");
         // bluetooth -> speakers
         assert_eq!(rig.audio.output_cycle().unwrap(), "Laptop speakers");
         assert_eq!(rig.sys.state().profile, HIFI_SPEAKERS);
-        assert_eq!(rig.sys.state().default_sink, "acerultrax_sink");
+        assert_eq!(rig.sys.state().default_sink, HW_SPEAKER);
         assert_eq!(rig.osd.quiet_depth(), 0);
-        assert!(rig.shown().iter().all(|s| !s.contains("hdmi")));
+        let shown = rig.shown();
+        assert!(
+            shown.iter().all(|s| !s.contains("hdmi") && !s.contains("Purified") && !s.contains("DualSense")),
+            "{shown:?}"
+        );
+    }
+
+    #[test]
+    fn cycle_finds_the_real_device_behind_acerultrax_and_a_filter() {
+        // The laptop as it was found: the speaker filter is the default, AcerUltraX feeds the
+        // headphones, the jack is in. F5 must go on from the headphones, not from a filter.
+        let rig = Rig::new(false);
+        rig.sys.state().headphone_jack = "on".into();
+        rig.audio.set_output(Output::Headphones).unwrap();
+        rig.sys.state().extra_sinks =
+            vec!["truesense_pv_speaker".into(), DUALSENSE.into(), "bluez_output.AA.1".into()];
+        rig.sys.state().default_sink = "truesense_pv_speaker".into();
+        rig.sys.state().links = format!(
+            "acerultrax_sink:monitor_FL\n  |-> acerultrax_output:g0_FL\nacerultrax_output:output_FL\n  |-> {HW_HEADPHONES}:playback_FL\n"
+        );
+        assert_eq!(rig.audio.output_cycle().unwrap(), "Sink bluez_output.AA.1");
+        // Through AcerUltraX to a controller (not a stop): start again from the speakers.
+        rig.sys.state().default_sink = "acerultrax_sink".into();
+        rig.sys.state().links = format!("acerultrax_output:output_FL\n  |-> {DUALSENSE}:playback_FL\n");
+        assert_eq!(rig.audio.output_cycle().unwrap(), "Laptop speakers");
+        assert_eq!(rig.sys.state().default_sink, HW_SPEAKER);
+    }
+
+    /// `pactl list sink-inputs` as on the laptop: a filter's output and a music app.
+    const APPS: &str = "Sink Input #49\n\tProperties:\n\t\tmedia.name = \"Purified Voice Speaker output\"\n\t\tnode.name = \"output.filter-chain-1552-31\"\n\t\tobject.id = \"49\"\nSink Input #473\n\tProperties:\n\t\tapplication.name = \"Gapless\"\n\t\tnode.name = \"Gapless\"\n\t\tobject.id = \"146\"\n";
+
+    #[test]
+    fn the_playing_apps_are_found_and_filters_left_out() {
+        assert_eq!(app_streams(APPS), [("473".to_owned(), "146".to_owned())]);
+        assert!(app_streams("").is_empty());
+        // Without AcerUltraX the apps are moved to the new device.
+        let rig = Rig::new(false);
+        rig.sys.state().no_front_sink = true;
+        rig.sys.state().default_sink = HW_SPEAKER.into();
+        rig.sys.state().headphone_jack = "on".into();
+        rig.sys.state().sink_inputs_long = APPS.into();
+        rig.audio.output_cycle().unwrap();
+        assert!(rig.sys.did(&["pactl", "move-sink-input", "473", HW_HEADPHONES]));
+        assert!(!rig.sys.did(&["pactl", "move-sink-input", "49"]));
+    }
+
+    #[test]
+    fn real_outputs_and_links_are_read_right() {
+        assert!(is_real_output(HW_HEADPHONES) && is_real_output("bluez_output.AA.1"));
+        assert!(is_real_output("alsa_output.usb-GeneralPlus_USB_Audio_Device-00.analog-stereo"));
+        for not in [
+            "truesense_pv_speaker",
+            "acerultrax_sink",
+            DUALSENSE,
+            "alsa_output.pci-0000_01_00.1.hdmi-stereo",
+            "",
+        ] {
+            assert!(!is_real_output(not), "{not}");
+        }
+        let links = "a:x\n  |-> b:y\nacerultrax_output:output_FL\n  |-> sink.name:playback_FL\n";
+        assert_eq!(linked_device(links, "acerultrax_output:output_FL").as_deref(), Some("sink.name"));
+        assert_eq!(linked_device(links, "missing:port"), None);
+        assert_eq!(linked_device("acerultrax_output:output_FL\n", "acerultrax_output:output_FL"), None);
     }
 
     #[test]

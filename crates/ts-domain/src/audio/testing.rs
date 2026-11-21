@@ -47,9 +47,13 @@ pub(crate) struct State {
     pub restarted: u32,
     pub extra_sinks: Vec<String>,
     pub no_front_sink: bool,
+    /// What `pw-link -l` prints.
+    pub links: String,
     pub card_missing_from_long_list: bool,
     pub default_sink: String,
     pub sink_inputs: Vec<String>,
+    /// What `pactl list sink-inputs` prints.
+    pub sink_inputs_long: String,
     pub sink_descs: BTreeMap<String, String>,
     // microphones
     pub default_source: String,
@@ -96,9 +100,11 @@ impl FakeSystem {
                 restarted: 0,
                 extra_sinks: Vec::new(),
                 no_front_sink: false,
+                links: String::new(),
                 card_missing_from_long_list: false,
                 default_sink: "acerultrax_sink".into(),
                 sink_inputs: Vec::new(),
+                sink_inputs_long: String::new(),
                 sink_descs: BTreeMap::new(),
                 default_source: SRC_ARRAY.into(),
                 muted: BTreeMap::new(),
@@ -162,6 +168,7 @@ impl FakeSystem {
                 "wpctl" => s.wpctl(&words),
                 "systemctl" => s.systemctl(&words),
                 "amixer" => s.amixer(&words),
+                "pw-link" => s.links.clone(),
                 _ => String::new(),
             }
         };
@@ -228,6 +235,7 @@ impl State {
                 self.sources().iter().enumerate().map(|(i, s)| format!("{}\t{s}\tPipeWire\ts32le 2ch 48000Hz\tSUSPENDED\n", 40 + i)).collect()
             }
             ["list", "short", "sink-inputs"] => self.sink_inputs.join("\n"),
+            ["list", "sink-inputs"] => self.sink_inputs_long.clone(),
             ["list", "short", "source-outputs"] => self.source_outputs.join("\n"),
             ["get-default-sink"] => format!("{}\n", self.default_sink),
             ["get-default-source"] => format!("{}\n", self.default_source),
