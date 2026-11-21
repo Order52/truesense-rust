@@ -131,11 +131,12 @@ impl Drop for ReapOnEnd {
 }
 
 /// Whether a `pactl subscribe` line is about something the watcher cares about: a card, an output,
-/// an input or the server (default device). Streams (`sink-input`, `source-output`), clients and
-/// modules come and go with every application and mean nothing for the microphone policy.
+/// an input, the server (default device), or a playing app (`sink-input`: an app that starts or
+/// is moved can get a second path through AcerUltraX, see `paths`). Recording streams, clients
+/// and modules come and go with every application and mean nothing here.
 pub fn relevant(line: &str) -> bool {
     let Some((_, what)) = line.split_once(" on ") else { return false };
-    matches!(what.split_whitespace().next(), Some("card" | "sink" | "source" | "server"))
+    matches!(what.split_whitespace().next(), Some("card" | "sink" | "source" | "server" | "sink-input"))
 }
 
 /// State shared between the reader thread and the waiter.
@@ -253,9 +254,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_changes_of_cards_outputs_inputs_and_the_server_count() {
+    fn only_changes_of_cards_outputs_inputs_the_server_and_playing_apps_count() {
         for line in [
             "Event 'change' on card #47",
+            "Event 'new' on sink-input #120",
             "Event 'new' on sink #51",
             "Event 'remove' on source #12",
             "Event 'change' on server #4294967295",
@@ -263,7 +265,6 @@ mod tests {
             assert!(relevant(line), "{line}");
         }
         for line in [
-            "Event 'new' on sink-input #120",
             "Event 'remove' on source-output #7",
             "Event 'new' on client #5",
             "Event 'new' on module #9",
@@ -349,7 +350,7 @@ mod tests {
         let (sub, tx, _) = scripted();
         until("the stream", || sub.healthy());
         let stop = AtomicBool::new(false);
-        tx.send("Event 'new' on sink-input #1".into()).unwrap(); // not relevant
+        tx.send("Event 'new' on source-output #1".into()).unwrap(); // not relevant
         assert_eq!(sub.wait(Duration::from_millis(60), &stop), Wake::Timeout);
         for _ in 0..5 {
             tx.send("Event 'change' on source #3".into()).unwrap();

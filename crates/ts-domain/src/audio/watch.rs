@@ -142,6 +142,12 @@ impl MicWatcher {
             ));
             self.last = Some(signature);
         }
+        // An app that picked its own device must not also play through AcerUltraX (a doubled
+        // voice). The direct link can appear a moment after the app's own, so look twice.
+        if !audio.single_dts_path().is_empty() || dts_every_time {
+            audio.clock.sleep(SETTLE);
+            audio.single_dts_path();
+        }
         // The DTS check runs every second pass.
         self.tick = (self.tick + 1) % 2;
         if dts_every_time || self.tick == 0 {

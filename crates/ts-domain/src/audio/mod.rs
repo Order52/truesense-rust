@@ -31,6 +31,7 @@ pub mod events;
 mod mic;
 mod output;
 pub mod parse;
+mod paths;
 mod sound;
 mod voice;
 mod watch;
