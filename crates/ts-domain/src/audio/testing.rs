@@ -54,6 +54,8 @@ pub(crate) struct State {
     pub sink_inputs: Vec<String>,
     /// What `pactl list sink-inputs` prints.
     pub sink_inputs_long: String,
+    /// Sinks whose active port says nothing is plugged in.
+    pub unplugged: Vec<String>,
     pub sink_descs: BTreeMap<String, String>,
     // microphones
     pub default_source: String,
@@ -105,6 +107,7 @@ impl FakeSystem {
                 default_sink: "acerultrax_sink".into(),
                 sink_inputs: Vec::new(),
                 sink_inputs_long: String::new(),
+                unplugged: Vec::new(),
                 sink_descs: BTreeMap::new(),
                 default_source: SRC_ARRAY.into(),
                 muted: BTreeMap::new(),
@@ -228,7 +231,12 @@ impl State {
                 .enumerate()
                 .map(|(i, s)| {
                     let desc = self.sink_descs.get(s).cloned().unwrap_or_else(|| format!("Sink {s}"));
-                    format!("Sink #{}\n\tState: SUSPENDED\n\tName: {s}\n\tDescription: {desc}\n\tDriver: PipeWire\n", 30 + i)
+                    let port = if self.unplugged.contains(s) {
+                        "\tPorts:\n\t\t[Out] Out: Out (type: HDMI, priority: 1, not available)\n\tActive Port: [Out] Out\n"
+                    } else {
+                        ""
+                    };
+                    format!("Sink #{}\n\tState: SUSPENDED\n\tName: {s}\n\tDescription: {desc}\n\tDriver: PipeWire\n{port}", 30 + i)
                 })
                 .collect(),
             ["list", "short", "sources"] => {

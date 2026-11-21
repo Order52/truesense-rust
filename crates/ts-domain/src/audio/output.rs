@@ -181,11 +181,17 @@ impl Audio {
     fn cycle(&self) -> Result<String, AudioError> {
         let sinks = self.sinks();
         let dts = sinks.iter().any(|n| n == FRONT_SINK);
-        // Where sound can really end up: the laptop's own two, then USB and Bluetooth outputs.
-        // Not HDMI, not a game controller's speaker, and never a filter in front of a device (the
-        // Purified Voice speaker filter, the AcerUltraX sink): those are not a place to switch to.
-        let others: Vec<String> =
-            sinks.iter().filter(|n| is_real_output(n) && !n.contains(CARD_MATCH)).cloned().collect();
+        // Where sound can really end up: the laptop's own two, then every other connected device
+        // in the order PipeWire lists them (USB and Bluetooth headsets and speakers, a
+        // controller's speaker, HDMI with a monitor), so a new device joins by itself. Never a
+        // filter in front of a device (the Purified Voice speaker filter, the AcerUltraX sink),
+        // and never a port with nothing plugged in.
+        let unplugged = unplugged_sinks(&self.out("pactl", &["list", "sinks"]));
+        let others: Vec<String> = sinks
+            .iter()
+            .filter(|n| is_real_output(n) && !n.contains(CARD_MATCH) && !unplugged.contains(n))
+            .cloned()
+            .collect();
         let mut stops = vec!["int:speakers".to_owned()];
         if self.jack_status().headphones {
             stops.push("int:headphones".into());
@@ -256,14 +262,31 @@ impl Audio {
     }
 }
 
-/// A sink that is a device sound ends up on (ALSA or Bluetooth), other than HDMI and a game
-/// controller's speaker. Filters and the AcerUltraX sink are not.
+/// A sink that is a device sound ends up on: any ALSA output (the laptop, USB headsets and
+/// speakers, a controller's speaker, HDMI) or Bluetooth output. Filters (Purified Voice) and the
+/// AcerUltraX sink sit in front of a device and are not.
 pub(crate) fn is_real_output(name: &str) -> bool {
-    let lower = name.to_lowercase();
-    (lower.starts_with("alsa_output.") || lower.starts_with("bluez_output."))
-        && !["hdmi", "dualsense", "dualshock", "controller", "gamepad", "xbox"]
-            .iter()
-            .any(|w| lower.contains(w))
+    name.starts_with("alsa_output.") || name.starts_with("bluez_output.")
+}
+
+/// The sinks whose active port says nothing is plugged in (an HDMI output without a monitor, a
+/// jack sink with the jack empty), from `pactl list sinks`: switching to one would be silence.
+pub(crate) fn unplugged_sinks(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for block in text.split("Sink #").skip(1) {
+        let field =
+            |key: &str| block.lines().find_map(|l| l.trim().strip_prefix(key).map(|v| v.trim().to_owned()));
+        let (Some(name), Some(port)) = (field("Name:"), field("Active Port:")) else { continue };
+        let port = port.trim_start_matches("[Out] ").to_owned();
+        let unplugged = block.lines().any(|l| {
+            let l = l.trim().trim_start_matches("[Out] ");
+            l.starts_with(&format!("{port}:")) && l.contains("not available")
+        });
+        if unplugged {
+            out.push(name);
+        }
+    }
+    out
 }
 
 /// The playing apps in `pactl list sink-inputs`: (sink input number, node id). A stream with no
@@ -419,6 +442,7 @@ mod tests {
         rig.sys.state().headphone_jack = "on".into();
         rig.sys.state().default_sink = HW_SPEAKER.into();
         rig.sys.state().sink_inputs_long = APPS.into();
+        rig.sys.state().unplugged = vec!["alsa_output.pci-0000_00_03.0.hdmi-stereo".into()];
 
         // speakers -> headphones: the jack's own sink is the default (AcerUltraX takes it from
         // there); the music app is unpinned, not moved, and the filter's output is left alone.
@@ -432,19 +456,18 @@ mod tests {
             !sent.iter().any(|c| c.contains("pw-metadata -d 49 ")),
             "the filter's output stays: {sent:?}"
         );
-        // headphones -> the Bluetooth speaker (HDMI, the filter and the controller are skipped)
+        // headphones -> the Bluetooth speaker -> the controller (the filter and an HDMI output
+        // without a monitor are skipped) -> speakers
         assert_eq!(rig.audio.output_cycle().unwrap(), "Some Speaker");
         assert_eq!(rig.sys.state().default_sink, "bluez_output.AA.1");
-        // bluetooth -> speakers
+        assert_eq!(rig.audio.output_cycle().unwrap(), format!("Sink {DUALSENSE}"));
+        assert_eq!(rig.sys.state().default_sink, DUALSENSE);
         assert_eq!(rig.audio.output_cycle().unwrap(), "Laptop speakers");
         assert_eq!(rig.sys.state().profile, HIFI_SPEAKERS);
         assert_eq!(rig.sys.state().default_sink, HW_SPEAKER);
         assert_eq!(rig.osd.quiet_depth(), 0);
         let shown = rig.shown();
-        assert!(
-            shown.iter().all(|s| !s.contains("hdmi") && !s.contains("Purified") && !s.contains("DualSense")),
-            "{shown:?}"
-        );
+        assert!(shown.iter().all(|s| !s.contains("hdmi") && !s.contains("Purified")), "{shown:?}");
     }
 
     #[test]
@@ -460,10 +483,13 @@ mod tests {
         rig.sys.state().links = format!(
             "acerultrax_sink:monitor_FL\n  |-> acerultrax_output:g0_FL\nacerultrax_output:output_FL\n  |-> {HW_HEADPHONES}:playback_FL\n"
         );
-        assert_eq!(rig.audio.output_cycle().unwrap(), "Sink bluez_output.AA.1");
-        // Through AcerUltraX to a controller (not a stop): start again from the speakers.
+        assert_eq!(rig.audio.output_cycle().unwrap(), format!("Sink {DUALSENSE}"));
+        // Through AcerUltraX to the controller: on to the next device after it.
         rig.sys.state().default_sink = "acerultrax_sink".into();
         rig.sys.state().links = format!("acerultrax_output:output_FL\n  |-> {DUALSENSE}:playback_FL\n");
+        assert_eq!(rig.audio.output_cycle().unwrap(), "Sink bluez_output.AA.1");
+        // A device that is gone (or not known) starts again from the speakers.
+        rig.sys.state().links = "acerultrax_output:output_FL\n  |-> alsa_output.gone:playback_FL\n".into();
         assert_eq!(rig.audio.output_cycle().unwrap(), "Laptop speakers");
         assert_eq!(rig.sys.state().default_sink, HW_SPEAKER);
     }
@@ -490,15 +516,12 @@ mod tests {
     fn real_outputs_and_links_are_read_right() {
         assert!(is_real_output(HW_HEADPHONES) && is_real_output("bluez_output.AA.1"));
         assert!(is_real_output("alsa_output.usb-GeneralPlus_USB_Audio_Device-00.analog-stereo"));
-        for not in [
-            "truesense_pv_speaker",
-            "acerultrax_sink",
-            DUALSENSE,
-            "alsa_output.pci-0000_01_00.1.hdmi-stereo",
-            "",
-        ] {
+        assert!(is_real_output(DUALSENSE) && is_real_output("alsa_output.pci-0000_01_00.1.hdmi-stereo"));
+        for not in ["truesense_pv_speaker", "acerultrax_sink", ""] {
             assert!(!is_real_output(not), "{not}");
         }
+        let sinks = "Sink #1\n\tName: alsa_output.hdmi\n\tPorts:\n\t\t[Out] HDMI1: HDMI / DisplayPort (type: HDMI, priority: 5900, not available)\n\tActive Port: [Out] HDMI1\nSink #2\n\tName: alsa_output.jack\n\tPorts:\n\t\t[Out] Headphones: Headphones (type: Headphones, priority: 200, available)\n\tActive Port: [Out] Headphones\nSink #3\n\tName: bluez_output.AA.1\n";
+        assert_eq!(unplugged_sinks(sinks), ["alsa_output.hdmi"]);
         let links = "a:x\n  |-> b:y\nacerultrax_output:output_FL\n  |-> sink.name:playback_FL\n";
         assert_eq!(linked_device(links, "acerultrax_output:output_FL").as_deref(), Some("sink.name"));
         assert_eq!(linked_device(links, "missing:port"), None);
