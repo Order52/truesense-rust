@@ -108,7 +108,10 @@ impl Audio {
     /// the jack and did nothing over USB. Each output is handled ONCE (remembered in the user state),
     /// so a later "Plain" chosen on purpose stays. New headsets get the profile of the laptop
     /// speakers plus a headphone EQ: AcerUltraX's own pick by name when it knows the model, else
-    /// Acer's general one. `force` redoes every output. Returns what changed, for example
+    /// Acer's general one (never the external-speaker tuning a headset otherwise gets). The 3.5 mm
+    /// jack is covered like any headset. `force` ("DTS on every output") redoes every output and
+    /// also turns the laptop speakers on (Music, Acer's tuning for this laptop's speakers) when they
+    /// are on Plain or Off. Returns what changed, for example
     /// `["Headset PC38X: Music + headphone EQ"]`.
     pub fn dts_cover(&self, force: bool) -> Result<Vec<String>, AudioError> {
         let devices = self.dts_devices()?;
@@ -119,8 +122,20 @@ impl Audio {
             .unwrap_or_default()
             .into_iter()
             .collect();
-        let speakers = devices.iter().find(|d| d.kind == "speakers").map_or("Music", |d| d.profile.as_str());
         let plain_or_off = |profile: &str| profile == "Plain" || profile == "Off";
+        let mut done = Vec::new();
+        // "DTS on every output" starts with the speakers it was made for.
+        if force {
+            for d in devices.iter().filter(|d| d.kind == "speakers" && plain_or_off(&d.profile)) {
+                self.dts(&["mode", "Music", "--device", &d.reference])?;
+                done.push(format!("{}: Music (Acer's tuning for these speakers)", d.label));
+            }
+        }
+        let speakers = if done.is_empty() {
+            devices.iter().find(|d| d.kind == "speakers").map_or("Music", |d| d.profile.as_str())
+        } else {
+            "Music"
+        };
         // The profile the speakers have, unless they have none on purpose: speakers on Plain/Off
         // mean the user wants no DTS.
         let want: Option<String> = devices
@@ -128,12 +143,10 @@ impl Audio {
             .find(|d| d.kind == "speakers" && !plain_or_off(&d.profile))
             .map(|d| d.profile.clone())
             .or_else(|| force.then(|| "Music".to_owned()));
-        let mut done = Vec::new();
         for device in &devices {
             let first = !seen.contains(&device.reference);
             if !(first || force)
                 || device.kind == "speakers"
-                || device.kind == "headphones"
                 || (device.kind == "bluetooth-speaker" && !force)
             {
                 continue; // AcerUltraX keeps Plain for Bluetooth speakers on purpose
@@ -322,6 +335,36 @@ mod tests {
     }
 
     #[test]
+    fn every_output_on_this_laptop_gets_its_best_dts() {
+        // As found on the laptop: speakers and the jack on Plain, the USB headset on Music with
+        // the external-speaker tuning (no headphone EQ).
+        let rig = Rig::new(false);
+        rig.sys.state().dts_devices_text =
+            Some(REAL_DEVICES.replacen("speakers           Music", "speakers           Plain", 1).replacen(
+                "headphones         Music",
+                "headphones         Plain",
+                1,
+            ));
+        rig.sys.state().dts_profile.insert(USB_HEADSET.into(), "Music".into());
+        let done = rig.audio.dts_cover(true).unwrap();
+        assert_eq!(profile_of(&rig, "@speakers").as_deref(), Some("Music"), "{done:?}");
+        assert_eq!(profile_of(&rig, "@headphones").as_deref(), Some("Music"), "{done:?}");
+        assert!(rig.sys.did(&["/x/acerultrax-cli", "headphone", "default", "--device", "@headphones"]));
+        assert!(rig.sys.did(&["/x/acerultrax-cli", "headphone", "default", "--device", USB_HEADSET]));
+        assert!(done[0].starts_with("Laptop speakers: Music"), "{done:?}");
+    }
+
+    #[test]
+    fn the_jack_is_covered_on_first_sight_like_a_headset() {
+        let rig = Rig::new(false);
+        rig.sys.state().dts_devices_text =
+            Some(REAL_DEVICES.replacen("headphones         Music", "headphones         Plain", 1));
+        rig.audio.dts_cover(false).unwrap();
+        assert_eq!(profile_of(&rig, "@headphones").as_deref(), Some("Music"));
+        assert!(rig.sys.did(&["/x/acerultrax-cli", "headphone", "auto", "--device", "@headphones"]));
+    }
+
+    #[test]
     fn force_with_speakers_on_plain_uses_music_and_says_so_when_nothing_changed() {
         let rig = Rig::new(false);
         rig.sys.state().dts_devices_text =
@@ -330,7 +373,11 @@ mod tests {
         let rig = Rig::new(false);
         rig.audio.dts_cover(true).unwrap();
         rig.sys.clear();
-        assert_eq!(rig.audio.dts_cover(true).unwrap().len(), 2, "the two headsets report their EQ again");
+        assert_eq!(
+            rig.audio.dts_cover(true).unwrap().len(),
+            3,
+            "the jack and the two headsets report their EQ again"
+        );
         assert!(
             !rig.sys.did(&["/x/acerultrax-cli", "headphone"]),
             "an EQ AcerUltraX already holds is not asked for again"

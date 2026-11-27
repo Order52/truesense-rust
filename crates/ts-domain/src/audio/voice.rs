@@ -283,8 +283,38 @@ impl Audio {
     }
 
     /// Restarts PipeWire so that it reads its drop-in configuration again.
+    /// Restarts PipeWire so a filter file is read, without leaving the sound somewhere else. A bare
+    /// restart dropped AcerUltraX (it ended with "lost the connection to PipeWire" and came back
+    /// only when systemd restarted it), and in between the default output fell to whatever was
+    /// left (the DualSense), where the sound then stayed. So: note the device the sound reaches,
+    /// restart PipeWire, restart AcerUltraX at once, and give the sound back to that device.
     fn reload(&self) {
+        let device = self.playing_device();
         self.run("systemctl", &["--user", "restart", "pipewire.service"]);
+        if self.has_dts() {
+            self.run("systemctl", &["--user", "try-restart", "acerultrax.service"]);
+        }
+        let Some(device) = device else { return };
+        let end = self.clock.now() + NODE_WAIT;
+        while self.clock.now() < end {
+            let sinks = self.sinks();
+            let dts_ready = !self.has_dts() || sinks.iter().any(|s| s == super::FRONT_SINK);
+            if dts_ready && sinks.contains(&device) {
+                self.run("pactl", &["set-default-sink", &device]);
+                return;
+            }
+            self.clock.sleep(NODE_POLL);
+        }
+    }
+
+    /// The device the sound reaches now: the default output, or behind AcerUltraX (or a filter)
+    /// the device AcerUltraX's output is linked to. `None` when it cannot be told.
+    fn playing_device(&self) -> Option<String> {
+        let default = self.default_sink();
+        if super::output::is_real_output(&default) {
+            return Some(default);
+        }
+        super::output::linked_device(&self.out("pw-link", &["-l"]), "acerultrax_output:output_FL")
     }
 
     pub(crate) fn source_names(&self) -> Vec<String> {
@@ -565,16 +595,20 @@ mod tests {
 
         // Another mode rewrites and restarts once.
         rig.audio.voice_set(VoiceDevice::Headset, VoiceMode::Personal).unwrap();
-        assert_eq!(rig.sys.count(&["systemctl"]), 1);
+        assert_eq!(rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]), 1);
         assert_eq!(rig.audio.voice_modes().headset, Some(VoiceMode::Personal));
 
         // Off removes the file and reloads, but only when there was one.
         rig.sys.clear();
         assert_eq!(rig.audio.voice_set(VoiceDevice::Headset, VoiceMode::Off).unwrap(), VoiceMode::Off);
         assert!(rig.read("pw/truesense-pv-headset.conf").is_none());
-        assert_eq!(rig.sys.count(&["systemctl"]), 1);
+        assert_eq!(rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]), 1);
         rig.audio.voice_set(VoiceDevice::Headset, VoiceMode::Off).unwrap();
-        assert_eq!(rig.sys.count(&["systemctl"]), 1, "nothing to remove, nothing to restart");
+        assert_eq!(
+            rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]),
+            1,
+            "nothing to remove, nothing to restart"
+        );
     }
 
     #[test]
@@ -710,6 +744,23 @@ mod tests {
     }
 
     #[test]
+    fn a_filter_change_keeps_dts_and_the_device_the_sound_was_on() {
+        // As on the laptop: AcerUltraX is the default and feeds the USB headset.
+        let rig = Rig::new(false);
+        rig.sys.state().extra_sinks = vec![USB_HEADSET.into(), DUALSENSE.into()];
+        rig.sys.state().default_sink = "acerultrax_sink".into();
+        rig.sys.state().links = format!("acerultrax_output:output_FL\n  |-> {USB_HEADSET}:playback_FL\n");
+        rig.audio.speaker_filter(true, VoiceMode::Personal).unwrap();
+        let sent = rig.sys.sent();
+        let at = |c: &str| sent.iter().position(|x| x == c).unwrap_or_else(|| panic!("{c} not in {sent:?}"));
+        let restart = at("systemctl --user restart pipewire.service");
+        let dts = at("systemctl --user try-restart acerultrax.service");
+        let back = at(&format!("pactl set-default-sink {USB_HEADSET}"));
+        assert!(restart < dts && dts < back, "{sent:?}");
+        assert_eq!(rig.sys.state().default_sink, USB_HEADSET);
+    }
+
+    #[test]
     fn the_speaker_filter_switches_a_file() {
         let rig = Rig::new(false);
         assert!(!rig.audio.speaker_filter_on());
@@ -719,9 +770,13 @@ mod tests {
         assert_eq!(rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]), 1);
         assert!(!rig.audio.speaker_filter(false, VoiceMode::Conference).unwrap());
         assert!(!rig.audio.speaker_filter_on());
-        assert_eq!(rig.sys.count(&["systemctl"]), 2);
+        assert_eq!(rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]), 2);
         rig.audio.speaker_filter(false, VoiceMode::Conference).unwrap();
-        assert_eq!(rig.sys.count(&["systemctl"]), 2, "nothing to remove, nothing to restart");
+        assert_eq!(
+            rig.sys.count(&["systemctl", "--user", "restart", "pipewire.service"]),
+            2,
+            "nothing to remove, nothing to restart"
+        );
         assert_eq!(
             rig.audio.speaker_filter(true, VoiceMode::Off).unwrap_err().to_string(),
             "mode: conference | personal"
