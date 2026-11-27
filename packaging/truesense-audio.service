@@ -8,6 +8,8 @@ StartLimitIntervalSec=0
 ExecStart=@PREFIX@/bin/truesense audio voice watch
 Restart=always
 RestartSec=3
+# a stop (logout, shutdown, an update) ends the watch with 130, "interrupted": that is a clean stop, not a failure
+SuccessExitStatus=130
 
 [Install]
 WantedBy=default.target

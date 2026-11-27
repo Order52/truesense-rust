@@ -210,7 +210,7 @@ impl Audio {
     pub fn autorepair(&self, delays: &[Duration], stop: &AtomicBool) {
         let mut previous = Duration::ZERO;
         for delay in delays {
-            self.clock.sleep(delay.saturating_sub(previous));
+            self.clock.pause(delay.saturating_sub(previous), stop);
             previous = *delay;
             if stop.load(Ordering::Relaxed) {
                 return;

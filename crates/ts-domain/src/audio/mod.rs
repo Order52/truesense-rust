@@ -82,6 +82,13 @@ pub trait Clock: Send + Sync {
     fn now(&self) -> Duration;
     /// Pauses for `d`; may return early when the service is asked to stop.
     fn sleep(&self, d: Duration);
+    /// Pauses for `d`, or less: it ends the moment `stop` is set (a long wait of a service must
+    /// never hold up its own shutdown). A clock without a way to wake up early just sleeps.
+    fn pause(&self, d: Duration, stop: &AtomicBool) {
+        if !stop.load(Ordering::Relaxed) {
+            self.sleep(d);
+        }
+    }
 }
 
 /// The real clock. It can be tied to a stop flag so that a pause of 90 s (the login repair) never
@@ -126,6 +133,13 @@ impl Clock for SystemClock {
             }
             None => std::thread::sleep(d),
         }
+    }
+
+    fn pause(&self, d: Duration, stop: &AtomicBool) {
+        // The signal bridge sets the flag and then rings the bell, so this wakes at once.
+        wake::wait_until(d, || {
+            stop.load(Ordering::Relaxed) || self.stop.as_ref().is_some_and(|s| s.load(Ordering::Relaxed))
+        });
     }
 }
 
@@ -558,6 +572,24 @@ mod tests {
         clock.sleep(Duration::from_secs(60));
         assert!(started.elapsed() < Duration::from_secs(5), "a stopped clock must not sleep out its pause");
         assert!(SystemClock::default().now() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn a_pause_ends_when_its_own_stop_flag_is_set() {
+        let stop = Arc::new(AtomicBool::new(false));
+        let setter = stop.clone();
+        let started = Instant::now();
+        let t = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(50));
+            setter.store(true, Ordering::Relaxed);
+            wake::ring();
+        });
+        SystemClock::new().pause(Duration::from_secs(60), &stop);
+        t.join().unwrap();
+        assert!(started.elapsed() < Duration::from_secs(5), "a stop must cut a pause short");
+        let started = Instant::now();
+        SystemClock::new().pause(Duration::from_secs(60), &stop);
+        assert!(started.elapsed() < Duration::from_secs(1), "a pause after the stop does not wait");
     }
 
     #[test]

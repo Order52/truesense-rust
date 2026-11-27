@@ -178,7 +178,7 @@ impl MicWatcher {
                     }
                     None => {
                         self.step();
-                        audio.clock.sleep(TICK);
+                        audio.clock.pause(TICK, stop);
                     }
                 }
             }
